@@ -1,5 +1,6 @@
 import os
 import re
+import csv
 
 # Split the folder name into array
 def split_into_arr(folder_name, split_char = '_'):
@@ -29,3 +30,20 @@ def get_children_by_extension(directory, extension):
             if file.endswith(extension):
                 list.append(file)
     return list
+
+def csv_to_dict(directory):
+    data_list = []
+    
+    with open(directory, mode='r', newline='') as file:
+        csv_reader = csv.DictReader(file)
+        
+        for row in csv_reader:
+            data_list.append(row)
+    
+    return data_list
+
+def get_all_children_in_path(directory):
+    all_items = os.listdir(directory)
+    # Filter out only the subdirectories
+    child_folders = [item for item in all_items if os.path.isdir(os.path.join(directory, item))]
+    return child_folders
