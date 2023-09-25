@@ -2,6 +2,8 @@ import common
 import string
 import tomli_w as tomli
 import defs
+import re
+import csv
 
 class Generator:
     def __init__(self):
@@ -47,9 +49,33 @@ class Generator:
 
         return out_str
 
-    def get_mod_name(self):
-        name = ""
+    def trim_name(self, base_name):
+        categories = ["Fighter", "Stage", "Effects", "UI", "Param", "Audio", "Misc"]
+        data = []
+
+        # Open the CSV file and read it as a dictionary
+        with open("./character_names.csv", 'r', newline='') as csvfile:
+            csv_reader = csv.DictReader(csvfile)
+            
+            # Iterate over each row (dictionary)
+            for row in csv_reader:
+                data.append(row)
         
+        set_name = set()
+        for datum in data:
+            for key, value in datum.items():
+                if type(value) is not list:
+                    set_name.add(value)
+
+        words_to_remove = categories
+        # Create a regular expression pattern to match words to remove and underscore
+        pattern = r'|'.join(re.escape(word) for word in words_to_remove)
+        pattern += r'|'.join(re.escape(name) for name in set_name)
+        pattern += r'|_'  # Add underscore to the pattern
+        
+        # Use regular expression to remove unwanted parts
+        name = re.sub(r'(C\d+|\[.*?\]|' + pattern + ')', '', base_name)
+
         return name
 
     def get_display_name(self):
@@ -70,7 +96,7 @@ class Generator:
                     slots = self.get_slot_range(all_slots)
                     break
                 
-        return character_name + " " + slots 
+        return character_name + " " + slots + " " + self.trim_name(common.get_dir_name(self.working_dir)) 
         
     def set_category(self):
         if self.contains_fighter == True: return "Fighter"
