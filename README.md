@@ -13,11 +13,9 @@ Python is required to run this script.
 Just run main.py file and load the directory of the mod file with files like fighter, sound, effect, ui, etc.
 
 ## To Do
-victory theme
-camera
-message xmsbt or something else
-slots for effects as well as others
-cleaner for slots c00, c01 -> c00-01
-multiple chars
-cleaner for multiple chars
-Batch Editor
+* Detect victory theme
+* Detect camera
+* Differentiate xmsbt
+* Specify slots for effects as well as others
+* Omit Overlapping character names such as aegis
+* Batch Edit
