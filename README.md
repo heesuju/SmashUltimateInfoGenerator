@@ -6,6 +6,7 @@ This is a simple script that generates an info.toml file for Smash Ultimate mods
 ## Install requirements
 ```sh
 pip install tomli_w
+pip install Pillow
 ```
 
 ## How to use
