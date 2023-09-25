@@ -20,6 +20,7 @@ def change_working_directory():
     display_text.insert(0, dict_info["display_name"])  # Insert the new text
     description_text.delete(1.0, tk.END)
     description_text.insert(tk.END, dict_info["description"])  # Insert the new text
+    combobox.set(dict_info["category"])
 
 # Create a function to update the info.toml file
 def update_info_toml():
@@ -80,7 +81,7 @@ options = ["Fighter", "Stage", "Effects", "UI", "Param", "Audio", "Misc"]
 combobox = ttk.Combobox(root, values=options)
 combobox.grid(row=5, column=1, sticky=tk.W, padx = 10, pady=10)
 combobox.bind("<<ComboboxSelected>>", on_combobox_select)
-combobox.set("Fighter")
+combobox.set("Misc")
 
 generate_button = tk.Button(root, text="Generate", command=update_info_toml)
 generate_button.grid(row=6, column=0, sticky=tk.W, padx = 10, pady=10)
