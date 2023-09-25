@@ -1,7 +1,6 @@
 import common
 import string
 import tomli_w as tomli
-import defs
 import re
 import csv
 
@@ -51,6 +50,8 @@ class Generator:
 
     def trim_name(self, base_name):
         categories = ["Fighter", "Stage", "Effects", "UI", "Param", "Audio", "Misc"]
+        extra = ["Aegis", "Pyra", "Mythra", "Rex", "Pkm", "Pokemon", "Charizard", "Ivysaur", "Squirtle"]
+
         data = []
 
         # Open the CSV file and read it as a dictionary
@@ -62,14 +63,15 @@ class Generator:
                 data.append(row)
         
         set_name = set()
+        set_name.update(extra)
+        
         for datum in data:
             for key, value in datum.items():
                 if type(value) is not list:
                     set_name.add(value)
 
-        words_to_remove = categories
         # Create a regular expression pattern to match words to remove and underscore
-        pattern = r'|'.join(re.escape(word) for word in words_to_remove)
+        pattern = r'|'.join(re.escape(word) for word in categories)
         pattern += r'|'.join(re.escape(name) for name in set_name)
         pattern += r'|_'  # Add underscore to the pattern
         
@@ -81,7 +83,9 @@ class Generator:
     def get_display_name(self):
         children = common.get_all_children_in_path(self.working_dir + "/fighter")
         dict_arr = common.csv_to_dict("./character_names.csv") 
-        character_name = ""                
+        character_name = ""   
+        cat_dict = {"Aegis":3, "Ice Climbers":2, "Pkm":4}     
+        name_arr = []        
         if len(children) > 1 and "kirby" in children:
             children.remove("kirby")
         slots = ""
@@ -92,10 +96,25 @@ class Generator:
                         character_name += dict['Value']
                     else:
                         character_name += ", " + dict['Value']
-                    all_slots = common.get_all_children_in_path(self.working_dir + "/fighter/" + child + "/model/body")
-                    slots = self.get_slot_range(all_slots)
-                    break
-                
+                    name_arr.append(dict['Value'])
+                    if common.is_valid_dir(self.working_dir + "/fighter/" + child + "/model/body"):
+                        all_slots = common.get_all_children_in_path(self.working_dir + "/fighter/" + child + "/model/body")
+                        slots = self.get_slot_range(all_slots)
+        
+        if len(name_arr) > 1:
+            name_parts = common.split_into_arr(name_arr[0], " ")
+            head = name_parts[0]
+            max = len(name_arr)
+            num = 1
+            for n in range(1, max):
+                if head in name_arr[n]:
+                    character_name = character_name.replace(head, "")
+                    character_name = head + " " + character_name
+                    num+=1
+            if head in cat_dict.keys():
+                if cat_dict[head] <= num:
+                    character_name = head
+
         return character_name + " " + slots + " " + self.trim_name(common.get_dir_name(self.working_dir)) 
         
     def set_category(self):

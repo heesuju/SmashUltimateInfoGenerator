@@ -2,6 +2,10 @@ import tkinter as tk
 from tkinter import filedialog
 from generator import Generator
 from tkinter import ttk
+from tkinter import PhotoImage
+from PIL import Image, ImageTk
+import shutil
+import os
 
 def on_combobox_select(event):
     selected_option = combobox.get()
@@ -12,6 +16,8 @@ def get_working_directory():
 
 def change_working_directory():
     working_dir = get_working_directory()
+    if not working_dir:
+        return
     directory_label.config(text=f"{working_dir}")
     dict_info = generator.preview_info_toml(directory_label.cget("text"), "", version_text.get(), "")
     
@@ -25,14 +31,48 @@ def change_working_directory():
 # Create a function to update the info.toml file
 def update_info_toml():
     generator.generate_info_toml(display_text.get(), authors_entry.get(), description_text.get("1.0", tk.END), version_text.get(), combobox.get())
+    move_file(img_dir_label.cget("text"), directory_label.cget("text"))
     result_text.config(text="Generated info.toml in mod folder")
     
+def update_image():
+    image_path =  filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.gif;*.webp")])
+    if not image_path:
+        return
+    img_dir_label.config(text=f"{image_path}")
+    original_image = Image.open(image_path)
+
+    target_width = 400  # Replace with your desired width
+    target_height = 225  # Replace with your desired height
+
+    original_width, original_height = original_image.size
+    width_ratio = target_width / original_width
+    height_ratio = target_height / original_height
+    scaling_factor = min(width_ratio, height_ratio)
+    new_width = int(original_width * scaling_factor)
+    new_height = int(original_height * scaling_factor)
+
+    resized_image = original_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+    img = ImageTk.PhotoImage(resized_image)
+    label.config(image=img)
+    label.image = img  # Keep a reference to prevent garbage collection
+
+def move_file(source_file, destination_directory):
+    if source_file == "None":
+        return
+    new_file_name = "preview.webp"  # Replace with the desired new file name
+    # Create the full destination path by joining the directory and file name
+    destination_path = os.path.join(destination_directory, new_file_name)
+
+    # Use shutil.move() to move and rename the file
+    shutil.move(source_file, destination_path)
+
 # Create the main application window
 root = tk.Tk()
 root.title("Toml Generator")
 
 # Set the size of the window
-root.geometry("420x440")
+root.geometry("840x440")
 
 # Create a button to trigger the directory selection and info.toml update
 select_directory_button = tk.Button(root, text="Select Directory", command=change_working_directory)
@@ -88,6 +128,16 @@ generate_button.grid(row=6, column=0, sticky=tk.W, padx = 10, pady=10)
 
 result_text = tk.Label(root, width=40, anchor="w")
 result_text .grid(row=7, column=0, sticky=tk.W, columnspan=2, padx = 10)
+
+# Create a Label widget to display the image
+label = tk.Label(root)
+label.grid(row=0, column=2, rowspan=8, pady=10, columnspan=2)
+
+img_button = tk.Button(root, text="Select Image", command=update_image)
+img_button.grid(row=0, column=2, sticky=tk.W, padx = 10, pady=10)
+
+img_dir_label = tk.Label(root, text="None", width=40, anchor="e", justify="right")
+img_dir_label.grid(row=0, column=3, padx = 10, sticky=tk.W)
 
 global generator
 generator = Generator()

@@ -16,6 +16,5 @@ Just run main.py file and load the directory of the mod file with files like fig
 * Detect victory theme
 * Detect camera
 * Differentiate xmsbt
-* Specify slots for effects as well as others
-* Omit Overlapping character names such as aegis
 * Batch Edit
+* Change Folder Names
