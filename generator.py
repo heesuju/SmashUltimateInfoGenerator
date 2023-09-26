@@ -111,6 +111,9 @@ class Generator:
             self.contains_audio = True
             if common.search_dir_for_keyword(self.working_dir + "/sound", "fighter_voice"):
                 self.description += "Voice\n"
+
+            if common.search_dir_for_keyword(self.working_dir + "/sound", "fighter"):
+                self.description += "SFX\n"
             
             if common.search_dir_for_keyword(self.working_dir + "/sound", "narration"):
                 self.description += "Narrator Voice\n"

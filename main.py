@@ -69,7 +69,7 @@ def update_info_toml():
     
 def update_image():
     image_path =  filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.gif;*.webp")])
-    if not image_path:
+    if not image_path or not os.path.exists(image_path):
         return
     img_dir_label.config(text=f"{image_path}")
     original_image = Image.open(image_path)
@@ -96,7 +96,7 @@ def move_file(source_file, destination_directory):
     new_file_name = "preview.webp"  # Replace with the desired new file name
     # Create the full destination path by joining the directory and file name
     destination_path = os.path.join(destination_directory, new_file_name)
-
+    img_dir_label.config(text=f"{destination_path}")
     # Use shutil.move() to move and rename the file
     shutil.move(source_file, destination_path)
 
