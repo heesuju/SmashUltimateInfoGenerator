@@ -3,6 +3,7 @@ import string
 import tomli_w as tomli
 import re
 import csv
+import defs
 
 class Generator:
     def __init__(self):
@@ -11,111 +12,63 @@ class Generator:
         self.version = "1.0.0"
         self.additional_info = ""
         self.display_name = ""
+        self.char_names = []
+        self.slots = []
+        self.mod_name = ""
         self.category = "Misc"
         self.contains_fighter = False
         self.contains_effect = False
         self.contains_ui = False
         self.contains_audio = False
 
-    def get_slot_range(self, slots):
-        ranges = []
+    def get_slots(self, slots):
         numbers = []
-        current_idx = 0
-        out_str = ""
+
         for s in slots:
             number = int(s[1:])  # Start from the second character to exclude the 'c'
             numbers.append(number)
+        
         numbers.sort()
-        
-        start = numbers[0] 
-        prev = numbers[0]
-        ranges.append("C" + f"{start:02}")
-
-        for n in range(1, len(numbers)):
-            if prev + 1 == numbers[n]:
-                ranges[current_idx] = "C" + f"{start:02}" + "-" + f"{numbers[n]:02}"
-            else:
-                current_idx+=1
-                ranges.append("C" + f"{numbers[n]:02}")
-                start = numbers[n]
-            prev = numbers[n]
-
-        for item in ranges:
-            if not out_str:
-                out_str += item
-            else:
-                out_str += ", " + item
-
-        return out_str
-
-    def trim_name(self, base_name):
-        categories = ["Fighter", "Stage", "Effects", "UI", "Param", "Audio", "Misc"]
-        extra = ["Aegis", "Pyra", "Mythra", "Rex", "Pkm", "Pokemon", "Charizard", "Ivysaur", "Squirtle"]
-
-        data = []
-
-        # Open the CSV file and read it as a dictionary
-        with open("./character_names.csv", 'r', newline='') as csvfile:
-            csv_reader = csv.DictReader(csvfile)
-            
-            # Iterate over each row (dictionary)
-            for row in csv_reader:
-                data.append(row)
-        
+        return numbers
+    
+    # trims the character name and category from the folder name to get the mod title
+    def get_mod_title(self, original):
+        dict_arr = common.csv_to_dict("./character_names.csv") 
         set_name = set()
-        set_name.update(extra)
-        
-        for datum in data:
-            for key, value in datum.items():
-                if type(value) is not list:
-                    set_name.add(value)
+        for dict in dict_arr:
+            if dict['Custom'] in self.char_names:
+                parts = common.split_into_arr(dict['Custom'], " ")
+                for part in parts:
+                    set_name.add(part)    
+                set_name.add(dict['Key'])
+                set_name.add(dict['Value'])
+                set_name.add(dict['Custom'])
 
         # Create a regular expression pattern to match words to remove and underscore
-        pattern = r'|'.join(re.escape(word) for word in categories)
+        pattern = r'|'.join(re.escape(word) for word in defs.CATEGORIES) + r'|'
         pattern += r'|'.join(re.escape(name) for name in set_name)
         pattern += r'|_'  # Add underscore to the pattern
         
         # Use regular expression to remove unwanted parts
-        name = re.sub(r'(C\d+|\[.*?\]|' + pattern + ')', '', base_name)
+        return re.sub(r'(C\d+|\[.*?\]|' + pattern + ')', '', original)
 
-        return name
-
-    def get_display_name(self):
+    def get_character_name_and_slots(self):
         children = common.get_all_children_in_path(self.working_dir + "/fighter")
         dict_arr = common.csv_to_dict("./character_names.csv") 
-        character_name = ""   
-        cat_dict = {"Aegis":3, "Ice Climbers":2, "Pkm":4}     
         name_arr = []        
+
         if len(children) > 1 and "kirby" in children:
             children.remove("kirby")
-        slots = ""
+
         for child in children:
             for dict in dict_arr:
                 if child == dict['Key']:
-                    if not character_name:
-                        character_name += dict['Value']
-                    else:
-                        character_name += ", " + dict['Value']
-                    name_arr.append(dict['Value'])
+                    name_arr.append(dict['Custom'])
                     if common.is_valid_dir(self.working_dir + "/fighter/" + child + "/model/body"):
                         all_slots = common.get_all_children_in_path(self.working_dir + "/fighter/" + child + "/model/body")
-                        slots = self.get_slot_range(all_slots)
-        
-        if len(name_arr) > 1:
-            name_parts = common.split_into_arr(name_arr[0], " ")
-            head = name_parts[0]
-            max = len(name_arr)
-            num = 1
-            for n in range(1, max):
-                if head in name_arr[n]:
-                    character_name = character_name.replace(head, "")
-                    character_name = head + " " + character_name
-                    num+=1
-            if head in cat_dict.keys():
-                if cat_dict[head] <= num:
-                    character_name = head
+                        slots = self.get_slots(all_slots)
 
-        return character_name + " " + slots + " " + self.trim_name(common.get_dir_name(self.working_dir)) 
+        return slots, name_arr
         
     def set_category(self):
         if self.contains_fighter == True: return "Fighter"
@@ -132,7 +85,7 @@ class Generator:
         self.description = "Includes:\n"
 
         if common.is_valid_dir(self.working_dir + "/fighter"):
-            self.display_name = self.get_display_name()
+            self.slots, self.char_names = self.get_character_name_and_slots()
             
             if common.search_dir_for_keyword(self.working_dir + "/fighter", "model"):
                 self.description += "Skin\n"
@@ -144,7 +97,7 @@ class Generator:
             if "kirby" in self.display_name == False and common.search_dir_for_keyword(self.working_dir + "/fighter", "kirby"):
                 self.description += "Kirby\n"
             
-            
+        self.mod_name = self.get_mod_title(common.get_dir_name(self.working_dir)) 
             
         if common.is_valid_dir(self.working_dir + "/effect"):
             for file in common.get_children_by_extension(self.working_dir + "/effect", ".eff"):
@@ -174,7 +127,11 @@ class Generator:
         # Get the description from the multiline Text widget
         self.description += self.additional_info
         self.category = self.set_category()
-        return {"display_name":self.display_name, "description":self.description, "category":self.category}
+        return {"description":self.description, 
+                "category":self.category, 
+                "character_names": self.char_names, 
+                "mod_name":self.mod_name,
+                "slots":self.slots}
         
     def generate_info_toml(self, display_name, authors, description, version, category):
         # Create and write to the info.toml file

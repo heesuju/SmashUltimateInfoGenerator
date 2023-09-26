@@ -1,0 +1,1 @@
+CATEGORIES = ["Fighter", "Stage", "Effects", "UI", "Param", "Audio", "Misc"]
