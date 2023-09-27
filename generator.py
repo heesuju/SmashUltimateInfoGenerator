@@ -25,9 +25,12 @@ class Generator:
         numbers = []
 
         for s in slots:
-            number = int(s[1:])  # Start from the second character to exclude the 'c'
+            if isinstance(s[1:], int):
+                number = int(s[1:])
+            else:
+                number = s[1:]
+
             numbers.append(number)
-        
         numbers.sort()
         return numbers
     
@@ -40,14 +43,14 @@ class Generator:
                 parts = common.split_into_arr(dict['Custom'], " ")
                 for part in parts:
                     set_name.add(part)    
-                set_name.add(dict['Key'])
+                #set_name.add(dict['Key'])
                 set_name.add(dict['Value'])
                 set_name.add(dict['Custom'])
 
         # Create a regular expression pattern to match words to remove and underscore
         pattern = r'|'.join(re.escape(word) for word in defs.CATEGORIES) + r'|'
         pattern += r'|'.join(re.escape(name) for name in set_name)
-        pattern += r'|_|-'  # Add underscore to the pattern
+        pattern += r'|_|-|&'  # Add underscore to the pattern
         
         # Use regular expression to remove unwanted parts
         return re.sub(r'(C\d+|\[.*?\]|' + pattern + ')', '', original, flags=re.I)
