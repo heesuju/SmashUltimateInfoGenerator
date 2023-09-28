@@ -26,7 +26,7 @@ class Generator:
         numbers = []
 
         for s in slots:
-            if isinstance(s[1:], int):
+            if s[1:].isdigit():
                 number = int(s[1:])
             else:
                 number = s[1:]
