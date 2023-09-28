@@ -1,4 +1,4 @@
-Key,Value,Custom
+Key,Value,Custom,Group
 mario,Mario,Mario,
 donkey,Donkey Kong,Donkey Kong,
 link,Link,Link,
@@ -16,8 +16,8 @@ peach,Peach,Peach,
 daisy,Daisy,Daisy,
 koopa,Bowser,Bowser,
 koopag,Giga Bowser,Giga Bowser,
-nana,Ice Climbers Nana,Ice Climbers Nana,
-popo,Ice Climbers Popo,Ice Climbers Popo,
+nana,Ice Climbers Nana,Nana,Ice Climers
+popo,Ice Climbers Popo,Popo,Ice Climers
 sheik,Sheik,Sheik,
 zelda,Zelda,Zelda,
 mariod,Dr. Mario,Dr. Mario,
@@ -38,10 +38,10 @@ szerosuit,Zero Suit Samus,ZSS,
 wario,Wario,Wario,
 snake,Snake,Snake,
 ike,Ike,Ike,
-ptrainer,Trainer,Pkm Trn,
-pzenigame,Squirtle,Pkm Sqrt,
-pfushigisou,Ivysaur,Pkm Ivy,
-plizardon,Charizard,Pkm Char,
+ptrainer,Trainer,Trainer,Pkm
+pzenigame,Squirtle,Squirtle,Pkm
+pfushigisou,Ivysaur,Ivysaur,Pkm
+plizardon,Charizard,Charizard,Pkm
 diddy,Diddy Kong,Diddy Kong,
 lucas,Lucas,Lucas,
 sonic,Sonic,Sonic,
@@ -87,8 +87,8 @@ master,Byleth,Byleth,
 tantan,Min Min,Min Min,
 pickel,Steve,Steve,
 edge,Sephiroth,Sephiroth,
-eflame,Pyra,Aegis Pyra,
-element,Rex,Aegis Rex,
-elight,Mythra,Aegis Mythra,
+eflame,Pyra,Pyra,Aegis
+element,Rex,Rex,
+elight,Mythra,Mythra,Aegis
 demon,Kazuya,Kazuya,
 trail,Sora,Sora

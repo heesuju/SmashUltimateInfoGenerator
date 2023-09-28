@@ -13,6 +13,7 @@ class Generator:
         self.additional_info = ""
         self.display_name = ""
         self.char_names = []
+        self.group_names = []
         self.slots = []
         self.mod_name = ""
         self.category = "Misc"
@@ -40,12 +41,11 @@ class Generator:
         set_name = set()
         for dict in dict_arr:
             if dict['Custom'] in self.char_names:
-                parts = common.split_into_arr(dict['Custom'], " ")
-                for part in parts:
-                    set_name.add(part)    
                 #set_name.add(dict['Key'])
                 set_name.add(dict['Value'])
                 set_name.add(dict['Custom'])
+                if dict['Group']:
+                    set_name.add(dict['Group'])
 
         # Create a regular expression pattern to match words to remove and underscore
         pattern = r'|'.join(re.escape(word) for word in defs.CATEGORIES) + r'|'
@@ -55,10 +55,12 @@ class Generator:
         # Use regular expression to remove unwanted parts
         return re.sub(r'(C\d+|\[.*?\]|' + pattern + ')', '', original, flags=re.I)
 
-    def get_character_name_and_slots(self):
+    def get_characters(self):
         children = common.get_all_children_in_path(self.working_dir + "/fighter")
         dict_arr = common.csv_to_dict("./character_names.csv") 
         name_arr = []        
+        group_arr = []
+        slot_arr = []
 
         if len(children) > 1 and "kirby" in children:
             children.remove("kirby")
@@ -67,11 +69,19 @@ class Generator:
             for dict in dict_arr:
                 if child == dict['Key']:
                     name_arr.append(dict['Custom'])
-                    if common.is_valid_dir(self.working_dir + "/fighter/" + child + "/model/body"):
-                        all_slots = common.get_all_children_in_path(self.working_dir + "/fighter/" + child + "/model/body")
-                        slots = self.get_slots(all_slots)
+                    group_arr.append(dict['Group'])
+                    
+                    slots = []
+                    if common.is_valid_dir(self.working_dir + "/fighter/" + child + "/model"):
+                        models = common.get_all_children_in_path(self.working_dir + "/fighter/" + child + "/model")
+                        for model in models:
+                            all_slots = common.get_all_children_in_path(self.working_dir + "/fighter/" + child + "/model/" + model)
+                            slots = self.get_slots(all_slots)
+                            for slot in slots:
+                                if slot not in slot_arr:
+                                    slot_arr.append(slot)
 
-        return slots, name_arr
+        return slot_arr, name_arr, group_arr
         
     def set_category(self):
         if self.contains_fighter == True: return "Fighter"
@@ -88,7 +98,7 @@ class Generator:
         self.description = "Includes:\n"
 
         if common.is_valid_dir(self.working_dir + "/fighter"):
-            self.slots, self.char_names = self.get_character_name_and_slots()
+            self.slots, self.char_names, self.group_names = self.get_characters()
             
             if common.search_dir_for_keyword(self.working_dir + "/fighter", "model"):
                 self.description += "Skin\n"

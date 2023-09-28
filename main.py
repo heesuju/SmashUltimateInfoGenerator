@@ -22,37 +22,44 @@ def on_entry_change(event):
 def get_working_directory():
     return filedialog.askdirectory()
 
+def group_char_name():
+    names = ""
+    names_by_group = {}
+    for n in range(len(generator.char_names)):
+        if generator.group_names[n] in names_by_group.keys():
+            arr = names_by_group[generator.group_names[n]]
+        else:
+            arr = []
+        arr.append(generator.char_names[n])
+        names_by_group.update({generator.group_names[n]: arr})
+
+    for key, value in names_by_group.items():
+        if key:
+            names += key + " "
+        for n in range(len(value)):
+            if n > 0:
+                names +=  " & " + value[n]
+            else:
+                names += value[n]
+                
+    return names
+
 def change_working_directory():
     working_dir = get_working_directory()
     if not working_dir:
         return
+    
     label_work_dir.config(text=f"{working_dir}")
     dict_info = generator.preview_info_toml(label_work_dir.cget("text"), "", entry_ver.get(), "")
-    
     label_output.config(text="Changed working directory")
 
     txt_desc.delete(1.0, tk.END)
     txt_desc.insert(tk.END, dict_info["description"])  # Insert the new text
-    combobox_cat.set(dict_info["category"])
-    entry_char_names.delete(0, tk.END)
-    names = ""
 
-    if len(dict_info["character_names"]) > 1:
-        name_parts = common.split_into_arr(dict_info["character_names"][0], " ")
-        head = name_parts[0]
-        names = dict_info["character_names"][0].replace(" ", "")
-        max = len(dict_info["character_names"])
-        num = 1
-        for n in range(1, max):
-            if head in dict_info["character_names"][n]:
-                next = dict_info["character_names"][n].replace(" ", "")
-                names += " & " + next
-                names = names.replace(head, "")
-                num += 1
-        if num > 1:
-            names = head + " " + names 
-    elif len(dict_info["character_names"]) == 1:
-        names = dict_info["character_names"][0]
+    combobox_cat.set(dict_info["category"])
+
+    entry_char_names.delete(0, tk.END)
+    names = group_char_name()           
     entry_char_names.insert(0, names)
 
     entry_mod_name.delete(0, tk.END)
@@ -61,10 +68,13 @@ def change_working_directory():
     slots_cleaned = slots_to_string(dict_info["slots"])
     entry_slots.delete(0, tk.END)
     entry_slots.insert(0, slots_cleaned)
+
     entry_display_name.delete(0, tk.END)
     entry_display_name.insert(0, names + " " + slots_cleaned + " " + dict_info["mod_name"]) 
+
     entry_folder_name.delete(0, tk.END)
     entry_folder_name.insert(0, dict_info["category"] + "_" + names.replace(" ", "") + "[" + slots_cleaned.replace(" ", "")  + "]_" + dict_info["mod_name"].replace(" ", "") ) 
+    
     find_image()
 
 # Create a function to update the info.toml file
