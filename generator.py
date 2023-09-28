@@ -50,10 +50,10 @@ class Generator:
         # Create a regular expression pattern to match words to remove and underscore
         pattern = r'|'.join(re.escape(word) for word in defs.CATEGORIES) + r'|'
         pattern += r'|'.join(re.escape(name) for name in set_name)
-        pattern += r'|_|-|&'  # Add underscore to the pattern
+        pattern += r'|_|&'  # Add underscore to the pattern
         
         # Use regular expression to remove unwanted parts
-        return re.sub(r'(C\d+|\[.*?\]|' + pattern + ')', '', original, flags=re.I)
+        return re.sub(r'(C\d+|\[.*?\]|-\d+|' + pattern + ')', '', original, flags=re.I)
 
     def get_characters(self):
         children = common.get_all_children_in_path(self.working_dir + "/fighter")
