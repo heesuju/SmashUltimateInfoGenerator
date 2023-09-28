@@ -33,4 +33,5 @@ pip install Pillow
 * Grt author and mod bame from html?(also maybe)
 
 ## Disclaimer
-* This tool only looks through what's included in the directory. Currently it cannot get the author and the version of the mod. 
+* This tool only looks through what's included in the directory. Currently it cannot get the author and the version of the mod.
+* character_names.csv contains all the names of the characters. I don't recommend changing the key column due to the fact that the script uses that value to see which characters are present. You are free to change the custom column. This column is the value that appears in the display name. 
