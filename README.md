@@ -31,3 +31,6 @@ pip install Pillow
 * Batch Edit(maybe)
 * Currently searches model/body for slots. This needs to be fixed to cover everything under models
 * Grt author and mod bame from html?(also maybe)
+
+## Disclaimer
+* This tool only looks through what's included in the directory. Currently it cannot get the author and the version of the mod. 
