@@ -138,7 +138,7 @@ class Generator:
             if common.search_dir_for_keyword(self.working_dir + "/ui", "message"):
                 self.description += "Custom Name\n"
             
-            if common.search_dir_for_keyword(self.working_dir + "/ui", "replace"):
+            if common.search_dir_for_keyword(self.working_dir + "/ui", "replace") or common.search_dir_for_keyword(self.working_dir + "/ui", "replace_patch"):
                 self.description += "UI\n"
                 
         # Get the description from the multiline Text widget
