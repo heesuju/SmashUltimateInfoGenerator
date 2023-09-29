@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
 from generator import Generator
+from config import Config
 from tkinter import ttk
 from tkinter import PhotoImage
 from PIL import Image, ImageTk
@@ -20,7 +21,10 @@ def on_entry_change(event):
     entry_folder_name.insert(0, combobox_cat.get() + "_" + entry_char_names.get().replace(" ", "") + "[" + entry_slots.get().replace(" ", "")  + "]_" + entry_mod_name.get().replace(" ", "") ) 
 
 def get_working_directory():
-    return filedialog.askdirectory()
+    if config.default_dir and common.is_valid_dir(config.default_dir):
+        return filedialog.askdirectory(initialdir=config.default_dir)
+    else:
+        return filedialog.askdirectory()
 
 def group_char_name():
     names = ""
@@ -48,7 +52,7 @@ def change_working_directory():
     working_dir = get_working_directory()
     if not working_dir:
         return
-    
+    config.set_default_dir(os.path.dirname(working_dir))
     label_work_dir.config(text=f"{working_dir}")
     dict_info = generator.preview_info_toml(label_work_dir.cget("text"), "", entry_ver.get(), "")
     label_output.config(text="Changed working directory")
@@ -277,6 +281,7 @@ label_img_dir.grid(row=0, column=3, padx = h_pad, sticky=tk.W)
 
 global generator
 generator = Generator()
+config = Config()
 
 # Start the GUI event loop
 root.mainloop()

@@ -119,6 +119,7 @@ class Generator:
                     self.description += "Single Effect\n"
                 else:
                     self.description += "Effects\n"
+                break
             
         if common.is_valid_dir(self.working_dir + "/sound"):
             self.contains_audio = True
