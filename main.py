@@ -156,6 +156,7 @@ def rename_directory():
             os.rename(old_directory_path, new_directory_path)
             label_work_dir.config(text=f"{new_directory_path}")
             generator.working_dir = new_directory_path
+            find_image()
         except OSError as e:
             print(f"Error renaming directory: {e}")
     else:
