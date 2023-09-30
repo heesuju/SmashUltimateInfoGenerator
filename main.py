@@ -195,7 +195,7 @@ def rename_directory():
         try:
             # Rename the directory
             os.rename(old_directory_path, new_directory_path)
-            entry_work_dir.delete(1.0, tk.END)
+            entry_work_dir.delete(0, tk.END)
             entry_work_dir.insert(tk.END, new_directory_path)
             generator.working_dir = new_directory_path
             find_image()
