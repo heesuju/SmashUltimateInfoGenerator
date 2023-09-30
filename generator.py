@@ -8,6 +8,7 @@ import defs
 class Generator:
     def __init__(self):
         self.working_dir = ""
+        self.image_dir = ""
         self.authors = ""
         self.version = "1.0.0"
         self.additional_info = ""
@@ -17,10 +18,19 @@ class Generator:
         self.slots = []
         self.mod_name = ""
         self.category = "Misc"
-        self.contains_fighter = False
-        self.contains_effect = False
-        self.contains_ui = False
-        self.contains_audio = False
+        self.reset()
+    
+    def reset(self):
+        self.is_skin = False
+        self.is_motion = False
+        self.is_effect = False
+        self.is_single_effect = False
+        self.is_voice = False
+        self.is_sfx = False
+        self.is_narrator = False
+        self.is_custom_name = False
+        self.is_ui = False
+        self.is_kirby = False
 
     def get_slots(self, slots):
         numbers = []
@@ -84,10 +94,11 @@ class Generator:
         return slot_arr, name_arr, group_arr
         
     def set_category(self):
-        if self.contains_fighter == True: return "Fighter"
-        elif self.contains_effect == True: return "Effects"
-        elif self.contains_ui == True: return "UI"
-        elif self.contains_audio == True: return "Audio"
+        if self.is_skin or self.is_motion:              return "Fighter"
+        elif self.is_effect or self.is_single_effect:   return "Effects"
+        elif self.is_voice or self.is_sfx:              return "Audio"
+        elif self.is_ui:                                return "UI"
+        else:                                           return "Misc"
 
     def preview_info_toml(self, working_dir:string=None, authors:string=None, version:string=None, additional_info:string=None):
         self.working_dir = working_dir
@@ -96,50 +107,50 @@ class Generator:
         self.additional_info = additional_info
         
         self.description = "Includes:\n"
+        self.reset()
 
         if common.is_valid_dir(self.working_dir + "/fighter"):
             self.slots, self.char_names, self.group_names = self.get_characters()
             
             if common.search_dir_for_keyword(self.working_dir + "/fighter", "model"):
                 self.description += "Skin\n"
-                self.contains_fighter = True
+                self.is_skin = True
 
             if common.search_dir_for_keyword(self.working_dir + "/fighter", "motion"):
-                self.description += "Motion\n"
-            
+                             
+                self.is_motion = True
+
             if "kirby" in self.display_name == False and common.search_dir_for_keyword(self.working_dir + "/fighter", "kirby"):
-                self.description += "Kirby\n"
+                self.is_kirby = True
             
         self.mod_name = self.get_mod_title(common.get_dir_name(self.working_dir)) 
             
         if common.is_valid_dir(self.working_dir + "/effect"):
             for file in common.get_children_by_extension(self.working_dir + "/effect", ".eff"):
-                self.contains_effect = True
+                
                 if common.search_files_for_pattern(file, r"c\d+"):
-                    self.description += "Single Effect\n"
+                    self.is_single_effect = True
                 else:
-                    self.description += "Effects\n"
+                    self.is_effect = True
                 break
             
         if common.is_valid_dir(self.working_dir + "/sound"):
-            self.contains_audio = True
             if common.search_dir_for_keyword(self.working_dir + "/sound", "fighter_voice"):
-                self.description += "Voice\n"
+                self.is_voice = True
 
             if common.search_dir_for_keyword(self.working_dir + "/sound", "fighter"):
-                self.description += "SFX\n"
+                self.is_sfx = True
             
             if common.search_dir_for_keyword(self.working_dir + "/sound", "narration"):
-                self.description += "Narrator Voice\n"
+                self.is_narrator = True
             
         # Check if the "ui" directory exists
         if common.is_valid_dir(self.working_dir + "/ui"):
-            self.contains_ui = True
             if common.search_dir_for_keyword(self.working_dir + "/ui", "message"):
-                self.description += "Custom Name\n"
+                self.is_custom_name = True
             
             if common.search_dir_for_keyword(self.working_dir + "/ui", "replace") or common.search_dir_for_keyword(self.working_dir + "/ui", "replace_patch"):
-                self.description += "UI\n"
+                self.is_ui = True
                 
         # Get the description from the multiline Text widget
         self.description += self.additional_info
