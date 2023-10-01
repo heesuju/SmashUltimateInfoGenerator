@@ -2,36 +2,35 @@ import common
 import string
 import tomli_w as tomli
 import re
-import csv
 import defs
 
 class Generator:
     def __init__(self):
         self.working_dir = ""
         self.image_dir = ""
-        self.authors = ""
-        self.version = "1.0.0"
         self.additional_info = ""
-        self.display_name = ""
-        self.char_names = []
-        self.group_names = []
-        self.slots = []
-        self.mod_name = ""
         self.category = "Misc"
         self.reset()
     
+    # resets values for generator
     def reset(self):
-        self.is_skin = False
-        self.is_motion = False
-        self.is_effect = False
-        self.is_single_effect = False
-        self.is_voice = False
-        self.is_sfx = False
-        self.is_narrator = False
-        self.is_custom_name = False
-        self.is_ui = False
-        self.is_kirby = False
+        self.display_name = ""          # The name that shows up in the in-game mod manager
+        self.mod_name = ""              # The name of the mod
+        self.char_names = []            # Character names included
+        self.group_names = []           # The name that groups Characters sharing the same slot 
+        self.slots = []                 # Slots used up by the mod
+        self.is_skin = False            # Whether skins are included
+        self.is_motion = False          # Whether animation or physics are included
+        self.is_effect = False          # Whether effects are included
+        self.is_single_effect = False   # Whether single slot effects are included
+        self.is_voice = False           # Whether fighter voice is included
+        self.is_sfx = False             # Whether sound effects are included
+        self.is_narrator = False        # Whether narrator voice is included
+        self.is_custom_name = False     # Whether custom name message is included
+        self.is_ui = False              # Whether css ui is included
+        self.is_kirby = False           # Whether replacement for kirby's copy ability is included 
 
+    # converts c01 to 1 if possible and sorts them in ascending order
     def get_slots(self, slots):
         numbers = []
 
@@ -40,8 +39,8 @@ class Generator:
                 number = int(s[1:])
             else:
                 number = s[1:]
-
             numbers.append(number)
+
         numbers.sort()
         return numbers
     
@@ -102,7 +101,6 @@ class Generator:
 
     def preview_info_toml(self, working_dir:string=None, authors:string=None, version:string=None, additional_info:string=None):
         self.working_dir = working_dir
-        self.authors = authors
         self.version = version
         self.additional_info = additional_info
         

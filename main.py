@@ -15,10 +15,26 @@ def on_combobox_select(event):
     entry_folder_name.insert(0, combobox_cat.get() + "_" + entry_char_names.get().replace(" ", "") + "[" + entry_slots.get().replace(" ", "")  + "]_" + entry_mod_name.get().replace(" ", "") ) 
 
 def on_entry_change(event):
+    set_display_name(entry_char_names.get(), entry_slots.get(), entry_mod_name.get(), combobox_cat.get())
+    set_folder_name(entry_char_names.get().replace(" ", ""), entry_slots.get().replace(" ", ""), entry_mod_name.get().replace(" ", ""), combobox_cat.get())
+
+def set_display_name(character_names, slots, mod_name, category):
     entry_display_name.delete(0, tk.END)
-    entry_display_name.insert(0, entry_char_names.get() + " " + entry_slots.get() + " " + entry_mod_name.get()) 
+    display_name = config.display_name_format
+    display_name = display_name.replace("{characters}", character_names)
+    display_name = display_name.replace("{slots}", slots)
+    display_name = display_name.replace("{mod}", mod_name)
+    display_name = display_name.replace("{category}", category)
+    entry_display_name.insert(0, display_name) 
+
+def set_folder_name(character_names, slots, mod_name, category):
     entry_folder_name.delete(0, tk.END)
-    entry_folder_name.insert(0, combobox_cat.get() + "_" + entry_char_names.get().replace(" ", "") + "[" + entry_slots.get().replace(" ", "")  + "]_" + entry_mod_name.get().replace(" ", "") ) 
+    folder_name = config.folder_name_format
+    folder_name = folder_name.replace("{characters}", character_names)
+    folder_name = folder_name.replace("{slots}", slots)
+    folder_name = folder_name.replace("{mod}", mod_name)
+    folder_name = folder_name.replace("{category}", category)
+    entry_folder_name.insert(0, folder_name)
 
 def toggle_checkbox(index):
     checkbox_states[index] = not checkbox_states[index]
@@ -82,12 +98,9 @@ def update_preview():
     entry_slots.delete(0, tk.END)
     entry_slots.insert(0, slots_cleaned)
 
-    entry_display_name.delete(0, tk.END)
-    entry_display_name.insert(0, names + " " + slots_cleaned + " " + dict_info["mod_name"]) 
+    set_display_name(names, slots_cleaned, dict_info["mod_name"], dict_info["category"])
+    set_folder_name(names.replace(" ", "") , slots_cleaned.replace(" ", ""), dict_info["mod_name"].replace(" ", ""), dict_info["category"])
 
-    entry_folder_name.delete(0, tk.END)
-    entry_folder_name.insert(0, dict_info["category"] + "_" + names.replace(" ", "") + "[" + slots_cleaned.replace(" ", "")  + "]_" + dict_info["mod_name"].replace(" ", "") ) 
-    
     find_image()
 
 def change_working_directory():
@@ -260,6 +273,59 @@ def update_description():
 def on_window_resize(event):
     set_image(entry_img_dir.get())
 
+h_pad = 10
+v_pad = 5
+
+def open_config():
+    new_window = tk.Toplevel(root)
+    new_window.title("Config")
+    new_window.geometry("320x240")
+    new_window.columnconfigure(0, weight=1)
+    new_window.rowconfigure(6, weight=1)
+    new_window.configure(padx=10, pady=10) 
+
+    config_label = tk.Label(new_window, text="Change default format for display and folder name")
+    config_label.grid(row=0, column=0, sticky=tk.W, pady = (0, v_pad))
+    help_label = tk.Label(new_window, text="*Arrange values: {characters}, {slots}, {mod}, {category}")
+    help_label.grid(row=1, column=0, sticky=tk.W, pady = (0, v_pad * 2))
+
+    label_folder_name_format = tk.Label(new_window, text="Folder Name Format")
+    label_folder_name_format.grid(row=2, column=0, sticky=tk.W)
+
+    entry_folder_name_format = tk.Entry(new_window, width=10)
+    entry_folder_name_format.grid(row=3, column=0, sticky=tk.EW, pady = (0, v_pad))
+
+    label_display_name_format = tk.Label(new_window, text="Display Name Format", justify='left')
+    label_display_name_format.grid(row=4, column=0, sticky=tk.W)
+
+    entry_display_name_format = tk.Entry(new_window, width=10)
+    entry_display_name_format.grid(row=5, column=0, sticky=tk.EW, pady = (0, v_pad))
+    
+    def on_save_config():
+        config.set_format(entry_display_name_format.get(), entry_folder_name_format.get())
+        new_window.destroy()
+
+    def on_restore_config():
+        config.reset()
+        entry_display_name_format.delete(0, tk.END)
+        entry_display_name_format.insert(0, config.display_name_format)
+        entry_folder_name_format.delete(0, tk.END)
+        entry_folder_name_format.insert(0, config.folder_name_format)
+
+    frame_config = tk.Frame(new_window)
+    frame_config.grid(row=6, column=0, sticky=tk.SE)
+
+    btn_restore = tk.Button(frame_config, text="Restore", command=lambda: on_restore_config())
+    btn_restore.pack(side="left")
+
+    btn_save = tk.Button(frame_config, text="Save", command=lambda: on_save_config())
+    btn_save.pack()
+
+    entry_display_name_format.delete(0, tk.END)
+    entry_display_name_format.insert(0, config.display_name_format)
+    entry_folder_name_format.delete(0, tk.END)
+    entry_folder_name_format.insert(0, config.folder_name_format)
+
 # Create the main application window
 root = tk.Tk()
 root.title("Smash Ultimate Toml Generator")
@@ -272,12 +338,13 @@ root.minsize(640, 300)  # Set a minimum width of 300 pixels and a minimum height
 # Set the size of the window
 root.geometry("920x500")
 root.configure(padx=10, pady=10) 
-h_pad = 10
-v_pad = 5
 
 # column 0
 label_work_dir = tk.Label(root, text="Directory")
 label_work_dir.grid(row=0, column=0, sticky=tk.W, pady = (0, v_pad))
+
+btn_config = tk.Button(root, text="Config", command=open_config)
+btn_config.grid(row=0, column=2, sticky=tk.E, pady = (0, v_pad))
 
 frame_work_dir = tk.Frame(root)
 frame_work_dir.grid(row=1, column=0, rowspan=2, columnspan=3, sticky=tk.EW, pady = (0, v_pad))
