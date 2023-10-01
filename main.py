@@ -79,6 +79,7 @@ def group_char_name():
     return names
 
 def update_preview():
+    config.load_config()
     config.set_default_dir(os.path.dirname(entry_work_dir.get()))
 
     dict_info = generator.preview_info_toml(entry_work_dir.get(), "", entry_ver.get(), "")
@@ -282,7 +283,7 @@ def open_config():
     new_window.geometry("320x240")
     new_window.columnconfigure(0, weight=1)
     new_window.rowconfigure(6, weight=1)
-    new_window.configure(padx=10, pady=10) 
+    new_window.configure(padx=10, pady=10)
 
     config_label = tk.Label(new_window, text="Change default format for display and folder name")
     config_label.grid(row=0, column=0, sticky=tk.W, pady = (0, v_pad))
@@ -316,7 +317,7 @@ def open_config():
     frame_config.grid(row=6, column=0, sticky=tk.SE)
 
     btn_restore = tk.Button(frame_config, text="Restore", command=lambda: on_restore_config())
-    btn_restore.pack(side="left")
+    btn_restore.pack(side="left", padx=(0, h_pad))
 
     btn_save = tk.Button(frame_config, text="Save", command=lambda: on_save_config())
     btn_save.pack()
