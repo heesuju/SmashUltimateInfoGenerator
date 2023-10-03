@@ -50,11 +50,11 @@ class Extractor:
         meta_description = soup.find('meta', attrs={'name': 'description'})
         if meta_description:
             description_content = meta_description.get('content') 
-            pattern = r'submitted by\s+([A-Za-z0-9*™]+)(?:\s*,\s*([A-Za-z0-9*™]+)(?:\s*,\s*([A-Za-z0-9*™]+))*)?(?:\s+and\s+([A-Za-z0-9*™]+(?:\s+[A-Za-z0-9*™]+)*))?$'
+            pattern = r'submitted by (.+)$'
             match = re.search(pattern, description_content)
 
             if match:
-                result = [name for name in match.groups() if name is not None]
+                result = match.group(1)
             else:
                 print("Authors not found in the text.")   
-        return result
+        return result.replace(" and", ",")
