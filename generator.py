@@ -17,6 +17,7 @@ class Generator:
         self.display_name = ""          # The name that shows up in the in-game mod manager
         self.mod_name = ""              # The name of the mod
         self.char_names = []            # Character names included
+        self.ignore_names = []          # A set of names to ignore in the mod title
         self.group_names = []           # The name that groups Characters sharing the same slot 
         self.slots = []                 # Slots used up by the mod
         self.is_skin = False            # Whether skins are included
@@ -60,6 +61,7 @@ class Generator:
         pattern = r'|'.join(re.escape(word) for word in defs.CATEGORIES) + r'|'
         pattern += r'|'.join(re.escape(name) for name in set_name)
         pattern += r'|_|&'  # Add underscore to the pattern
+        self.ignore_names = set_name
         
         # Use regular expression to remove unwanted parts
         return re.sub(r'(C\d+|\[.*?\]|-\d+|' + pattern + ')', '', original, flags=re.I)

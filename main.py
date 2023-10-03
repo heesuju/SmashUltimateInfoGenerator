@@ -9,6 +9,25 @@ import shutil
 import os
 import common
 import defs
+from html_extract import Extractor
+import re
+
+def on_url_change(event):
+    is_success, mod_title, authors = extractor.get_elements(entry_url.get())
+    entry_mod_name.delete(0, tk.END)
+    entry_authors.delete(0, tk.END)
+    
+    if is_success:
+        entry_mod_name.insert(0, trim_mod_name(mod_title))
+        entry_authors.insert(0, authors)
+        label_output.config(text="Url request successful")
+    else:
+        if generator.mod_name: 
+            entry_mod_name.insert(0, generator.mod_name)
+        label_output.config(text="Url request failed")
+    
+    set_display_name(entry_char_names.get(), entry_slots.get(), entry_mod_name.get(), combobox_cat.get())
+    set_folder_name(entry_char_names.get().replace(" ", ""), entry_slots.get().replace(" ", ""), entry_mod_name.get().replace(" ", ""), combobox_cat.get())
 
 def on_combobox_select(event):
     entry_folder_name.delete(0, tk.END)
@@ -17,6 +36,11 @@ def on_combobox_select(event):
 def on_entry_change(event):
     set_display_name(entry_char_names.get(), entry_slots.get(), entry_mod_name.get(), combobox_cat.get())
     set_folder_name(entry_char_names.get().replace(" ", ""), entry_slots.get().replace(" ", ""), entry_mod_name.get().replace(" ", ""), combobox_cat.get())
+
+def trim_mod_name(mod_name):
+    words_pattern = '|'.join(re.escape(word) for word in generator.ignore_names)
+    pattern = r'\b(?:' + words_pattern + r')\b'
+    return re.sub(pattern, '', mod_name)
 
 def set_display_name(character_names, slots, mod_name, category):
     entry_display_name.delete(0, tk.END)
@@ -92,15 +116,21 @@ def update_preview():
     names = group_char_name()           
     entry_char_names.insert(0, names)
 
-    entry_mod_name.delete(0, tk.END)
-    entry_mod_name.insert(0, dict_info["mod_name"])
-
     slots_cleaned = slots_to_string(dict_info["slots"])
     entry_slots.delete(0, tk.END)
     entry_slots.insert(0, slots_cleaned)
 
-    set_display_name(names, slots_cleaned, dict_info["mod_name"], dict_info["category"])
-    set_folder_name(names.replace(" ", "") , slots_cleaned.replace(" ", ""), dict_info["mod_name"].replace(" ", ""), dict_info["category"])
+    mod_name = ""
+    if not entry_url.get():
+        mod_name = dict_info["mod_name"]
+    else:
+        mod_name = trim_mod_name(extractor.mod_title)
+    
+    entry_mod_name.delete(0, tk.END)
+    entry_mod_name.insert(0, mod_name)
+
+    set_display_name(names, slots_cleaned, mod_name, dict_info["category"])
+    set_folder_name(names.replace(" ", "") , slots_cleaned.replace(" ", ""), mod_name.replace(" ", ""), dict_info["category"])
 
     find_image()
 
@@ -357,14 +387,21 @@ entry_work_dir = tk.Entry(frame_work_dir, width=10)
 entry_work_dir.pack(fill=tk.X, expand=True)
 entry_work_dir.bind("<KeyRelease>", on_update_directory)
 
+label_url = tk.Label(root, text="Url")
+label_url.grid(row=3, column=0, sticky=tk.W)
+
+entry_url = tk.Entry(root, width=10)
+entry_url.grid(row=4, column=0, sticky=tk.EW, padx = (0, h_pad), pady = (0, v_pad))
+entry_url.bind("<KeyRelease>", on_url_change)
+
 label_authors = tk.Label(root, text="Authors")
-label_authors.grid(row=3, column=0, sticky=tk.W)
+label_authors.grid(row=5, column=0, sticky=tk.W)
 
 entry_authors = tk.Entry(root, width=10)
-entry_authors.grid(row=4, column=0, sticky=tk.EW, padx = (0, h_pad), pady = (0, v_pad))
+entry_authors.grid(row=6, column=0, sticky=tk.EW, padx = (0, h_pad), pady = (0, v_pad))
 
 frame = tk.Frame(root)
-frame.grid(row=5, column=0, rowspan=2, sticky=tk.EW, padx = (0, h_pad), pady = (0, v_pad))
+frame.grid(row=7, column=0, rowspan=2, sticky=tk.EW, padx = (0, h_pad), pady = (0, v_pad))
 frame.columnconfigure(1, weight=1)
 
 label_ver = tk.Label(frame, text="Version")
@@ -464,6 +501,7 @@ listbox.bind("<Button-1>", lambda event: toggle_checkbox(listbox.nearest(event.y
 
 global generator
 generator = Generator()
+extractor = Extractor()
 config = Config()
 
 root.bind("<Configure>", on_window_resize)
