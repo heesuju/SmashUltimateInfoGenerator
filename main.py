@@ -66,9 +66,11 @@ def toggle_checkbox(index):
 
 def update_listbox():
     listbox.delete(0, tk.END)
-    
+
     # Add items with checkboxes
-    for i, item in enumerate(defs.ELEMENTS):
+    for i, item in enumerate(defs.ELEMENTS + config.additional_elements):
+        if i >= len(checkbox_states):
+            checkbox_states.append(False)
         checkbox = "[O]" if checkbox_states[i] else "[X]"
         listbox.insert(tk.END, f"{checkbox} {item}")
 
@@ -279,10 +281,12 @@ def slots_to_string(slots):
 def set_description():
     description = "Includes:\n"
     txt_desc.delete(1.0, tk.END)
-
+    combined_list = defs.ELEMENTS + config.additional_elements
     for n in range(len(checkbox_states)):
-        if checkbox_states[n]:
-            description += defs.ELEMENTS[n] + "\n"
+        if n >= len(combined_list):
+            checkbox_states[n] = False
+        elif checkbox_states[n]:
+            description += combined_list[n] + "\n"
 
     if True in checkbox_states:
         txt_desc.insert(tk.END, description)
@@ -312,7 +316,7 @@ def open_config():
     new_window.title("Config")
     new_window.geometry("320x240")
     new_window.columnconfigure(0, weight=1)
-    new_window.rowconfigure(6, weight=1)
+    new_window.rowconfigure(8, weight=1)
     new_window.configure(padx=10, pady=10)
 
     config_label = tk.Label(new_window, text="Change default format for display and folder name")
@@ -332,8 +336,15 @@ def open_config():
     entry_display_name_format = tk.Entry(new_window, width=10)
     entry_display_name_format.grid(row=5, column=0, sticky=tk.EW, pady = (0, v_pad))
     
+    label_additional_elements = tk.Label(new_window, text="Additional Elements(separate by \",\")", justify='left')
+    label_additional_elements.grid(row=6, column=0, sticky=tk.W)
+
+    entry_additional_elements = tk.Entry(new_window, width=10)
+    entry_additional_elements.grid(row=7, column=0, sticky=tk.EW, pady = (0, v_pad))
+
     def on_save_config():
-        config.set_format(entry_display_name_format.get(), entry_folder_name_format.get())
+        config.set_config(entry_display_name_format.get(), entry_folder_name_format.get(), entry_additional_elements.get())
+        update_listbox()
         new_window.destroy()
 
     def on_restore_config():
@@ -342,9 +353,10 @@ def open_config():
         entry_display_name_format.insert(0, config.display_name_format)
         entry_folder_name_format.delete(0, tk.END)
         entry_folder_name_format.insert(0, config.folder_name_format)
+        entry_additional_elements.delete(0, tk.END)
 
     frame_config = tk.Frame(new_window)
-    frame_config.grid(row=6, column=0, sticky=tk.SE)
+    frame_config.grid(row=8, column=0, sticky=tk.SE)
 
     btn_restore = tk.Button(frame_config, text="Restore", command=lambda: on_restore_config())
     btn_restore.pack(side="left", padx=(0, h_pad))
@@ -356,7 +368,9 @@ def open_config():
     entry_display_name_format.insert(0, config.display_name_format)
     entry_folder_name_format.delete(0, tk.END)
     entry_folder_name_format.insert(0, config.folder_name_format)
-
+    entry_additional_elements.delete(0, tk.END)
+    entry_additional_elements.insert(0, config.get_additional_elements_as_str())
+    
 # Create the main application window
 root = tk.Tk()
 root.title("Smash Ultimate Toml Generator")
@@ -466,9 +480,6 @@ label_list.grid(row=9, column=1, sticky=tk.W)
 listbox = tk.Listbox(root, selectmode=tk.SINGLE, width=10)
 listbox.grid(row=10, column=1, sticky=tk.NSEW, padx = (0, h_pad), pady = (0, v_pad))
 
-for item in defs.ELEMENTS:
-    listbox.insert(tk.END, item)
-
 # column 2
 label_folder_name = tk.Label(root, text="Folder Name")
 label_folder_name .grid(row=3, column=2, sticky=tk.W)
@@ -494,15 +505,15 @@ btn_apply.grid(row=11, column=2, sticky=tk.E)
 label_output = tk.Label(root)
 label_output .grid(row=11, column=0, sticky=tk.W, columnspan=2)
 
-global checkbox_states
-checkbox_states = [False] * len(defs.ELEMENTS)
-update_listbox()
-listbox.bind("<Button-1>", lambda event: toggle_checkbox(listbox.nearest(event.y)))
-
 global generator
 generator = Generator()
 extractor = Extractor()
 config = Config()
+
+global checkbox_states
+checkbox_states = [False] * len(defs.ELEMENTS + config.additional_elements)
+update_listbox()
+listbox.bind("<Button-1>", lambda event: toggle_checkbox(listbox.nearest(event.y)))
 
 root.bind("<Configure>", on_window_resize)
 
