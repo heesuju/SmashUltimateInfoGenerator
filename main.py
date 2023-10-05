@@ -149,7 +149,7 @@ def on_update_directory(event):
     if entry_work_dir.get() and os.path.exists(entry_work_dir.get()):
         update_preview()
 
-def update_info_toml():
+def apply_changes():
     generator.generate_info_toml(entry_display_name.get(), entry_authors.get(), txt_desc.get("1.0", tk.END), entry_ver.get(), combobox_cat.get())
     move_file(entry_img_dir.get(), entry_work_dir.get())
     rename_directory()
@@ -175,8 +175,6 @@ def on_update_image(event):
     
 def resize_image(image_path, target_width, target_height):
     img = Image.open(image_path)
-    
-    # Calculate the aspect ratio
     aspect_ratio = img.width / img.height
     
     # Resize the image to fit the target dimensions while preserving aspect ratio
@@ -204,29 +202,29 @@ def set_image(directory):
     label_img.config(image=image, width=10, height=10)
     label_img.image = image  # Keep a reference to prevent garbage collection
 
-def move_file(source_file, destination_directory):
-    if source_file == "None":
+def move_file(source_file, dst_dir):
+    if not source_file or not os.path.exists(source_file):
+        print("image dir is empty or invalid")
         return
+    
     new_file_name = "preview.webp"  # Replace with the desired new file name
-    destination_path = os.path.join(destination_directory, new_file_name)
+    new_path = os.path.join(dst_dir, new_file_name)
     entry_img_dir.delete(0, tk.END)
-    entry_img_dir.insert(tk.END, destination_path)
+    entry_img_dir.insert(tk.END, new_path)
     # Use shutil.move() to move and rename the file
-    shutil.move(source_file, destination_path)
+    shutil.move(source_file, new_path)
 
 def find_image():
-    img_list = common.get_children_by_extension(generator.working_dir, ".webp")
-    if len(img_list) > 0:
-        set_image(generator.working_dir +  "/" + img_list[0])
-    else:
-        png_list = common.get_children_by_extension(generator.working_dir, ".png")
-        if len(png_list) > 0:
-            set_image(generator.working_dir + "/" + png_list[0])
-        else:
-            entry_img_dir.delete(0, tk.END)
-            label_img.config(image=None)
-            label_img.image = None  # Keep a reference to prevent garbage collection
-            
+    for type in defs.IMAGE_TYPES:
+        img_list = common.get_children_by_extension(generator.working_dir, type)
+        if len(img_list) > 0:
+            set_image(generator.working_dir +  "/" + img_list[0])
+            return
+
+    entry_img_dir.delete(0, tk.END)
+    label_img.config(image=None)
+    label_img.image = None
+
 def rename_directory():
     if not generator.working_dir or not entry_folder_name.get():
         return
@@ -499,7 +497,7 @@ label_desc.grid(row=9, column=2, sticky=tk.W)
 txt_desc = tk.Text(root, height=10, width=10)
 txt_desc.grid(row=10, column=2, sticky=tk.NSEW, pady = (0, v_pad))
 
-btn_apply = tk.Button(root, text="Apply", command=update_info_toml)
+btn_apply = tk.Button(root, text="Apply", command=apply_changes)
 btn_apply.grid(row=11, column=2, sticky=tk.E)
 
 label_output = tk.Label(root)
