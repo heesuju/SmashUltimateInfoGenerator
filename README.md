@@ -31,9 +31,6 @@ pip install requests beautifulsoup4
 * Change default format for display_name and folder name
 
 ## To Do 
-* Detect victory theme
-* Detect camera
-* Differentiate message(xmsbt)
 * Get version and download image name from url(maybe)
 
 ## Disclaimer

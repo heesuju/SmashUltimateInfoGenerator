@@ -297,10 +297,14 @@ def update_description():
     checkbox_states[3] = generator.is_single_effect
     checkbox_states[4] = generator.is_voice
     checkbox_states[5] = generator.is_sfx
-    checkbox_states[6] = generator.is_narrator
-    checkbox_states[7] = generator.is_custom_name
-    checkbox_states[8] = generator.is_ui
-    checkbox_states[9] = generator.is_kirby
+    checkbox_states[6] = generator.is_narrator_voice
+    checkbox_states[7] = generator.is_victory_theme
+    checkbox_states[8] = generator.is_victory_animation
+    checkbox_states[9] = generator.is_custom_name
+    checkbox_states[10] = generator.is_single_name
+    checkbox_states[11] = generator.is_ui
+    checkbox_states[12] = generator.is_kirby
+
     update_listbox()
 
 def on_window_resize(event):

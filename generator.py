@@ -14,22 +14,25 @@ class Generator:
     
     # resets values for generator
     def reset(self):
-        self.display_name = ""          # The name that shows up in the in-game mod manager
-        self.mod_name = ""              # The name of the mod
-        self.char_names = []            # Character names included
-        self.ignore_names = []          # A set of names to ignore in the mod title
-        self.group_names = []           # The name that groups Characters sharing the same slot 
-        self.slots = []                 # Slots used up by the mod
-        self.is_skin = False            # Whether skins are included
-        self.is_motion = False          # Whether animation or physics are included
-        self.is_effect = False          # Whether effects are included
-        self.is_single_effect = False   # Whether single slot effects are included
-        self.is_voice = False           # Whether fighter voice is included
-        self.is_sfx = False             # Whether sound effects are included
-        self.is_narrator = False        # Whether narrator voice is included
-        self.is_custom_name = False     # Whether custom name message is included
-        self.is_ui = False              # Whether css ui is included
-        self.is_kirby = False           # Whether replacement for kirby's copy ability is included 
+        self.display_name = ""                  # The name that shows up in the in-game mod manager
+        self.mod_name = ""                      # The name of the mod
+        self.char_names = []                    # Character names included
+        self.ignore_names = []                  # A set of names to ignore in the mod title
+        self.group_names = []                   # The name that groups Characters sharing the same slot 
+        self.slots = []                         # Slots used up by the mod
+        self.is_skin = False                    # Whether skins are included
+        self.is_motion = False                  # Whether animation or physics are included
+        self.is_effect = False                  # Whether effects are included
+        self.is_single_effect = False           # Whether single slot effects are included
+        self.is_voice = False                   # Whether fighter voice is included
+        self.is_sfx = False                     # Whether sound effects are included
+        self.is_narrator_voice = False          # Whether narrator voice is included
+        self.is_victory_theme = False           # Whether victory bgm is included
+        self.is_victory_animation = False       # Whether custom victory animation is included
+        self.is_custom_name = False             # Whether custom name message is included
+        self.is_single_name = False             # Whether single-slot custom name message is included
+        self.is_ui = False                      # Whether css ui is included
+        self.is_kirby = False                   # Whether replacement for kirby's copy ability is included 
 
     # converts c01 to 1 if possible and sorts them in ascending order
     def get_slots(self, slots):
@@ -142,12 +145,26 @@ class Generator:
                 self.is_sfx = True
             
             if common.search_dir_for_keyword(self.working_dir + "/sound", "narration"):
-                self.is_narrator = True
+                self.is_narrator_voice = True
             
+        if common.is_valid_dir(self.working_dir + "/stream;"):
+            self.is_victory_theme = True
+
+        if common.is_valid_dir(self.working_dir + "/camera"):
+            self.is_victory_animation = True
+
+
+        self.is_single_name = False
+
         # Check if the "ui" directory exists
         if common.is_valid_dir(self.working_dir + "/ui"):
             if common.search_dir_for_keyword(self.working_dir + "/ui", "message"):
-                self.is_custom_name = True
+                custom_name = common.get_children_by_extension(self.working_dir + "/ui/message", ".msbt")
+                single_name = common.get_children_by_extension(self.working_dir + "/ui/message", ".xmsbt")
+                if len(custom_name) > 0:
+                    self.is_custom_name = True
+                elif len(single_name) > 0:
+                    self.is_single_name = True
             
             if common.search_dir_for_keyword(self.working_dir + "/ui", "replace") or common.search_dir_for_keyword(self.working_dir + "/ui", "replace_patch"):
                 self.is_ui = True
