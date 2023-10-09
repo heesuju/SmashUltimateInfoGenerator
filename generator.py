@@ -14,8 +14,11 @@ class Generator:
     
     # resets values for generator
     def reset(self):
+        self.url = ""
+        self.img_url = ""
         self.display_name = ""                  # The name that shows up in the in-game mod manager
         self.mod_name = ""                      # The name of the mod
+        self.mod_title_web = ""                 # The mod title scraped from the web page
         self.char_names = []                    # Character names included
         self.ignore_names = []                  # A set of names to ignore in the mod title
         self.group_names = []                   # The name that groups Characters sharing the same slot 

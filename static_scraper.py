@@ -1,29 +1,27 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+from threading import Thread
 
-class Extractor:
-    def __init__(self):
-        self.url = ""
+class Extractor(Thread):
+    def __init__(self, url:str, callback):
+        super().__init__()
+        self.url = url
+        self.callback = callback
         self.mod_title = ""
         self.authors = ""
-        self.result = False
 
-    def get_elements(self, url):
-        if self.url != url:
-            self.url = url
+    def run(self):
+        try:
             soup = self.get_html(self.url)
-            if soup:
-                self.mod_title = self.get_mod_title(soup)
-                self.authors = self.get_authors(soup)
-                self.result = True
-            else:
-                self.mod_title = ""
-                self.authors = ""
-                self.result = False 
-        return self.result, self.mod_title, self.authors
+            self.mod_title = self.get_mod_title(soup)
+            self.authors = self.get_authors(soup)
+        except:
+            self.mod_title = ""
+            self.authors = ""
+        self.callback(self.mod_title, self.authors)
             
-    def get_html(self, url):
+    def get_html(self, url:str):
         try:
             response = requests.get(url)
             if response.status_code == 200:

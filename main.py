@@ -3,31 +3,61 @@ from tkinter import filedialog
 from generator import Generator
 from config import Config
 from tkinter import ttk
-from tkinter import PhotoImage
 from PIL import Image, ImageTk
 import shutil
 import os
 import common
 import defs
-from html_extract import Extractor
-import re
+from static_scraper import Extractor
+from dynamic_scraper import Selenium
+from downloader import Downloader
 
-def on_url_change(event):
-    is_success, mod_title, authors = extractor.get_elements(entry_url.get())
-    entry_mod_name.delete(0, tk.END)
-    entry_authors.delete(0, tk.END)
+def on_img_download():
+    label_output.config(text="Downloaded image")
+    find_image()
+
+def download_img():
+    downloader_thread = Downloader(generator.img_url, generator.working_dir, on_img_download)
+    downloader_thread.start()
     
-    if is_success:
-        entry_mod_name.insert(0, trim_mod_name(mod_title))
+def on_bs4_result(mod_title, authors):
+    if mod_title:
+        generator.mod_title_web = mod_title
+        entry_mod_name.delete(0, tk.END)
+        entry_mod_name.insert(0, common.trim_mod_name(generator.mod_title_web, generator.ignore_names))
+    elif generator.mod_name:
+        entry_mod_name.delete(0, tk.END)
+        entry_mod_name.insert(0, generator.mod_name)
+    
+    if authors:
+        entry_authors.delete(0, tk.END)
         entry_authors.insert(0, authors)
-        label_output.config(text="Url request successful")
-    else:
-        if generator.mod_name: 
-            entry_mod_name.insert(0, generator.mod_name)
-        label_output.config(text="Url request failed")
-    
+
     set_display_name(entry_char_names.get(), entry_slots.get(), entry_mod_name.get(), combobox_cat.get())
     set_folder_name(entry_char_names.get().replace(" ", ""), entry_slots.get().replace(" ", ""), entry_mod_name.get().replace(" ", ""), combobox_cat.get())
+
+def on_selenium_result(version, img_url):
+    label_output.config(text="Fetched elements")
+    entry_ver.delete(0, tk.END)
+    entry_ver.insert(0, common.format_version(version))
+    generator.img_url = img_url
+    if generator.img_url and generator.working_dir:
+        btn_download_img.config(state="normal")
+    else:
+        btn_download_img.config(state="disabled")
+
+def on_url_change(event):
+    if generator.url == entry_url.get() or not common.is_valid_url(entry_url.get()):
+        return
+    
+    label_output.config(text="Fetching elements...")
+    btn_download_img.config(state="disabled")
+    generator.url = entry_url.get()
+    bs4_thread = Extractor(entry_url.get(), on_bs4_result)
+    selenium_thread = Selenium(entry_url.get(), on_selenium_result)
+    
+    bs4_thread.start()
+    selenium_thread.start()
 
 def on_combobox_select(event):
     entry_folder_name.delete(0, tk.END)
@@ -36,11 +66,6 @@ def on_combobox_select(event):
 def on_entry_change(event):
     set_display_name(entry_char_names.get(), entry_slots.get(), entry_mod_name.get(), combobox_cat.get())
     set_folder_name(entry_char_names.get().replace(" ", ""), entry_slots.get().replace(" ", ""), entry_mod_name.get().replace(" ", ""), combobox_cat.get())
-
-def trim_mod_name(mod_name):
-    words_pattern = '|'.join(re.escape(word) for word in generator.ignore_names)
-    pattern = r'\b(?:' + words_pattern + r')\b'
-    return re.sub(pattern, '', mod_name)
 
 def set_display_name(character_names, slots, mod_name, category):
     entry_display_name.delete(0, tk.END)
@@ -82,28 +107,6 @@ def get_working_directory():
     else:
         return filedialog.askdirectory()
 
-def group_char_name():
-    names = ""
-    names_by_group = {}
-    for n in range(len(generator.char_names)):
-        if generator.group_names[n] in names_by_group.keys():
-            arr = names_by_group[generator.group_names[n]]
-        else:
-            arr = []
-        arr.append(generator.char_names[n])
-        names_by_group.update({generator.group_names[n]: arr})
-
-    for key, value in names_by_group.items():
-        if key:
-            names += key + " "
-        for n in range(len(value)):
-            if n > 0:
-                names +=  " & " + value[n]
-            else:
-                names += value[n]
-                
-    return names
-
 def update_preview():
     config.load_config()
     config.set_default_dir(os.path.dirname(entry_work_dir.get()))
@@ -115,10 +118,10 @@ def update_preview():
     combobox_cat.set(dict_info["category"])
 
     entry_char_names.delete(0, tk.END)
-    names = group_char_name()           
+    names = common.group_char_name(generator.char_names, generator.group_names)           
     entry_char_names.insert(0, names)
 
-    slots_cleaned = slots_to_string(dict_info["slots"])
+    slots_cleaned = common.slots_to_string(dict_info["slots"])
     entry_slots.delete(0, tk.END)
     entry_slots.insert(0, slots_cleaned)
 
@@ -126,7 +129,7 @@ def update_preview():
     if not entry_url.get():
         mod_name = dict_info["mod_name"]
     else:
-        mod_name = trim_mod_name(extractor.mod_title)
+        mod_name = common.trim_mod_name(generator.mod_title_web, generator.ignore_names)
     
     entry_mod_name.delete(0, tk.END)
     entry_mod_name.insert(0, mod_name)
@@ -207,8 +210,7 @@ def move_file(source_file, dst_dir):
         print("image dir is empty or invalid")
         return
     
-    new_file_name = "preview.webp"  # Replace with the desired new file name
-    new_path = os.path.join(dst_dir, new_file_name)
+    new_path = os.path.join(dst_dir, defs.IMAGE_NAME)
     entry_img_dir.delete(0, tk.END)
     entry_img_dir.insert(tk.END, new_path)
     # Use shutil.move() to move and rename the file
@@ -247,34 +249,6 @@ def rename_directory():
             print(f"Error renaming directory: {e}")
     else:
         print(f"The directory '{old_directory_path}' does not exist.")
-
-def slots_to_string(slots):
-    ranges = []
-    current_idx = 0
-    out_str = ""
-    start = slots[0] 
-    prev = slots[0]
-    if not isinstance(start,int):
-        ranges.append("C" + start)
-    else:
-        ranges.append("C" + f"{start:02}")
-
-        for n in range(1, len(slots)):
-            if prev + 1 == slots[n]:
-                ranges[current_idx] = "C" + f"{start:02}" + "-" + f"{slots[n]:02}"
-            else:
-                current_idx+=1
-                ranges.append("C" + f"{slots[n]:02}")
-                start = slots[n]
-            prev = slots[n]
-
-    for item in ranges:
-        if not out_str:
-            out_str += item
-        else:
-            out_str += ", " + item
-    
-    return out_str
 
 def set_description():
     description = "Includes:\n"
@@ -376,11 +350,11 @@ def open_config():
 # Create the main application window
 root = tk.Tk()
 root.title("Smash Ultimate Toml Generator")
-for i in range(3):  # Assuming you have three columns
+for i in range(3):
     root.columnconfigure(i, weight=1)
-    root.columnconfigure(i, minsize=200)  # Adjust the width as needed
-root.rowconfigure(10, weight=1)  # Adjust the width as needed
-root.minsize(640, 300)  # Set a minimum width of 300 pixels and a minimum height of 200 pixels
+    root.columnconfigure(i, minsize=200)
+root.rowconfigure(10, weight=1)
+root.minsize(640, 340)
 
 # Set the size of the window
 root.geometry("920x500")
@@ -445,14 +419,17 @@ frame_img_dir = tk.Frame(frame_img, width = 10)
 frame_img_dir.pack(side=tk.TOP, fill=tk.X, expand=False)
 
 btn_select_img = tk.Button(frame_img_dir, text="Browse", command=update_image)
-btn_select_img.pack(side="left", padx = (0, h_pad))
+btn_select_img.pack(side=tk.LEFT, padx = (0, h_pad))
 
-entry_img_dir = tk.Entry(frame_img_dir, width=10, justify='right')
+entry_img_dir = tk.Entry(frame_img_dir, width=10)
 entry_img_dir.pack(fill=tk.X, expand=True)
 entry_img_dir.bind("<KeyRelease>", on_update_image)
 
+btn_download_img = tk.Button(frame_img, text="Download", command=download_img, state="disabled")
+btn_download_img.pack(side=tk.BOTTOM, anchor=tk.NW, padx = (0, h_pad))
+
 label_img = tk.Label(frame_img, justify='left', anchor='nw')
-label_img.pack(fill=tk.BOTH, expand=True)
+label_img.pack(fill=tk.BOTH, expand=True, pady = (0, v_pad))
 
 # column 1
 label_char_names = tk.Label(root, text="Characters")
@@ -509,7 +486,6 @@ label_output .grid(row=11, column=0, sticky=tk.W, columnspan=2)
 
 global generator
 generator = Generator()
-extractor = Extractor()
 config = Config()
 
 global checkbox_states
