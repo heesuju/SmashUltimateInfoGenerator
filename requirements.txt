@@ -2,3 +2,4 @@ tomli_w
 Pillow
 requests 
 beautifulsoup4
+selenium
