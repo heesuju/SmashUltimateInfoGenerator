@@ -24,6 +24,7 @@ class Generator:
         self.group_names = []                   # The name that groups Characters sharing the same slot 
         self.slots = []                         # Slots used up by the mod
         self.is_skin = False                    # Whether skins are included
+        self.is_stage = False                   # Whether stages are included
         self.is_motion = False                  # Whether animation or physics are included
         self.is_effect = False                  # Whether effects are included
         self.is_single_effect = False           # Whether single slot effects are included
@@ -102,6 +103,7 @@ class Generator:
         
     def set_category(self):
         if self.is_skin or self.is_motion:              return "Fighter"
+        elif self.is_stage:                             return "Stage"
         elif self.is_effect or self.is_single_effect:   return "Effects"
         elif self.is_voice or self.is_sfx:              return "Audio"
         elif self.is_ui:                                return "UI"
@@ -128,6 +130,9 @@ class Generator:
 
             if "kirby" in self.display_name == False and common.search_dir_for_keyword(self.working_dir + "/fighter", "kirby"):
                 self.is_kirby = True
+          
+        if common.is_valid_dir(self.working_dir + "/stage"):  
+            self.is_stage = True
             
         self.mod_name = self.get_mod_title(common.get_dir_name(self.working_dir)) 
             

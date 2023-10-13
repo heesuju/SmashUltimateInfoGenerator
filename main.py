@@ -278,6 +278,7 @@ def update_description():
     checkbox_states[10] = generator.is_single_name
     checkbox_states[11] = generator.is_ui
     checkbox_states[12] = generator.is_kirby
+    checkbox_states[13] = generator.is_stage
 
     update_listbox()
 
