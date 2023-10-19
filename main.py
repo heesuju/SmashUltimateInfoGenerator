@@ -11,6 +11,7 @@ import defs
 from static_scraper import Extractor
 from dynamic_scraper import Selenium
 from downloader import Downloader
+from loader import Loader
 
 def on_img_download():
     label_output.config(text="Downloaded image")
@@ -128,6 +129,13 @@ def update_preview():
     mod_name = ""
     if not entry_url.get():
         mod_name = dict_info["mod_name"]
+        
+        if loader.load_toml(entry_work_dir.get()):
+            entry_authors.delete(0, tk.END)
+            entry_authors.insert(0, loader.authors)
+            entry_ver.delete(0, tk.END)
+            entry_ver.insert(0, loader.version)
+            combobox_cat.set(loader.category)
     else:
         mod_name = common.trim_mod_name(generator.mod_title_web, generator.ignore_names)
     
@@ -486,8 +494,10 @@ label_output = tk.Label(root)
 label_output .grid(row=11, column=0, sticky=tk.W, columnspan=2)
 
 global generator
+global loader
 generator = Generator()
 config = Config()
+loader = Loader()
 
 global checkbox_states
 checkbox_states = [False] * len(defs.ELEMENTS + config.additional_elements)
