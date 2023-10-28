@@ -373,7 +373,8 @@ root.configure(padx=10, pady=10)
 label_work_dir = tk.Label(root, text="Directory")
 label_work_dir.grid(row=0, column=0, sticky=tk.W, pady = (0, v_pad))
 
-btn_config = tk.Button(root, text="Config", command=open_config)
+img_icon = ImageTk.PhotoImage(file='./icons/config.png')
+btn_config = tk.Button(root, image=img_icon, width=15,height=15,relief=tk.FLAT ,command=open_config )
 btn_config.grid(row=0, column=2, sticky=tk.E, pady = (0, v_pad))
 
 frame_work_dir = tk.Frame(root)
