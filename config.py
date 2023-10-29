@@ -1,5 +1,7 @@
 import json
 import os
+import tkinter as tk
+import utils
 
 class Config:
     def __init__(self):
@@ -75,3 +77,62 @@ class Config:
             else:
                 out_str += element
         return out_str
+    
+    def on_save_config(self):
+        self.set_config(self.entry_display_name_format.get(), self.entry_folder_name_format.get(), self.entry_additional_elements.get())
+        self.new_window.destroy()
+
+    def on_restore_config(self):
+        self.reset()
+        self.entry_display_name_format.delete(0, tk.END)
+        self.entry_display_name_format.insert(0, self.display_name_format)
+        self.entry_folder_name_format.delete(0, tk.END)
+        self.entry_folder_name_format.insert(0, self.folder_name_format)
+        self.entry_additional_elements.delete(0, tk.END)
+
+    def open_config(self, root):
+        self.new_window = tk.Toplevel(root)
+        self.new_window.title("Config")
+        self.new_window.geometry("320x240")
+        self.new_window.columnconfigure(0, weight=1)
+        self.new_window.rowconfigure(8, weight=1)
+        self.new_window.configure(padx=10, pady=10)
+
+        self.config_label = tk.Label(self.new_window, text="Change default format for display and folder name")
+        self.config_label.grid(row=0, column=0, sticky=tk.W, pady = (0, utils.v_pad))
+        self.help_label = tk.Label(self.new_window, text="*Arrange values: {characters}, {slots}, {mod}, {category}")
+        self.help_label.grid(row=1, column=0, sticky=tk.W, pady = (0, utils.v_pad * 2))
+
+        self.label_folder_name_format = tk.Label(self.new_window, text="Folder Name Format")
+        self.label_folder_name_format.grid(row=2, column=0, sticky=tk.W)
+
+        self.entry_folder_name_format = tk.Entry(self.new_window, width=10)
+        self.entry_folder_name_format.grid(row=3, column=0, sticky=tk.EW, pady = (0, utils.v_pad))
+
+        self.label_display_name_format = tk.Label(self.new_window, text="Display Name Format", justify='left')
+        self.label_display_name_format.grid(row=4, column=0, sticky=tk.W)
+
+        self.entry_display_name_format = tk.Entry(self.new_window, width=10)
+        self.entry_display_name_format.grid(row=5, column=0, sticky=tk.EW, pady = (0, utils.v_pad))
+        
+        self.label_additional_elements = tk.Label(self.new_window, text="Additional Elements(separate by \",\")", justify='left')
+        self.label_additional_elements.grid(row=6, column=0, sticky=tk.W)
+
+        self.entry_additional_elements = tk.Entry(self.new_window, width=10)
+        self.entry_additional_elements.grid(row=7, column=0, sticky=tk.EW, pady = (0, utils.v_pad))
+
+        self.frame_config = tk.Frame(self.new_window)
+        self.frame_config.grid(row=8, column=0, sticky=tk.SE)
+
+        self.btn_restore = tk.Button(self.frame_config, text="Restore", command=lambda: self.on_restore_config())
+        self.btn_restore.pack(side="left", padx=(0, utils.h_pad))
+
+        self.btn_save = tk.Button(self.frame_config, text="Save", command=lambda: self.on_save_config())
+        self.btn_save.pack()
+
+        self.entry_display_name_format.delete(0, tk.END)
+        self.entry_display_name_format.insert(0, self.display_name_format)
+        self.entry_folder_name_format.delete(0, tk.END)
+        self.entry_folder_name_format.insert(0, self.folder_name_format)
+        self.entry_additional_elements.delete(0, tk.END)
+        self.entry_additional_elements.insert(0, self.get_additional_elements_as_str())

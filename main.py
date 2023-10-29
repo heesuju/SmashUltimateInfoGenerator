@@ -297,65 +297,8 @@ h_pad = 10
 v_pad = 5
 
 def open_config():
-    new_window = tk.Toplevel(root)
-    new_window.title("Config")
-    new_window.geometry("320x240")
-    new_window.columnconfigure(0, weight=1)
-    new_window.rowconfigure(8, weight=1)
-    new_window.configure(padx=10, pady=10)
+    config.open_config(root) 
 
-    config_label = tk.Label(new_window, text="Change default format for display and folder name")
-    config_label.grid(row=0, column=0, sticky=tk.W, pady = (0, v_pad))
-    help_label = tk.Label(new_window, text="*Arrange values: {characters}, {slots}, {mod}, {category}")
-    help_label.grid(row=1, column=0, sticky=tk.W, pady = (0, v_pad * 2))
-
-    label_folder_name_format = tk.Label(new_window, text="Folder Name Format")
-    label_folder_name_format.grid(row=2, column=0, sticky=tk.W)
-
-    entry_folder_name_format = tk.Entry(new_window, width=10)
-    entry_folder_name_format.grid(row=3, column=0, sticky=tk.EW, pady = (0, v_pad))
-
-    label_display_name_format = tk.Label(new_window, text="Display Name Format", justify='left')
-    label_display_name_format.grid(row=4, column=0, sticky=tk.W)
-
-    entry_display_name_format = tk.Entry(new_window, width=10)
-    entry_display_name_format.grid(row=5, column=0, sticky=tk.EW, pady = (0, v_pad))
-    
-    label_additional_elements = tk.Label(new_window, text="Additional Elements(separate by \",\")", justify='left')
-    label_additional_elements.grid(row=6, column=0, sticky=tk.W)
-
-    entry_additional_elements = tk.Entry(new_window, width=10)
-    entry_additional_elements.grid(row=7, column=0, sticky=tk.EW, pady = (0, v_pad))
-
-    def on_save_config():
-        config.set_config(entry_display_name_format.get(), entry_folder_name_format.get(), entry_additional_elements.get())
-        update_listbox()
-        new_window.destroy()
-
-    def on_restore_config():
-        config.reset()
-        entry_display_name_format.delete(0, tk.END)
-        entry_display_name_format.insert(0, config.display_name_format)
-        entry_folder_name_format.delete(0, tk.END)
-        entry_folder_name_format.insert(0, config.folder_name_format)
-        entry_additional_elements.delete(0, tk.END)
-
-    frame_config = tk.Frame(new_window)
-    frame_config.grid(row=8, column=0, sticky=tk.SE)
-
-    btn_restore = tk.Button(frame_config, text="Restore", command=lambda: on_restore_config())
-    btn_restore.pack(side="left", padx=(0, h_pad))
-
-    btn_save = tk.Button(frame_config, text="Save", command=lambda: on_save_config())
-    btn_save.pack()
-
-    entry_display_name_format.delete(0, tk.END)
-    entry_display_name_format.insert(0, config.display_name_format)
-    entry_folder_name_format.delete(0, tk.END)
-    entry_folder_name_format.insert(0, config.folder_name_format)
-    entry_additional_elements.delete(0, tk.END)
-    entry_additional_elements.insert(0, config.get_additional_elements_as_str())
-    
 # Create the main application window
 root = tk.Tk()
 root.title("Smash Ultimate Toml Generator")
