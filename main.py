@@ -266,7 +266,7 @@ def set_description():
         if n >= len(combined_list):
             checkbox_states[n] = False
         elif checkbox_states[n]:
-            description += combined_list[n] + "\n"
+            description += "- " + combined_list[n] + "\n"
 
     if True in checkbox_states:
         txt_desc.insert(tk.END, description)
