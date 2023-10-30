@@ -14,9 +14,9 @@ class Loader:
 
     def load_toml(self, dir):
         self.reset()
-        if not os.path.exists(dir + "info.toml"):
+        if not os.path.exists(dir + "/info.toml"):
             return False
-        with open(dir + "info.toml", "rb") as toml_file:
+        with open(dir + "/info.toml", "rb") as toml_file:
             loaded_dict = tomli.load(toml_file)
             if loaded_dict:
                 if "display_name" in loaded_dict: self.display_name = loaded_dict["display_name"]
