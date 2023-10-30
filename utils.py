@@ -1,8 +1,5 @@
 import tkinter as tk
 
-h_pad = 10
-v_pad = 5
-
 def style_label_as_entry(label, color):
     label.config(relief=tk.SUNKEN, borderwidth=1)  # Add a border
     label.config(bg=color)  # Set background color to white

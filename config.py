@@ -1,7 +1,7 @@
 import json
 import os
 import tkinter as tk
-import utils
+import defs
 
 class Config:
     def __init__(self):
@@ -99,33 +99,33 @@ class Config:
         self.new_window.configure(padx=10, pady=10)
 
         self.config_label = tk.Label(self.new_window, text="Change default format for display and folder name")
-        self.config_label.grid(row=0, column=0, sticky=tk.W, pady = (0, utils.v_pad))
+        self.config_label.grid(row=0, column=0, sticky=tk.W, pady = (0, defs.PAD_H))
         self.help_label = tk.Label(self.new_window, text="*Arrange values: {characters}, {slots}, {mod}, {category}")
-        self.help_label.grid(row=1, column=0, sticky=tk.W, pady = (0, utils.v_pad * 2))
+        self.help_label.grid(row=1, column=0, sticky=tk.W, pady = (0, defs.PAD_V * 2))
 
         self.label_folder_name_format = tk.Label(self.new_window, text="Folder Name Format")
         self.label_folder_name_format.grid(row=2, column=0, sticky=tk.W)
 
         self.entry_folder_name_format = tk.Entry(self.new_window, width=10)
-        self.entry_folder_name_format.grid(row=3, column=0, sticky=tk.EW, pady = (0, utils.v_pad))
+        self.entry_folder_name_format.grid(row=3, column=0, sticky=tk.EW, pady = (0, defs.PAD_V))
 
         self.label_display_name_format = tk.Label(self.new_window, text="Display Name Format", justify='left')
         self.label_display_name_format.grid(row=4, column=0, sticky=tk.W)
 
         self.entry_display_name_format = tk.Entry(self.new_window, width=10)
-        self.entry_display_name_format.grid(row=5, column=0, sticky=tk.EW, pady = (0, utils.v_pad))
+        self.entry_display_name_format.grid(row=5, column=0, sticky=tk.EW, pady = (0, defs.PAD_V))
         
         self.label_additional_elements = tk.Label(self.new_window, text="Additional Elements(separate by \",\")", justify='left')
         self.label_additional_elements.grid(row=6, column=0, sticky=tk.W)
 
         self.entry_additional_elements = tk.Entry(self.new_window, width=10)
-        self.entry_additional_elements.grid(row=7, column=0, sticky=tk.EW, pady = (0, utils.v_pad))
+        self.entry_additional_elements.grid(row=7, column=0, sticky=tk.EW, pady = (0, defs.PAD_V))
 
         self.frame_config = tk.Frame(self.new_window)
         self.frame_config.grid(row=8, column=0, sticky=tk.SE)
 
         self.btn_restore = tk.Button(self.frame_config, text="Restore", command=lambda: self.on_restore_config())
-        self.btn_restore.pack(side="left", padx=(0, utils.h_pad))
+        self.btn_restore.pack(side="left", padx=(0, defs.PAD_H))
 
         self.btn_save = tk.Button(self.frame_config, text="Save", command=lambda: self.on_save_config())
         self.btn_save.pack()

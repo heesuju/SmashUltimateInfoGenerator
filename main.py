@@ -293,9 +293,6 @@ def update_description():
 def on_window_resize(event):
     set_image(entry_img_dir.get())
 
-h_pad = 10
-v_pad = 5
-
 def open_config():
     config.open_config(root) 
 
@@ -314,17 +311,17 @@ root.configure(padx=10, pady=10)
 
 # column 0
 label_work_dir = tk.Label(root, text="Directory")
-label_work_dir.grid(row=0, column=0, sticky=tk.W, pady = (0, v_pad))
+label_work_dir.grid(row=0, column=0, sticky=tk.W, pady = (0, defs.PAD_V))
 
 img_icon = ImageTk.PhotoImage(file='./icons/config.png')
-btn_config = tk.Button(root, image=img_icon, width=15,height=15,relief=tk.FLAT ,command=open_config )
-btn_config.grid(row=0, column=2, sticky=tk.E, pady = (0, v_pad))
+btn_config = tk.Button(root, image=img_icon, width=15,height=15,relief=tk.FLAT ,cursor='hand2',command=open_config )
+btn_config.grid(row=0, column=2, sticky=tk.E, pady = (0, defs.PAD_V))
 
 frame_work_dir = tk.Frame(root)
-frame_work_dir.grid(row=1, column=0, rowspan=2, columnspan=3, sticky=tk.EW, pady = (0, v_pad))
+frame_work_dir.grid(row=1, column=0, rowspan=2, columnspan=3, sticky=tk.EW, pady = (0, defs.PAD_V))
 
 btn_change_work_dir = tk.Button(frame_work_dir, text="Browse", command=change_working_directory)
-btn_change_work_dir.pack(side="left", padx = (0, h_pad))
+btn_change_work_dir.pack(side="left", padx = (0, defs.PAD_H))
 
 entry_work_dir = tk.Entry(frame_work_dir, width=10)
 entry_work_dir.pack(fill=tk.X, expand=True)
@@ -334,24 +331,24 @@ label_url = tk.Label(root, text="Url")
 label_url.grid(row=3, column=0, sticky=tk.W)
 
 entry_url = tk.Entry(root, width=10)
-entry_url.grid(row=4, column=0, sticky=tk.EW, padx = (0, h_pad), pady = (0, v_pad))
+entry_url.grid(row=4, column=0, sticky=tk.EW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
 entry_url.bind("<KeyRelease>", on_url_change)
 
 label_authors = tk.Label(root, text="Authors")
 label_authors.grid(row=5, column=0, sticky=tk.W)
 
 entry_authors = tk.Entry(root, width=10)
-entry_authors.grid(row=6, column=0, sticky=tk.EW, padx = (0, h_pad), pady = (0, v_pad))
+entry_authors.grid(row=6, column=0, sticky=tk.EW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
 
 frame = tk.Frame(root)
-frame.grid(row=7, column=0, rowspan=2, sticky=tk.EW, padx = (0, h_pad), pady = (0, v_pad))
+frame.grid(row=7, column=0, rowspan=2, sticky=tk.EW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
 frame.columnconfigure(1, weight=1)
 
 label_ver = tk.Label(frame, text="Version")
 label_ver.grid(row=0, column=0, sticky=tk.W)
 
 entry_ver = tk.Entry(frame, width=10)
-entry_ver .grid(row=1, column=0, sticky=tk.W, padx=(0,h_pad))
+entry_ver .grid(row=1, column=0, sticky=tk.W, padx=(0,defs.PAD_H))
 entry_ver.insert(0, "1.0.0")
 
 label_cat = tk.Label(frame, text="Category")
@@ -363,73 +360,73 @@ combobox_cat.bind("<<ComboboxSelected>>", on_combobox_select)
 combobox_cat.set(defs.CATEGORIES[-1])
 
 label_img_dir = tk.Label(root, text="Image", anchor='w')
-label_img_dir.grid(row=9, column=0, sticky=tk.W, padx = (0, h_pad))
+label_img_dir.grid(row=9, column=0, sticky=tk.W, padx = (0, defs.PAD_H))
 
-frame_img = tk.Frame(root, width = 10)
-frame_img.grid(row=10, column=0, sticky=tk.NSEW, padx = (0, h_pad), pady = (0, v_pad))
+frame_img = tk.Frame(root, width=10)
+frame_img.grid(row=10, column=0, sticky=tk.NSEW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
 
 frame_img_dir = tk.Frame(frame_img, width = 10)
 frame_img_dir.pack(side=tk.TOP, fill=tk.X, expand=False)
 
-btn_select_img = tk.Button(frame_img_dir, text="Browse", command=update_image)
-btn_select_img.pack(side=tk.LEFT, padx = (0, h_pad))
+btn_select_img = tk.Button(frame_img_dir, text="Browse", command=update_image, anchor='n')
+btn_select_img.pack(side=tk.LEFT, padx = (0, defs.PAD_H))
 
 entry_img_dir = tk.Entry(frame_img_dir, width=10)
 entry_img_dir.pack(fill=tk.X, expand=True)
 entry_img_dir.bind("<KeyRelease>", on_update_image)
 
 btn_download_img = tk.Button(frame_img, text="Download", command=download_img, state="disabled")
-btn_download_img.pack(side=tk.BOTTOM, anchor=tk.NW, padx = (0, h_pad))
+btn_download_img.pack(side=tk.BOTTOM, anchor=tk.NW, padx = (0, defs.PAD_H))
 
-label_img = tk.Label(frame_img, justify='left', anchor='nw')
-label_img.pack(fill=tk.BOTH, expand=True, pady = (0, v_pad))
+label_img = tk.Label(frame_img, justify='center', anchor='center', bg='black')
+label_img.pack(fill=tk.BOTH, expand=True, pady = (0, defs.PAD_V))
 
 # column 1
 label_char_names = tk.Label(root, text="Characters")
 label_char_names.grid(row=3, column=1, sticky=tk.W)
 
 entry_char_names = tk.Entry(root, width=10)
-entry_char_names.grid(row=4, column=1, sticky=tk.EW, padx = (0, h_pad), pady = (0, v_pad))
+entry_char_names.grid(row=4, column=1, sticky=tk.EW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
 entry_char_names.bind("<KeyRelease>", on_entry_change)
 
 label_slots = tk.Label(root, text="Slots")
 label_slots.grid(row=5, column=1, sticky=tk.W)
 
 entry_slots = tk.Entry(root, width=10)
-entry_slots.grid(row=6, column=1, sticky=tk.EW, padx = (0, h_pad), pady = (0, v_pad))
+entry_slots.grid(row=6, column=1, sticky=tk.EW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
 entry_slots.bind("<KeyRelease>", on_entry_change)
 
 label_mod_name = tk.Label(root, text="Mod Title")
 label_mod_name.grid(row=7, column=1, sticky=tk.W)
 
 entry_mod_name = tk.Entry(root, width=10)
-entry_mod_name.grid(row=8, column=1, sticky=tk.EW, padx = (0, h_pad), pady = (0, v_pad))
+entry_mod_name.grid(row=8, column=1, sticky=tk.EW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
 entry_mod_name.bind("<KeyRelease>", on_entry_change)
 
 label_list = tk.Label(root, text="Includes")
 label_list.grid(row=9, column=1, sticky=tk.W)
 
 listbox = tk.Listbox(root, selectmode=tk.SINGLE, width=10)
-listbox.grid(row=10, column=1, sticky=tk.NSEW, padx = (0, h_pad), pady = (0, v_pad))
+listbox.grid(row=10, column=1, sticky=tk.NSEW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
 
 # column 2
 label_folder_name = tk.Label(root, text="Folder Name")
 label_folder_name .grid(row=3, column=2, sticky=tk.W)
 
 entry_folder_name = tk.Entry(root)
-entry_folder_name.grid(row=4, column=2, sticky=tk.EW, pady = (0, v_pad))
+entry_folder_name.grid(row=4, column=2, sticky=tk.EW, pady = (0, defs.PAD_V))
 
 label_display_name = tk.Label(root, text="Display Name")
 label_display_name.grid(row=5, column=2, sticky=tk.W)
 
 entry_display_name = tk.Entry(root, width=10)
-entry_display_name.grid(row=6, column=2, sticky=tk.EW, pady = (0, v_pad))
+entry_display_name.grid(row=6, column=2, sticky=tk.EW, pady = (0, defs.PAD_V))
 
 label_desc = tk.Label(root, text="Description")
 label_desc.grid(row=9, column=2, sticky=tk.W)
 
 txt_desc = tk.Text(root, height=10, width=10)
-txt_desc.grid(row=10, column=2, sticky=tk.NSEW, pady = (0, v_pad))
+txt_desc.grid(row=10, column=2, sticky=tk.NSEW, pady = (0, defs.PAD_V))
 
 btn_apply = tk.Button(root, text="Apply", command=apply_changes)
 btn_apply.grid(row=11, column=2, sticky=tk.E)
