@@ -136,3 +136,16 @@ def get_group_count(group_name):
             count+=1
 
     return count
+
+def add_spaces_to_camel_case(input_string):
+    result = [input_string[0]]
+    
+    for i in range(1, len(input_string)):
+        char = input_string[i]
+        prev_char = input_string[i - 1]
+        
+        if char.isupper() and prev_char.islower():
+            result.append(' ')
+        result.append(char)
+    
+    return ''.join(result)
