@@ -228,7 +228,7 @@ def move_file(source_file, dst_dir):
 
 def find_image():
     for type in defs.IMAGE_TYPES:
-        img_list = common.get_children_by_extension(generator.working_dir, type)
+        img_list = common.get_direct_child_by_extension(generator.working_dir, type)
         if len(img_list) > 0:
             set_image(generator.working_dir +  "/" + img_list[0])
             return

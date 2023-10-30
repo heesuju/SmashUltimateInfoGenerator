@@ -31,6 +31,13 @@ def get_children_by_extension(directory, extension):
                 list.append(file)
     return list
 
+def get_direct_child_by_extension(directory, extension):
+    list = []
+    for filename in os.listdir(directory):
+        if filename.endswith(extension) and os.path.isfile(os.path.join(directory, filename)):
+            list.append(filename)
+    return list
+
 def csv_to_dict(directory):
     data_list = []
     
