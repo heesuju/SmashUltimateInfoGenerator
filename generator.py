@@ -70,7 +70,7 @@ class Generator:
         pattern += r'|_|&'  # Add underscore to the pattern
         self.ignore_names = set_name
         
-        name = re.sub(r'(C\d+|\[.*?\]|-\d+|' + pattern + ')', '', original, flags=re.I)
+        name = re.sub(r'(C\d+|\[.*?\]|' + pattern + ')', '', original, flags=re.I)
         trimmed_arr = name.split(' ')
         out_str=""
         for trimmed in trimmed_arr:
