@@ -1,4 +1,5 @@
 import tomli as tomli
+import os 
 
 class Loader:
     def __init__(self):
@@ -13,8 +14,9 @@ class Loader:
 
     def load_toml(self, dir):
         self.reset()
-
-        with open(dir + "\info.toml", "rb") as toml_file:
+        if not os.path.exists(dir + "info.toml"):
+            return False
+        with open(dir + "info.toml", "rb") as toml_file:
             loaded_dict = tomli.load(toml_file)
             if loaded_dict:
                 if "display_name" in loaded_dict: self.display_name = loaded_dict["display_name"]

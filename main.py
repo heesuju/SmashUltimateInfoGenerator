@@ -109,6 +109,8 @@ def get_working_directory():
         return filedialog.askdirectory()
 
 def update_preview():
+    entry_url.delete(0, tk.END)
+    generator.url = entry_url.get()
     config.load_config()
     config.set_default_dir(os.path.dirname(entry_work_dir.get()))
 
