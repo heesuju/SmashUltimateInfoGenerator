@@ -167,6 +167,15 @@ def get_formatted_elements(format, str):
         print("String matched!")
         return match.groupdict()
     else:
+        slot_removed = format
+        slot_removed = slot_removed.replace("[{slots}]", "")
+        escaped_input = re.escape(slot_removed)
+        #regex_pattern = escaped_input.replace(r'\{', r'(?P<').replace(r'\}', r'>\w+)')
+        regex_pattern = escaped_input.replace(r'\{', r'(?P<').replace(r'\}', r'>.+)')
+        match = re.match(regex_pattern, str)
+        if match: 
+            print("String matched!")
+            return match.groupdict()
         print("String did not match the pattern.")
         return None
     

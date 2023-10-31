@@ -124,9 +124,12 @@ def update_preview():
     names = common.group_char_name(generator.char_names, generator.group_names)           
     entry_char_names.insert(0, names)
 
-    slots_cleaned = common.slots_to_string(dict_info["slots"])
     entry_slots.delete(0, tk.END)
-    entry_slots.insert(0, slots_cleaned)
+    
+    slots_cleaned = ""
+    if generator.slots:
+        slots_cleaned = common.slots_to_string(dict_info["slots"])
+        entry_slots.insert(0, slots_cleaned)    
 
     mod_name = ""
     if not entry_url.get():
