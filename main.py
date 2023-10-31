@@ -130,8 +130,12 @@ def update_preview():
 
     mod_name = ""
     if not entry_url.get():
-        mod_name = dict_info["mod_name"]
-        
+        dir_name = common.get_dir_name(generator.working_dir)
+        title = common.get_mod_title(dir_name, generator.char_names, config.folder_name_format)
+        capitalized = common.add_spaces_to_camel_case(title)
+        mod_name = capitalized
+        generator.mod_name = mod_name
+
         if loader.load_toml(entry_work_dir.get()):
             entry_authors.delete(0, tk.END)
             entry_authors.insert(0, loader.authors)
@@ -139,7 +143,7 @@ def update_preview():
             entry_ver.insert(0, loader.version)
             combobox_cat.set(loader.category)
     else:
-        mod_name = common.trim_mod_name(generator.mod_title_web, generator.ignore_names)
+        mod_name = generator.mod_title_web
     
     entry_mod_name.delete(0, tk.END)
     entry_mod_name.insert(0, mod_name)

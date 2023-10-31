@@ -156,3 +156,48 @@ def add_spaces_to_camel_case(input_string):
         result.append(char)
     
     return ''.join(result)
+
+def get_formatted_elements(format, str):
+    escaped_input = re.escape(format)
+    #regex_pattern = escaped_input.replace(r'\{', r'(?P<').replace(r'\}', r'>\w+)')
+    regex_pattern = escaped_input.replace(r'\{', r'(?P<').replace(r'\}', r'>.+)')
+    match = re.match(regex_pattern, str)
+
+    if match:
+        print("String matched!")
+        return match.groupdict()
+    else:
+        print("String did not match the pattern.")
+        return None
+    
+# trims the character name and category from the folder name to get the mod title
+def get_mod_title(original, char_names, folder_name_format):
+    dict_elements = get_formatted_elements(folder_name_format, original)
+    if dict_elements is not None:
+        return dict_elements["mod"]
+    else:
+        dict_arr = csv_to_dict("./character_names.csv")
+        set_name = set()
+        for dict in dict_arr:
+            if dict['Custom'] in char_names:
+                #set_name.add(dict['Key'])
+                set_name.add(dict['Value'])
+                set_name.add(dict['Custom'])
+                if dict['Group']:
+                    set_name.add(dict['Group'])
+
+        # Create a regular expression pattern to match words to remove and underscore
+        pattern = r'|'.join(re.escape(name) for name in set_name) + r'|'
+        pattern += r'|_|&'  # Add underscore to the pattern
+        
+        name = re.sub(r'(C\d+|\[.*?\]|' + pattern + ')', '', original, flags=re.I)
+
+        #Remove spaces
+        trimmed_arr = name.split(' ')
+        out_str=""
+        for trimmed in trimmed_arr:
+            if out_str: 
+                out_str += ' '
+            out_str += trimmed
+        
+        return out_str

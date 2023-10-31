@@ -52,34 +52,6 @@ class Generator:
         numbers.sort()
         return numbers
     
-    # trims the character name and category from the folder name to get the mod title
-    def get_mod_title(self, original):
-        dict_arr = common.csv_to_dict("./character_names.csv") 
-        set_name = set()
-        for dict in dict_arr:
-            if dict['Custom'] in self.char_names:
-                #set_name.add(dict['Key'])
-                set_name.add(dict['Value'])
-                set_name.add(dict['Custom'])
-                if dict['Group']:
-                    set_name.add(dict['Group'])
-
-        # Create a regular expression pattern to match words to remove and underscore
-        pattern = r'|'.join(re.escape(word) for word in defs.CATEGORIES) + r'|'
-        pattern += r'|'.join(re.escape(name) for name in set_name)
-        pattern += r'|_|&'  # Add underscore to the pattern
-        self.ignore_names = set_name
-        
-        name = re.sub(r'(C\d+|\[.*?\]|' + pattern + ')', '', original, flags=re.I)
-        trimmed_arr = name.split(' ')
-        out_str=""
-        for trimmed in trimmed_arr:
-            if out_str: 
-                out_str += ' '
-            out_str += trimmed
-        
-        return out_str
-    
     def get_characters(self):
         children = common.get_all_children_in_path(self.working_dir + "/fighter")
         dict_arr = common.csv_to_dict("./character_names.csv") 
@@ -140,9 +112,7 @@ class Generator:
           
         if common.is_valid_dir(self.working_dir + "/stage"):  
             self.is_stage = True
-            
-        self.mod_name = self.get_mod_title(common.add_spaces_to_camel_case(common.get_dir_name(self.working_dir)))
-            
+                
         if common.is_valid_dir(self.working_dir + "/effect"):
             for file in common.get_children_by_extension(self.working_dir + "/effect", ".eff"):
                 
@@ -183,7 +153,7 @@ class Generator:
             
             if common.search_dir_for_keyword(self.working_dir + "/ui", "replace") or common.search_dir_for_keyword(self.working_dir + "/ui", "replace_patch"):
                 self.is_ui = True
-                
+        
         # Get the description from the multiline Text widget
         self.description += self.additional_info
         self.category = self.set_category()
