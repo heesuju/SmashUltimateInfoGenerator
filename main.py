@@ -13,6 +13,11 @@ from dynamic_scraper import Selenium
 from downloader import Downloader
 from loader import Loader
 from comparison import Comparison
+from image_resize import ImageResize
+
+def on_img_resized(image):
+    label_img.config(image=image, width=10, height=10)
+    label_img.image = image  # Keep a reference to prevent garbage collection
 
 def on_img_download():
     label_output.config(text="Downloaded image")
@@ -194,35 +199,16 @@ def on_update_image(event):
                 set_image(image_dir)
                 break
     
-def resize_image(image_path, target_width, target_height):
-    img = Image.open(image_path)
-    aspect_ratio = img.width / img.height
-    
-    # Resize the image to fit the target dimensions while preserving aspect ratio
-    if target_width / aspect_ratio <= target_height:
-        new_width = target_width
-        new_height = int(new_width / aspect_ratio)
-    else:
-        new_height = target_height
-        new_width = int(new_height * aspect_ratio)
-    
-    return img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-
 def set_image(directory):
-    image_path =  directory    
-    if not image_path or not os.path.exists(image_path):
+    if not directory or not os.path.exists(directory):
         return
     
     entry_img_dir.delete(0, tk.END)
-    entry_img_dir.insert(tk.END, image_path)
+    entry_img_dir.insert(tk.END, directory)
 
-    label_width = label_img.winfo_width()
-    label_height = label_img.winfo_height()
-    resized_image = resize_image(image_path, label_width, label_height)
-    image = ImageTk.PhotoImage(resized_image)
-    label_img.config(image=image, width=10, height=10)
-    label_img.image = image  # Keep a reference to prevent garbage collection
-
+    resize_thread = ImageResize(directory, label_img.winfo_width(), label_img.winfo_height(), on_img_resized)
+    resize_thread.start()
+    
 def move_file(source_file, dst_dir):
     if not source_file or not os.path.exists(source_file):
         print("image dir is empty or invalid")
