@@ -13,6 +13,7 @@ class Config:
         self.display_name_format = "{characters} {slots} {mod}"
         self.folder_name_format = "{category}_{characters}[{slots}]_{mod}"
         self.additional_elements = []
+        self.new_window = None
             
     def save_config(self):
         config_dict = {
@@ -91,6 +92,9 @@ class Config:
         self.entry_additional_elements.delete(0, tk.END)
 
     def open_config(self, root):
+        if self.new_window is not None:
+            self.new_window.destroy()
+    
         self.new_window = tk.Toplevel(root)
         self.new_window.title("Config")
         self.new_window.geometry("320x240")
