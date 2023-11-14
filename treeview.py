@@ -13,7 +13,7 @@ class Menu:
         self.filtered_mods = []
         self.cur_page = 1
         self.total_pages = 1
-        self.page_size = 5
+        self.page_size = 10
         self.show()
         self.scan()
     
@@ -114,6 +114,7 @@ class Menu:
             btn = tk.Button(self.frame_paging, text=n, relief=tk.FLAT, cursor='hand2', command=lambda number=n: self.change_page(number), width=2)
             if self.cur_page == n:
                 btn["font"]= font.Font(weight="bold")
+                btn["fg"]= "#6563FF"
             btn.grid(row=0, column=n)
             prev = n
 
@@ -135,7 +136,7 @@ class Menu:
         
         style = ttk.Style(root)
         style.map("Checkbox.Treeview", background=[("disabled", "#E6E6E6"), ("selected", "#E6E6E6")])
-        #style.configure("Checkbox.Treeview", rowheight=40)
+        style.configure("Checkbox.Treeview", rowheight=26)
         display_columns = []
         for col, category in enumerate(self.categories):
             if col < len(self.categories)-1:
