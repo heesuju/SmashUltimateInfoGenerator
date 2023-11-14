@@ -1,10 +1,23 @@
 import os
 import re
 import csv
+import math
 
 # Split the folder name into array
 def split_into_arr(folder_name, split_char = '_'):
     return folder_name.split(split_char)
+
+def trim_redundant_spaces(input, split_char = ' '):
+    arr = input.split(split_char)
+    result = ""
+    
+    for it in arr:
+        if result:
+            result += " " + it
+        else:
+            result += it
+    
+    return result
 
 def search_dir_for_keyword(directory, keyword):
     for root, dirs, files in os.walk(directory):
@@ -66,22 +79,25 @@ def format_version(input_str):
     return formatted_version
 
 def slots_to_string(slots):
+    if len(slots) <= 0:
+        return ""
+    
     ranges = []
     current_idx = 0
     out_str = ""
     start = slots[0] 
     prev = slots[0]
     if not isinstance(start,int):
-        ranges.append("C" + start)
+        ranges.append(start)
     else:
-        ranges.append("C" + f"{start:02}")
+        ranges.append(f"{start:02}")
 
         for n in range(1, len(slots)):
             if prev + 1 == slots[n]:
-                ranges[current_idx] = "C" + f"{start:02}" + "-" + f"{slots[n]:02}"
+                ranges[current_idx] = f"{start:02}" + "-" + f"{slots[n]:02}"
             else:
                 current_idx+=1
-                ranges.append("C" + f"{slots[n]:02}")
+                ranges.append(f"{slots[n]:02}")
                 start = slots[n]
             prev = slots[n]
 
@@ -89,9 +105,9 @@ def slots_to_string(slots):
         if not out_str:
             out_str += item
         else:
-            out_str += ", " + item
+            out_str += "," + item
     
-    return out_str
+    return "C" + out_str
 
 def trim_mod_name(mod_name, ignored_list):
     words_pattern = '|'.join(re.escape(word) for word in ignored_list)
@@ -210,3 +226,31 @@ def get_mod_title(original, char_names, folder_name_format):
             out_str += trimmed
         
         return out_str
+    
+def clamp(n, smallest, largest): return max(smallest, min(n, largest))
+
+def get_pages(current_page=1, total_pages=1, max_size=5):
+    out_arr = []
+    half = math.floor(max_size/2)
+    min = clamp(current_page-half, 1, total_pages)
+    max = clamp(current_page+half, 1, total_pages)
+    if current_page-half < 1:
+        max -= (current_page-half - 1)
+    elif current_page+half > total_pages:
+        min -= (current_page+half - total_pages)
+
+    if total_pages < max_size:
+        min = 1
+        max = total_pages
+        
+    for n in range(min, max+1):
+        out_arr.append(n) 
+    
+    if 1 not in out_arr:
+        out_arr.append(1)
+    
+    if total_pages not in out_arr:
+        out_arr.append(total_pages)
+    
+    out_arr.sort()
+    return out_arr

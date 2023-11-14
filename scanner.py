@@ -1,13 +1,18 @@
 import os
 from threading import Thread
 from loader import Loader
+from generator import Generator
 from mod import Mod
+from PIL import Image, ImageTk
+from image_resize import ImageResize
+import common
 
 class Scanner(Thread):
     def __init__(self, directory:str, callback):
         super().__init__()
         self.directory = directory
         self.loader = Loader()
+        self.generator = Generator()
         self.callback = callback
 
     def find_mods(self, directory):
@@ -18,11 +23,27 @@ class Scanner(Thread):
                 
                 folder_path = os.path.join(directory, folder_name)
                 if os.path.isdir(folder_path):
-                    mod = Mod(folder_name, folder_name, False, None)
+                    mod = Mod(folder_name, folder_name, "", "", "", "", "", "", False)
                     mods.append(mod)
+                    mod.path = folder_path
+
                     if self.loader.load_toml(folder_path):
                         mod.display_name = self.loader.display_name
-        
+                        mod.authors = self.loader.authors
+                        mod.category = self.loader.category
+                        mod.version = self.loader.version
+                        mod.info_toml = True
+                    
+                    self.generator.preview_info_toml(folder_path, "", "", "")
+                    mod.slots = common.slots_to_string(self.generator.slots)
+                    mod.characters = common.group_char_name(self.generator.char_names, self.generator.group_names)      
+                    
+                    mod.mod_name = mod.display_name.replace(mod.slots, "")
+                    mod.mod_name = mod.display_name.replace(mod.slots.replace(" ", ""), "")
+                    mod.mod_name = mod.mod_name.replace(mod.characters, "")
+                    mod.mod_name = mod.mod_name.replace(mod.category, "")
+                    mod.mod_name = common.trim_redundant_spaces(mod.mod_name)
+
         self.callback(mods)
 
     def run(self):
