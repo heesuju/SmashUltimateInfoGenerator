@@ -1,5 +1,4 @@
 import tkinter as tk
-from ttkwidgets import CheckboxTreeview 
 from tkinter import ttk
 from scanner import Scanner
 import math
@@ -29,7 +28,8 @@ class Menu:
         start = (self.cur_page-1) * self.page_size
         end = common.clamp(self.cur_page * self.page_size, start, len(mods))
         for n in range(start,end):
-            self.treeview.insert("", tk.END, values=(mods[n].mod_name, mods[n].category, mods[n].version, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].info_toml, mods[n].path))
+            if mods[n].img == None: self.treeview.insert("", tk.END, values=(mods[n].mod_name, mods[n].category, mods[n].version, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].info_toml, mods[n].path))
+            else: self.treeview.insert("", tk.END, image=mods[n].img, values=(mods[n].mod_name, mods[n].category, mods[n].version, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].info_toml, mods[n].path))
 
     def search(self, event):
         self.reset()
@@ -71,7 +71,7 @@ class Menu:
             self.treeview.change_state(item=selected_item, state="checked")
 
     def scan(self):
-        scan_thread = Scanner("C:/Users/mycom/Desktop/Game_utils/smash_mods/moved", self.on_scanned)
+        scan_thread = Scanner("C:/Users/Hee-Su/Desktop/mods", self.on_scanned)
         scan_thread.start()
 
     def add_filter_item(self, row, col, name):
@@ -123,7 +123,11 @@ class Menu:
         self.btn_right.grid(row=0, column=self.total_pages + 1)
 
     def show(self):
-        self.category_frame = ttk.LabelFrame(root, text="Filter")
+        self.list_frame = tk.Frame(root)
+        self.list_frame.pack(fill="both", side=tk.LEFT, expand=True)
+        
+        
+        self.category_frame = ttk.LabelFrame(self.list_frame, text="Filter")
         self.category_frame.pack(padx=10, pady=10, fill="x")
         
         self.entry_mod_name = self.add_filter_item(0, 0, "Mod Name")
@@ -131,12 +135,12 @@ class Menu:
         self.entry_character = self.add_filter_item(2, 0, "Character")
         
         self.categories = ["Mod Name", "Category", "Version", "Authors", "Characters", "Slots", "Info.toml", "Dir"]
-
-        self.treeview = CheckboxTreeview(root, columns=self.categories, show=("headings", "tree"))
+        
+        self.treeview = ttk.Treeview(self.list_frame, columns=self.categories, show=("headings", "tree"))
         
         style = ttk.Style(root)
-        style.map("Checkbox.Treeview", background=[("disabled", "#E6E6E6"), ("selected", "#E6E6E6")])
-        style.configure("Checkbox.Treeview", rowheight=26)
+        #style.map("Checkbox.Treeview", background=[("disabled", "#E6E6E6"), ("selected", "#E6E6E6")])
+        style.configure("Treeview", rowheight=60)
         display_columns = []
         for col, category in enumerate(self.categories):
             if col < len(self.categories)-1:
@@ -152,8 +156,11 @@ class Menu:
         self.treeview.bind("<Double-1>", self.on_double_clicked)
         self.treeview.bind("<space>", self.on_space_pressed)
         self.scrollbar.pack(side="right", fill="y")
-        self.frame_paging = tk.Frame(root)
+        self.frame_paging = tk.Frame(self.list_frame)
         self.frame_paging.pack()
+        
+        self.label_img = tk.Label(root, bg="black")
+        self.label_img.pack(side=tk.RIGHT, padx=10, pady=10, fill="both", expand=True)
 
 
 root = tk.Tk()

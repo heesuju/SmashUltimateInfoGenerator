@@ -11,3 +11,4 @@ class Mod:
         self.selected = selected
         self.path = ""
         self.info_toml = False
+        self.img = None

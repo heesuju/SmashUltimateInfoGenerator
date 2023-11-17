@@ -14,7 +14,21 @@ class Scanner(Thread):
         self.loader = Loader()
         self.generator = Generator()
         self.callback = callback
+        
+    def find_image(self, directory, width, height):
+        img = Image.open(directory)
+        aspect_ratio = img.width / img.height
+        
+        # Resize the image to fit the target dimensions while preserving aspect ratio
+        if width / aspect_ratio <= height:
+            new_width = width
+            new_height = int(new_width / aspect_ratio)
+        else:
+            new_height = height
+            new_width = int(new_height * aspect_ratio)
 
+        return ImageTk.PhotoImage(img.resize((new_width, new_height), Image.Resampling.LANCZOS))
+    
     def find_mods(self, directory):
         mods = []
 
@@ -43,6 +57,9 @@ class Scanner(Thread):
                     mod.mod_name = mod.mod_name.replace(mod.characters, "")
                     mod.mod_name = mod.mod_name.replace(mod.category, "")
                     mod.mod_name = common.trim_redundant_spaces(mod.mod_name)
+                    img_path = folder_path + "/preview.webp"
+                    if os.path.exists(img_path):
+                        mod.img = self.find_image(folder_path + "\\preview.webp", 100, 60)
 
         self.callback(mods)
 
