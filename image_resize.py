@@ -35,7 +35,10 @@ class ImageResize(Thread):
             new_height = target_height
             new_width = int(new_height * aspect_ratio)
 
-        return img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        w = max(1, new_width)
+        h = max(1, new_height)
+
+        return img.resize((w, h), Image.Resampling.LANCZOS)
     
     def run(self):
         self.set_image()
