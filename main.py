@@ -7,6 +7,7 @@ from PIL import Image, ImageTk
 import tkinter.font as font
 import defs
 from editor import Editor
+from loader import Loader
 
 class Menu:    
     def __init__(self) -> None:
@@ -16,6 +17,7 @@ class Menu:
         self.total_pages = 1
         self.page_size = 10
         self.editor = Editor()
+        self.loader = Loader()
         self.show()
         self.scan()
     
@@ -59,11 +61,12 @@ class Menu:
     def on_item_selected(self, event):
         selected_item = self.treeview.focus()
         item = self.treeview.item(selected_item)
+        if self.loader.load_toml(item['values'][-1]): self.l_desc_v.config(text=self.loader.description)
+        else: self.l_desc_v.config(text="No info.toml found")
 
     def on_double_clicked(self, event):
         selected_item = self.treeview.focus()
         item = self.treeview.item(selected_item)
-        print(item)
         self.editor.open(root, item['values'][-1])
 
     def on_space_pressed(self, event):
@@ -129,9 +132,7 @@ class Menu:
     def show(self):
         self.list_frame = tk.Frame(root)
         self.list_frame.pack(side=tk.LEFT, padx=10, pady=10, fill="both", expand=True)
-        
 
-        
         self.category_frame = ttk.LabelFrame(self.list_frame, text="Filter")
         self.category_frame.pack(padx=10, pady=10, fill="x")
 
@@ -170,11 +171,11 @@ class Menu:
         self.label_img = tk.Label(self.info_frame, bg="black")
         self.label_img.grid(row=0, column=0)
 
-        l_desc_prev = tk.Label(self.info_frame, text="Description")
-        l_desc_prev.grid(row=1, column=0, sticky=tk.W)
+        l_desc = tk.Label(self.info_frame, text="Description")
+        l_desc.grid(row=1, column=0, sticky=tk.W)
 
-        t_desc_prev_v = tk.Text(self.info_frame, height=10, width=10)
-        t_desc_prev_v.grid(row=2, column=0, sticky=tk.NSEW)
+        self.l_desc_v = tk.Label(self.info_frame, height=10, width=10, relief="sunken", borderwidth=1, justify="left")
+        self.l_desc_v.grid(row=2, column=0, sticky=tk.NSEW)
 
 
 root = tk.Tk()

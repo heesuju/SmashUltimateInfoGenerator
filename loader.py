@@ -12,7 +12,7 @@ class Loader:
         self.category = ""
         self.version = ""
 
-    def load_toml(self, dir):
+    def load_toml(self, dir:str):
         self.reset()
         if not os.path.exists(dir + "/info.toml"):
             return False
