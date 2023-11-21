@@ -31,8 +31,8 @@ class Menu:
         start = (self.cur_page-1) * self.page_size
         end = common.clamp(self.cur_page * self.page_size, start, len(mods))
         for n in range(start,end):
-            if mods[n].img == None: self.treeview.insert("", tk.END, values=(mods[n].mod_name, mods[n].category, mods[n].version, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].info_toml))
-            else: self.treeview.insert("", tk.END, text=mods[n].path, image=mods[n].img, values=(mods[n].mod_name, mods[n].category, mods[n].version, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].info_toml))
+            if mods[n].img == None: self.treeview.insert("", tk.END, values=(mods[n].mod_name, mods[n].category, mods[n].version, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].info_toml, mods[n].path))
+            else: self.treeview.insert("", tk.END, image=mods[n].img, values=(mods[n].mod_name, mods[n].category, mods[n].version, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].info_toml, mods[n].path))
 
     def search(self, event):
         self.reset()
@@ -43,9 +43,9 @@ class Menu:
         character = self.entry_character.get()
         self.filtered_mods = []
         for mod in self.mods:
-            if mod_name not in mod.mod_name: continue
-            if author not in mod.authors: continue
-            if character not in mod.characters: continue
+            if mod_name.lower() not in mod.mod_name.lower(): continue
+            if author.lower() not in mod.authors.lower(): continue
+            if character.lower() not in mod.characters.lower(): continue
             
             self.filtered_mods.append(mod)
             
@@ -64,7 +64,7 @@ class Menu:
         selected_item = self.treeview.focus()
         item = self.treeview.item(selected_item)
         print(item)
-        self.editor.open(root, item['text'])
+        self.editor.open(root, item['values'][-1])
 
     def on_space_pressed(self, event):
         selected_item = self.treeview.focus()
