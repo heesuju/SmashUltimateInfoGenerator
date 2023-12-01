@@ -61,9 +61,12 @@ class Menu:
     def on_item_selected(self, event):
         selected_item = self.treeview.focus()
         item = self.treeview.item(selected_item)
-        if self.loader.load_toml(item['values'][-1]): self.l_desc_v.config(text=self.loader.description)
-        else: self.l_desc_v.config(text="No info.toml found")
-
+        self.l_desc_v.config(state="normal")
+        self.l_desc_v.delete(1.0, tk.END)
+        if self.loader.load_toml(item['values'][-1]): self.l_desc_v.insert(tk.END, self.loader.description)
+        else: self.l_desc_v.insert(tk.END, "No info.toml found")
+        self.l_desc_v.config(state="disabled")
+            
     def on_double_clicked(self, event):
         selected_item = self.treeview.focus()
         item = self.treeview.item(selected_item)
@@ -155,9 +158,10 @@ class Menu:
         #style.map("Checkbox.Treeview", background=[("disabled", "#E6E6E6"), ("selected", "#E6E6E6")])
         style.configure("Treeview", rowheight=60)
         display_columns = []
+        self.treeview.column("#0", width=140, stretch=tk.NO)
         for col, category in enumerate(self.categories):
             if col < len(self.categories)-1:
-                self.treeview.column(category, width=100)
+                self.treeview.column(category, width=50)
                 display_columns.append(category)
             self.treeview.heading(category, text=category)
         self.treeview["displaycolumns"]=display_columns
@@ -178,12 +182,8 @@ class Menu:
         l_desc = tk.Label(self.info_frame, text="Description", anchor="w", justify="left")
         l_desc.pack(fill="x")
 
-        self.l_desc_v = tk.Label(self.info_frame, height=10, width=10, relief="sunken", borderwidth=1, anchor="w", justify="left", wraplength=300)
+        self.l_desc_v = tk.Text(self.info_frame, height=10, width=10, state="disabled")
         self.l_desc_v.pack(padx=defs.PAD_H, pady=(0, defs.PAD_V), fill="both", expand=True)
-        
-"""         t_desc_prev_v = tk.Text(self.info_frame, height=10, width=10)
-        t_desc_prev_v.grid(row=3, column=0, columnspan=2, sticky=tk.NSEW)
-        t_desc_prev_v.insert(tk.END, loaded_data.description) """
 
 
 root = tk.Tk()
