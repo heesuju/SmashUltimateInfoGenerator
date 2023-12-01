@@ -78,13 +78,13 @@ class Menu:
             self.treeview.change_state(item=selected_item, state="checked")
 
     def scan(self):
-        scan_thread = Scanner("C:/Users/admin/Desktop/mods", self.on_scanned)
+        scan_thread = Scanner("C:/Users/Hee-Su/Desktop/mods", self.on_scanned)
         scan_thread.start()
 
     def add_filter_item(self, row, col, name):
-        label = ttk.Label(self.category_frame, text=name)
+        label = ttk.Label(self.frame_filter, text=name)
         label.grid(row=row, column=col, sticky=tk.W, padx=5)
-        entry = tk.Entry(self.category_frame)
+        entry = tk.Entry(self.frame_filter)
         entry.grid(row=row, column=col+1)
         entry.bind("<Return>", self.search)
         return entry
@@ -130,11 +130,18 @@ class Menu:
         self.btn_right.grid(row=0, column=self.total_pages + 1)
 
     def show(self):
-        self.list_frame = tk.Frame(root)
-        self.list_frame.pack(side=tk.LEFT, padx=10, pady=10, fill="both", expand=True)
+        self.frame_filter = ttk.LabelFrame(root, text="Filter")
+        self.frame_filter.pack(padx=defs.PAD_H, pady=defs.PAD_V, fill="x")
+        
+        self.frame_content = tk.Frame(root)
+        self.frame_content.pack(padx=defs.PAD_H, pady=(0, defs.PAD_V), fill="both", expand=True)
+        
+        self.frame_list = ttk.LabelFrame(self.frame_content, text="Mods")
+        self.frame_list.pack(side=tk.LEFT, padx=(0, defs.PAD_H/2), fill="both", expand=True)
 
-        self.category_frame = ttk.LabelFrame(self.list_frame, text="Filter")
-        self.category_frame.pack(padx=10, pady=10, fill="x")
+        self.info_frame = ttk.LabelFrame(self.frame_content, text="Details")
+        self.info_frame.pack(side=tk.RIGHT, padx=(defs.PAD_H/2, 0), fill="both", expand=True)
+        self.info_frame.columnconfigure(0, weight=1)
 
         self.entry_mod_name = self.add_filter_item(0, 0, "Mod Name")
         self.entry_author = self.add_filter_item(1, 0, "Author")
@@ -142,7 +149,7 @@ class Menu:
         
         self.categories = ["Mod Name", "Category", "Version", "Authors", "Characters", "Slots", "Info.toml", "Dir"]
         
-        self.treeview = ttk.Treeview(self.list_frame, columns=self.categories, show=("headings", "tree"))
+        self.treeview = ttk.Treeview(self.frame_list, columns=self.categories, show=("headings", "tree"))
         
         style = ttk.Style(root)
         #style.map("Checkbox.Treeview", background=[("disabled", "#E6E6E6"), ("selected", "#E6E6E6")])
@@ -162,20 +169,21 @@ class Menu:
         self.treeview.bind("<Double-1>", self.on_double_clicked)
         self.treeview.bind("<space>", self.on_space_pressed)
         self.scrollbar.pack(side="right", fill="y")
-        self.frame_paging = tk.Frame(self.list_frame)
+        self.frame_paging = tk.Frame(self.frame_list)
         self.frame_paging.pack()
                 
-        self.info_frame = ttk.Frame(root)
-        self.info_frame.pack(side=tk.RIGHT, padx=10, pady=10, fill="both", expand=True)
-        self.info_frame.columnconfigure(0, weight=1)
         self.label_img = tk.Label(self.info_frame, bg="black")
-        self.label_img.grid(row=0, column=0)
+        self.label_img.pack(padx=defs.PAD_H, pady=defs.PAD_V, fill="both", expand=True)
 
-        l_desc = tk.Label(self.info_frame, text="Description")
-        l_desc.grid(row=1, column=0, sticky=tk.W)
+        l_desc = tk.Label(self.info_frame, text="Description", anchor="w", justify="left")
+        l_desc.pack(fill="x")
 
-        self.l_desc_v = tk.Label(self.info_frame, height=10, width=10, relief="sunken", borderwidth=1, justify="left")
-        self.l_desc_v.grid(row=2, column=0, sticky=tk.NSEW)
+        self.l_desc_v = tk.Label(self.info_frame, height=10, width=10, relief="sunken", borderwidth=1, anchor="w", justify="left", wraplength=300)
+        self.l_desc_v.pack(padx=defs.PAD_H, pady=(0, defs.PAD_V), fill="both", expand=True)
+        
+"""         t_desc_prev_v = tk.Text(self.info_frame, height=10, width=10)
+        t_desc_prev_v.grid(row=3, column=0, columnspan=2, sticky=tk.NSEW)
+        t_desc_prev_v.insert(tk.END, loaded_data.description) """
 
 
 root = tk.Tk()
