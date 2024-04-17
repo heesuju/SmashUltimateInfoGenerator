@@ -36,8 +36,8 @@ class Menu:
         start = (self.cur_page-1) * self.page_size
         end = common.clamp(self.cur_page * self.page_size, start, len(mods))
         for n in range(start,end):
-            if mods[n].img == None: self.treeview.insert("", tk.END, values=(mods[n].mod_name, mods[n].category, mods[n].version, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].info_toml, mods[n].path))
-            else: self.treeview.insert("", tk.END, image=mods[n].img, values=(mods[n].mod_name, mods[n].category, mods[n].version, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].info_toml, mods[n].path))
+            if mods[n].img == None: self.treeview.insert("", tk.END, values=(mods[n].mod_name, mods[n].category, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].path))
+            else: self.treeview.insert("", tk.END, image=mods[n].img, values=(mods[n].mod_name, mods[n].category, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].path))
 
     def search(self, event):
         self.reset()
@@ -156,7 +156,7 @@ class Menu:
         self.entry_author = self.add_filter_item(1, 0, "Author")
         self.entry_character = self.add_filter_item(2, 0, "Character")
         
-        self.categories = ["Mod Name", "Category", "Version", "Authors", "Characters", "Slots", "Info.toml", "Dir"]
+        self.categories = ["Mod Name", "Category", "Author", "Char", "Slot", "Dir"]
         
         self.treeview = ttk.Treeview(self.frame_list, columns=self.categories, show=("headings", "tree"))
         
@@ -164,10 +164,15 @@ class Menu:
         #style.map("Checkbox.Treeview", background=[("disabled", "#E6E6E6"), ("selected", "#E6E6E6")])
         style.configure("Treeview", rowheight=60)
         display_columns = []
-        self.treeview.column("#0", width=140, stretch=tk.NO)
+        self.treeview.column("#0", minwidth=140, width=140, stretch=tk.NO)
+        self.treeview.column("Mod Name", minwidth=100, width=100, stretch=tk.NO)
+        self.treeview.column("Category", minwidth=30, width=50)
+        self.treeview.column("Author", minwidth=30, width=50)
+        self.treeview.column("Char", minwidth=30, width=50)
+        self.treeview.column("Slot", minwidth=30, width=50)
+
         for col, category in enumerate(self.categories):
             if col < len(self.categories)-1:
-                self.treeview.column(category, width=50)
                 display_columns.append(category)
             self.treeview.heading(category, text=category)
         self.treeview["displaycolumns"]=display_columns
@@ -179,9 +184,9 @@ class Menu:
         self.treeview.bind("<Double-1>", self.on_double_clicked)
         self.treeview.bind("<space>", self.on_space_pressed)
         self.scrollbar.pack(side="right", fill="y")
-        self.frame_paging = tk.Frame(self.frame_list)
-        self.frame_paging.pack()
-                
+        self.frame_paging = tk.Frame(self.root)
+        self.frame_paging.pack(pady = (0, defs.PAD_V))
+        
         self.label_img = tk.Label(self.info_frame, bg="black")
         self.label_img.pack(padx=defs.PAD_H, pady=defs.PAD_V, fill="both", expand=True)
 
