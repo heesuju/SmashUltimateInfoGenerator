@@ -22,10 +22,10 @@ class Config:
             "display_name_format":self.display_name_format,
             "folder_name_format":self.folder_name_format,
             "additional_elements":self.additional_elements}
-        json_str = json.dumps(config_dict)
-        json_file = open(PATH_CONFIG, "w")
-        json_file.write(json_str)
-        json_file.close()
+        
+        with open(PATH_CONFIG, 'w') as f:
+            json.dump(config_dict, f, indent=4)
+            
         print("Saved config")
 
     def load_config(self):
