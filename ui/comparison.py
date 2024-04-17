@@ -1,9 +1,6 @@
 import tkinter as tk
 import defs
-import utils
 from tkinter import ttk
-from loader import Loader
-from generator import Generator
 import common
 
 class Comparison:

@@ -1,19 +1,20 @@
 import tkinter as tk
 from tkinter import filedialog
-from generator import Generator
-from config import Config
+from utils.generator import Generator
+from .config import Config
 from tkinter import ttk
 from PIL import Image, ImageTk
 import shutil
 import os
 import common
 import defs
-from static_scraper import Extractor
-from dynamic_scraper import Selenium
-from downloader import Downloader
-from loader import Loader
-from comparison import Comparison
-from image_resize import ImageResize
+from scraper.static_scraper import Extractor
+from scraper.dynamic_scraper import Selenium
+from utils.downloader import Downloader
+from utils.loader import Loader
+from .comparison import Comparison
+from utils.image_resize import ImageResize
+from . import PATH_ICON
 
 class Editor:
     def __init__(self) -> None:
@@ -326,9 +327,9 @@ class Editor:
         self.new_window.geometry("920x540")
         self.new_window.configure(padx=10, pady=10) 
 
-        self.icon_browse = ImageTk.PhotoImage(file='./icons/browse.png')
-        self.icon_config = ImageTk.PhotoImage(file='./icons/config.png')
-        self.icon_download = ImageTk.PhotoImage(file='./icons/download.png')
+        self.icon_browse = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'browse.png'))
+        self.icon_config = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'config.png'))
+        self.icon_download = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'download.png'))
 
         # column 0
         self.label_work_dir = tk.Label(self.new_window, text="Directory")

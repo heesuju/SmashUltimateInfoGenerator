@@ -2,6 +2,7 @@ import os
 import re
 import csv
 import math
+from data import PATH_CHAR_NAMES
 
 # Split the folder name into array
 def split_into_arr(folder_name, split_char = '_'):
@@ -151,7 +152,7 @@ def group_char_name(char_names, group_names):
     return outstr
 
 def get_group_count(group_name):
-    dict_arr = csv_to_dict("./character_names.csv") 
+    dict_arr = csv_to_dict(PATH_CHAR_NAMES) 
     count = 0
 
     for dict in dict_arr:
@@ -201,7 +202,7 @@ def get_mod_title(original, char_names, folder_name_format):
     if dict_elements is not None:
         return dict_elements["mod"]
     else:
-        dict_arr = csv_to_dict("./character_names.csv")
+        dict_arr = csv_to_dict(PATH_CHAR_NAMES)
         set_name = set()
         for dict in dict_arr:
             if dict['Custom'] in char_names:

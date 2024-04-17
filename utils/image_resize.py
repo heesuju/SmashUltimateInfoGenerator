@@ -1,5 +1,3 @@
-import tkinter as tk
-import defs
 import os
 from threading import Thread
 from PIL import Image, ImageTk

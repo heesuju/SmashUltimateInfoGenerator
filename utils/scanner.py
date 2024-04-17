@@ -1,10 +1,9 @@
 import os
 from threading import Thread
-from loader import Loader
-from generator import Generator
+from utils.loader import Loader
+from utils.generator import Generator
 from mod import Mod
 from PIL import Image, ImageTk
-from image_resize import ImageResize
 import common
 
 class Scanner(Thread):

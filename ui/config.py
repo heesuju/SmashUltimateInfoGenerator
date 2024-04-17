@@ -2,6 +2,7 @@ import json
 import os
 import tkinter as tk
 import defs
+from cache import PATH_CONFIG
 
 class Config:
     def __init__(self):
@@ -22,15 +23,15 @@ class Config:
             "folder_name_format":self.folder_name_format,
             "additional_elements":self.additional_elements}
         json_str = json.dumps(config_dict)
-        json_file = open("config.json", "w")
+        json_file = open(PATH_CONFIG, "w")
         json_file.write(json_str)
         json_file.close()
         print("Saved config")
 
     def load_config(self):
-        if(os.path.isfile("config.json")):
+        if(os.path.isfile(PATH_CONFIG)):
             try:
-                json_file = open("config.json", "r")
+                json_file = open(PATH_CONFIG, "r")
                 data = json.loads(json_file.read())
                 self.default_dir = data["default_directory"]
                 if data["display_name_format"]:

@@ -3,6 +3,7 @@ import string
 import tomli_w as tomli
 import re
 import defs
+from data import PATH_CHAR_NAMES
 
 class Generator:
     def __init__(self):
@@ -54,7 +55,7 @@ class Generator:
     
     def get_characters(self):
         children = common.get_all_children_in_path(self.working_dir + "/fighter")
-        dict_arr = common.csv_to_dict("./character_names.csv") 
+        dict_arr = common.csv_to_dict(PATH_CHAR_NAMES) 
         name_arr = []        
         group_arr = []
         slot_arr = []
