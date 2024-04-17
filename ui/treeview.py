@@ -141,12 +141,15 @@ class Menu:
         
         self.frame_content = tk.Frame(self.root)
         self.frame_content.pack(padx=defs.PAD_H, pady=(0, defs.PAD_V), fill="both", expand=True)
-        
+        self.frame_content.columnconfigure(0, weight=2)
+        self.frame_content.columnconfigure(1, weight=1)
+        self.frame_content.rowconfigure(0, weight=1)
+
         self.frame_list = ttk.LabelFrame(self.frame_content, text="Mods")
-        self.frame_list.pack(side=tk.LEFT, padx=(0, defs.PAD_H/2), fill="both", expand=True)
+        self.frame_list.grid(row=0, column=0, padx=(0, defs.PAD_H/2), sticky=tk.NSEW)
 
         self.info_frame = ttk.LabelFrame(self.frame_content, text="Details")
-        self.info_frame.pack(side=tk.RIGHT, padx=(defs.PAD_H/2, 0), fill="both", expand=True)
+        self.info_frame.grid(row=0, column=1, padx=(defs.PAD_H/2, 0), sticky=tk.NSEW)
         self.info_frame.columnconfigure(0, weight=1)
 
         self.entry_mod_name = self.add_filter_item(0, 0, "Mod Name")
