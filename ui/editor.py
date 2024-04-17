@@ -311,7 +311,7 @@ class Editor:
             'working_dir':self.generator.working_dir
             })
 
-    def open(self, root, working_dir):
+    def open(self, root, working_dir = ""):
         if self.new_window is not None:
             self.new_window.destroy()
             

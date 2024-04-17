@@ -9,6 +9,7 @@ import tkinter.font as font
 import defs
 from .editor import Editor
 from utils.loader import Loader
+from utils.image_resize import ImageResize
 from . import PATH_ICON
 
 class Menu:    
@@ -18,7 +19,7 @@ class Menu:
         self.filtered_mods = []
         self.cur_page = 1
         self.total_pages = 1
-        self.page_size = 10
+        self.page_size = 12
         self.editor = Editor()
         self.loader = Loader()
         self.show()
@@ -61,19 +62,40 @@ class Menu:
         self.filtered_mods = mods
         self.populate(self.mods)
     
+    def on_img_resized(self, image):
+        self.label_img.config(image=image, width=10, height=10)
+        self.label_img.image = image  # Keep a reference to prevent garbage collection
+
     def on_item_selected(self, event):
         selected_item = self.treeview.focus()
         item = self.treeview.item(selected_item)
         self.l_desc_v.config(state="normal")
         self.l_desc_v.delete(1.0, tk.END)
-        if self.loader.load_toml(item['values'][-1]): self.l_desc_v.insert(tk.END, self.loader.description)
+        if self.loader.load_toml(item['values'][-1]): 
+            self.l_desc_v.insert(tk.END, self.loader.description)
+            self.l_ver.config(text=self.loader.version, width=5)
+            self.l_author.config(text=self.loader.authors, width=1)
         else: self.l_desc_v.insert(tk.END, "No info.toml found")
         self.l_desc_v.config(state="disabled")
+        img_preview = os.path.join(item['values'][-1], "preview.webp")
+        if os.path.exists(img_preview):
+            resize_thread = ImageResize(img_preview, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
+            resize_thread.start()
+        else:
+            self.label_img.image = ""
+            self.l_ver.config(text="")
+            self.l_author.config(text="")
             
     def on_double_clicked(self, event):
+        self.open_editor()
+
+    def open_editor(self):
         selected_item = self.treeview.focus()
-        item = self.treeview.item(selected_item)
-        self.editor.open(self.root, item['values'][-1])
+        if selected_item:
+            item = self.treeview.item(selected_item)
+            self.editor.open(self.root, item['values'][-1])
+        else:
+            print("nothing selected in treeview!")
 
     def on_space_pressed(self, event):
         selected_item = self.treeview.focus()
@@ -184,14 +206,30 @@ class Menu:
         self.treeview.bind("<Double-1>", self.on_double_clicked)
         self.treeview.bind("<space>", self.on_space_pressed)
         self.scrollbar.pack(side="right", fill="y")
+        
         self.frame_paging = tk.Frame(self.root)
         self.frame_paging.pack(pady = (0, defs.PAD_V))
         
+        self.info_frame.rowconfigure(index=0, weight=1)
+        self.info_frame.rowconfigure(index=3, weight=1)
+
         self.label_img = tk.Label(self.info_frame, bg="black")
-        self.label_img.pack(padx=defs.PAD_H, pady=defs.PAD_V, fill="both", expand=True)
+        self.label_img.grid(row=0, padx=defs.PAD_H, pady=(defs.PAD_V, 0), sticky=tk.NSEW)
+
+        self.ver_auth_frame = tk.Frame(self.info_frame)
+        self.ver_auth_frame.grid(row=1, padx=defs.PAD_H, pady=(0, defs.PAD_V), sticky=tk.NSEW)
+
+        self.l_ver = tk.Label(self.ver_auth_frame, anchor="w", justify="left")
+        self.l_ver.pack(side=tk.LEFT)
+
+        self.l_author = tk.Label(self.ver_auth_frame, anchor="e", justify="right", width=1)
+        self.l_author.pack(side=tk.RIGHT, fill="x", expand=True)
 
         l_desc = tk.Label(self.info_frame, text="Description", anchor="w", justify="left")
-        l_desc.pack(fill="x")
+        l_desc.grid(row=2, padx=defs.PAD_H, sticky=tk.W)
 
-        self.l_desc_v = tk.Text(self.info_frame, height=10, width=10, state="disabled")
-        self.l_desc_v.pack(padx=defs.PAD_H, pady=(0, defs.PAD_V), fill="both", expand=True)
+        self.l_desc_v = tk.Text(self.info_frame, height=1, width=10, state="disabled")
+        self.l_desc_v.grid(row=3, padx=defs.PAD_H, pady=(0, defs.PAD_V), sticky=tk.NSEW)
+
+        self.btn_edit = tk.Button(self.info_frame, text="Edit", cursor='hand2', command=self.open_editor)
+        self.btn_edit.grid(row=4, padx=defs.PAD_H, pady=(0, defs.PAD_V), sticky=tk.EW)
