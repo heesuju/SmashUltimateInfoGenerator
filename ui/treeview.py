@@ -29,6 +29,10 @@ class Menu:
         self.treeview.selection_clear()
         self.treeview.delete(*self.treeview.get_children())
 
+    def refresh(self):
+        self.reset()
+        self.scan()
+
     def populate(self, mods):
         self.total_pages = math.ceil(len(mods)/self.page_size)
         print(f"found {len(mods)} items")
@@ -40,7 +44,10 @@ class Menu:
             if mods[n].img == None: self.treeview.insert("", tk.END, values=(mods[n].mod_name, mods[n].category, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].path))
             else: self.treeview.insert("", tk.END, image=mods[n].img, values=(mods[n].mod_name, mods[n].category, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].path))
 
-    def search(self, event):
+    def on_filter_submitted(self, event):
+        self.search()
+
+    def search(self):
         self.reset()
         self.cur_page = 1
         mod_name = self.entry_mod_name.get()
@@ -56,6 +63,12 @@ class Menu:
             self.filtered_mods.append(mod)
             
         self.populate(self.filtered_mods)
+
+    def clear_filter(self):
+        self.entry_mod_name.delete(0, tk.END)
+        self.entry_author.delete(0, tk.END)
+        self.entry_character.delete(0, tk.END)
+        self.search()
 
     def on_scanned(self, mods):
         self.mods = mods
@@ -114,7 +127,7 @@ class Menu:
         label.grid(row=row, column=col, sticky=tk.W, padx=5)
         entry = tk.Entry(self.frame_filter)
         entry.grid(row=row, column=col+1)
-        entry.bind("<Return>", self.search)
+        entry.bind("<Return>", self.on_filter_submitted)
         return entry
     
     def change_page(self, number):
@@ -177,7 +190,14 @@ class Menu:
         self.entry_mod_name = self.add_filter_item(0, 0, "Mod Name")
         self.entry_author = self.add_filter_item(1, 0, "Author")
         self.entry_character = self.add_filter_item(2, 0, "Character")
-        
+        self.btn_search = tk.Button(self.frame_filter, text="Search", cursor='hand2', command=self.search)
+        self.btn_search.grid(row=3, column=1, sticky=tk.E)
+        self.btn_clear = tk.Button(self.frame_filter, text="Clear", cursor='hand2', command=self.clear_filter)
+        self.btn_clear.grid(row=3, column=0)
+
+        self.btn_refresh = tk.Button(self.frame_filter, text="Refresh", cursor='hand2', command=self.refresh)
+        self.btn_refresh.grid(row=3, column=2)
+
         self.categories = ["Mod Name", "Category", "Author", "Char", "Slot", "Dir"]
         
         self.treeview = ttk.Treeview(self.frame_list, columns=self.categories, show=("headings", "tree"))
