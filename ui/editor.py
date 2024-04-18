@@ -310,14 +310,17 @@ class Editor:
             'description':self.txt_desc.get(1.0, tk.END),
             'working_dir':self.generator.working_dir
             })
-
+    
     def open(self, root, working_dir = ""):
         if self.new_window is not None:
             self.new_window.destroy()
             
         self.new_window = tk.Toplevel(root)
         self.new_window.title("Edit")
+        self.show(self.new_window, working_dir)
 
+    def show(self, root, working_dir = ""):
+        self.new_window = root
         for i in range(3):
             self.new_window.columnconfigure(i, weight=1)
             self.new_window.columnconfigure(i, minsize=200)
@@ -469,5 +472,6 @@ class Editor:
         self.new_window.bind("<Configure>", self.on_window_resize)
 
         self.entry_work_dir.delete(0, tk.END)
-        self.entry_work_dir.insert(tk.END, working_dir)
-        self.update_preview()
+        if working_dir:
+            self.entry_work_dir.insert(tk.END, working_dir)
+            self.update_preview()

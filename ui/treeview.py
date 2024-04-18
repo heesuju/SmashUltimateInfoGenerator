@@ -10,6 +10,7 @@ import defs
 from .editor import Editor
 from utils.loader import Loader
 from utils.image_resize import ImageResize
+from utils import load_config
 from . import PATH_ICON
 
 class Menu:    
@@ -119,8 +120,12 @@ class Menu:
             self.treeview.change_state(item=selected_item, state="checked")
 
     def scan(self):
-        scan_thread = Scanner("C:/Users/mycom/Desktop/mods", self.on_scanned)
-        scan_thread.start()
+        config_data = load_config()
+        if config_data is not None and config_data["default_directory"]:
+            scan_thread = Scanner(config_data["default_directory"], self.on_scanned)
+            scan_thread.start()
+        else:
+            print("no default directory")
 
     def add_filter_item(self, row, col, name):
         label = ttk.Label(self.frame_filter, text=name)
