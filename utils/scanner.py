@@ -51,8 +51,11 @@ class Scanner(Thread):
                     mod.slots = common.slots_to_string(self.generator.slots)
                     mod.characters = common.group_char_name(self.generator.char_names, self.generator.group_names)      
                     
-                    mod.mod_name = mod.display_name.replace(mod.slots, "")
-                    mod.mod_name = mod.display_name.replace(mod.slots.replace(" ", ""), "")
+                    mod.mod_name = mod.display_name.replace(mod.slots.lower(), "")
+                    mod.mod_name = mod.mod_name.replace(mod.slots.lower().replace(" ", ""), "")
+                    mod.mod_name = mod.mod_name.replace(mod.slots.upper(), "")
+                    mod.mod_name = mod.mod_name.replace(mod.slots.upper().replace(" ", ""), "")
+                    
                     mod.mod_name = mod.mod_name.replace(mod.characters, "")
                     mod.mod_name = mod.mod_name.replace(mod.category, "")
                     mod.mod_name = common.trim_redundant_spaces(mod.mod_name)
