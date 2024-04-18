@@ -7,6 +7,7 @@ from utils.load_config import load_config
 
 class Config:
     def __init__(self):
+        self.new_window = None
         self.reset()
         self.load()
 
@@ -16,7 +17,6 @@ class Config:
         self.display_name_format = "{characters} {slots} {mod}"
         self.folder_name_format = "{category}_{characters}[{slots}]_{mod}"
         self.additional_elements = []
-        self.new_window = None
             
     def save_config(self):
         config_dict = {
