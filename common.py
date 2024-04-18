@@ -3,6 +3,7 @@ import re
 import csv
 import math
 from data import PATH_CHAR_NAMES
+from utils.load_config import load_config
 
 # Split the folder name into array
 def split_into_arr(folder_name, split_char = '_'):
@@ -108,7 +109,14 @@ def slots_to_string(slots):
         else:
             out_str += "," + item
     
-    return "C" + out_str
+    slot_prefix = "C"
+    loaded_config = load_config()
+    if loaded_config is not None:
+        is_cap = loaded_config.get("is_slot_capped")
+        if is_cap == False:
+            slot_prefix = "c"
+            
+    return slot_prefix + out_str
 
 def trim_mod_name(mod_name, ignored_list):
     words_pattern = '|'.join(re.escape(word) for word in ignored_list)

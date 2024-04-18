@@ -126,7 +126,7 @@ class Editor:
     def update_preview(self):
         self.entry_url.delete(0, tk.END)
         self.generator.url = self.entry_url.get()
-        self.config.load_config()
+        self.config.load()
         self.config.set_default_dir(os.path.dirname(self.entry_work_dir.get()))
 
         dict_info = self.generator.preview_info_toml(self.entry_work_dir.get(), "", self.entry_ver.get(), "")
