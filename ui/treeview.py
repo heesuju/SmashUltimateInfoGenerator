@@ -25,6 +25,7 @@ class Menu:
         self.config = Config(self.on_config_changed)
         self.editor = Editor()
         self.loader = Loader()
+        self.progress_count = 0
         self.show()
         self.scan()
     
@@ -44,8 +45,8 @@ class Menu:
         start = (self.cur_page-1) * self.page_size
         end = common.clamp(self.cur_page * self.page_size, start, len(mods))
         for n in range(start,end):
-            if mods[n].img == None: self.treeview.insert("", tk.END, values=(mods[n].mod_name, mods[n].category, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].path))
-            else: self.treeview.insert("", tk.END, image=mods[n].img, values=(mods[n].mod_name, mods[n].category, mods[n].authors, mods[n].characters, mods[n].slots, mods[n].path))
+            if mods[n]["img"] == None: self.treeview.insert("", tk.END, values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]))
+            else: self.treeview.insert("", tk.END, image=mods[n]["img"], values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]))
 
     def on_filter_submitted(self, event):
         self.search()
@@ -75,6 +76,10 @@ class Menu:
 
     def on_config_changed(self):
         self.refresh()
+    
+    def on_scan_progress(self, future):
+        self.progress_count += 1
+        self.progressbar['value'] += self.progress_count/948.0
 
     def on_scanned(self, mods):
         self.mods = mods
@@ -131,7 +136,7 @@ class Menu:
     def scan(self):
         config_data = load_config()
         if config_data is not None and config_data["default_directory"]:
-            scan_thread = Scanner(config_data["default_directory"], self.on_scanned)
+            scan_thread = Scanner(config_data["default_directory"], progress_callback=self.on_scan_progress, callback=self.on_scanned)
             scan_thread.start()
         else:
             print("no default directory")
@@ -159,15 +164,9 @@ class Menu:
         self.change_page(self.cur_page)
 
     def show_paging(self):
-        icon_left = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'left.png'))
-        icon_right = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'right.png'))
         for child in self.frame_paging.winfo_children():
             child.destroy()
 
-        self.btn_left = tk.Button(self.frame_paging, image=icon_left, relief=tk.FLAT, cursor='hand2', command=self.prev_page)
-        self.btn_left.image = icon_left
-        self.btn_left.grid(row=0, column=0)
-        
         prev = 0
         for index, n in enumerate(common.get_pages(self.cur_page, self.total_pages)):
             if index > 0 and prev+1 != n:
@@ -180,10 +179,6 @@ class Menu:
                 btn["fg"]= "#6563FF"
             btn.grid(row=0, column=n)
             prev = n
-
-        self.btn_right = tk.Button(self.frame_paging, image = icon_right, relief=tk.FLAT, cursor='hand2', command=self.next_page)
-        self.btn_right.image = icon_right
-        self.btn_right.grid(row=0, column=self.total_pages + 1)
 
     def show(self):
         self.frame_filter = ttk.LabelFrame(self.root, text="Filter")
@@ -246,8 +241,37 @@ class Menu:
         self.treeview.bind("<space>", self.on_space_pressed)
         self.scrollbar.pack(side="right", fill="y")
         
-        self.frame_paging = tk.Frame(self.root)
-        self.frame_paging.pack(pady = (0, defs.PAD_V))
+        self.f_footer = tk.Frame(self.root)
+        self.f_footer.pack(padx = defs.PAD_H, pady = (0, defs.PAD_V), fill="x")
+        self.f_footer.columnconfigure(index=0, weight=1)
+        self.f_footer.columnconfigure(index=1, weight=1)
+        self.f_footer.columnconfigure(index=2, weight=1)
+
+        icon_left = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'left.png'))
+        icon_right = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'right.png'))
+
+        self.f_left = tk.Frame(self.f_footer)
+        self.f_left.grid(row=0, column=0, sticky=tk.EW)
+
+        self.btn_left = tk.Button(self.f_left, image=icon_left, relief=tk.FLAT, cursor='hand2', command=self.prev_page)
+        self.btn_left.image = icon_left
+        self.btn_left.pack(side=tk.RIGHT)
+
+        self.progressbar = ttk.Progressbar(self.f_left, mode="determinate", orient="horizontal", length=200)
+        self.progressbar.pack(side=tk.LEFT)
+        
+        self.f_right = tk.Frame(self.f_footer)
+        self.f_right.grid(row=0, column=2, sticky=tk.EW)
+
+        self.btn_right = tk.Button(self.f_right, image = icon_right, relief=tk.FLAT, cursor='hand2', command=self.next_page)
+        self.btn_right.image = icon_right
+        self.btn_right.pack(side=tk.LEFT)
+
+        self.frame_paging = tk.Frame(self.f_footer)
+        self.frame_paging.grid(row=0, column=1)
+        
+        self.l_page = tk.Label(self.f_right, text="showing 30 items", width=20)
+        self.l_page.pack(side=tk.RIGHT)
         
         self.info_frame.rowconfigure(index=0, weight=1)
         self.info_frame.rowconfigure(index=3, weight=1)
