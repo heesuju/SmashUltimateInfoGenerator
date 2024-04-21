@@ -6,8 +6,9 @@ from cache import PATH_CONFIG
 from utils.load_config import load_config
 
 class Config:
-    def __init__(self):
+    def __init__(self, callback = None):
         self.new_window = None
+        self.callback = callback
         self.reset()
         self.load()
 
@@ -30,7 +31,9 @@ class Config:
         
         with open(PATH_CONFIG, 'w') as f:
             json.dump(config_dict, f, indent=4)
-            
+        
+        if self.callback is not None:
+            self.callback()
         print("Saved config")
 
     def load(self):
@@ -56,7 +59,8 @@ class Config:
         self.default_dir = default_dir
         self.save_config()
 
-    def set_config(self, display_name_format, folder_name_format, additional_elements, is_slot_capped=True, start_with_editor=False):
+    def set_config(self, default_dir, display_name_format, folder_name_format, additional_elements, is_slot_capped=True, start_with_editor=False):
+        self.default_dir = default_dir
         self.display_name_format = display_name_format
         self.folder_name_format = folder_name_format
         self.set_additional_elements(additional_elements)
@@ -88,7 +92,7 @@ class Config:
         return out_str
 
     def on_save_config(self):
-        self.set_config(self.entry_display_name_format.get(), self.entry_folder_name_format.get(), self.entry_additional_elements.get(), True if self.slot_cap.get() == 1 else False, True if self.start_w_editor.get() == 1 else False)
+        self.set_config(self.e_mod_dir.get(), self.entry_display_name_format.get(), self.entry_folder_name_format.get(), self.entry_additional_elements.get(), True if self.slot_cap.get() == 1 else False, True if self.start_w_editor.get() == 1 else False)
         self.new_window.destroy()
 
     def on_restore_config(self):
@@ -107,44 +111,51 @@ class Config:
     
         self.new_window = tk.Toplevel(root)
         self.new_window.title("Config")
-        self.new_window.geometry("320x340")
+        self.new_window.geometry("400x400")
         self.new_window.columnconfigure(0, weight=1)
-        self.new_window.rowconfigure(10, weight=1)
+        self.new_window.rowconfigure(12, weight=1)
         self.new_window.configure(padx=10, pady=10)
-
+        self.new_window.lift(root)
+        
+        self.l_mod_dir = tk.Label(self.new_window, text="Mod Directory(required)")
+        self.l_mod_dir.grid(row=0, column=0, sticky=tk.W)
+        
+        self.e_mod_dir = tk.Entry(self.new_window, width=10)
+        self.e_mod_dir.grid(row=1, column=0, sticky=tk.EW, pady = (0, defs.PAD_V))
+        
         self.config_label = tk.Label(self.new_window, text="Change default format for display and folder name")
-        self.config_label.grid(row=0, column=0, sticky=tk.W, pady = (0, defs.PAD_H))
+        self.config_label.grid(row=2, column=0, sticky=tk.W, pady = (0, defs.PAD_H))
         self.help_label = tk.Label(self.new_window, text="*Arrange values: {characters}, {slots}, {mod}, {category}")
-        self.help_label.grid(row=1, column=0, sticky=tk.W, pady = (0, defs.PAD_V * 2))
+        self.help_label.grid(row=3, column=0, sticky=tk.W, pady = (0, defs.PAD_V * 2))
 
         self.label_folder_name_format = tk.Label(self.new_window, text="Folder Name Format")
-        self.label_folder_name_format.grid(row=2, column=0, sticky=tk.W)
+        self.label_folder_name_format.grid(row=4, column=0, sticky=tk.W)
 
         self.entry_folder_name_format = tk.Entry(self.new_window, width=10)
-        self.entry_folder_name_format.grid(row=3, column=0, sticky=tk.EW, pady = (0, defs.PAD_V))
+        self.entry_folder_name_format.grid(row=5, column=0, sticky=tk.EW, pady = (0, defs.PAD_V))
 
         self.label_display_name_format = tk.Label(self.new_window, text="Display Name Format", justify='left')
-        self.label_display_name_format.grid(row=4, column=0, sticky=tk.W)
+        self.label_display_name_format.grid(row=6, column=0, sticky=tk.W)
 
         self.entry_display_name_format = tk.Entry(self.new_window, width=10)
-        self.entry_display_name_format.grid(row=5, column=0, sticky=tk.EW, pady = (0, defs.PAD_V))
+        self.entry_display_name_format.grid(row=7, column=0, sticky=tk.EW, pady = (0, defs.PAD_V))
         
         self.label_additional_elements = tk.Label(self.new_window, text="Additional Elements(separate by \",\")", justify='left')
-        self.label_additional_elements.grid(row=6, column=0, sticky=tk.W)
+        self.label_additional_elements.grid(row=8, column=0, sticky=tk.W)
 
         self.entry_additional_elements = tk.Entry(self.new_window, width=10)
-        self.entry_additional_elements.grid(row=7, column=0, sticky=tk.EW, pady = (0, defs.PAD_V))
+        self.entry_additional_elements.grid(row=9, column=0, sticky=tk.EW, pady = (0, defs.PAD_V))
 
         self.slot_cap = tk.IntVar(value = (1 if self.is_slot_capped else 0))
         self.cbox_capitalize_slots = tk.Checkbutton(self.new_window, text="Capitalize slot prefix(e.g. C02 or c02)", variable=self.slot_cap)
-        self.cbox_capitalize_slots.grid(row=8, column=0, sticky=tk.W)
+        self.cbox_capitalize_slots.grid(row=10, column=0, sticky=tk.W)
         
         self.start_w_editor = tk.IntVar(value = (1 if self.start_with_editor else 0))
         self.cbox_start_w_editor = tk.Checkbutton(self.new_window, text="Show editor on start", variable=self.start_w_editor)
-        self.cbox_start_w_editor.grid(row=9, column=0, sticky=tk.W)
+        self.cbox_start_w_editor.grid(row=11, column=0, sticky=tk.W)
 
         self.frame_config = tk.Frame(self.new_window)
-        self.frame_config.grid(row=10, column=0, sticky=tk.SE)
+        self.frame_config.grid(row=12, column=0, sticky=tk.SE)
 
         self.btn_restore = tk.Button(self.frame_config, text="Restore", command=lambda: self.on_restore_config())
         self.btn_restore.pack(side="left", padx=(0, defs.PAD_H))
@@ -152,6 +163,8 @@ class Config:
         self.btn_save = tk.Button(self.frame_config, text="Save", command=lambda: self.on_save_config())
         self.btn_save.pack()
         
+        self.e_mod_dir.delete(0, tk.END)
+        self.e_mod_dir.insert(0, self.default_dir)
         self.entry_display_name_format.delete(0, tk.END)
         self.entry_display_name_format.insert(0, self.display_name_format)
         self.entry_folder_name_format.delete(0, tk.END)

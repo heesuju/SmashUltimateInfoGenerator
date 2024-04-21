@@ -8,6 +8,7 @@ from PIL import Image, ImageTk
 import tkinter.font as font
 import defs
 from .editor import Editor
+from .config import Config
 from utils.loader import Loader
 from utils.image_resize import ImageResize
 from utils import load_config
@@ -21,6 +22,7 @@ class Menu:
         self.cur_page = 1
         self.total_pages = 1
         self.page_size = 12
+        self.config = Config(self.on_config_changed)
         self.editor = Editor()
         self.loader = Loader()
         self.show()
@@ -71,6 +73,9 @@ class Menu:
         self.entry_character.delete(0, tk.END)
         self.search()
 
+    def on_config_changed(self):
+        self.refresh()
+
     def on_scanned(self, mods):
         self.mods = mods
         self.filtered_mods = mods
@@ -111,6 +116,10 @@ class Menu:
         else:
             print("nothing selected in treeview!")
 
+    def open_config(self):
+        self.config.load()
+        self.config.open_config(self.root)
+
     def on_space_pressed(self, event):
         selected_item = self.treeview.focus()
         item = self.treeview.item(selected_item)
@@ -126,6 +135,7 @@ class Menu:
             scan_thread.start()
         else:
             print("no default directory")
+            self.open_config()
 
     def add_filter_item(self, row, col, name):
         label = ttk.Label(self.frame_filter, text=name)
@@ -195,13 +205,17 @@ class Menu:
         self.entry_mod_name = self.add_filter_item(0, 0, "Mod Name")
         self.entry_author = self.add_filter_item(1, 0, "Author")
         self.entry_character = self.add_filter_item(2, 0, "Character")
-        self.btn_search = tk.Button(self.frame_filter, text="Search", cursor='hand2', command=self.search)
-        self.btn_search.grid(row=3, column=1, sticky=tk.E)
-        self.btn_clear = tk.Button(self.frame_filter, text="Clear", cursor='hand2', command=self.clear_filter)
-        self.btn_clear.grid(row=3, column=0)
+        
+        self.f_filter_actions = tk.Frame(self.frame_filter)
+        self.f_filter_actions.grid(row=3, column=0, columnspan=2, padx=(defs.PAD_H, 0), pady=(defs.PAD_V/2), sticky=tk.NSEW)
+        
+        self.btn_search = tk.Button(self.f_filter_actions, text="Search", cursor='hand2', command=self.search)
+        self.btn_search.pack(side=tk.LEFT, padx=(0, defs.PAD_H))
+        self.btn_clear = tk.Button(self.f_filter_actions, text="Clear", cursor='hand2', command=self.clear_filter)
+        self.btn_clear.pack(side=tk.LEFT, padx=(0, defs.PAD_H))
 
-        self.btn_refresh = tk.Button(self.frame_filter, text="Refresh", cursor='hand2', command=self.refresh)
-        self.btn_refresh.grid(row=3, column=2)
+        self.btn_refresh = tk.Button(self.f_filter_actions, text="Refresh", cursor='hand2', command=self.refresh)
+        self.btn_refresh.pack(side=tk.LEFT, padx=(0, defs.PAD_H))
 
         self.categories = ["Mod Name", "Category", "Author", "Char", "Slot", "Dir"]
         
