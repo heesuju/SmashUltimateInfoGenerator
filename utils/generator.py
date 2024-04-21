@@ -44,11 +44,11 @@ class Generator:
         numbers = []
 
         for s in slots:
-            if s[1:].isdigit():
-                number = int(s[1:])
-            else:
-                number = s[1:]
-            numbers.append(number)
+            slot_num = str(s[1:]) 
+            num = 0
+            if slot_num.isdigit():
+                num = int(s[1:])
+                numbers.append(num)
 
         numbers.sort()
         return numbers
