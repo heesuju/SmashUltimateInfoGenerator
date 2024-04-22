@@ -1,9 +1,12 @@
 import os
+from functools import partial
 import tkinter as tk
 from tkinter import ttk
 from utils.scanner import Scanner
 import math
 import common
+import threading
+import queue
 from PIL import Image, ImageTk
 import tkinter.font as font
 import defs
@@ -21,17 +24,33 @@ class Menu:
         self.filtered_mods = []
         self.cur_page = 1
         self.total_pages = 1
-        self.page_size = 12
+        self.page_size = 30
         self.config = Config(self.on_config_changed)
         self.editor = Editor()
         self.loader = Loader()
+        self.queue = queue.Queue()
         self.progress_count = 0
+        self.max_count = 0
         self.show()
         self.scan()
     
     def reset(self):
         self.treeview.selection_clear()
         self.treeview.delete(*self.treeview.get_children())
+        self.l_desc_v.config(state="normal")
+        self.l_desc_v.delete(1.0, tk.END)
+        self.l_desc_v.config(state="disabled")
+        self.label_img.image = ""
+        self.l_ver.config(text="")
+        self.l_author.config(text="")
+            
+    def open_folder(self):
+        selected_item = self.treeview.focus()
+        if selected_item:
+            item = self.treeview.item(selected_item)
+            os.startfile(item['values'][-1])
+        else:
+            print("no item selected!")
 
     def refresh(self):
         self.reset()
@@ -47,6 +66,9 @@ class Menu:
         for n in range(start,end):
             if mods[n]["img"] == None: self.treeview.insert("", tk.END, values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]))
             else: self.treeview.insert("", tk.END, image=mods[n]["img"], values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]))
+        
+        n_count = end - start
+        self.l_page.config(text=f"{n_count} of {len(mods)}")
 
     def on_filter_submitted(self, event):
         self.search()
@@ -60,9 +82,9 @@ class Menu:
         character = self.entry_character.get()
         self.filtered_mods = []
         for mod in self.mods:
-            if mod_name.lower() not in mod.mod_name.lower(): continue
-            if author.lower() not in mod.authors.lower(): continue
-            if character.lower() not in mod.characters.lower(): continue
+            if mod_name.lower() not in mod["mod_name"].lower(): continue
+            if author.lower() not in mod["authors"].lower(): continue
+            if character.lower() not in mod["characters"].lower(): continue
             
             self.filtered_mods.append(mod)
             
@@ -79,7 +101,14 @@ class Menu:
     
     def on_scan_progress(self, future):
         self.progress_count += 1
-        self.progressbar['value'] += self.progress_count/948.0
+        self.queue.put(self.progress_count)
+        self.root.event_generate('<<Progress>>')
+
+    def updater(self, pb:ttk.Progressbar, label:ttk.Label, q:queue, event):
+        perc = round(q.get()/self.max_count, 2) * 100.0
+        if perc <= 100.0:
+            pb['value'] = perc
+            label.config(text=f"{pb['value']}%")
 
     def on_scanned(self, mods):
         self.mods = mods
@@ -132,11 +161,15 @@ class Menu:
             self.treeview.change_state(item=selected_item, state="unchecked")
         else:
             self.treeview.change_state(item=selected_item, state="checked")
-
+    
+    def on_scan_start(self, max_count):
+        self.max_count = max_count
+        
     def scan(self):
+        self.progress_count = 0
         config_data = load_config()
         if config_data is not None and config_data["default_directory"]:
-            scan_thread = Scanner(config_data["default_directory"], progress_callback=self.on_scan_progress, callback=self.on_scanned)
+            scan_thread = Scanner(config_data["default_directory"], start_callback=self.on_scan_start, progress_callback=self.on_scan_progress, callback=self.on_scanned)
             scan_thread.start()
         else:
             print("no default directory")
@@ -243,9 +276,9 @@ class Menu:
         
         self.f_footer = tk.Frame(self.root)
         self.f_footer.pack(padx = defs.PAD_H, pady = (0, defs.PAD_V), fill="x")
-        self.f_footer.columnconfigure(index=0, weight=1)
-        self.f_footer.columnconfigure(index=1, weight=1)
-        self.f_footer.columnconfigure(index=2, weight=1)
+        self.f_footer.columnconfigure(index=0, weight=1, uniform="equal")
+        self.f_footer.columnconfigure(index=1, weight=1, uniform="equal")
+        self.f_footer.columnconfigure(index=2, weight=1, uniform="equal")
 
         icon_left = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'left.png'))
         icon_right = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'right.png'))
@@ -260,6 +293,12 @@ class Menu:
         self.progressbar = ttk.Progressbar(self.f_left, mode="determinate", orient="horizontal", length=200)
         self.progressbar.pack(side=tk.LEFT)
         
+        self.l_progress = tk.Label(self.f_left, text="")
+        self.l_progress.pack(side=tk.LEFT)
+
+        update_handler = partial(self.updater, self.progressbar, self.l_progress, self.queue)
+        self.root.bind('<<Progress>>', update_handler)
+        
         self.f_right = tk.Frame(self.f_footer)
         self.f_right.grid(row=0, column=2, sticky=tk.EW)
 
@@ -270,7 +309,7 @@ class Menu:
         self.frame_paging = tk.Frame(self.f_footer)
         self.frame_paging.grid(row=0, column=1)
         
-        self.l_page = tk.Label(self.f_right, text="showing 30 items", width=20)
+        self.l_page = tk.Label(self.f_right, text="")
         self.l_page.pack(side=tk.RIGHT)
         
         self.info_frame.rowconfigure(index=0, weight=1)
@@ -294,5 +333,14 @@ class Menu:
         self.l_desc_v = tk.Text(self.info_frame, height=1, width=10, state="disabled")
         self.l_desc_v.grid(row=3, padx=defs.PAD_H, pady=(0, defs.PAD_V), sticky=tk.NSEW)
 
-        self.btn_edit = tk.Button(self.info_frame, text="Edit", cursor='hand2', command=self.open_editor)
-        self.btn_edit.grid(row=4, padx=defs.PAD_H, pady=(0, defs.PAD_V), sticky=tk.EW)
+        self.f_selected_mod = tk.Frame(self.info_frame)
+        self.f_selected_mod.grid(row=4, padx=defs.PAD_H, pady=(0, defs.PAD_V), sticky=tk.EW)
+        self.f_selected_mod.columnconfigure(index=0, weight=1, uniform="equal")
+        self.f_selected_mod.columnconfigure(index=1, weight=1, uniform="equal")
+        self.f_selected_mod.rowconfigure(index=0, weight=1)
+
+        self.btn_edit = tk.Button(self.f_selected_mod, text="Edit", cursor='hand2', command=self.open_editor)
+        self.btn_edit.grid(row=0, column=0, sticky=tk.EW, padx=(0, defs.PAD_H/2))
+        
+        self.btn_open_folder = tk.Button(self.f_selected_mod, text="Open", cursor='hand2', command=self.open_folder)
+        self.btn_open_folder.grid(row=0, column=1, sticky=tk.EW, padx=(defs.PAD_H/2, 0))

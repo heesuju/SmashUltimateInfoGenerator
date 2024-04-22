@@ -7,9 +7,10 @@ from PIL import Image, ImageTk
 import common
 
 class Scanner(Thread):
-    def __init__(self, directory:str, progress_callback = None, callback = None):
+    def __init__(self, directory:str, start_callback = None, progress_callback = None, callback = None):
         super().__init__()
         self.directory = directory
+        self.start_callback = start_callback
         self.progress_callback = progress_callback
         self.callback = callback
         
@@ -79,7 +80,7 @@ class Scanner(Thread):
         mods = []
 
         if os.path.isdir(directory):
-            
+            self.start_callback(len(os.listdir(directory)))
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 futures = [executor.submit(self.find_mod, folder_name, os.path.join(directory, folder_name)) for folder_name in os.listdir(directory)]
                 [future.add_done_callback(self.progress_callback) for future in futures]
