@@ -33,7 +33,7 @@ class Config:
             json.dump(config_dict, f, indent=4)
         
         if self.callback is not None:
-            self.callback()
+            self.callback(self.default_dir)
         print("Saved config")
 
     def load(self):

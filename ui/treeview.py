@@ -96,8 +96,9 @@ class Menu:
         self.entry_character.delete(0, tk.END)
         self.search()
 
-    def on_config_changed(self):
-        self.refresh()
+    def on_config_changed(self, dir:str):
+        if dir:
+            self.refresh()
     
     def on_scan_progress(self, future):
         self.progress_count += 1
