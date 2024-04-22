@@ -61,13 +61,13 @@ class Scanner(Thread):
             mod["slots"] = common.slots_to_string(generator.slots)
             mod["characters"] = common.group_char_name(generator.char_names, generator.group_names)      
             
-            mod["mod_name"] = mod["display_name"].replace(mod["slots"].lower(), "")
-            mod["mod_name"] = mod["mod_name"].replace(mod["slots"].lower().replace(" ", ""), "")
-            mod["mod_name"] = mod["mod_name"].replace(mod["slots"].upper(), "")
-            mod["mod_name"] = mod["mod_name"].replace(mod["slots"].upper().replace(" ", ""), "")
+            mod["mod_name"] = mod["display_name"].replace(mod["slots"].lower(), "", 1)
+            mod["mod_name"] = mod["mod_name"].replace(mod["slots"].lower().replace(" ", ""), "", 1)
+            mod["mod_name"] = mod["mod_name"].replace(mod["slots"].upper(), "", 1)
+            mod["mod_name"] = mod["mod_name"].replace(mod["slots"].upper().replace(" ", ""), "", 1)
             
-            mod["mod_name"] = mod["mod_name"].replace(mod["characters"], "")
-            mod["mod_name"] = mod["mod_name"].replace(mod["category"], "")
+            mod["mod_name"] = mod["mod_name"].replace(mod["characters"], "", 1)
+            mod["mod_name"] = mod["mod_name"].replace(mod["category"], "", 1)
             mod["mod_name"] = common.trim_redundant_spaces(mod["mod_name"])
             img_path = path + "/preview.webp"
             if os.path.exists(img_path):
