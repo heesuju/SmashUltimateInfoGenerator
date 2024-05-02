@@ -8,8 +8,8 @@ import shutil
 import os
 import common
 import defs
-from scraper.static_scraper import Extractor
-from scraper.dynamic_scraper import Selenium
+from utils.static_scraper import Extractor
+from utils.dynamic_scraper import Selenium
 from utils.downloader import Downloader
 from utils.loader import Loader
 from .comparison import Comparison
@@ -52,11 +52,20 @@ class Editor:
         self.set_display_name(self.entry_char_names.get(), self.entry_slots.get(), self.entry_mod_name.get(), self.combobox_cat.get())
         self.set_folder_name(self.entry_char_names.get().replace(" ", ""), self.entry_slots.get().replace(" ", ""), self.entry_mod_name.get().replace(" ", ""), self.combobox_cat.get())
 
-    def on_selenium_result(self, version, img_url):
+    def on_selenium_result(self, version, img_urls):
         self.label_output.config(text="Fetched elements")
         self.entry_ver.delete(0, tk.END)
         self.entry_ver.insert(0, common.format_version(version))
-        self.generator.img_url = img_url
+        
+        if len(img_urls) > 0:
+            self.generator.img_url = img_urls[0]
+            self.cbox_img.config(values=img_urls)
+            self.cbox_img.set(img_urls[0])
+        else:
+            self.generator.img_url = ""
+            self.cbox_img.config(values=[])
+            self.cbox_img.set("")
+
         if self.generator.img_url and self.generator.working_dir:
             self.btn_download_img.config(state="normal")
         else:
@@ -407,8 +416,15 @@ class Editor:
         self.entry_img_dir.pack(fill=tk.X, expand=True)
         self.entry_img_dir.bind("<KeyRelease>", self.on_update_image)
 
-        self.btn_download_img = tk.Button(self.frame_img, image=self.icon_download, relief=tk.FLAT, cursor="hand2", command=self.download_img, state="disabled")
-        self.btn_download_img.pack(side=tk.BOTTOM, anchor=tk.NW)
+        fr_img_download = tk.Frame(self.frame_img)
+        fr_img_download.pack(side=tk.BOTTOM, anchor=tk.NW, fill='x')
+
+        self.btn_download_img = tk.Button(fr_img_download, image=self.icon_download, relief=tk.FLAT, cursor="hand2", command=self.download_img, state="disabled")
+        self.btn_download_img.pack(side=tk.LEFT, anchor=tk.NW, padx = (0, defs.PAD_H))
+
+        self.cbox_img = ttk.Combobox(fr_img_download, width=10)
+        self.cbox_img.pack(side=tk.LEFT, anchor=tk.NW, expand=True, fill='x')
+        self.cbox_img.bind("<<ComboboxSelected>>", self.on_combobox_select)
 
         self.label_img = tk.Label(self.frame_img, justify='center', anchor='center', bg='black')
         self.label_img.pack(fill=tk.BOTH, expand=True)

@@ -2,5 +2,6 @@ tomli_w
 Pillow
 requests 
 beautifulsoup4
-selenium
+playwright
 tomli
+cx_Freeze

@@ -5,10 +5,8 @@ This is a simple tool written in python that generates an info.toml file for Sma
 
 ## Install requirements
 ```sh
-pip install tomli_w
-pip install Pillow
-pip install requests beautifulsoup4
-pip install selenium
+pip install -r ./requirements.txt
+python -m playwright install
 ```
 
 ## How to use
