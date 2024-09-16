@@ -15,7 +15,7 @@ from utils.downloader import Downloader
 from utils.loader import Loader
 from .comparison import Comparison
 from utils.image_resize import ImageResize
-from . import PATH_ICON
+from . import PATH_ICON, set_text
 from cache import remove_cache
 from utils import open_web
 
@@ -87,25 +87,32 @@ class Editor:
             else:
                 self.set_img_cbox(self.img_descriptions, self.img_descriptions[0])
                 self.ckbox_replace_img.config(state="normal")
+                self.cbox_img.config(state="normal")
         else:
             self.generator.img_url = ""
             self.set_img_cbox()
             self.ckbox_replace_img.config(state="disabled")
+            self.cbox_img.config(state="disabled")
+        self.btn_fetch_data.config(state="normal")
 
-    def on_url_change(self):
-        if self.generator.url == self.entry_url.get() or not common.is_valid_url(self.entry_url.get()):
+    def get_data_from_url(self):
+        if not self.entry_url.get() or not common.is_valid_url(self.entry_url.get()):
             return
         
+        self.btn_fetch_data.config(state="disabled")
         self.label_output.config(text="Fetching elements...")
         self.ckbox_replace_img.config(state="disabled")
         self.generator.url = self.entry_url.get()
-        self.ckbox_replace_img.config(state="disabled")
+        self.cbox_img.config(state="disabled")
         self.replace_img_state.set(False)
         bs4_thread = Extractor(self.entry_url.get(), self.on_bs4_result)
         selenium_thread = Selenium(self.entry_url.get(), self.on_selenium_result)
         
         bs4_thread.start()
         selenium_thread.start()
+
+    def on_url_changed(self, event):
+        self.generator.url = self.entry_url.get()
 
     def open_url(self):
         if common.is_valid_url(self.entry_url.get()):
@@ -182,19 +189,17 @@ class Editor:
 
     def update_preview(self):
         self.entry_url.delete(0, tk.END)
-        self.generator.url = self.entry_url.get()
         self.config.load()
         #self.config.set_default_dir(os.path.dirname(self.entry_work_dir.get()))
 
         dict_info = self.generator.preview_info_toml(self.entry_work_dir.get(), "", self.entry_ver.get(), "")
-        self.label_output.config(text="Changed working directory")
-        
+        set_text(self.label_output, "Changed working directory")
+
         self.update_description()
         self.combobox_cat.set(dict_info["category"])
 
-        self.entry_char_names.delete(0, tk.END)
         names = common.group_char_name(self.generator.char_names, self.generator.group_names)           
-        self.entry_char_names.insert(0, names)
+        set_text(self.entry_char_names, names)
 
         self.entry_slots.delete(0, tk.END)
         
@@ -212,19 +217,17 @@ class Editor:
             self.generator.mod_name = mod_name
 
             if self.loader.load_toml(self.entry_work_dir.get()):
-                self.entry_authors.delete(0, tk.END)
-                self.entry_authors.insert(0, self.loader.authors)
-                self.entry_ver.delete(0, tk.END)
-                self.entry_ver.insert(0, self.loader.version)
+                set_text(self.entry_authors, self.loader.authors)
+                set_text(self.entry_ver, self.loader.version)
+                set_text(self.entry_url, self.loader.url)
                 self.combobox_cat.set(self.loader.category)
         else:
             mod_name = self.generator.mod_title_web
         
-        self.entry_mod_name.delete(0, tk.END)
-        self.entry_mod_name.insert(0, mod_name)
-
+        set_text(self.entry_mod_name, mod_name)
         self.set_display_name(names, slots_cleaned, mod_name, dict_info["category"])
         self.set_folder_name(names.replace(" ", "") , slots_cleaned.replace(" ", ""), mod_name.replace(" ", ""), dict_info["category"])
+        self.generator.url = self.entry_url.get()
 
         self.find_image()
 
@@ -420,9 +423,9 @@ class Editor:
         
         self.entry_url = tk.Entry(self.url_frame, width=10)
         self.entry_url.pack(side='left', fill=tk.X, expand=True)
-        # self.entry_url.bind("<KeyRelease>", self.on_url_change)
+        self.entry_url.bind("<KeyRelease>", self.on_url_changed)
 
-        self.btn_fetch_data = tk.Button(self.url_frame, text="Get", cursor='hand2', command=self.on_url_change, anchor='n')
+        self.btn_fetch_data = tk.Button(self.url_frame, text="Get", cursor='hand2', command=self.get_data_from_url, anchor='n')
         self.btn_fetch_data.pack(side=tk.LEFT, padx=(defs.PAD_H, defs.PAD_H))
 
         self.btn_open_web = tk.Button(self.url_frame, text="Open", cursor='hand2', command=self.open_url, anchor='n')
@@ -484,7 +487,7 @@ class Editor:
         self.ckbox_replace_img = tk.Checkbutton(fr_img_download, text="replace with", relief=tk.FLAT, cursor="hand2", command=self.on_img_replace_changed, state="disabled", variable=self.replace_img_state)
         self.ckbox_replace_img.pack(side=tk.LEFT, anchor=tk.NW, padx = (0, defs.PAD_H))
 
-        self.cbox_img = ttk.Combobox(fr_img_download, width=10)
+        self.cbox_img = ttk.Combobox(fr_img_download, width=10, state="disabled")
         self.cbox_img.pack(side=tk.LEFT, anchor=tk.NW, expand=True, fill='x')
         self.cbox_img.bind("<<ComboboxSelected>>", self.on_img_url_selected)
 

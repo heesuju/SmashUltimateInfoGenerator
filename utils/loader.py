@@ -11,6 +11,8 @@ class Loader:
         self.authors = ""
         self.category = ""
         self.version = ""
+        self.mod_name = ""
+        self.url = ""
 
     def load_toml(self, dir:str):
         self.reset()
@@ -24,6 +26,9 @@ class Loader:
                 if "authors" in loaded_dict: self.authors = loaded_dict["authors"]
                 if "category" in loaded_dict: self.category = loaded_dict["category"]
                 if "version" in loaded_dict: self.version = loaded_dict["version"]
+                if "mod_name" in loaded_dict: self.mod_name = loaded_dict["mod_name"]
+                if "url" in loaded_dict: self.url = loaded_dict["url"]
+
             
                 print("successfully loaded info.toml in working directory")
                 return True
