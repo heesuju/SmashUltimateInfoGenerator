@@ -17,6 +17,7 @@ from .comparison import Comparison
 from utils.image_resize import ImageResize
 from . import PATH_ICON
 from cache import remove_cache
+from utils import open_web
 
 class Editor:
     def __init__(self) -> None:
@@ -91,7 +92,7 @@ class Editor:
             self.set_img_cbox()
             self.ckbox_replace_img.config(state="disabled")
 
-    def on_url_change(self, event):
+    def on_url_change(self):
         if self.generator.url == self.entry_url.get() or not common.is_valid_url(self.entry_url.get()):
             return
         
@@ -105,6 +106,10 @@ class Editor:
         
         bs4_thread.start()
         selenium_thread.start()
+
+    def open_url(self):
+        if common.is_valid_url(self.entry_url.get()):
+            open_web(self.entry_url.get())
 
     def on_combobox_select(self, event):
         self.entry_folder_name.delete(0, tk.END)
@@ -410,9 +415,18 @@ class Editor:
         self.label_url = tk.Label(self.new_window, text="Url")
         self.label_url.grid(row=3, column=0, sticky=tk.W)
 
-        self.entry_url = tk.Entry(self.new_window, width=10)
-        self.entry_url.grid(row=4, column=0, columnspan=3, sticky=tk.EW, pady = (0, defs.PAD_V))
-        self.entry_url.bind("<KeyRelease>", self.on_url_change)
+        self.url_frame = tk.Frame(self.new_window)
+        self.url_frame.grid(row=4, column=0, columnspan=3, sticky=tk.EW, pady = (0, defs.PAD_V))
+        
+        self.entry_url = tk.Entry(self.url_frame, width=10)
+        self.entry_url.pack(side='left', fill=tk.X, expand=True)
+        # self.entry_url.bind("<KeyRelease>", self.on_url_change)
+
+        self.btn_fetch_data = tk.Button(self.url_frame, text="Get", cursor='hand2', command=self.on_url_change, anchor='n')
+        self.btn_fetch_data.pack(side=tk.LEFT, padx=(defs.PAD_H, defs.PAD_H))
+
+        self.btn_open_web = tk.Button(self.url_frame, text="Open", cursor='hand2', command=self.open_url, anchor='n')
+        self.btn_open_web.pack(side=tk.LEFT)
 
         self.label_mod_name = tk.Label(self.new_window, text="Mod Title")
         self.label_mod_name.grid(row=5, column=0, sticky=tk.W)
