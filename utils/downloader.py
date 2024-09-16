@@ -3,7 +3,7 @@ import requests
 import defs
 
 class Downloader(Thread):
-    def __init__(self, url:str, dir:str, callback):
+    def __init__(self, url:str, dir:str, callback=None):
         super().__init__()
         self.url = url
         self.dir = dir
@@ -13,10 +13,10 @@ class Downloader(Thread):
         try:
             response = requests.get(self.url)
             response.raise_for_status()  # Check for any HTTP errors
-            file_name = self.dir + "/" + defs.IMAGE_NAME 
-            with open(file_name, 'wb') as file:
+            with open(self.dir, 'wb') as file:
                 file.write(response.content)
-            print(f"Image downloaded and saved as {defs.IMAGE_NAME}")
-            self.callback()
+            print(f"Image downloaded and saved in {self.dir}")
+            if self.callback is not None:
+                self.callback()
         except requests.exceptions.RequestException as e:
             print(f"Error: {e}")

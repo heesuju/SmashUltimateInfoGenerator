@@ -172,5 +172,7 @@ class Generator:
                 "authors": authors,
                 "description": description,
                 "version": version,
-                "category": category
+                "category": category,
+                "url": self.url,
+                "mod_name": self.mod_name
             }, toml_file)

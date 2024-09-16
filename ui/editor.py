@@ -6,6 +6,7 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import shutil
 import os
+import sys
 import common
 import defs
 from utils.static_scraper import Extractor
@@ -15,6 +16,7 @@ from utils.loader import Loader
 from .comparison import Comparison
 from utils.image_resize import ImageResize
 from . import PATH_ICON
+from cache import remove_cache
 
 class Editor:
     def __init__(self) -> None:
@@ -23,18 +25,33 @@ class Editor:
         self.config = Config()
         self.loader = Loader()
         self.comparison = Comparison()
+        self.img_urls = []
+        self.img_descriptions = []
 
     def on_img_resized(self, image):
         self.label_img.config(image=image, width=10, height=10)
         self.label_img.image = image  # Keep a reference to prevent garbage collection
 
-    def on_img_download(self):
-        self.label_output.config(text="Downloaded image")
-        self.find_image()
-
     def download_img(self):
-        downloader_thread = Downloader(self.generator.img_url, self.generator.working_dir, self.on_img_download)
-        downloader_thread.start()
+        download_data = []
+        download_dir = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "cache/thumbnails")
+        os.makedirs(download_dir, exist_ok=True)
+        remove_cache()
+
+        for img_url in self.img_urls:
+            file_name = common.trim_url(img_url)
+            download_data.append((img_url, os.path.join(download_dir, file_name)))
+        
+        threads = []
+        for img_url, working_dir in download_data:
+            downloader_thread = Downloader(img_url, working_dir)
+            downloader_thread.start()  # Start each thread
+            threads.append(downloader_thread)  # Keep track of threads
+
+        for thread in threads:
+            thread.join()
+
+        self.label_output.config(text="Downloaded image")
         
     def on_bs4_result(self, mod_title, authors):
         if mod_title:
@@ -52,32 +69,37 @@ class Editor:
         self.set_display_name(self.entry_char_names.get(), self.entry_slots.get(), self.entry_mod_name.get(), self.combobox_cat.get())
         self.set_folder_name(self.entry_char_names.get().replace(" ", ""), self.entry_slots.get().replace(" ", ""), self.entry_mod_name.get().replace(" ", ""), self.combobox_cat.get())
 
-    def on_selenium_result(self, version, img_urls):
+    def on_selenium_result(self, version, img_urls, img_descriptions):
+        self.img_urls = img_urls
+        self.img_descriptions = img_descriptions 
         self.label_output.config(text="Fetched elements")
         self.entry_ver.delete(0, tk.END)
         self.entry_ver.insert(0, common.format_version(version))
         
-        if len(img_urls) > 0:
-            self.generator.img_url = img_urls[0]
-            self.cbox_img.config(values=img_urls)
-            self.cbox_img.set(img_urls[0])
+        if len(self.img_urls) > 0:
+            self.label_output.config(text="Downloading thumbnails...")
+            self.download_img()
+            if self.replace_img_state.get():
+                self.generator.img_url = self.img_urls[0]
+                download_dir = os.path.join(common.get_project_dir(), "cache/thumbnails")
+                self.set_image(os.path.join(download_dir, common.trim_url(self.img_urls[0])))
+            else:
+                self.set_img_cbox(self.img_descriptions, self.img_descriptions[0])
+                self.ckbox_replace_img.config(state="normal")
         else:
             self.generator.img_url = ""
-            self.cbox_img.config(values=[])
-            self.cbox_img.set("")
-
-        if self.generator.img_url and self.generator.working_dir:
-            self.btn_download_img.config(state="normal")
-        else:
-            self.btn_download_img.config(state="disabled")
+            self.set_img_cbox()
+            self.ckbox_replace_img.config(state="disabled")
 
     def on_url_change(self, event):
         if self.generator.url == self.entry_url.get() or not common.is_valid_url(self.entry_url.get()):
             return
         
         self.label_output.config(text="Fetching elements...")
-        self.btn_download_img.config(state="disabled")
+        self.ckbox_replace_img.config(state="disabled")
         self.generator.url = self.entry_url.get()
+        self.ckbox_replace_img.config(state="disabled")
+        self.replace_img_state.set(False)
         bs4_thread = Extractor(self.entry_url.get(), self.on_bs4_result)
         selenium_thread = Selenium(self.entry_url.get(), self.on_selenium_result)
         
@@ -87,7 +109,24 @@ class Editor:
     def on_combobox_select(self, event):
         self.entry_folder_name.delete(0, tk.END)
         self.entry_folder_name.insert(0, self.combobox_cat.get() + "_" + self.entry_char_names.get().replace(" ", "") + "[" + self.entry_slots.get().replace(" ", "")  + "]_" + self.entry_mod_name.get().replace(" ", "") ) 
-
+    
+    def on_img_url_selected(self, event):
+        selected_text = self.cbox_img.get()
+        selected_idx = self.cbox_img.current()
+        self.replace_img_state.set(True)
+        if selected_idx < len(self.img_urls):
+            self.generator.img_url = self.img_urls[selected_idx]
+            name = common.trim_url(self.generator.img_url)
+            download_dir = os.path.join(common.get_project_dir(), "cache/thumbnails")
+            self.set_image(os.path.join(download_dir, name))
+    
+    def on_img_replace_changed(self):
+        should_replace = self.replace_img_state.get()
+        if should_replace:
+            self.on_img_url_selected(None)
+        else:
+            self.find_image()
+    
     def on_entry_change(self, event):
         self.set_display_name(self.entry_char_names.get(), self.entry_slots.get(), self.entry_mod_name.get(), self.combobox_cat.get())
         self.set_folder_name(self.entry_char_names.get().replace(" ", ""), self.entry_slots.get().replace(" ", ""), self.entry_mod_name.get().replace(" ", ""), self.combobox_cat.get())
@@ -125,6 +164,10 @@ class Editor:
             self.listbox.insert(tk.END, f"{checkbox} {item}")
 
         self.set_description()
+ 
+    def set_img_cbox(self, values=[], selected_option=""):
+        self.cbox_img.config(values=values)
+        self.cbox_img.set(selected_option)
 
     def get_working_directory(self):
         if self.config.default_dir and common.is_valid_dir(self.config.default_dir):
@@ -234,14 +277,18 @@ class Editor:
         new_path = os.path.join(dst_dir, defs.IMAGE_NAME)
         self.entry_img_dir.delete(0, tk.END)
         self.entry_img_dir.insert(tk.END, new_path)
-        # Use shutil.move() to move and rename the file
-        shutil.move(source_file, new_path)
+        
+        if os.path.samefile(source_file, new_path) == False:
+            shutil.copy(source_file, new_path)
+        else:
+            print("paths are same")
 
     def find_image(self):
         for type in defs.IMAGE_TYPES:
             img_list = common.get_direct_child_by_extension(self.generator.working_dir, type)
             if len(img_list) > 0:
                 self.set_image(self.generator.working_dir +  "/" + img_list[0])
+                self.replace_img_state.set(False)
                 return
 
         self.entry_img_dir.delete(0, tk.END)
@@ -419,12 +466,13 @@ class Editor:
         fr_img_download = tk.Frame(self.frame_img)
         fr_img_download.pack(side=tk.BOTTOM, anchor=tk.NW, fill='x')
 
-        self.btn_download_img = tk.Button(fr_img_download, image=self.icon_download, relief=tk.FLAT, cursor="hand2", command=self.download_img, state="disabled")
-        self.btn_download_img.pack(side=tk.LEFT, anchor=tk.NW, padx = (0, defs.PAD_H))
+        self.replace_img_state = tk.IntVar()  # Use IntVar for 1 (checked) or 0 (unchecked)
+        self.ckbox_replace_img = tk.Checkbutton(fr_img_download, text="replace with", relief=tk.FLAT, cursor="hand2", command=self.on_img_replace_changed, state="disabled", variable=self.replace_img_state)
+        self.ckbox_replace_img.pack(side=tk.LEFT, anchor=tk.NW, padx = (0, defs.PAD_H))
 
         self.cbox_img = ttk.Combobox(fr_img_download, width=10)
         self.cbox_img.pack(side=tk.LEFT, anchor=tk.NW, expand=True, fill='x')
-        self.cbox_img.bind("<<ComboboxSelected>>", self.on_combobox_select)
+        self.cbox_img.bind("<<ComboboxSelected>>", self.on_img_url_selected)
 
         self.label_img = tk.Label(self.frame_img, justify='center', anchor='center', bg='black')
         self.label_img.pack(fill=tk.BOTH, expand=True)

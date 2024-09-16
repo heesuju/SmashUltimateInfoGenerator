@@ -1,9 +1,17 @@
 import os
 import re
+import sys
 import csv
 import math
 from data import PATH_CHAR_NAMES
 from utils.load_config import load_config
+
+def get_project_dir():
+    return os.path.abspath(os.path.dirname(sys.argv[0]))
+
+def trim_url(url:str)->str:
+    parts = url.split("/")
+    return parts[-1]
 
 # Split the folder name into array
 def split_into_arr(folder_name, split_char = '_'):
