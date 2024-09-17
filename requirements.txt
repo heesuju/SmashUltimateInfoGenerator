@@ -5,3 +5,4 @@ beautifulsoup4
 playwright
 tomli
 cx_Freeze
+webdriver_manager

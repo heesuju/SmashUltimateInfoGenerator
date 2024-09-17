@@ -1,3 +1,5 @@
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -25,7 +27,8 @@ class Selenium(Thread):
             chrome_options = Options()
             chrome_options.add_argument("--headless=new") 
             chrome_options.add_argument("user-agent=fake-useragent")
-            driver = webdriver.Chrome(options=chrome_options)
+            
+            driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
             driver.get(self.url)
             page_source = driver.execute_script("return document.body.outerHTML;")
             soup = BeautifulSoup(page_source, 'html.parser')
