@@ -111,7 +111,8 @@ class Menu:
         perc = round(q.get()/self.max_count, 2) * 100.0
         if perc <= 100.0:
             pb['value'] = perc
-            label.config(text=f"{pb['value']}%")
+            formatted_number = "{:.2f}%".format(perc)
+            set_text(label, formatted_number)
 
     def on_scanned(self, mods):
         self.mods = mods
