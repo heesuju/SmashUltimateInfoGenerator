@@ -16,6 +16,7 @@ from utils.loader import Loader
 from utils.image_resize import ImageResize
 from utils import load_config
 from . import PATH_ICON
+from .common_ui import *
 
 class Menu:    
     def __init__(self, root) -> None:
@@ -38,12 +39,12 @@ class Menu:
     def reset(self):
         self.treeview.selection_clear()
         self.treeview.delete(*self.treeview.get_children())
-        self.l_desc_v.config(state="normal")
-        self.l_desc_v.delete(1.0, tk.END)
-        self.l_desc_v.config(state="disabled")
+        set_enabled(self.l_desc_v)
+        clear_text(self.l_desc_v)
+        set_enabled(self.l_desc_v, False)
         self.label_img.image = ""
-        self.l_ver.config(text="")
-        self.l_author.config(text="")
+        clear_text(self.l_ver)
+        clear_text(self.l_author)
             
     def open_folder(self):
         selected_item = self.treeview.focus()
@@ -94,9 +95,9 @@ class Menu:
         self.populate(self.filtered_mods)
 
     def clear_filter(self):
-        self.entry_mod_name.delete(0, tk.END)
-        self.entry_author.delete(0, tk.END)
-        self.entry_character.delete(0, tk.END)
+        clear_text(self.entry_mod_name)
+        clear_text(self.entry_author)
+        clear_text(self.entry_character)
         self.search()
 
     def on_config_changed(self, dir:str):

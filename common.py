@@ -78,16 +78,6 @@ def get_all_children_in_path(directory):
     child_folders = [item for item in all_items if os.path.isdir(os.path.join(directory, item))]
     return child_folders
 
-# returns formatted version(e.g. 1.0 -> 1.0.0) 
-def format_version(input_str):
-    segments = input_str.split('.')
-    
-    while len(segments) < 3:
-        segments.append('0')
-
-    formatted_version = '.'.join(segments)
-    return formatted_version
-
 def slots_to_string(slots):
     if len(slots) <= 0:
         return ""

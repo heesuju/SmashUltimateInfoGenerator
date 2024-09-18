@@ -38,6 +38,12 @@ def get_text(widget, remove_spacing:bool = False)->str:
 
     return output
 
+def set_enabled(widget, is_enabled:bool=True):
+    if is_enabled:
+        widget.config(state="normal")
+    else:
+        widget.config(state="disabled")
+
 class TomlParams:
     def __init__(self, display_name:str = "", authors:str = "", description:str = "", version:str = "", category:str = "", 
                  url:str = "", mod_name:str = "") -> None:

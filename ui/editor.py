@@ -17,7 +17,7 @@ from .comparison import Comparison
 from utils.image_resize import ImageResize
 from . import PATH_ICON
 from cache import remove_cache
-from utils import open_web
+from utils import open_web, format_version
 from .common_ui import *
 
 class Editor:
@@ -83,7 +83,7 @@ class Editor:
         self.img_urls = img_urls
         self.img_descriptions = img_descriptions 
         set_text(self.label_output, "Fetched elements")
-        set_text(self.entry_ver, common.format_version(version))
+        set_text(self.entry_ver, format_version(version))
         
         if len(self.img_urls) > 0:
             self.label_output.config(text="Downloading thumbnails...")
@@ -94,14 +94,14 @@ class Editor:
                 self.set_image(os.path.join(download_dir, common.trim_url(self.img_urls[0])))
             else:
                 self.set_img_cbox(self.img_descriptions, self.img_descriptions[0])
-                self.ckbox_replace_img.config(state="normal")
-                self.cbox_img.config(state="normal")
+                set_enabled(self.ckbox_replace_img)
+                set_enabled(self.cbox_img)
         else:
             self.generator.img_url = ""
             self.set_img_cbox()
-            self.ckbox_replace_img.config(state="disabled")
-            self.cbox_img.config(state="disabled")
-        self.btn_fetch_data.config(state="normal")
+            set_enabled(self.ckbox_replace_img, False)
+            set_enabled(self.cbox_img, False)
+            set_enabled(self.btn_fetch_data)
 
     def get_data_from_url(self):
         if not self.entry_url.get() or not common.is_valid_url(self.entry_url.get()):
@@ -109,7 +109,7 @@ class Editor:
         
         self.btn_fetch_data.config(state="disabled")
         set_text(self.label_output, "Fetching elements...")
-        self.ckbox_replace_img.config(state="disabled")
+        set_enabled(self.ckbox_replace_img, False)
         self.generator.url = self.entry_url.get()
         self.cbox_img.config(state="disabled")
         self.replace_img_state.set(False)
@@ -130,7 +130,6 @@ class Editor:
         set_text(self.entry_folder_name, self.combobox_cat.get() + "_" + self.entry_char_names.get().replace(" ", "") + "[" + self.entry_slots.get().replace(" ", "")  + "]_" + self.entry_mod_name.get().replace(" ", "") ) 
     
     def on_img_url_selected(self, event):
-        selected_text = self.cbox_img.get()
         selected_idx = self.cbox_img.current()
         self.replace_img_state.set(True)
         if selected_idx < len(self.img_urls):
@@ -199,9 +198,14 @@ class Editor:
         self.config.load()
         #self.config.set_default_dir(os.path.dirname(self.entry_work_dir.get()))
 
-        dict_info = self.generator.preview_info_toml(self.entry_work_dir.get(), "", self.entry_ver.get(), "")
-        set_text(self.label_output, "Changed working directory")
+        dict_info = self.generator.preview_info_toml(
+            get_text(self.entry_work_dir), 
+            "", 
+            get_text(self.entry_ver), 
+            ""
+        )
 
+        set_text(self.label_output, "Changed working directory")
         self.update_description()
         self.combobox_cat.set(dict_info["category"])
 
