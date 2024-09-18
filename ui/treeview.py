@@ -60,19 +60,16 @@ class Menu:
 
     def populate(self, mods):
         self.total_pages = math.ceil(len(mods)/self.page_size)
-        if len(mods) > 0:
-            print(f"found {len(mods)} items")
-            self.show_paging()
-            start = (self.cur_page-1) * self.page_size
-            end = common.clamp(self.cur_page * self.page_size, start, len(mods))
-            for n in range(start,end):
-                if mods[n]["img"] == None: self.treeview.insert("", tk.END, values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]))
-                else: self.treeview.insert("", tk.END, image=mods[n]["img"], values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]))
-            
-            n_count = end - start
-            self.l_page.config(text=f"{n_count} of {len(mods)}")
-        else:
-            self.open_config()
+        print(f"found {len(mods)} items")
+        self.show_paging()
+        start = (self.cur_page-1) * self.page_size
+        end = common.clamp(self.cur_page * self.page_size, start, len(mods))
+        for n in range(start,end):
+            if mods[n]["img"] == None: self.treeview.insert("", tk.END, values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]))
+            else: self.treeview.insert("", tk.END, image=mods[n]["img"], values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]))
+        
+        n_count = end - start
+        self.l_page.config(text=f"{n_count} of {len(mods)}")
 
     def on_filter_submitted(self, event):
         self.search()
@@ -119,7 +116,10 @@ class Menu:
     def on_scanned(self, mods):
         self.mods = mods
         self.filtered_mods = mods
-        self.populate(self.mods)
+        if len(mods) > 0:
+            self.populate(self.mods)
+        else:
+            self.open_config()
     
     def on_img_resized(self, image):
         self.label_img.config(image=image, width=10, height=10)
