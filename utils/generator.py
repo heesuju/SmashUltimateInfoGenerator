@@ -163,16 +163,3 @@ class Generator:
                 "character_names": self.char_names, 
                 "mod_name":self.mod_name,
                 "slots":self.slots}
-        
-    def generate_info_toml(self, display_name, authors, description, version, category):
-        # Create and write to the info.toml file
-        with open(self.working_dir + "\info.toml", "wb") as toml_file:
-            tomli.dump({
-                "display_name": display_name, 
-                "authors": authors,
-                "description": description,
-                "version": version,
-                "category": category,
-                "url": self.url,
-                "mod_name": self.mod_name
-            }, toml_file)

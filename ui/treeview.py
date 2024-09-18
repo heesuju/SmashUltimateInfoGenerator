@@ -30,6 +30,7 @@ class Menu:
         self.loader = Loader()
         self.queue = queue.Queue()
         self.progress_count = 0
+        self.progress_lock = threading.Lock()
         self.max_count = 0
         self.show()
         self.scan()
@@ -103,7 +104,8 @@ class Menu:
             self.refresh()
     
     def on_scan_progress(self, future):
-        self.progress_count += 1
+        with self.progress_lock:
+            self.progress_count += 1
         self.queue.put(self.progress_count)
         self.root.event_generate('<<Progress>>')
 

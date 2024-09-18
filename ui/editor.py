@@ -15,9 +15,10 @@ from utils.downloader import Downloader
 from utils.loader import Loader
 from .comparison import Comparison
 from utils.image_resize import ImageResize
-from . import PATH_ICON, set_text
+from . import PATH_ICON
 from cache import remove_cache
 from utils import open_web
+from .common_ui import *
 
 class Editor:
     def __init__(self) -> None:
@@ -57,25 +58,32 @@ class Editor:
     def on_bs4_result(self, mod_title, authors):
         if mod_title:
             self.generator.mod_title_web = mod_title
-            self.entry_mod_name.delete(0, tk.END)
-            self.entry_mod_name.insert(0, common.trim_mod_name(self.generator.mod_title_web, self.generator.ignore_names))
+            set_text(self.entry_mod_name, common.trim_mod_name(self.generator.mod_title_web, self.generator.ignore_names))
         elif self.generator.mod_name:
-            self.entry_mod_name.delete(0, tk.END)
-            self.entry_mod_name.insert(0, self.generator.mod_name)
-        
+            set_text(self.entry_mod_name, self.generator.mod_name)
+            
         if authors:
-            self.entry_authors.delete(0, tk.END)
-            self.entry_authors.insert(0, authors)
+            set_text(self.entry_authors, authors)
 
-        self.set_display_name(self.entry_char_names.get(), self.entry_slots.get(), self.entry_mod_name.get(), self.combobox_cat.get())
-        self.set_folder_name(self.entry_char_names.get().replace(" ", ""), self.entry_slots.get().replace(" ", ""), self.entry_mod_name.get().replace(" ", ""), self.combobox_cat.get())
+        self.set_display_name(
+            get_text(self.entry_char_names), 
+            get_text(self.entry_slots), 
+            get_text(self.entry_mod_name), 
+            get_text(self.combobox_cat)
+        )
+
+        self.set_folder_name(
+            get_text(self.entry_char_names, remove_spacing=True), 
+            get_text(self.entry_slots, remove_spacing=True), 
+            get_text(self.entry_mod_name, remove_spacing=True), 
+            get_text(self.combobox_cat)
+        )
 
     def on_selenium_result(self, version, img_urls, img_descriptions):
         self.img_urls = img_urls
         self.img_descriptions = img_descriptions 
-        self.label_output.config(text="Fetched elements")
-        self.entry_ver.delete(0, tk.END)
-        self.entry_ver.insert(0, common.format_version(version))
+        set_text(self.label_output, "Fetched elements")
+        set_text(self.entry_ver, common.format_version(version))
         
         if len(self.img_urls) > 0:
             self.label_output.config(text="Downloading thumbnails...")
@@ -100,7 +108,7 @@ class Editor:
             return
         
         self.btn_fetch_data.config(state="disabled")
-        self.label_output.config(text="Fetching elements...")
+        set_text(self.label_output, "Fetching elements...")
         self.ckbox_replace_img.config(state="disabled")
         self.generator.url = self.entry_url.get()
         self.cbox_img.config(state="disabled")
@@ -112,15 +120,14 @@ class Editor:
         selenium_thread.start()
 
     def on_url_changed(self, event):
-        self.generator.url = self.entry_url.get()
+        self.generator.url = get_text(self.entry_url)
 
     def open_url(self):
         if common.is_valid_url(self.entry_url.get()):
             open_web(self.entry_url.get())
 
     def on_combobox_select(self, event):
-        self.entry_folder_name.delete(0, tk.END)
-        self.entry_folder_name.insert(0, self.combobox_cat.get() + "_" + self.entry_char_names.get().replace(" ", "") + "[" + self.entry_slots.get().replace(" ", "")  + "]_" + self.entry_mod_name.get().replace(" ", "") ) 
+        set_text(self.entry_folder_name, self.combobox_cat.get() + "_" + self.entry_char_names.get().replace(" ", "") + "[" + self.entry_slots.get().replace(" ", "")  + "]_" + self.entry_mod_name.get().replace(" ", "") ) 
     
     def on_img_url_selected(self, event):
         selected_text = self.cbox_img.get()
@@ -245,10 +252,15 @@ class Editor:
             self.update_preview()
 
     def apply_changes(self):
-        self.generator.generate_info_toml(self.entry_display_name.get(), self.entry_authors.get(), self.txt_desc.get("1.0", tk.END), self.entry_ver.get(), self.combobox_cat.get())
-        self.move_file(self.entry_img_dir.get(), self.entry_work_dir.get())
+        dump_toml(
+            self.generator.working_dir,
+            TomlParams(self.entry_display_name, self.entry_authors, self.txt_desc, self.entry_ver, 
+                       self.combobox_cat, self.entry_url, self.entry_mod_name)
+        )
+
+        self.move_file()
         self.rename_directory()
-        self.label_output.config(text="Applied changes")
+        set_text(self.label_output, "Applied changes")
         
     def update_image(self):
         image_path =  filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.gif;*.webp")])
@@ -277,14 +289,16 @@ class Editor:
         resize_thread = ImageResize(directory, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
         resize_thread.start()
         
-    def move_file(self, source_file, dst_dir):
+    def move_file(self):
+        source_file = get_text(self.entry_img_dir) 
+        dst_dir = get_text(self.entry_work_dir)
+        
         if not source_file or not os.path.exists(source_file):
             print("image dir is empty or invalid")
             return
         
         new_path = os.path.join(dst_dir, defs.IMAGE_NAME)
-        self.entry_img_dir.delete(0, tk.END)
-        self.entry_img_dir.insert(tk.END, new_path)
+        set_text(self.entry_img_dir, new_path)
         
         if os.path.samefile(source_file, new_path) == False:
             shutil.copy(source_file, new_path)
