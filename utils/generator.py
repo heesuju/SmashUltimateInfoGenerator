@@ -20,6 +20,7 @@ class Generator:
         self.display_name = ""                  # The name that shows up in the in-game mod manager
         self.mod_name = ""                      # The name of the mod
         self.mod_title_web = ""                 # The mod title scraped from the web page
+        self.char_keys = []
         self.char_names = []                    # Character names included
         self.ignore_names = []                  # A set of names to ignore in the mod title
         self.group_names = []                   # The name that groups Characters sharing the same slot 
@@ -56,6 +57,7 @@ class Generator:
     def get_characters(self):
         children = common.get_all_children_in_path(self.working_dir + "/fighter")
         dict_arr = common.csv_to_dict(PATH_CHAR_NAMES) 
+        key_arr = []
         name_arr = []        
         group_arr = []
         slot_arr = []
@@ -66,6 +68,7 @@ class Generator:
         for child in children:
             for dict in dict_arr:
                 if child == dict['Key']:
+                    key_arr.append(dict['Key'])
                     name_arr.append(dict['Custom'])
                     group_arr.append(dict['Group'])
                     
@@ -79,7 +82,7 @@ class Generator:
                                 if slot not in slot_arr:
                                     slot_arr.append(slot)
 
-        return slot_arr, name_arr, group_arr
+        return slot_arr, name_arr, group_arr, key_arr
         
     def set_category(self):
         if self.is_skin or self.is_motion:              return "Fighter"
@@ -98,7 +101,7 @@ class Generator:
         self.reset()
 
         if common.is_valid_dir(self.working_dir + "/fighter"):
-            self.slots, self.char_names, self.group_names = self.get_characters()
+            self.slots, self.char_names, self.group_names, self.char_keys = self.get_characters()
             
             if common.search_dir_for_keyword(self.working_dir + "/fighter", "model"):
                 self.description += "Skin\n"

@@ -1,94 +1,94 @@
-Key,Value,Custom,Group
-mario,Mario,Mario,
-donkey,Donkey Kong,Donkey Kong,
-link,Link,Link,
-samus,Samus,Samus,
-samusd,Dark Samus,Dark Samus
-yoshi,Yoshi,Yoshi,
-kirby,Kirby,Kirby,
-fox,Fox,Fox,
-pikachu,Pikachu,Pikachu,
-luigi,Luigi,Luigi,
-ness,Ness,Ness,
-captain,Captain Falcon,Captain Falcon,
-purin,Jigglypuff,Jigglypuff,
-peach,Peach,Peach,
-daisy,Daisy,Daisy,
-koopa,Bowser,Bowser,
-koopag,Giga Bowser,Giga Bowser,
-nana,Ice Climbers Nana,Nana,Ice Climbers
-popo,Ice Climbers Popo,Popo,Ice Climbers
-sheik,Sheik,Sheik,
-zelda,Zelda,Zelda,
-mariod,Dr. Mario,Dr. Mario,
-pichu,Pichu,Pichu,
-falco,Falco,Falco,
-marth,Marth,Marth,
-lucina,Lucina,Lucina,
-younglink,Young Link,Young Link,
-ganon,Ganondorf,Ganondorf,
-mewtwo,Mewtwo,Mewtwo,
-roy,Roy,Roy,
-chrom,Chrom,Chrom,
-gamewatch,Mr. Game & Watch,Mr. Game & Watch,
-metaknight,Meta Knight,Meta Knight,
-pit,Pit,Pit,
-pitb,Dark Pit,Dark Pit,
-szerosuit,Zero Suit Samus,ZSS,
-wario,Wario,Wario,
-snake,Snake,Snake,
-ike,Ike,Ike,
-ptrainer,Trainer,Trainer,Pkm
-pzenigame,Squirtle,Squirtle,Pkm
-pfushigisou,Ivysaur,Ivysaur,Pkm
-plizardon,Charizard,Charizard,Pkm
-diddy,Diddy Kong,Diddy Kong,
-lucas,Lucas,Lucas,
-sonic,Sonic,Sonic,
-dedede,King Dedede,King Dedede,
-pikmin,Olimar,Olimar,
-lucario,Lucario,Lucario,
-robot,R.O.B.,R.O.B.,
-toonlink,Toon Link,Toon Link,
-wolf,Wolf,Wolf,
-murabito,Villager,Villager,
-rockman,Mega Man,Mega Man,
-wiifit,Wii Fit Trainer,Wii Fit Trainer,
-rosetta,Rosalina & Luma,Rosalina,
-littlemac,Little Mac,Little Mac,
-gekkouga,Greninja,Greninja,
-miifighter,Mii Brawler,Mii Brawler,
-miiswordsman,Mii Swordfighter,Mii Swordfighter,
-miigunner,Mii Gunner,Mii Gunner,
-palutena,Palutena,Palutena,
-pacman,Pac-man,Pac-man,
-reflet,Robin,Robin,
-shulk,Shulk,Shulk,
-koopajr,Bowser JR.,Bowser JR.,
-duckhunt,Duck Hunt,Duck Hunt,
-ryu,Ryu,Ryu,
-ken,Ken,Ken,
-cloud,Cloud,Cloud,
-kamui,Corrin,Corrin,
-bayonetta,Bayonetta,Bayonetta,
-inkling,Inkling,Inkling,
-ridley,Ridley,Ridley,
-simon,Simon,Simon,
-richter,Richter,Richter,
-krool,King K. Rool,King K. Rool,
-shizue,Isabelle,Isabelle,
-gaogaen,Incineroar,Incineroar,
-packun,Piranha Plant,Piranha Plant,
-jack,Joker,Joker,
-brave,Hero,Hero,
-buddy,Banjo & Kazooie,Banjo & Kazooie,
-dolly,Terry,Terry,
-master,Byleth,Byleth,
-tantan,Min Min,Min Min,
-pickel,Steve,Steve,
-edge,Sephiroth,Sephiroth,
-eflame,Pyra,Pyra,Aegis
-element,Rex,Rex,Aegis
-elight,Mythra,Mythra,Aegis
-demon,Kazuya,Kazuya,
-trail,Sora,Sora
+Key,Value,Custom,Group,Series
+mario,Mario,Mario,,Super Mario
+donkey,Donkey Kong,Donkey Kong,,Donkey Kong
+link,Link,Link,,Zelda
+samus,Samus,Samus,,Metroid
+samusd,Dark Samus,Dark Samus,,Metroid
+yoshi,Yoshi,Yoshi,,Super Mario
+kirby,Kirby,Kirby,,Kirby
+fox,Fox,Fox,,StarFox
+pikachu,Pikachu,Pikachu,,Pokemon
+luigi,Luigi,Luigi,,Super Mario
+ness,Ness,Ness,,EarthBound
+captain,Captain Falcon,Captain Falcon,,F-Zero
+purin,Jigglypuff,Jigglypuff,,Pokemon
+peach,Peach,Peach,,Super Mario
+daisy,Daisy,Daisy,,Super Mario
+koopa,Bowser,Bowser,,Super Mario
+koopag,Giga Bowser,Giga Bowser,,Super Mario
+nana,Ice Climbers Nana,Nana,Ice Climbers,Ice Climber
+popo,Ice Climbers Popo,Popo,Ice Climbers,Ice Climber
+sheik,Sheik,Sheik,,Zelda
+zelda,Zelda,Zelda,,Zelda
+mariod,Dr. Mario,Dr. Mario,,Super Mario
+pichu,Pichu,Pichu,,Pokemon
+falco,Falco,Falco,,StarFox
+marth,Marth,Marth,,Fire Emblem
+lucina,Lucina,Lucina,,Fire Emblem
+younglink,Young Link,Young Link,,Zelda
+ganon,Ganondorf,Ganondorf,,Zelda
+mewtwo,Mewtwo,Mewtwo,,Pokemon
+roy,Roy,Roy,,Fire Emblem
+chrom,Chrom,Chrom,,Fire Emblem
+gamewatch,Mr. Game & Watch,Mr. Game & Watch,,Game & Watch
+metaknight,Meta Knight,Meta Knight,,Kirby
+pit,Pit,Pit,,Kid Icarus
+pitb,Dark Pit,Dark Pit,,Kid Icarus
+szerosuit,Zero Suit Samus,ZSS,,Metroid
+wario,Wario,Wario,,WarioWare
+snake,Snake,Snake,,Metal Gear Solid
+ike,Ike,Ike,,Fire Emblem
+ptrainer,Trainer,Trainer,Pkm,Pokemon
+pzenigame,Squirtle,Squirtle,Pkm,Pokemon
+pfushigisou,Ivysaur,Ivysaur,Pkm,Pokemon
+plizardon,Charizard,Charizard,Pkm,Pokemon
+diddy,Diddy Kong,Diddy Kong,,Donkey Kong
+lucas,Lucas,Lucas,,EarthBound
+sonic,Sonic,Sonic,,Sonic
+dedede,King Dedede,King Dedede,,Kirby
+pikmin,Olimar,Olimar,,Pikmin
+lucario,Lucario,Lucario,,Pokemon
+robot,R.O.B.,R.O.B.,,R.O.B
+toonlink,Toon Link,Toon Link,,Zelda
+wolf,Wolf,Wolf,,StarFox
+murabito,Villager,Villager,,Animal Crossing
+rockman,Mega Man,Mega Man,,Mega Man
+wiifit,Wii Fit Trainer,Wii Fit Trainer,,Wii Fit
+rosetta,Rosalina & Luma,Rosalina,,Super Mario
+littlemac,Little Mac,Little Mac,,Punch-Out
+gekkouga,Greninja,Greninja,,Pokemon
+miifighter,Mii Brawler,Mii Brawler,,Mii
+miiswordsman,Mii Swordfighter,Mii Swordfighter,,Mii
+miigunner,Mii Gunner,Mii Gunner,,Mii
+palutena,Palutena,Palutena,,Kid Icarus
+pacman,Pac-man,Pac-man,,Pac-Man
+reflet,Robin,Robin,,Fire Emblem
+shulk,Shulk,Shulk,,Xenoblade
+koopajr,Bowser JR.,Bowser JR.,,Super Mario
+duckhunt,Duck Hunt,Duck Hunt,,Duck Hunt
+ryu,Ryu,Ryu,,Street Fighter
+ken,Ken,Ken,,Street Fighter
+cloud,Cloud,Cloud,,Final Fantasy
+kamui,Corrin,Corrin,,Fire Emblem
+bayonetta,Bayonetta,Bayonetta,,Bayonetta
+inkling,Inkling,Inkling,,Splatoon
+ridley,Ridley,Ridley,,Metroid
+simon,Simon,Simon,,Castlevania
+richter,Richter,Richter,,Castlevania
+krool,King K. Rool,King K. Rool,,Donkey Kong
+shizue,Isabelle,Isabelle,,Animal Crossing
+gaogaen,Incineroar,Incineroar,,Pokemon
+packun,Piranha Plant,Piranha Plant,,Super Mario
+jack,Joker,Joker,,Persona
+brave,Hero,Hero,,Dragon Quest
+buddy,Banjo & Kazooie,Banjo & Kazooie,,Banjo-Kazooie
+dolly,Terry,Terry,,Fatal Fury
+master,Byleth,Byleth,,Fire Emblem
+tantan,Min Min,Min Min,,Arms
+pickel,Steve,Steve,,Minecraft
+edge,Sephiroth,Sephiroth,,Final Fantasy
+eflame,Pyra,Pyra,Aegis,Xenoblade
+element,Rex,Rex,Aegis,Xenoblade
+elight,Mythra,Mythra,Aegis,Xenoblade
+demon,Kazuya,Kazuya,,Tekken
+trail,Sora,Sora,,Kingdom Hearts

@@ -7,3 +7,7 @@ def format_version(input_str)->str:
 
     formatted_version = '.'.join(numeric_parts)
     return formatted_version
+
+def remove_redundant_spacing(input:str):
+    arr = [i for i in input.split(' ') if i]
+    return " ".join(arr)

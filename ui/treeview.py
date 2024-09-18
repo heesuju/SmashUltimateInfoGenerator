@@ -12,6 +12,7 @@ import tkinter.font as font
 import defs
 from .editor import Editor
 from .config import Config
+from .filter import Filter
 from utils.loader import Loader
 from utils.image_resize import ImageResize
 from utils import load_config
@@ -71,31 +72,11 @@ class Menu:
         n_count = end - start
         self.l_page.config(text=f"{n_count} of {len(mods)}")
 
-    def on_filter_submitted(self, event):
-        self.search()
-
     def search(self):
         self.reset()
-        self.cur_page = 1
-        mod_name = self.entry_mod_name.get()
-        author = self.entry_author.get()
-        category = ""
-        character = self.entry_character.get()
-        self.filtered_mods = []
-        for mod in self.mods:
-            if mod_name.lower() not in mod["mod_name"].lower(): continue
-            if author.lower() not in mod["authors"].lower(): continue
-            if character.lower() not in mod["characters"].lower(): continue
-            
-            self.filtered_mods.append(mod)
-            
+        self.cur_page = 1        
+        self.filtered_mods = self.filter_view.filter_mods(self.mods)    
         self.populate(self.filtered_mods)
-
-    def clear_filter(self):
-        clear_text(self.entry_mod_name)
-        clear_text(self.entry_author)
-        clear_text(self.entry_character)
-        self.search()
 
     def on_config_changed(self, dir:str):
         if dir:
@@ -181,14 +162,6 @@ class Menu:
         else:
             print("no default directory")
             self.open_config()
-
-    def add_filter_item(self, row, col, name):
-        label = ttk.Label(self.frame_filter, text=name)
-        label.grid(row=row, column=col, sticky=tk.W, padx=5)
-        entry = tk.Entry(self.frame_filter)
-        entry.grid(row=row, column=col+1)
-        entry.bind("<Return>", self.on_filter_submitted)
-        return entry
     
     def change_page(self, number):
         self.cur_page = number
@@ -221,8 +194,7 @@ class Menu:
             prev = n
 
     def show(self):
-        self.frame_filter = ttk.LabelFrame(self.root, text="Filter")
-        self.frame_filter.pack(padx=defs.PAD_H, pady=defs.PAD_V, fill="x")
+        self.filter_view = Filter(self.root, self.search, self.refresh)
         
         self.frame_content = tk.Frame(self.root)
         self.frame_content.pack(padx=defs.PAD_H, pady=(0, defs.PAD_V), fill="both", expand=True)
@@ -235,22 +207,7 @@ class Menu:
 
         self.info_frame = ttk.LabelFrame(self.frame_content, text="Details")
         self.info_frame.grid(row=0, column=1, padx=(defs.PAD_H/2, 0), sticky=tk.NSEW)
-        self.info_frame.columnconfigure(0, weight=1)
-
-        self.entry_mod_name = self.add_filter_item(0, 0, "Mod Name")
-        self.entry_author = self.add_filter_item(1, 0, "Author")
-        self.entry_character = self.add_filter_item(2, 0, "Character")
-        
-        self.f_filter_actions = tk.Frame(self.frame_filter)
-        self.f_filter_actions.grid(row=3, column=0, columnspan=2, padx=(defs.PAD_H, 0), pady=(defs.PAD_V/2), sticky=tk.NSEW)
-        
-        self.btn_search = tk.Button(self.f_filter_actions, text="Search", cursor='hand2', command=self.search)
-        self.btn_search.pack(side=tk.LEFT, padx=(0, defs.PAD_H))
-        self.btn_clear = tk.Button(self.f_filter_actions, text="Clear", cursor='hand2', command=self.clear_filter)
-        self.btn_clear.pack(side=tk.LEFT, padx=(0, defs.PAD_H))
-
-        self.btn_refresh = tk.Button(self.f_filter_actions, text="Refresh", cursor='hand2', command=self.refresh)
-        self.btn_refresh.pack(side=tk.LEFT, padx=(0, defs.PAD_H))
+        self.info_frame.columnconfigure(0, weight=1)     
 
         self.categories = ["Mod Name", "Category", "Author", "Char", "Slot", "Dir"]
         

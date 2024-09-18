@@ -61,14 +61,19 @@ def get_direct_child_by_extension(directory, extension):
             list.append(filename)
     return list
 
-def csv_to_dict(directory):
+def csv_to_dict(directory, col_name:str = ""):
     data_list = []
     
     with open(directory, mode='r', newline='') as file:
         csv_reader = csv.DictReader(file)
         
         for row in csv_reader:
-            data_list.append(row)
+            if col_name:
+                item = str(row.get(col_name, ""))
+                if item not in data_list:
+                    data_list.append(item)
+            else:
+                data_list.append(row)
     
     return data_list
 
