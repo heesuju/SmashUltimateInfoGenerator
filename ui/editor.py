@@ -304,10 +304,12 @@ class Editor:
         new_path = os.path.join(dst_dir, defs.IMAGE_NAME)
         set_text(self.entry_img_dir, new_path)
         
-        if os.path.samefile(source_file, new_path) == False:
-            shutil.copy(source_file, new_path)
-        else:
-            print("paths are same")
+        if os.path.exists(new_path):
+            if os.path.samefile(source_file, new_path):
+                print("paths are same")
+                return
+            
+        shutil.copy(source_file, new_path)
 
     def find_image(self):
         for type in defs.IMAGE_TYPES:
