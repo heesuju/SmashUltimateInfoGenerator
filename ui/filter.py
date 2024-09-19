@@ -1,6 +1,6 @@
 from tkinter import ttk
 import tkinter as tk
-from defs import PAD_H, PAD_V
+from defs import PAD_H, PAD_V, CATEGORIES
 from .common_ui import *
 from data import PATH_CHAR_NAMES
 from common import csv_to_dict
@@ -16,13 +16,12 @@ class Filter:
         self.entry_mod_name = self.add_filter_entry(0, 0, "Mod Name")
         self.entry_author = self.add_filter_entry(0, 2, "Author")
         self.entry_character = self.add_filter_entry(0, 4, "Character")
-        
-        data = ["All"]
-        series = sorted(csv_to_dict(PATH_CHAR_NAMES, "Series"))
-        data.extend(series)
-        data = [remove_redundant_spacing(i) for i in data]
-        self.cbox_series = self.add_filter_dropdown(1, 0, "Series", data)
 
+        self.cbox_category = self.add_filter_dropdown(1, 0, "Category", ["All"] + CATEGORIES)
+
+        series = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Series"))
+        series = [remove_redundant_spacing(i) for i in series]
+        self.cbox_series = self.add_filter_dropdown(1, 2, "Series", series)
         self.frame_actions = tk.Frame(self.frame)
         self.frame_actions.grid(row=3, column=0, columnspan=2, padx=(PAD_H, 0), pady=(PAD_V/2), sticky=tk.NSEW)
         
@@ -64,7 +63,8 @@ class Filter:
             "mod_name": get_text(self.entry_mod_name).lower() if lowercase else get_text(self.entry_mod_name),
             "authors": get_text(self.entry_author).lower() if lowercase else get_text(self.entry_author),
             "characters": get_text(self.entry_character).lower() if lowercase else get_text(self.entry_character),
-            "series": get_text(self.cbox_series).lower() if lowercase else get_text(self.cbox_series)
+            "series": get_text(self.cbox_series).lower() if lowercase else get_text(self.cbox_series),
+            "category": get_text(self.cbox_category).lower() if lowercase else get_text(self.cbox_category)
         }
     
     def clear(self):
@@ -72,6 +72,7 @@ class Filter:
         clear_text(self.entry_author)
         clear_text(self.entry_character)
         self.cbox_series.set("All")
+        self.cbox_category.set("All")
         self.search_fn()
 
     def filter_mods(self, mods):
@@ -91,6 +92,11 @@ class Filter:
                 
                 if should_include == False:
                     continue
+            
+            if filter_params.get("category") != "all":
+                if filter_params.get("category") != mod["category"].lower():
+                    continue
+            
             
             outputs.append(mod)
         
