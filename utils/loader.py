@@ -13,6 +13,7 @@ class Loader:
         self.version = ""
         self.mod_name = ""
         self.url = ""
+        self.wifi_safe = "Uncertain"
 
     def load_toml(self, dir:str):
         self.reset()
@@ -28,7 +29,7 @@ class Loader:
                 if "version" in loaded_dict: self.version = loaded_dict["version"]
                 if "mod_name" in loaded_dict: self.mod_name = loaded_dict["mod_name"]
                 if "url" in loaded_dict: self.url = loaded_dict["url"]
-
+                if "wifi_safe" in loaded_dict: self.wifi_safe = loaded_dict["wifi_safe"]
             
                 print("successfully loaded info.toml in working directory")
                 return True

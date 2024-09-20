@@ -40,6 +40,7 @@ class Scanner(Thread):
             "mod_name" : "",
             "selected" : "",
             "path" : "",
+            "wifi_safe" : "Uncertain",
             "info_toml" : False,
             "img" : None
         }
@@ -56,6 +57,7 @@ class Scanner(Thread):
                 mod["category"] = loader.category
                 mod["version"] = loader.version
                 mod["info_toml"] = True
+                mod["wifi_safe"] = loader.wifi_safe
             
             generator.preview_info_toml(path, "", "", "")
             mod["slots"] = common.slots_to_string(generator.slots)

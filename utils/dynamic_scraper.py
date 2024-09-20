@@ -10,8 +10,10 @@ from bs4 import BeautifulSoup
 import defs
 from threading import Thread
 from typing import List
+from utils.classify_mod_safety import classify_mod_safety
 
 TIMEOUT_DELAY = 1
+PUNCTUATIONS = [".", "?", "!"]
 
 class Selenium(Thread):
     def __init__(self, url:str, callback):
@@ -35,13 +37,14 @@ class Selenium(Thread):
             # is_nsfw = check_if_nsfw(driver, soup)
             self.img_urls, self.img_descriptions = get_thumbnails(driver, soup)    
             self.version = get_version(driver, soup)
+            wifi_safe = get_wifi_safety(driver, soup)
         except TimeoutException:
             driver.execute_script("window.stop();")
             print("driver timeout exception")
         finally:
             driver.close()
         
-        self.callback(self.version, self.img_urls, self.img_descriptions)
+        self.callback(self.version, self.img_urls, self.img_descriptions, wifi_safe)
 
 def check_if_nsfw(driver, soup):
     result = False
@@ -111,3 +114,21 @@ def number_dups(descriptions:List[str])->List[str]:
             outputs.append(n)
     
     return outputs
+
+def get_wifi_safety(driver, soup)->str:
+    try:
+        WebDriverWait(driver, TIMEOUT_DELAY).until(
+        EC.visibility_of_element_located((By.TAG_NAME, "body"))
+        )
+        
+        html = driver.page_source
+        soup = BeautifulSoup(html, "html.parser")
+        text = soup.get_text(separator="\n")
+        parts = [x for x in text.split("\n") if x]
+        text = "\n".join(parts)
+        result = classify_mod_safety(text)
+        print("Wifi-safe:", result)
+        return result
+    except TimeoutException:
+        print("Failed to find body")
+        return "Uncertain"

@@ -46,7 +46,7 @@ def set_enabled(widget, is_enabled:bool=True):
 
 class TomlParams:
     def __init__(self, display_name:str = "", authors:str = "", description:str = "", version:str = "", category:str = "", 
-                 url:str = "", mod_name:str = "") -> None:
+                 url:str = "", mod_name:str = "", wifi_safe:str = "Unknown") -> None:
         self.display_name = display_name
         self.authors = authors 
         self.description = description 
@@ -54,9 +54,10 @@ class TomlParams:
         self.category = category
         self.url = url
         self.mod_name = mod_name
+        self.wifi_safe = wifi_safe
 
     def __init__(self, display_name:tk.Entry, authors:tk.Entry, description:tk.Text, version:tk.Entry, category:ttk.Combobox, 
-                 url:tk.Entry, mod_name:tk.Entry) -> None:
+                 url:tk.Entry, mod_name:tk.Entry, wifi_safe:ttk.Combobox) -> None:
         self.display_name = get_text(display_name)
         self.authors = get_text(authors) 
         self.description = get_text(description) 
@@ -64,6 +65,7 @@ class TomlParams:
         self.category = get_text(category)
         self.url = get_text(url)
         self.mod_name = get_text(mod_name)
+        self.wifi_safe = get_text(wifi_safe)
 
 # Create and write to the info.toml file
 def dump_toml(path, params:TomlParams):
@@ -76,5 +78,6 @@ def dump_toml(path, params:TomlParams):
             "version": params.version,
             "category": params.category,
             "url": params.url,
-            "mod_name": params.mod_name
+            "mod_name": params.mod_name,
+            "wifi_safe":params.wifi_safe
         }, toml_file)

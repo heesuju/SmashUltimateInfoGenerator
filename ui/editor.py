@@ -79,12 +79,13 @@ class Editor:
             get_text(self.combobox_cat)
         )
 
-    def on_selenium_result(self, version, img_urls, img_descriptions):
+    def on_selenium_result(self, version, img_urls, img_descriptions, wifi_safe:str):
         self.img_urls = img_urls
-        self.img_descriptions = img_descriptions 
+        self.img_descriptions = img_descriptions
         set_text(self.label_output, "Fetched elements")
         set_text(self.entry_ver, format_version(version))
-        
+        self.cbox_wifi_safe.set(wifi_safe)
+
         if len(self.img_urls) > 0:
             self.label_output.config(text="Downloading thumbnails...")
             self.download_img()
@@ -101,7 +102,7 @@ class Editor:
             self.set_img_cbox()
             set_enabled(self.ckbox_replace_img, False)
             set_enabled(self.cbox_img, False)
-            set_enabled(self.btn_fetch_data)
+        set_enabled(self.btn_fetch_data)
 
     def get_data_from_url(self):
         if not self.entry_url.get() or not common.is_valid_url(self.entry_url.get()):
@@ -232,6 +233,7 @@ class Editor:
                 set_text(self.entry_ver, self.loader.version)
                 set_text(self.entry_url, self.loader.url)
                 self.combobox_cat.set(self.loader.category)
+                self.cbox_wifi_safe.set(self.loader.wifi_safe)
         else:
             mod_name = self.generator.mod_title_web
         
@@ -259,7 +261,7 @@ class Editor:
         dump_toml(
             self.generator.working_dir,
             TomlParams(self.entry_display_name, self.entry_authors, self.txt_desc, self.entry_ver, 
-                       self.combobox_cat, self.entry_url, self.entry_mod_name)
+                       self.combobox_cat, self.entry_url, self.entry_mod_name, self.cbox_wifi_safe)
         )
 
         self.move_file()
@@ -528,6 +530,14 @@ class Editor:
         self.entry_slots = tk.Entry(self.new_window, width=10)
         self.entry_slots.grid(row=8, column=1, sticky=tk.EW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
         self.entry_slots.bind("<KeyRelease>", self.on_entry_change)
+
+        self.l_wifi_safe = tk.Label(self.new_window, text="Wifi-Safe")
+        self.l_wifi_safe.grid(row=9, column=1, sticky=tk.W)
+    
+        self.cbox_wifi_safe = ttk.Combobox(self.new_window, width=10, values=["Uncertain", "Safe", "Not Safe"])
+        self.cbox_wifi_safe.grid(row=10, column=1, sticky=tk.EW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
+        self.cbox_wifi_safe.set("Uncertain")
+        # self.cbox_wifi_safe.bind("<<ComboboxSelected>>", self.on_img_url_selected)
 
         self.label_list = tk.Label(self.new_window, text="Includes")
         self.label_list.grid(row=11, column=1, sticky=tk.W)

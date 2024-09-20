@@ -22,6 +22,10 @@ class Filter:
         series = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Series"))
         series = [remove_redundant_spacing(i) for i in series]
         self.cbox_series = self.add_filter_dropdown(1, 2, "Series", series)
+
+        self.cbox_info = self.add_filter_dropdown(2, 0, "Info.toml", ["All", "Included", "Not Included"])
+        self.cbox_wifi = self.add_filter_dropdown(2, 2, "Wifi-Safe", ["All", "Safe", "Not Safe", "Uncertain"])
+        
         self.frame_actions = tk.Frame(self.frame)
         self.frame_actions.grid(row=3, column=0, columnspan=2, padx=(PAD_H, 0), pady=(PAD_V/2), sticky=tk.NSEW)
         
@@ -64,7 +68,9 @@ class Filter:
             "authors": get_text(self.entry_author).lower() if lowercase else get_text(self.entry_author),
             "characters": get_text(self.entry_character).lower() if lowercase else get_text(self.entry_character),
             "series": get_text(self.cbox_series).lower() if lowercase else get_text(self.cbox_series),
-            "category": get_text(self.cbox_category).lower() if lowercase else get_text(self.cbox_category)
+            "category": get_text(self.cbox_category).lower() if lowercase else get_text(self.cbox_category),
+            "info_toml": get_text(self.cbox_info).lower() if lowercase else get_text(self.cbox_info),
+            "wifi_safe": get_text(self.cbox_wifi).lower() if lowercase else get_text(self.cbox_wifi),
         }
     
     def clear(self):
@@ -73,6 +79,8 @@ class Filter:
         clear_text(self.entry_character)
         self.cbox_series.set("All")
         self.cbox_category.set("All")
+        self.cbox_info.set("All")
+        self.cbox_wifi.set("All")
         self.search_fn()
 
     def filter_mods(self, mods):
@@ -97,7 +105,16 @@ class Filter:
                 if filter_params.get("category") != mod["category"].lower():
                     continue
             
-            
+            if filter_params.get("info_toml") != "all":
+                if filter_params.get("info_toml") == "included" and mod["info_toml"] == False:
+                    continue
+                elif filter_params.get("info_toml") == "not included" and mod["info_toml"] == True:
+                    continue
+
+            if filter_params.get("wifi_safe") != "all":
+                if filter_params.get("wifi_safe") != mod["wifi_safe"].lower():
+                    continue
+                
             outputs.append(mod)
         
         return outputs
