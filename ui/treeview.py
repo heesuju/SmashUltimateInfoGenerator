@@ -57,6 +57,7 @@ class Menu:
             print("no item selected!")
 
     def refresh(self):
+        self.filter_view.clear()
         self.reset()
         self.scan()
 
@@ -220,7 +221,7 @@ class Menu:
 
     def show(self):
         self.f_dir = tk.Frame(self.root)
-        self.f_dir.pack(padx=PAD_H, pady=(PAD_V, 0), fill="x")
+        self.f_dir.pack(padx=PAD_H, pady=PAD_V, fill="x")
         
         self.l_dir = tk.Label(self.f_dir, text="Mod Directory")
         self.l_dir.pack(side=tk.LEFT)
@@ -237,19 +238,16 @@ class Menu:
 
         # self.entry_work_dir.bind("<KeyRelease>", self.on_update_directory)
         
-        self.filter_view = Filter(self.root, self.search, self.refresh)
         
         self.frame_content = tk.Frame(self.root)
         self.frame_content.pack(padx=PAD_H, pady=(0, PAD_V), fill="both", expand=True)
-        self.frame_content.columnconfigure(0, weight=2)
-        self.frame_content.columnconfigure(1, weight=1)
-        self.frame_content.rowconfigure(0, weight=1)
 
         self.frame_list = ttk.LabelFrame(self.frame_content, text="Mods")
-        self.frame_list.grid(row=0, column=0, padx=(0, PAD_H/2), sticky=tk.NSEW)
+        self.frame_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0,PAD_H))
+        self.filter_view = Filter(self.frame_list, self.search, self.refresh)
 
         self.info_frame = ttk.LabelFrame(self.frame_content, text="Details")
-        self.info_frame.grid(row=0, column=1, padx=(PAD_H/2, 0), sticky=tk.NSEW)
+        self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.info_frame.columnconfigure(0, weight=1)     
 
         self.categories = ["Mod Name", "Category", "Author", "Char", "Slot", "Dir"]

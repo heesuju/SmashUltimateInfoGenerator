@@ -8,26 +8,35 @@ from utils.cleaner import remove_redundant_spacing
 
 class Filter:
     def __init__(self, root, search_fn, refresh_fn) -> None:
-        self.frame = ttk.LabelFrame(root, text="Filter")
-        self.frame.pack(padx=PAD_H, pady=PAD_V, fill="x")
+        self.frame = tk.Frame(root)
+        self.frame.pack(padx=PAD_H, pady=PAD_V/2, fill="x")
+        
+        self.frame.columnconfigure(1, weight=2)
+        self.frame.columnconfigure(1, minsize=100)
+        self.frame.columnconfigure(3, weight=2)
+        self.frame.columnconfigure(3, minsize=100)
+        
         self.search_fn = search_fn
         self.refresh_fn = refresh_fn
         
         self.entry_mod_name = self.add_filter_entry(0, 0, "Mod Name")
         self.entry_author = self.add_filter_entry(0, 2, "Author")
-        self.entry_character = self.add_filter_entry(0, 4, "Character")
-
+        
         self.cbox_category = self.add_filter_dropdown(1, 0, "Category", ["All"] + CATEGORIES)
 
         series = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Series"))
         series = [remove_redundant_spacing(i) for i in series]
-        self.cbox_series = self.add_filter_dropdown(1, 2, "Series", series)
+        self.cbox_series = self.add_filter_dropdown(2, 0, "Series", series)
+        self.cbox_series.bind("<<ComboboxSelected>>", self.on_series_changed)
 
-        self.cbox_info = self.add_filter_dropdown(2, 0, "Info.toml", ["All", "Included", "Not Included"])
-        self.cbox_wifi = self.add_filter_dropdown(2, 2, "Wifi-Safe", ["All", "Safe", "Not Safe", "Uncertain"])
+        chars = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Custom"))
+        self.cbox_char = self.add_filter_dropdown(2, 2, "Character", chars)
+
+        self.cbox_info = self.add_filter_dropdown(3, 0, "Info.toml", ["All", "Included", "Not Included"])
+        self.cbox_wifi = self.add_filter_dropdown(3, 2, "Wifi-Safe", ["All", "Safe", "Not Safe", "Uncertain"])
         
         self.frame_actions = tk.Frame(self.frame)
-        self.frame_actions.grid(row=3, column=0, columnspan=2, padx=(PAD_H, 0), pady=(PAD_V/2), sticky=tk.NSEW)
+        self.frame_actions.grid(row=4, column=0, columnspan=4, pady=(PAD_V/2, 0), sticky=tk.E)
         
         self.btn_search = tk.Button(self.frame_actions, text="Search", cursor='hand2', command=self.search_fn)
         self.btn_search.pack(side=tk.LEFT, padx=(0, PAD_H))
@@ -40,18 +49,18 @@ class Filter:
 
     def add_filter_entry(self, row, col, name):
         label = ttk.Label(self.frame, text=name)
-        label.grid(row=row, column=col, sticky=tk.W, padx=5)
+        label.grid(row=row, column=col, sticky=tk.EW, padx=(0,PAD_H))
         entry = tk.Entry(self.frame)
-        entry.grid(row=row, column=col+1)
+        entry.grid(row=row, column=col+1, sticky=tk.EW, padx=(0,PAD_H), pady=PAD_V/2)
         entry.bind("<Return>", self.on_filter_submitted)
         return entry
     
     def add_filter_dropdown(self, row, col, name, data):
         label = ttk.Label(self.frame, text=name)
-        label.grid(row=row, column=col, sticky=tk.W, padx=5)
+        label.grid(row=row, column=col, sticky=tk.EW, padx=(0,PAD_H))
 
         combobox = ttk.Combobox(self.frame, values=data, width=10)
-        combobox.grid(row=row, column=col+1, sticky=tk.EW)
+        combobox.grid(row=row, column=col+1, sticky=tk.EW, padx=(0,PAD_H), pady=PAD_V/2)
         combobox.bind("<<ComboboxSelected>>", self.on_combobox_selected)
         combobox.set(data[0])
         return combobox
@@ -62,11 +71,26 @@ class Filter:
     def on_combobox_selected(self, event):
         pass
 
+    def on_series_changed(self, event):
+        char_data = csv_to_dict(PATH_CHAR_NAMES)
+        selected_series = get_text(self.cbox_series)
+        filtered_chars = []
+        if selected_series != "All":
+            for c in char_data:
+                if c.get("Series") == selected_series:
+                    filtered_chars.append(c.get("Custom"))
+        else:
+            filtered_chars = sorted(csv_to_dict(PATH_CHAR_NAMES, "Custom"))
+
+        chars = ["All"] + sorted(filtered_chars)
+        self.cbox_char.config(values=chars)
+        self.cbox_char.set(chars[0])
+
     def get_filter_params(self, lowercase:bool = True):
         return {
             "mod_name": get_text(self.entry_mod_name).lower() if lowercase else get_text(self.entry_mod_name),
             "authors": get_text(self.entry_author).lower() if lowercase else get_text(self.entry_author),
-            "characters": get_text(self.entry_character).lower() if lowercase else get_text(self.entry_character),
+            "characters": get_text(self.cbox_char).lower() if lowercase else get_text(self.cbox_char),
             "series": get_text(self.cbox_series).lower() if lowercase else get_text(self.cbox_series),
             "category": get_text(self.cbox_category).lower() if lowercase else get_text(self.cbox_category),
             "info_toml": get_text(self.cbox_info).lower() if lowercase else get_text(self.cbox_info),
@@ -76,7 +100,9 @@ class Filter:
     def clear(self):
         clear_text(self.entry_mod_name)
         clear_text(self.entry_author)
-        clear_text(self.entry_character)
+        chars = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Custom"))
+        self.cbox_char.config(values=chars)
+        self.cbox_char.set("All")
         self.cbox_series.set("All")
         self.cbox_category.set("All")
         self.cbox_info.set("All")
@@ -91,7 +117,8 @@ class Filter:
         for mod in mods:
             if filter_params.get("mod_name") not in mod["mod_name"].lower(): continue
             if filter_params.get("authors") not in mod["authors"].lower(): continue
-            if filter_params.get("characters") not in mod["characters"].lower(): continue
+            if filter_params.get("characters") != "all":
+                if filter_params.get("characters") != mod["characters"].lower(): continue
             if filter_params.get("series") != "all":
                 should_include = False
                 for char_name in mod["character_list"]:
