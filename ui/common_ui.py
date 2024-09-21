@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import filedialog
 import tomli_w as tomli
 import os
+from common import is_valid_dir
 
 def set_text(widget, text:str)->None:
     if isinstance(widget, tk.Entry):
@@ -81,3 +83,9 @@ def dump_toml(path, params:TomlParams):
             "mod_name": params.mod_name,
             "wifi_safe":params.wifi_safe
         }, toml_file)
+
+def open_file_dialog(default_dir:str=""):
+    if is_valid_dir(default_dir):
+        return filedialog.askdirectory(initialdir=default_dir)
+    else:
+        return filedialog.askdirectory()

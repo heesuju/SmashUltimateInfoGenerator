@@ -9,13 +9,14 @@ import threading
 import queue
 from PIL import Image, ImageTk
 import tkinter.font as font
-import defs
+from defs import PAD_H, PAD_V
 from .editor import Editor
 from .config import Config
 from .filter import Filter
 from utils.loader import Loader
 from utils.image_resize import ImageResize
 from utils import load_config
+from utils.update_config import update_config_directory
 from . import PATH_ICON
 from .common_ui import *
 
@@ -100,8 +101,8 @@ class Menu:
         self.filtered_mods = mods
         if len(mods) > 0:
             self.populate(self.mods)
-        else:
-            self.open_config()
+        # else:
+        #     self.open_config()
     
     def on_img_resized(self, image):
         self.label_img.config(image=image, width=10, height=10)
@@ -157,12 +158,36 @@ class Menu:
         self.progress_count = 0
         config_data = load_config()
         if config_data is not None and config_data["default_directory"]:
+            set_text(self.entry_dir, config_data["default_directory"])
             scan_thread = Scanner(config_data["default_directory"], start_callback=self.on_scan_start, progress_callback=self.on_scan_progress, callback=self.on_scanned)
             scan_thread.start()
-        else:
-            print("no default directory")
-            self.open_config()
+        # else:
+        #     print("no default directory")
+        #     self.open_config()
     
+    def change_working_directory(self):
+        config_data = load_config()
+        if config_data is not None and config_data["default_directory"]:
+            working_dir = open_file_dialog(config_data["default_directory"])
+        else:
+            working_dir = open_file_dialog()
+
+        if not working_dir:
+            return
+        
+        if is_valid_dir(working_dir):
+            update_config_directory(working_dir)
+            set_text(self.entry_dir, working_dir)
+            self.refresh()
+    
+    def on_directory_changed(self, event):
+        new_directory = get_text(self.entry_dir)
+        if is_valid_dir(new_directory):
+            update_config_directory(new_directory)
+            self.refresh()
+        else:
+            print("invalid directory!")
+        
     def change_page(self, number):
         self.cur_page = number
         self.reset()
@@ -194,19 +219,37 @@ class Menu:
             prev = n
 
     def show(self):
+        self.f_dir = tk.Frame(self.root)
+        self.f_dir.pack(padx=PAD_H, pady=(PAD_V, 0), fill="x")
+        
+        self.l_dir = tk.Label(self.f_dir, text="Mod Directory")
+        self.l_dir.pack(side=tk.LEFT)
+
+        self.entry_dir = tk.Entry(self.f_dir, width=10)
+        self.entry_dir.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=PAD_H)
+        self.entry_dir.bind('<Return>', self.on_directory_changed)
+
+        self.icon_browse = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'browse.png'))
+
+        self.btn_dir = tk.Button(self.f_dir, image=self.icon_browse, relief=tk.FLAT, cursor='hand2', command=self.change_working_directory)
+        self.btn_dir.pack(side=tk.LEFT, padx = (0, PAD_H))
+
+
+        # self.entry_work_dir.bind("<KeyRelease>", self.on_update_directory)
+        
         self.filter_view = Filter(self.root, self.search, self.refresh)
         
         self.frame_content = tk.Frame(self.root)
-        self.frame_content.pack(padx=defs.PAD_H, pady=(0, defs.PAD_V), fill="both", expand=True)
+        self.frame_content.pack(padx=PAD_H, pady=(0, PAD_V), fill="both", expand=True)
         self.frame_content.columnconfigure(0, weight=2)
         self.frame_content.columnconfigure(1, weight=1)
         self.frame_content.rowconfigure(0, weight=1)
 
         self.frame_list = ttk.LabelFrame(self.frame_content, text="Mods")
-        self.frame_list.grid(row=0, column=0, padx=(0, defs.PAD_H/2), sticky=tk.NSEW)
+        self.frame_list.grid(row=0, column=0, padx=(0, PAD_H/2), sticky=tk.NSEW)
 
         self.info_frame = ttk.LabelFrame(self.frame_content, text="Details")
-        self.info_frame.grid(row=0, column=1, padx=(defs.PAD_H/2, 0), sticky=tk.NSEW)
+        self.info_frame.grid(row=0, column=1, padx=(PAD_H/2, 0), sticky=tk.NSEW)
         self.info_frame.columnconfigure(0, weight=1)     
 
         self.categories = ["Mod Name", "Category", "Author", "Char", "Slot", "Dir"]
@@ -239,7 +282,7 @@ class Menu:
         self.scrollbar.pack(side="right", fill="y")
         
         self.f_footer = tk.Frame(self.root)
-        self.f_footer.pack(padx = defs.PAD_H, pady = (0, defs.PAD_V), fill="x")
+        self.f_footer.pack(padx = PAD_H, pady = (0, PAD_V), fill="x")
         self.f_footer.columnconfigure(index=0, weight=1, uniform="equal")
         self.f_footer.columnconfigure(index=1, weight=1, uniform="equal")
         self.f_footer.columnconfigure(index=2, weight=1, uniform="equal")
@@ -280,10 +323,10 @@ class Menu:
         self.info_frame.rowconfigure(index=3, weight=1)
 
         self.label_img = tk.Label(self.info_frame, bg="black")
-        self.label_img.grid(row=0, padx=defs.PAD_H, pady=(defs.PAD_V, 0), sticky=tk.NSEW)
+        self.label_img.grid(row=0, padx=PAD_H, pady=(PAD_V, 0), sticky=tk.NSEW)
 
         self.ver_auth_frame = tk.Frame(self.info_frame)
-        self.ver_auth_frame.grid(row=1, padx=defs.PAD_H, pady=(0, defs.PAD_V), sticky=tk.NSEW)
+        self.ver_auth_frame.grid(row=1, padx=PAD_H, pady=(0, PAD_V), sticky=tk.NSEW)
 
         self.l_ver = tk.Label(self.ver_auth_frame, anchor="w", justify="left")
         self.l_ver.pack(side=tk.LEFT)
@@ -292,19 +335,19 @@ class Menu:
         self.l_author.pack(side=tk.RIGHT, fill="x", expand=True)
 
         l_desc = tk.Label(self.info_frame, text="Description", anchor="w", justify="left")
-        l_desc.grid(row=2, padx=defs.PAD_H, sticky=tk.W)
+        l_desc.grid(row=2, padx=PAD_H, sticky=tk.W)
 
         self.l_desc_v = tk.Text(self.info_frame, height=1, width=10, state="disabled")
-        self.l_desc_v.grid(row=3, padx=defs.PAD_H, pady=(0, defs.PAD_V), sticky=tk.NSEW)
+        self.l_desc_v.grid(row=3, padx=PAD_H, pady=(0, PAD_V), sticky=tk.NSEW)
 
         self.f_selected_mod = tk.Frame(self.info_frame)
-        self.f_selected_mod.grid(row=4, padx=defs.PAD_H, pady=(0, defs.PAD_V), sticky=tk.EW)
+        self.f_selected_mod.grid(row=4, padx=PAD_H, pady=(0, PAD_V), sticky=tk.EW)
         self.f_selected_mod.columnconfigure(index=0, weight=1, uniform="equal")
         self.f_selected_mod.columnconfigure(index=1, weight=1, uniform="equal")
         self.f_selected_mod.rowconfigure(index=0, weight=1)
 
         self.btn_edit = tk.Button(self.f_selected_mod, text="Edit", cursor='hand2', command=self.open_editor)
-        self.btn_edit.grid(row=0, column=0, sticky=tk.EW, padx=(0, defs.PAD_H/2))
+        self.btn_edit.grid(row=0, column=0, sticky=tk.EW, padx=(0, PAD_H/2))
         
         self.btn_open_folder = tk.Button(self.f_selected_mod, text="Open", cursor='hand2', command=self.open_folder)
-        self.btn_open_folder.grid(row=0, column=1, sticky=tk.EW, padx=(defs.PAD_H/2, 0))
+        self.btn_open_folder.grid(row=0, column=1, sticky=tk.EW, padx=(PAD_H/2, 0))

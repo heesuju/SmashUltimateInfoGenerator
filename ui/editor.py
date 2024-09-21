@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import filedialog
 from utils.generator import Generator
 from .config import Config
 from tkinter import ttk
@@ -188,12 +187,6 @@ class Editor:
         self.cbox_img.config(values=values)
         self.cbox_img.set(selected_option)
 
-    def get_working_directory(self):
-        if self.config.default_dir and common.is_valid_dir(self.config.default_dir):
-            return filedialog.askdirectory(initialdir=self.config.default_dir)
-        else:
-            return filedialog.askdirectory()
-
     def update_preview(self):
         self.entry_url.delete(0, tk.END)
         self.config.load()
@@ -245,16 +238,16 @@ class Editor:
         self.find_image()
 
     def change_working_directory(self):
-        working_dir = self.get_working_directory()
+        working_dir = open_file_dialog(self.config.default_dir)
         if not working_dir:
             return
         
-        self.entry_work_dir.delete(0, tk.END)
-        self.entry_work_dir.insert(tk.END, working_dir)
+        set_text(self.entry_work_dir, working_dir)
         self.update_preview()
 
     def on_update_directory(self,event):
-        if self.entry_work_dir.get() and os.path.exists(self.entry_work_dir.get()):
+        work_dir = get_text(self.entry_work_dir)
+        if work_dir and os.path.exists(work_dir):
             self.update_preview()
 
     def apply_changes(self):
@@ -339,8 +332,7 @@ class Editor:
             try:
                 # Rename the directory
                 os.rename(old_directory_path, new_directory_path)
-                self.entry_work_dir.delete(0, tk.END)
-                self.entry_work_dir.insert(tk.END, new_directory_path)
+                set_text(self.entry_work_dir, new_directory_path)
                 self.generator.working_dir = new_directory_path
                 self.find_image()
             except OSError as e:
