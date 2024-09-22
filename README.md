@@ -6,18 +6,25 @@ This is a simple tool written in python that generates an info.toml file for Sma
 ## Install requirements
 ```sh
 pip install -r ./requirements.txt
-python -m playwright install
 ```
 
 ## How to use
 1. Install python and add to path
 2. Open cmd
 3. pip install -r .\requirements.txt
-4. Run main.py file
+4. Run main.py file (Run main.exe for exe build)
+```sh
+python main.py
+```
 5. Load the directory of the mod file with files like fighter, sound, effect, ui, etc.
 6. Enter the gamebanana url if you want authors and accurate mod name, otherwise authors have to be entered in manually and the folder name will be trimmed to get the mod name.
 7. Add an image by clicking 'Browse' under 'Image'.
 8. Make changes if necessary and click apply.
+
+## How to make an exe build
+```sh
+python setup.py build
+```
 
 ## Done
 * Search fighter/{name}/model/body for skin slots in use

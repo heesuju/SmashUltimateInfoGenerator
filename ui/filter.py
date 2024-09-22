@@ -23,6 +23,24 @@ class Filter:
         self.entry_author = self.add_filter_entry(0, 2, "Author")
         
         self.cbox_category = self.add_filter_dropdown(1, 0, "Category", ["All"] + CATEGORIES)
+        label_slots = ttk.Label(self.frame, text="Slots")
+        label_slots.grid(row=1, column=2, sticky=tk.EW, padx=(0,PAD_H))
+        
+        self.frame_slots = tk.Frame(self.frame)
+        self.frame_slots.grid(row=1, column=3, sticky=tk.EW, padx=(0,PAD_H), pady=PAD_V/2)
+
+        vcmd = (root.register(self.callback)) 
+
+        self.entry_slots_from = tk.Entry(self.frame_slots, width=5, validate='all', validatecommand=(vcmd, '%P'))
+        self.entry_slots_from.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        set_text(self.entry_slots_from, "0")
+
+        label_slot_n = ttk.Label(self.frame_slots, text="~")
+        label_slot_n.pack(side=tk.LEFT, padx=PAD_H)
+
+        self.entry_slots_to = tk.Entry(self.frame_slots, width=5, validate='all', validatecommand=(vcmd, '%P'))
+        self.entry_slots_to.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        set_text(self.entry_slots_to, "255")
 
         series = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Series"))
         series = [remove_redundant_spacing(i) for i in series]
@@ -46,7 +64,13 @@ class Filter:
 
         self.btn_refresh = tk.Button(self.frame_actions, text="Refresh", cursor='hand2', command=self.refresh_fn)
         self.btn_refresh.pack(side=tk.LEFT, padx=(0, PAD_H))
-
+    
+    def callback(self, P):
+        if (str.isdigit(P) and len(P) <= 3) or P == "":
+            return True
+        else:
+            return False
+        
     def add_filter_entry(self, row, col, name):
         label = ttk.Label(self.frame, text=name)
         label.grid(row=row, column=col, sticky=tk.EW, padx=(0,PAD_H))
@@ -82,7 +106,8 @@ class Filter:
         else:
             filtered_chars = sorted(csv_to_dict(PATH_CHAR_NAMES, "Custom"))
 
-        chars = ["All"] + sorted(filtered_chars)
+        chars = ["All"] if len(filtered_chars) > 1 else []
+        chars.extend(sorted(filtered_chars))
         self.cbox_char.config(values=chars)
         self.cbox_char.set(chars[0])
 
@@ -95,6 +120,8 @@ class Filter:
             "category": get_text(self.cbox_category).lower() if lowercase else get_text(self.cbox_category),
             "info_toml": get_text(self.cbox_info).lower() if lowercase else get_text(self.cbox_info),
             "wifi_safe": get_text(self.cbox_wifi).lower() if lowercase else get_text(self.cbox_wifi),
+            "slot_from": get_text(self.entry_slots_from).lower() if lowercase else get_text(self.entry_slots_from),
+            "slot_to": get_text(self.entry_slots_to).lower() if lowercase else get_text(self.entry_slots_to)
         }
     
     def clear(self):
@@ -107,6 +134,8 @@ class Filter:
         self.cbox_category.set("All")
         self.cbox_info.set("All")
         self.cbox_wifi.set("All")
+        set_text(self.entry_slots_from, "0")
+        set_text(self.entry_slots_to, "255")
         self.search_fn()
 
     def filter_mods(self, mods):
@@ -140,6 +169,20 @@ class Filter:
 
             if filter_params.get("wifi_safe") != "all":
                 if filter_params.get("wifi_safe") != mod["wifi_safe"].lower():
+                    continue
+
+            if filter_params.get("slot_from") or filter_params.get("slot_to"):
+                contains_slot = False
+                min_slot = int(filter_params.get("slot_from") if filter_params.get("slot_from") else 0)
+                max_slot = int(filter_params.get("slot_to") if filter_params.get("slot_to") else 255)
+                
+                if max_slot >= min_slot:
+                    for slot in mod["slot_list"]:
+                        if slot >= min_slot and slot <= max_slot:
+                            contains_slot = True
+                            break
+                
+                if contains_slot == False:
                     continue
                 
             outputs.append(mod)

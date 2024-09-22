@@ -254,7 +254,8 @@ class Editor:
         dump_toml(
             self.generator.working_dir,
             TomlParams(self.entry_display_name, self.entry_authors, self.txt_desc, self.entry_ver, 
-                       self.combobox_cat, self.entry_url, self.entry_mod_name, self.cbox_wifi_safe)
+                       self.combobox_cat, self.entry_url, self.entry_mod_name, self.cbox_wifi_safe,
+                       self.generator.slots)
         )
 
         self.move_file()

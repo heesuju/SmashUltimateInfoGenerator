@@ -37,6 +37,7 @@ class Scanner(Thread):
             "version" : "",
             "characters" : "",
             "slots" : "",
+            "slot_list" : [],
             "mod_name" : "",
             "selected" : "",
             "path" : "",
@@ -61,6 +62,7 @@ class Scanner(Thread):
             
             generator.preview_info_toml(path, "", "", "")
             mod["slots"] = common.slots_to_string(generator.slots)
+            mod["slot_list"] = generator.slots
             mod["characters"] = common.group_char_name(generator.char_names, generator.group_names)      
             mod["character_list"] = generator.char_keys
 
