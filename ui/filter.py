@@ -33,14 +33,12 @@ class Filter:
 
         self.entry_slots_from = tk.Entry(self.frame_slots, width=5, validate='all', validatecommand=(vcmd, '%P'))
         self.entry_slots_from.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        set_text(self.entry_slots_from, "0")
 
         label_slot_n = ttk.Label(self.frame_slots, text="~")
         label_slot_n.pack(side=tk.LEFT, padx=PAD_H)
 
         self.entry_slots_to = tk.Entry(self.frame_slots, width=5, validate='all', validatecommand=(vcmd, '%P'))
         self.entry_slots_to.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        set_text(self.entry_slots_to, "255")
 
         series = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Series"))
         series = [remove_redundant_spacing(i) for i in series]
@@ -134,8 +132,8 @@ class Filter:
         self.cbox_category.set("All")
         self.cbox_info.set("All")
         self.cbox_wifi.set("All")
-        set_text(self.entry_slots_from, "0")
-        set_text(self.entry_slots_to, "255")
+        clear_text(self.entry_slots_from)
+        clear_text(self.entry_slots_to)
         self.search_fn()
 
     def filter_mods(self, mods):
