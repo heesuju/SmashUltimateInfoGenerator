@@ -117,8 +117,8 @@ def number_dups(descriptions:List[str])->List[str]:
 
 def get_wifi_safety(driver, soup)->str:
     try:
-        WebDriverWait(driver, TIMEOUT_DELAY).until(
-        EC.visibility_of_element_located((By.TAG_NAME, "body"))
+        wrapper = WebDriverWait(driver, TIMEOUT_DELAY).until(
+        EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         
         html = driver.page_source
