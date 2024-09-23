@@ -29,7 +29,7 @@ class Menu:
         self.total_pages = 1
         self.page_size = 30
         self.config = Config(self.on_config_changed)
-        self.editor = Editor()
+        self.editor = Editor(self.on_finish_edit)
         self.loader = Loader()
         self.queue = queue.Queue()
         self.progress_count = 0
@@ -68,9 +68,9 @@ class Menu:
         start = (self.cur_page-1) * self.page_size
         end = common.clamp(self.cur_page * self.page_size, start, len(mods))
         for n in range(start,end):
-            if mods[n]["img"] == None: self.treeview.insert("", tk.END, values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]))
+            if mods[n]["img"] == None: self.treeview.insert("", tk.END, values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]), tags=('enabled'))
             else: self.treeview.insert("", tk.END, image=mods[n]["img"], values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]))
-        
+        self.treeview.tag_configure('enabled', background='lightgrey')
         n_count = end - start
         self.l_page.config(text=f"{n_count} of {len(mods)}")
 
@@ -83,7 +83,30 @@ class Menu:
     def on_config_changed(self, dir:str):
         if dir:
             self.refresh()
-    
+
+    def on_finish_edit(self, old_dir:str, new_dir:str):
+        is_dir_same = True if old_dir == new_dir else False
+        dir_to_update = old_dir if is_dir_same else new_dir
+        scan_thread = Scanner([dir_to_update], callback=self.on_finish_update)
+        scan_thread.start()
+
+    def on_finish_update(self, mods):
+        valid_mods = [mod for mod in self.mods if os.path.isdir(mod["path"])]
+
+        for n in mods:
+            found_match = False
+            for idx, m in enumerate(valid_mods):
+                if n["path"] == m["path"]:
+                    valid_mods[idx] = n
+                    found_match = True
+                    print("updated dir:", n["path"])
+                    break
+            if found_match == False:
+                valid_mods.append(n)
+                print("added dir:", n["path"])
+        self.mods = valid_mods
+        self.search()
+
     def on_scan_progress(self, future):
         with self.progress_lock:
             self.progress_count += 1
@@ -257,6 +280,8 @@ class Menu:
         style = ttk.Style(self.root)
         #style.map("Checkbox.Treeview", background=[("disabled", "#E6E6E6"), ("selected", "#E6E6E6")])
         style.configure("Treeview", rowheight=60)
+        style.map('Treeview', background=[('selected', '#BFBFBF')])
+
         display_columns = []
         self.treeview.column("#0", minwidth=140, width=140, stretch=tk.NO)
         self.treeview.column("Mod Name", minwidth=100, width=100, stretch=tk.NO)

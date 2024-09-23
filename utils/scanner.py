@@ -5,9 +5,10 @@ from utils.loader import Loader
 from utils.generator import Generator
 from PIL import Image, ImageTk
 import common
+from typing import Union
 
 class Scanner(Thread):
-    def __init__(self, directory:str, start_callback = None, progress_callback = None, callback = None):
+    def __init__(self, directory:Union[str, list], start_callback = None, progress_callback = None, callback = None):
         super().__init__()
         self.directory = directory
         self.start_callback = start_callback
@@ -81,18 +82,24 @@ class Scanner(Thread):
             return mod
         return None
     
-    def find_mods(self, directory):
+    def find_mods(self, directory:Union[str, list]):
         mods = []
 
-        if os.path.isdir(directory):
+        if self.start_callback is not None:
             self.start_callback(len(os.listdir(directory)))
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+            
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = []
+            if isinstance(directory, str):
                 futures = [executor.submit(self.find_mod, folder_name, os.path.join(directory, folder_name)) for folder_name in os.listdir(directory)]
+            elif isinstance(directory, list):
+                futures = [executor.submit(self.find_mod, d.split("\\")[-1], d) for d in directory]
+            if self.progress_callback is not None:
                 [future.add_done_callback(self.progress_callback) for future in futures]
-                for future in concurrent.futures.as_completed(futures):
-                    mod = future.result()
-                    if mod is not None:
-                        mods.append(mod)
+            for future in concurrent.futures.as_completed(futures):
+                mod = future.result()
+                if mod is not None:
+                    mods.append(mod)
 
         sorted_mods = self.sort_mods(mods)
         self.callback(sorted_mods)

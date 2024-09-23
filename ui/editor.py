@@ -20,7 +20,7 @@ from utils import open_web, format_version
 from .common_ui import *
 
 class Editor:
-    def __init__(self) -> None:
+    def __init__(self, callback=None) -> None:
         self.new_window = None
         self.generator = Generator()
         self.config = Config()
@@ -28,6 +28,7 @@ class Editor:
         self.comparison = Comparison()
         self.img_urls = []
         self.img_descriptions = []
+        self.callback = callback
 
     def on_img_resized(self, image):
         self.label_img.config(image=image, width=10, height=10)
@@ -257,11 +258,14 @@ class Editor:
                        self.combobox_cat, self.entry_url, self.entry_mod_name, self.cbox_wifi_safe,
                        self.generator.slots)
         )
-
-        self.move_file()
-        self.rename_directory()
-        set_text(self.label_output, "Applied changes")
         
+        old_directory = self.generator.working_dir
+        
+        self.move_file()
+        new_directory = self.rename_directory()
+        set_text(self.label_output, "Applied changes")
+        self.callback(old_directory, new_directory)
+
     def update_image(self):
         image_path =  filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.gif;*.webp")])
         if not image_path or not os.path.exists(image_path):
@@ -321,7 +325,7 @@ class Editor:
 
     def rename_directory(self):
         if not self.generator.working_dir or not self.entry_folder_name.get():
-            return
+            return ""
         
         # Define the old folder name and the new folder name
         old_directory_path = self.generator.working_dir
@@ -340,6 +344,8 @@ class Editor:
                 print(f"Error renaming directory: {e}")
         else:
             print(f"The directory '{old_directory_path}' does not exist.")
+        
+        return new_directory_path
 
     def set_description(self):
         description = "Includes:\n"
