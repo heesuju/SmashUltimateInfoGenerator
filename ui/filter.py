@@ -145,7 +145,15 @@ class Filter:
             if filter_params.get("mod_name") not in mod["mod_name"].lower(): continue
             if filter_params.get("authors") not in mod["authors"].lower(): continue
             if filter_params.get("characters") != "all":
-                if filter_params.get("characters") != mod["characters"].lower(): continue
+                found_match = False
+                for ch in mod["character_names"]:
+                    if ch.lower() == filter_params.get("characters"):
+                        found_match = True
+                        break
+
+                if  found_match == False: 
+                    continue
+                
             if filter_params.get("series") != "all":
                 should_include = False
                 for char_name in mod["character_list"]:

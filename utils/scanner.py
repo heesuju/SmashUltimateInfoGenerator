@@ -37,6 +37,7 @@ class Scanner(Thread):
             "category" : "Misc",
             "version" : "",
             "characters" : "",
+            "character_names" : [],
             "slots" : "",
             "slot_list" : [],
             "mod_name" : "",
@@ -64,7 +65,8 @@ class Scanner(Thread):
             generator.preview_info_toml(path, "", "", "")
             mod["slots"] = common.slots_to_string(generator.slots)
             mod["slot_list"] = generator.slots
-            mod["characters"] = common.group_char_name(generator.char_names, generator.group_names)      
+            mod["characters"] = common.group_char_name(generator.char_names, generator.group_names)  
+            mod["character_names"] = generator.char_names
             mod["character_list"] = generator.char_keys
 
             mod["mod_name"] = mod["display_name"].replace(mod["slots"].lower(), "", 1)
