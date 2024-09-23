@@ -19,6 +19,7 @@ from utils import load_config
 from utils.update_config import update_config_directory
 from . import PATH_ICON
 from .common_ui import *
+from utils.sort import sort_by_priority
 
 class Menu:    
     def __init__(self, root) -> None:
@@ -78,6 +79,7 @@ class Menu:
         self.reset()
         self.cur_page = 1        
         self.filtered_mods = self.filter_view.filter_mods(self.mods)    
+        self.filtered_mods = sort_by_priority(self.filtered_mods, load_config()["sort_priority"])
         self.populate(self.filtered_mods)
 
     def on_config_changed(self, dir:str):
@@ -124,7 +126,7 @@ class Menu:
         self.mods = mods
         self.filtered_mods = mods
         if len(mods) > 0:
-            self.populate(self.mods)
+            self.search()
         # else:
         #     self.open_config()
     
@@ -280,7 +282,7 @@ class Menu:
         style = ttk.Style(self.root)
         #style.map("Checkbox.Treeview", background=[("disabled", "#E6E6E6"), ("selected", "#E6E6E6")])
         style.configure("Treeview", rowheight=60)
-        style.map('Treeview', background=[('selected', '#BFBFBF')])
+        # style.map('Treeview', background=[('selected', '#BFBFBF')])
 
         display_columns = []
         self.treeview.column("#0", minwidth=140, width=140, stretch=tk.NO)

@@ -34,7 +34,7 @@ class Scanner(Thread):
             "folder_name":folder_name,
             "display_name" : folder_name,
             "authors" : "",
-            "category" : "",
+            "category" : "Misc",
             "version" : "",
             "characters" : "",
             "slots" : "",
@@ -87,7 +87,7 @@ class Scanner(Thread):
 
         if self.start_callback is not None:
             self.start_callback(len(os.listdir(directory)))
-            
+
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = []
             if isinstance(directory, str):

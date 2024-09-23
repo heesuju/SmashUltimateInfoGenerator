@@ -19,6 +19,7 @@ class Config:
         self.display_name_format = "{characters} {slots} {mod}"
         self.folder_name_format = "{category}_{characters}[{slots}]_{mod}"
         self.additional_elements = []
+        self.sort_priority = ["category", "characters", "mod_name", "slots"]
             
     def save_config(self):
         config_dict = {
@@ -27,7 +28,8 @@ class Config:
             "folder_name_format":self.folder_name_format,
             "additional_elements":self.additional_elements,
             "is_slot_capped":self.is_slot_capped,
-            "start_with_editor":self.start_with_editor}
+            "start_with_editor":self.start_with_editor,
+            "sort_priority": self.sort_priority}
         
         with open(PATH_CONFIG, 'w') as f:
             json.dump(config_dict, f, indent=4)
@@ -50,6 +52,8 @@ class Config:
                 self.is_slot_capped = data["is_slot_capped"]
             if data.get("start_with_editor") is not None:
                 self.start_with_editor = data["start_with_editor"]
+            if data.get("sort_priority") is not None:
+                self.sort_priority = data["sort_priority"]
             print("Loaded config")
         else:
             print("No saved config")
