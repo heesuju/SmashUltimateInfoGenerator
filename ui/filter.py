@@ -1,6 +1,9 @@
 from tkinter import ttk
+from PIL import ImageTk
 import tkinter as tk
 from defs import PAD_H, PAD_V, CATEGORIES
+from . import PATH_ICON
+from .sorting import Sorting
 from .common_ui import *
 from data import PATH_CHAR_NAMES
 from common import csv_to_dict
@@ -8,6 +11,8 @@ from utils.cleaner import remove_redundant_spacing
 
 class Filter:
     def __init__(self, root, search_fn, refresh_fn) -> None:
+        self.sort_view = None
+        self.root = root
         self.frame = tk.Frame(root)
         self.frame.pack(padx=PAD_H, pady=PAD_V/2, fill="x")
         
@@ -54,6 +59,10 @@ class Filter:
         self.frame_actions = tk.Frame(self.frame)
         self.frame_actions.grid(row=4, column=0, columnspan=4, pady=(PAD_V/2, 0), sticky=tk.E)
         
+        self.icon_sort = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'sort.png'))
+        self.btn_sort = tk.Button(self.frame_actions, image=self.icon_sort, relief=tk.FLAT, cursor='hand2', command=self.show_sort)
+        self.btn_sort.pack(side=tk.LEFT, padx=(0, PAD_H))
+
         self.btn_search = tk.Button(self.frame_actions, text="Search", cursor='hand2', command=self.search_fn)
         self.btn_search.pack(side=tk.LEFT, padx=(0, PAD_H))
 
@@ -153,7 +162,7 @@ class Filter:
 
                 if  found_match == False: 
                     continue
-                
+
             if filter_params.get("series") != "all":
                 should_include = False
                 for char_name in mod["character_list"]:
@@ -199,3 +208,11 @@ class Filter:
         for d in data:
             if d.get("Key") ==  character_name:
                 return d.get("Series").lower()
+            
+    def show_sort(self):
+        if self.sort_view is None:
+            self.sort_view = Sorting(self.on_sorting_changed)
+        self.sort_view.open(self.root)
+
+    def on_sorting_changed(self):
+        self.search_fn()

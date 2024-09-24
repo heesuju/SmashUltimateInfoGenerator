@@ -19,7 +19,7 @@ class Config:
         self.display_name_format = "{characters} {slots} {mod}"
         self.folder_name_format = "{category}_{characters}[{slots}]_{mod}"
         self.additional_elements = []
-        self.sort_priority = ["category", "characters", "mod_name", "slots"]
+        self.sort_priority = []
             
     def save_config(self):
         config_dict = {
@@ -57,7 +57,14 @@ class Config:
             print("Loaded config")
         else:
             print("No saved config")
-            self.save_config()
+            self.set_sort_priority()
+
+    def set_sort_priority(self, priorities = [{"column":"category", "order":"Ascending"}, 
+                                 {"column":"characters", "order":"Ascending"}, 
+                                 {"column":"slots", "order":"Ascending"}, 
+                                 {"column":"mod_name", "order":"Ascending"}]):
+        self.sort_priority = priorities
+        self.save_config()
 
     def set_default_dir(self, default_dir):
         self.default_dir = default_dir
