@@ -1,24 +1,16 @@
 
 def sort_by_priority(mods, priority:list):
-    if priority is None:
+    if priority is None or len(priority) == 0:
         return mods
     
-    if len(priority) >= 4:
-        sorted_data = sorted(mods, key=lambda x: (x[priority[0]["column"]] if priority[0]["order"] == "Ascending" else ''.join(reversed(x[priority[0]["column"]])), 
-                                              x[priority[1]["column"]] if priority[1]["order"] == "Ascending" else ''.join(reversed(x[priority[1]["column"]])),
-                                              x[priority[2]["column"]] if priority[2]["order"] == "Ascending" else ''.join(reversed(x[priority[2]["column"]])),
-                                              x[priority[3]["column"]] if priority[3]["order"] == "Ascending" else ''.join(reversed(x[priority[3]["column"]]))))
+    def get_sort_key(x):
+        sort_key = []
+        for p in priority:
+            col_value = x[p["column"]]
+            sort_key.append(col_value)
+        return tuple(sort_key)
     
-    elif len(priority) >= 3:
-        sorted_data = sorted(mods, key=lambda x: (x[priority[0]["column"]] if priority[0]["order"] == "Ascending" else ''.join(reversed(x[priority[0]["column"]])), 
-                                              x[priority[1]["column"]] if priority[1]["order"] == "Ascending" else ''.join(reversed(x[priority[1]["column"]])),
-                                              x[priority[2]["column"]] if priority[2]["order"] == "Ascending" else ''.join(reversed(x[priority[2]["column"]]))))
-        
-    elif len(priority) >= 2:
-        sorted_data = sorted(mods, key=lambda x: (x[priority[0]["column"]] if priority[0]["order"] == "Ascending" else ''.join(reversed(x[priority[0]["column"]])), 
-                                              x[priority[1]["column"]] if priority[1]["order"] == "Ascending" else ''.join(reversed(x[priority[1]["column"]]))))
-        
-    elif len(priority) >= 1:
-        sorted_data = sorted(mods, key=lambda x: (x[priority[0]["column"]] if priority[0]["order"] == "Ascending" else ''.join(reversed(x[priority[0]["column"]]))))
+    reverse_flags = [p["order"] == "Descending" for p in priority]
     
+    sorted_data = sorted(mods, key=get_sort_key, reverse=any(reverse_flags))    
     return sorted_data
