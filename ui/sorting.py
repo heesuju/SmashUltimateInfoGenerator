@@ -129,8 +129,14 @@ class Sorting:
         self.new_window.destroy()
 
     def restore(self):
-        self.config.set_sort_priority()
-        self.load()
+        self.ddl_sort1.set("Category")
+        self.ddl_sort2.set("Character")
+        self.ddl_sort3.set("Slot")
+        self.ddl_sort4.set("Mod Name")
+        self.ddl_order1.set("Ascending")
+        self.ddl_order2.set("Ascending")
+        self.ddl_order3.set("Ascending")
+        self.ddl_order4.set("Ascending")
         self.on_sort_changed(None)
 
     def get_sort_category(self, combobox):
