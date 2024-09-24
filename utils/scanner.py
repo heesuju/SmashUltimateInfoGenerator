@@ -38,6 +38,7 @@ class Scanner(Thread):
             "version" : "",
             "characters" : "",
             "character_names" : [],
+            "character_name": "",
             "slots" : "",
             "slot_list" : [],
             "mod_name" : "",
@@ -61,22 +62,26 @@ class Scanner(Thread):
                 mod["version"] = loader.version
                 mod["info_toml"] = True
                 mod["wifi_safe"] = loader.wifi_safe
+                mod["mod_name"] = loader.mod_name
             
             generator.preview_info_toml(path, "", "", "")
             mod["slots"] = common.slots_to_string(generator.slots)
             mod["slot_list"] = generator.slots
             mod["characters"] = common.group_char_name(generator.char_names, generator.group_names)  
             mod["character_names"] = generator.char_names
+            mod["character_name"] = ", ".join(sorted(mod["character_names"]))
             mod["character_list"] = generator.char_keys
 
-            mod["mod_name"] = mod["display_name"].replace(mod["slots"].lower(), "", 1)
-            mod["mod_name"] = mod["mod_name"].replace(mod["slots"].lower().replace(" ", ""), "", 1)
-            mod["mod_name"] = mod["mod_name"].replace(mod["slots"].upper(), "", 1)
-            mod["mod_name"] = mod["mod_name"].replace(mod["slots"].upper().replace(" ", ""), "", 1)
+            if not mod["mod_name"]:
+                mod["mod_name"] = mod["display_name"].replace(mod["slots"].lower(), "", 1)
+                mod["mod_name"] = mod["mod_name"].replace(mod["slots"].lower().replace(" ", ""), "", 1)
+                mod["mod_name"] = mod["mod_name"].replace(mod["slots"].upper(), "", 1)
+                mod["mod_name"] = mod["mod_name"].replace(mod["slots"].upper().replace(" ", ""), "", 1)
+                
+                mod["mod_name"] = mod["mod_name"].replace(mod["characters"], "", 1)
+                mod["mod_name"] = mod["mod_name"].replace(mod["category"], "", 1)
+                mod["mod_name"] = common.trim_redundant_spaces(mod["mod_name"])
             
-            mod["mod_name"] = mod["mod_name"].replace(mod["characters"], "", 1)
-            mod["mod_name"] = mod["mod_name"].replace(mod["category"], "", 1)
-            mod["mod_name"] = common.trim_redundant_spaces(mod["mod_name"])
             img_path = path + "/preview.webp"
             if os.path.exists(img_path):
                 mod["img"] = self.find_image(path + "\\preview.webp", 100, 60)

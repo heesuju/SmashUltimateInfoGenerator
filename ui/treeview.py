@@ -69,8 +69,9 @@ class Menu:
         start = (self.cur_page-1) * self.page_size
         end = common.clamp(self.cur_page * self.page_size, start, len(mods))
         for n in range(start,end):
-            if mods[n]["img"] == None: self.treeview.insert("", tk.END, values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]), tags=('enabled'))
-            else: self.treeview.insert("", tk.END, image=mods[n]["img"], values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], mods[n]["characters"], mods[n]["slots"], mods[n]["path"]))
+            characters = ", ".join(sorted(mods[n]["character_names"]))
+            if mods[n]["img"] == None: self.treeview.insert("", tk.END, values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], characters, mods[n]["slots"], mods[n]["path"]), tags=('enabled'))
+            else: self.treeview.insert("", tk.END, image=mods[n]["img"], values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], characters, mods[n]["slots"], mods[n]["path"]))
         self.treeview.tag_configure('enabled', background='lightgrey')
         n_count = end - start
         self.l_page.config(text=f"{n_count} of {len(mods)}")

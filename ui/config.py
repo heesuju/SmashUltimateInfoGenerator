@@ -60,7 +60,7 @@ class Config:
             self.set_sort_priority()
 
     def set_sort_priority(self, priorities = [{"column":"category", "order":"Ascending"}, 
-                                 {"column":"characters", "order":"Ascending"}, 
+                                 {"column":"character_name", "order":"Ascending"}, 
                                  {"column":"slots", "order":"Ascending"}, 
                                  {"column":"mod_name", "order":"Ascending"}]):
         self.sort_priority = priorities

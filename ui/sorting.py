@@ -13,7 +13,7 @@ SORTING_CATEGORIES = {
     "mod_name":"Mod Name", 
     "category":"Category", 
     "authors":"Author", 
-    "characters":"Character", 
+    "character_name":"Character", 
     "slots":"Slot"
 }
 
