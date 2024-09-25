@@ -70,8 +70,12 @@ class Menu:
         end = common.clamp(self.cur_page * self.page_size, start, len(mods))
         for n in range(start,end):
             characters = ", ".join(sorted(mods[n]["character_names"]))
-            if mods[n]["img"] == None: self.treeview.insert("", tk.END, values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], characters, mods[n]["slots"], mods[n]["path"]), tags=('enabled'))
-            else: self.treeview.insert("", tk.END, image=mods[n]["img"], values=(mods[n]["mod_name"], mods[n]["category"], mods[n]["authors"], characters, mods[n]["slots"], mods[n]["path"]))
+            #//["Category", "Char", "Slot", "Mod Name", "Author", "Dir"]
+            if mods[n]["img"] == None: 
+                self.treeview.insert("", tk.END, values=(mods[n]["category"], characters, mods[n]["slots"], mods[n]["mod_name"], mods[n]["authors"], mods[n]["path"]))
+            else: 
+                self.treeview.insert("", tk.END, image=mods[n]["img"], values=(mods[n]["category"], characters, mods[n]["slots"], mods[n]["mod_name"], mods[n]["authors"], mods[n]["path"]))
+
         self.treeview.tag_configure('enabled', background='lightgrey')
         n_count = end - start
         self.l_page.config(text=f"{n_count} of {len(mods)}")
@@ -276,7 +280,7 @@ class Menu:
         self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.info_frame.columnconfigure(0, weight=1)     
 
-        self.categories = ["Mod Name", "Category", "Author", "Char", "Slot", "Dir"]
+        self.categories = ["Category", "Char", "Slot", "Mod Name", "Author", "Dir"]
         
         self.treeview = ttk.Treeview(self.frame_list, columns=self.categories, show=("headings", "tree"))
         
@@ -287,11 +291,11 @@ class Menu:
 
         display_columns = []
         self.treeview.column("#0", minwidth=140, width=140, stretch=tk.NO)
+        self.treeview.column("Category", minwidth=30, width=30)
+        self.treeview.column("Char", minwidth=30, width=30)
+        self.treeview.column("Slot", minwidth=20, width=30)
         self.treeview.column("Mod Name", minwidth=100, width=100, stretch=tk.NO)
-        self.treeview.column("Category", minwidth=30, width=50)
-        self.treeview.column("Author", minwidth=30, width=50)
-        self.treeview.column("Char", minwidth=30, width=50)
-        self.treeview.column("Slot", minwidth=30, width=50)
+        self.treeview.column("Author", minwidth=30, width=50)      
 
         for col, category in enumerate(self.categories):
             if col < len(self.categories)-1:

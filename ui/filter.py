@@ -5,6 +5,7 @@ from defs import PAD_H, PAD_V, CATEGORIES
 from . import PATH_ICON
 from .sorting import Sorting
 from .common_ui import *
+from common import get_completion
 from data import PATH_CHAR_NAMES
 from common import csv_to_dict
 from utils.cleaner import remove_redundant_spacing
@@ -51,6 +52,7 @@ class Filter:
         self.cbox_series.bind("<<ComboboxSelected>>", self.on_series_changed)
 
         chars = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Custom"))
+        self.char_values = chars
         self.cbox_char = self.add_filter_dropdown(2, 2, "Character", chars)
 
         self.cbox_info = self.add_filter_dropdown(3, 0, "Info.toml", ["All", "Included", "Not Included"])
@@ -92,15 +94,26 @@ class Filter:
 
         combobox = ttk.Combobox(self.frame, values=data, width=10)
         combobox.grid(row=row, column=col+1, sticky=tk.EW, padx=(0,PAD_H), pady=PAD_V/2)
-        combobox.bind("<<ComboboxSelected>>", self.on_combobox_selected)
+        # combobox.bind("<<ComboboxSelected>>", self.on_combobox_submitted)
+        combobox.bind("<Return>", self.on_combobox_submitted)
         combobox.set(data[0])
         return combobox
     
     def on_filter_submitted(self, event):
         self.search_fn()
 
-    def on_combobox_selected(self, event):
-        pass
+    def on_combobox_submitted(self, event):
+        new_category = get_completion(get_text(self.cbox_category), CATEGORIES)
+        self.cbox_category.set(new_category if new_category else "All")
+        
+        new_char = get_completion(get_text(self.cbox_char), self.char_values)
+        self.cbox_char.set(new_char if new_char else "All")
+
+        
+        self.cbox_info
+        self.cbox_series
+        self.cbox_wifi
+        self.search_fn()
 
     def on_series_changed(self, event):
         char_data = csv_to_dict(PATH_CHAR_NAMES)
@@ -116,8 +129,9 @@ class Filter:
         chars = ["All"] if len(filtered_chars) > 1 else []
         chars.extend(sorted(filtered_chars))
         self.cbox_char.config(values=chars)
+        self.char_values = chars
         self.cbox_char.set(chars[0])
-
+        
     def get_filter_params(self, lowercase:bool = True):
         return {
             "mod_name": get_text(self.entry_mod_name).lower() if lowercase else get_text(self.entry_mod_name),

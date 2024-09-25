@@ -269,3 +269,16 @@ def get_pages(current_page=1, total_pages=1, max_size=5):
     
     out_arr.sort()
     return out_arr
+
+def get_completion(text:str, values:list)->None:
+    if not text:
+        return ""
+    elif text not in values:
+        for cat in values:
+            if text.lower() in cat.lower():
+                return cat
+        return ""
+    else:
+        return text
+    
+def get_edit_distance(text1:str, text2:str)->float:
