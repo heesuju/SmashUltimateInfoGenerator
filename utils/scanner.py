@@ -15,19 +15,23 @@ class Scanner(Thread):
         self.progress_callback = progress_callback
         self.callback = callback
         
-    def find_image(self, directory, width, height):
+    def find_image(self, directory, width, height, keep_ratio:bool = True):
         img = Image.open(directory)
-        aspect_ratio = img.width / img.height
-        
-        # Resize the image to fit the target dimensions while preserving aspect ratio
-        if width / aspect_ratio <= height:
-            new_width = width
-            new_height = int(new_width / aspect_ratio)
-        else:
-            new_height = height
-            new_width = int(new_height * aspect_ratio)
 
-        return ImageTk.PhotoImage(img.resize((new_width, new_height), Image.Resampling.LANCZOS))
+        # Resize the image to fit the target dimensions while preserving aspect ratio
+        if keep_ratio:
+            aspect_ratio = img.width / img.height
+
+            if width / aspect_ratio <= height:
+                new_width = width
+                new_height = int(new_width / aspect_ratio)
+            else:
+                new_height = height
+                new_width = int(new_height * aspect_ratio)
+
+            return ImageTk.PhotoImage(img.resize((new_width, new_height), Image.Resampling.LANCZOS))
+        else:
+            return ImageTk.PhotoImage(img.resize((width, height), Image.Resampling.LANCZOS))
     
     def init_mod(self, folder_name:str = ""):
         return {
@@ -84,7 +88,7 @@ class Scanner(Thread):
             
             img_path = path + "/preview.webp"
             if os.path.exists(img_path):
-                mod["img"] = self.find_image(path + "\\preview.webp", 100, 60)
+                mod["img"] = self.find_image(path + "\\preview.webp", 100, 60, False)
 
             return mod
         return None

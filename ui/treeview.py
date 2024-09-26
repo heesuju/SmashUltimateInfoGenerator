@@ -19,7 +19,6 @@ from utils import load_config
 from utils.update_config import update_config_directory
 from . import PATH_ICON
 from .common_ui import *
-from utils.sort import sort_by_priority
 
 class Menu:    
     def __init__(self, root) -> None:
@@ -84,7 +83,6 @@ class Menu:
         self.reset()
         self.cur_page = 1        
         self.filtered_mods = self.filter_view.filter_mods(self.mods)    
-        self.filtered_mods = sort_by_priority(self.filtered_mods, load_config()["sort_priority"])
         self.populate(self.filtered_mods)
 
     def on_config_changed(self, dir:str):
@@ -145,10 +143,11 @@ class Menu:
         self.l_desc_v.config(state="normal")
         self.l_desc_v.delete(1.0, tk.END)
         if self.loader.load_toml(item['values'][-1]): 
-            self.l_desc_v.insert(tk.END, self.loader.description)
+            set_text(self.l_desc_v, self.loader.description)
             self.l_ver.config(text=self.loader.version, width=5)
             self.l_author.config(text=self.loader.authors, width=1)
-        else: self.l_desc_v.insert(tk.END, "No info.toml found")
+        else: 
+            set_text(self.l_desc_v, "No info.toml found")
         self.l_desc_v.config(state="disabled")
         img_preview = os.path.join(item['values'][-1], "preview.webp")
         if os.path.exists(img_preview):

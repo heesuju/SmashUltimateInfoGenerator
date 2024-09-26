@@ -3,12 +3,16 @@ from PIL import ImageTk
 import tkinter as tk
 from defs import PAD_H, PAD_V, CATEGORIES
 from . import PATH_ICON
-from .sorting import Sorting
+from .sorting import Sorting, sort_by_columns
 from .common_ui import *
 from common import get_completion
 from data import PATH_CHAR_NAMES
 from common import csv_to_dict
 from utils.cleaner import remove_redundant_spacing
+from utils.load_config import load_config
+
+INFO_VALUES = ["All", "Included", "Not Included"]
+WIFI_VALUES = ["All", "Safe", "Not Safe", "Uncertain"]
 
 class Filter:
     def __init__(self, root, search_fn, refresh_fn) -> None:
@@ -39,24 +43,26 @@ class Filter:
 
         self.entry_slots_from = tk.Entry(self.frame_slots, width=5, validate='all', validatecommand=(vcmd, '%P'))
         self.entry_slots_from.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.entry_slots_from.bind("<Return>", self.on_filter_submitted)
 
         label_slot_n = ttk.Label(self.frame_slots, text="~")
         label_slot_n.pack(side=tk.LEFT, padx=PAD_H)
+        label_slot_n.bind("<Return>", self.on_filter_submitted)
 
         self.entry_slots_to = tk.Entry(self.frame_slots, width=5, validate='all', validatecommand=(vcmd, '%P'))
         self.entry_slots_to.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        series = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Series"))
-        series = [remove_redundant_spacing(i) for i in series]
-        self.cbox_series = self.add_filter_dropdown(2, 0, "Series", series)
+        self.series = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Series"))
+        self.series = [remove_redundant_spacing(i) for i in self.series]
+        self.cbox_series = self.add_filter_dropdown(2, 0, "Series", self.series)
         self.cbox_series.bind("<<ComboboxSelected>>", self.on_series_changed)
 
         chars = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Custom"))
         self.char_values = chars
         self.cbox_char = self.add_filter_dropdown(2, 2, "Character", chars)
 
-        self.cbox_info = self.add_filter_dropdown(3, 0, "Info.toml", ["All", "Included", "Not Included"])
-        self.cbox_wifi = self.add_filter_dropdown(3, 2, "Wifi-Safe", ["All", "Safe", "Not Safe", "Uncertain"])
+        self.cbox_info = self.add_filter_dropdown(3, 0, "Info.toml", INFO_VALUES)
+        self.cbox_wifi = self.add_filter_dropdown(3, 2, "Wifi-Safe", WIFI_VALUES)
         
         self.frame_actions = tk.Frame(self.frame)
         self.frame_actions.grid(row=4, column=0, columnspan=4, pady=(PAD_V/2, 0), sticky=tk.E)
@@ -103,16 +109,21 @@ class Filter:
         self.search_fn()
 
     def on_combobox_submitted(self, event):
-        new_category = get_completion(get_text(self.cbox_category), CATEGORIES)
+        new_category = get_completion(get_text(self.cbox_category), ["All"] + CATEGORIES)
         self.cbox_category.set(new_category if new_category else "All")
         
         new_char = get_completion(get_text(self.cbox_char), self.char_values)
         self.cbox_char.set(new_char if new_char else "All")
 
+        new_info = get_completion(get_text(self.cbox_info), INFO_VALUES)
+        self.cbox_info.set(new_info if new_info else "All")
+
+        new_series = get_completion(get_text(self.cbox_series), self.series)
+        self.cbox_series.set(new_series if new_series else "All") 
         
-        self.cbox_info
-        self.cbox_series
-        self.cbox_wifi
+        new_wifi = get_completion(get_text(self.cbox_wifi), WIFI_VALUES)
+        self.cbox_wifi.set(new_wifi if new_wifi else "All")
+
         self.search_fn()
 
     def on_series_changed(self, event):
@@ -216,7 +227,7 @@ class Filter:
                 
             outputs.append(mod)
         
-        return outputs
+        return sort_by_columns(outputs, load_config()["sort_priority"])
 
     def get_series(self, character_name:str, data):
         for d in data:
