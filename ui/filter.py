@@ -100,7 +100,6 @@ class Filter:
 
         combobox = ttk.Combobox(self.frame, values=data, width=10)
         combobox.grid(row=row, column=col+1, sticky=tk.EW, padx=(0,PAD_H), pady=PAD_V/2)
-        # combobox.bind("<<ComboboxSelected>>", self.on_combobox_submitted)
         combobox.bind("<Return>", self.on_combobox_submitted)
         combobox.set(data[0])
         return combobox
@@ -111,9 +110,6 @@ class Filter:
     def on_combobox_submitted(self, event):
         new_category = get_completion(get_text(self.cbox_category), ["All"] + CATEGORIES)
         self.cbox_category.set(new_category if new_category else "All")
-        
-        new_char = get_completion(get_text(self.cbox_char), self.char_values)
-        self.cbox_char.set(new_char if new_char else "All")
 
         new_info = get_completion(get_text(self.cbox_info), INFO_VALUES)
         self.cbox_info.set(new_info if new_info else "All")
@@ -121,6 +117,23 @@ class Filter:
         new_series = get_completion(get_text(self.cbox_series), self.series)
         self.cbox_series.set(new_series if new_series else "All") 
         
+        char_data = csv_to_dict(PATH_CHAR_NAMES)
+        
+        filtered_chars = []
+        if new_series != "All":
+            for c in char_data:
+                if c.get("Series") == new_series:
+                    filtered_chars.append(c.get("Custom"))
+        else:
+            filtered_chars = sorted(csv_to_dict(PATH_CHAR_NAMES, "Custom"))
+
+        chars = ["All"] if len(filtered_chars) > 1 else []
+        chars.extend(sorted(filtered_chars))
+        self.char_values = chars
+
+        new_char = get_completion(get_text(self.cbox_char), self.char_values)
+        self.cbox_char.set(new_char if new_char else "All")
+
         new_wifi = get_completion(get_text(self.cbox_wifi), WIFI_VALUES)
         self.cbox_wifi.set(new_wifi if new_wifi else "All")
 
