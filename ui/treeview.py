@@ -279,10 +279,23 @@ class Menu:
         self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.info_frame.columnconfigure(0, weight=1)     
 
-        self.categories = ["Category", "Char", "Slot", "Mod Name", "Author", "Dir"]
+        self.categories = ["Category", "Character", "Slot", "Mod Name", "Author", "Dir"]
         
         self.treeview = ttk.Treeview(self.frame_list, columns=self.categories, show=("headings", "tree"))
-        
+        def treeview_sort_column(tv, col, reverse):
+            l = [(tv.set(k, col), k) for k in tv.get_children('')]
+            l.sort(reverse=reverse)
+
+            for index, (val, k) in enumerate(l):
+                tv.move(k, '', index)
+
+            tv.heading(col, command=lambda: \
+                    treeview_sort_column(tv, col, not reverse))
+    
+        for col in self.categories:
+            self.treeview.heading(col, text=col, command=lambda _col=col: \
+                                  treeview_sort_column(self.treeview, _col, False))
+
         style = ttk.Style(self.root)
         #style.map("Checkbox.Treeview", background=[("disabled", "#E6E6E6"), ("selected", "#E6E6E6")])
         style.configure("Treeview", rowheight=60)
@@ -291,7 +304,7 @@ class Menu:
         display_columns = []
         self.treeview.column("#0", minwidth=140, width=140, stretch=tk.NO)
         self.treeview.column("Category", minwidth=30, width=30)
-        self.treeview.column("Char", minwidth=30, width=30)
+        self.treeview.column("Character", minwidth=30, width=30)
         self.treeview.column("Slot", minwidth=20, width=30)
         self.treeview.column("Mod Name", minwidth=100, width=100, stretch=tk.NO)
         self.treeview.column("Author", minwidth=30, width=50)      
