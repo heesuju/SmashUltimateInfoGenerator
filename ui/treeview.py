@@ -152,6 +152,7 @@ class Menu:
         for mod in self.mods:
             if mod["enabled"]:
                 self.enabled_mods.append(mod["folder_name"])
+                self.preset_cache.append(mod["hash"])
         self.filtered_mods = mods
         if len(mods) > 0:
             self.search()
@@ -201,7 +202,7 @@ class Menu:
         self.config.load()
         self.config.open_config(self.root)
 
-    def on_space_pressed(self, event):
+    def on_enable_mod(self, event):
         self.enable_mod()
     
     def on_scan_start(self, max_count):
@@ -250,6 +251,17 @@ class Menu:
         for mod in self.mods:
             mod["enabled"] = False
         print("disabled every mod")
+        self.on_change_page()
+
+    def reload_preset(self):
+        self.enabled_mods = []
+        for mod in self.mods:
+            if mod["hash"] in self.preset_cache:
+                mod["enabled"] = True
+                self.enabled_mods.append(mod["folder_name"])
+            else:
+                mod["enabled"] = False
+        print("reloaded preset")
         self.on_change_page()
 
     def show(self):
@@ -318,7 +330,9 @@ class Menu:
         self.treeview.configure(yscrollcommand=self.scrollbar.set)
         self.treeview.bind('<<TreeviewSelect>>', self.on_item_selected)
         self.treeview.bind("<Double-1>", self.on_double_clicked)
-        self.treeview.bind("<space>", self.on_space_pressed)
+        self.treeview.bind("<space>", self.on_enable_mod)
+        self.treeview.bind("<Return>", self.on_enable_mod)
+
         self.scrollbar.pack(side="right", fill="y")
         
         self.paging = Paging(self.frame_list, self.on_change_page)
@@ -335,11 +349,14 @@ class Menu:
         update_handler = partial(self.updater, self.progressbar, self.l_progress, self.queue)
         self.root.bind('<<Progress>>', update_handler)
 
-        self.btn_save = tk.Button(self.f_footer, text="Save Preset", cursor='hand2', command=self.save_preset)
+        self.btn_save = tk.Button(self.f_footer, text="Overwrite Preset", cursor='hand2', command=self.save_preset)
         self.btn_save.pack(side=tk.RIGHT)
 
         self.btn_disable = tk.Button(self.f_footer, text="Disable All", cursor='hand2', command=self.disable_all)
         self.btn_disable.pack(side=tk.RIGHT, padx=(0, PAD_H))
+
+        self.btn_load = tk.Button(self.f_footer, text="Reload Preset", cursor='hand2', command=self.reload_preset)
+        self.btn_load.pack(side=tk.RIGHT)
 
         self.info_frame.rowconfigure(index=0, weight=1)
         self.info_frame.rowconfigure(index=3, weight=1)

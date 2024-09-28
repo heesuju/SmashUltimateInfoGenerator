@@ -53,15 +53,16 @@ class Scanner(Thread):
             "wifi_safe" : "Uncertain",
             "info_toml" : False,
             "img" : None,
-            "enabled": False
+            "enabled": False,
+            "hash": ""
         }
 
     def find_mod(self, name:str, path:str):
         if os.path.isdir(path):
             mod = self.init_mod(name)
             mod["path"] = path
-            hash = gen_hash_as_decimal(name)
-            mod["enabled"] = hash in self.preset
+            mod["hash"] = gen_hash_as_decimal(name)
+            mod["enabled"] = mod["hash"] in self.preset
             loader = Loader()
             generator = Generator()
             if loader.load_toml(path):
