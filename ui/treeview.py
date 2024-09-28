@@ -303,7 +303,7 @@ class Menu:
         self.treeview.column("Character", minwidth=70, width=70, stretch=tk.YES)
         self.treeview.column("Slot", minwidth=30, width=30, stretch=tk.YES)
         self.treeview.column("Mod Name", minwidth=100, width=100, stretch=tk.YES)
-        self.treeview.column("Author", minwidth=30, width=50, stretch=tk.YES)     
+        self.treeview.column("Author", minwidth=70, width=70, stretch=tk.YES)     
         self.treeview.heading("#0", text="Thumbnail")
 
         for col, category in enumerate(self.categories):
@@ -339,7 +339,7 @@ class Menu:
         self.btn_save.pack(side=tk.RIGHT)
 
         self.btn_disable = tk.Button(self.f_footer, text="Disable All", cursor='hand2', command=self.disable_all)
-        self.btn_disable.pack(side=tk.RIGHT)
+        self.btn_disable.pack(side=tk.RIGHT, padx=(0, PAD_H))
 
         self.info_frame.rowconfigure(index=0, weight=1)
         self.info_frame.rowconfigure(index=3, weight=1)
