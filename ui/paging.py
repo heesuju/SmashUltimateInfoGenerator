@@ -58,6 +58,9 @@ class Paging:
         for child in self.frame_paging.winfo_children():
             child.destroy()
 
+        if self.total_pages <= 0: 
+            return
+
         prev = 0
         for index, n in enumerate(get_pages(self.cur_page, self.total_pages)):
             if index > 0 and prev+1 != n:
