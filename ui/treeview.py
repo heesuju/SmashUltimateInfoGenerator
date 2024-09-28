@@ -70,6 +70,10 @@ class Menu:
                 self.treeview.item(selected_item, text=" ✅ ", tags="enabled")
                 self.enabled_mods.append(path)
                 self.btn_enable.config(text="Disable")
+            for mod in self.mods:
+                if mod["folder_name"] == path:
+                    mod["enabled"] = mod["folder_name"] in self.enabled_mods
+                    break
         else:
             print("no item selected!")
 
@@ -240,8 +244,13 @@ class Menu:
 
     def save_preset(self):
         self.preset_cache = self.preset_manager.save_preset(self.enabled_mods)
+
+    def disable_all(self):
+        self.enabled_mods = []
         for mod in self.mods:
-            mod["enabled"] = mod["folder_name"] in self.enabled_mods
+            mod["enabled"] = False
+        print("disabled every mod")
+        self.on_change_page()
 
     def show(self):
         self.f_dir = tk.Frame(self.root)
@@ -325,9 +334,12 @@ class Menu:
 
         update_handler = partial(self.updater, self.progressbar, self.l_progress, self.queue)
         self.root.bind('<<Progress>>', update_handler)
-        
+
         self.btn_save = tk.Button(self.f_footer, text="Save Preset", cursor='hand2', command=self.save_preset)
         self.btn_save.pack(side=tk.RIGHT)
+
+        self.btn_disable = tk.Button(self.f_footer, text="Disable All", cursor='hand2', command=self.disable_all)
+        self.btn_disable.pack(side=tk.RIGHT)
 
         self.info_frame.rowconfigure(index=0, weight=1)
         self.info_frame.rowconfigure(index=3, weight=1)

@@ -64,9 +64,13 @@ class Filter:
         self.cbox_info = self.add_filter_dropdown(3, 0, "Info.toml", INFO_VALUES)
         self.cbox_wifi = self.add_filter_dropdown(3, 2, "Wifi-Safe", WIFI_VALUES)
         
+        self.show_only_enabled = tk.IntVar()
+        self.ckbox_enabled = tk.Checkbutton(self.frame, text="Show only enabled", variable=self.show_only_enabled, cursor='hand2')
+        self.ckbox_enabled.grid(row=4, column=0, columnspan=2, pady=(PAD_V/2, 0), sticky=tk.W)
+
         self.frame_actions = tk.Frame(self.frame)
-        self.frame_actions.grid(row=4, column=0, columnspan=4, pady=(PAD_V/2, 0), sticky=tk.E)
-        
+        self.frame_actions.grid(row=4, column=2, columnspan=2, pady=(PAD_V/2, 0), sticky=tk.E)
+
         self.icon_sort = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'sort.png'))
         self.btn_sort = tk.Button(self.frame_actions, image=self.icon_sort, relief=tk.FLAT, cursor='hand2', command=self.show_sort)
         self.btn_sort.pack(side=tk.LEFT, padx=(0, PAD_H))
@@ -160,7 +164,8 @@ class Filter:
             "info_toml": get_text(self.cbox_info).lower() if lowercase else get_text(self.cbox_info),
             "wifi_safe": get_text(self.cbox_wifi).lower() if lowercase else get_text(self.cbox_wifi),
             "slot_from": get_text(self.entry_slots_from).lower() if lowercase else get_text(self.entry_slots_from),
-            "slot_to": get_text(self.entry_slots_to).lower() if lowercase else get_text(self.entry_slots_to)
+            "slot_to": get_text(self.entry_slots_to).lower() if lowercase else get_text(self.entry_slots_to),
+            "enabled_only": self.show_only_enabled.get()
         }
     
     def clear(self):
@@ -175,6 +180,7 @@ class Filter:
         self.cbox_wifi.set("All")
         clear_text(self.entry_slots_from)
         clear_text(self.entry_slots_to)
+        self.show_only_enabled.set(False)
         self.search_fn()
 
     def filter_mods(self, mods):
@@ -183,8 +189,16 @@ class Filter:
         data = csv_to_dict(PATH_CHAR_NAMES)
         
         for mod in mods:
-            if filter_params.get("mod_name") not in mod["mod_name"].lower(): continue
-            if filter_params.get("authors") not in mod["authors"].lower(): continue
+            if filter_params.get("enabled_only", False):
+                if not mod["enabled"]: 
+                    continue
+
+            if filter_params.get("mod_name") not in mod["mod_name"].lower(): 
+                continue
+
+            if filter_params.get("authors") not in mod["authors"].lower(): 
+                continue
+
             if filter_params.get("characters") != "all":
                 found_match = False
                 for ch in mod["character_names"]:
@@ -211,6 +225,7 @@ class Filter:
             if filter_params.get("info_toml") != "all":
                 if filter_params.get("info_toml") == "included" and mod["info_toml"] == False:
                     continue
+
                 elif filter_params.get("info_toml") == "not included" and mod["info_toml"] == True:
                     continue
 
