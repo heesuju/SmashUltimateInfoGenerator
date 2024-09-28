@@ -93,3 +93,15 @@ def open_file_dialog(default_dir:str=""):
         return filedialog.askdirectory(initialdir=default_dir)
     else:
         return filedialog.askdirectory()
+    
+def get_is_digit(text:str, num_digits:int=3):
+    if (str.isdigit(text) and len(text) <= num_digits) or text == "":
+        return True
+    else:
+        return False
+    
+def validate_slot(P):
+    return get_is_digit(P)
+
+def validate_page(P):
+    return get_is_digit(P, 4)

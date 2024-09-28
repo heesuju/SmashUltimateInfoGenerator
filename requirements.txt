@@ -2,7 +2,6 @@ tomli_w
 Pillow
 requests 
 beautifulsoup4
-playwright
 tomli
 cx_Freeze
 webdriver_manager

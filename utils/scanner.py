@@ -5,15 +5,17 @@ from utils.loader import Loader
 from utils.generator import Generator
 from PIL import Image, ImageTk
 import common
+from utils.hash import gen_hash_as_decimal
 from typing import Union
 
 class Scanner(Thread):
-    def __init__(self, directory:Union[str, list], start_callback = None, progress_callback = None, callback = None):
+    def __init__(self, directory:Union[str, list], start_callback = None, progress_callback = None, callback = None, preset = []):
         super().__init__()
         self.directory = directory
         self.start_callback = start_callback
         self.progress_callback = progress_callback
         self.callback = callback
+        self.preset = preset
         
     def find_image(self, directory, width, height, keep_ratio:bool = True):
         img = Image.open(directory)
@@ -50,13 +52,16 @@ class Scanner(Thread):
             "path" : "",
             "wifi_safe" : "Uncertain",
             "info_toml" : False,
-            "img" : None
+            "img" : None,
+            "enabled": False
         }
 
     def find_mod(self, name:str, path:str):
         if os.path.isdir(path):
             mod = self.init_mod(name)
             mod["path"] = path
+            hash = gen_hash_as_decimal(name)
+            mod["enabled"] = hash in self.preset
             loader = Loader()
             generator = Generator()
             if loader.load_toml(path):

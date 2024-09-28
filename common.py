@@ -2,7 +2,6 @@ import os
 import re
 import sys
 import csv
-import math
 from data import PATH_CHAR_NAMES
 from utils.load_config import load_config
 
@@ -241,34 +240,8 @@ def get_mod_title(original, char_names, folder_name_format):
             out_str += trimmed
         
         return out_str
-    
+
 def clamp(n, smallest, largest): return max(smallest, min(n, largest))
-
-def get_pages(current_page=1, total_pages=1, max_size=5):
-    out_arr = []
-    half = math.floor(max_size/2)
-    min = clamp(current_page-half, 1, total_pages)
-    max = clamp(current_page+half, 1, total_pages)
-    if current_page-half < 1:
-        max -= (current_page-half - 1)
-    elif current_page+half > total_pages:
-        min -= (current_page+half - total_pages)
-
-    if total_pages < max_size:
-        min = 1
-        max = total_pages
-        
-    for n in range(min, max+1):
-        out_arr.append(n) 
-    
-    if 1 not in out_arr:
-        out_arr.append(1)
-    
-    if total_pages not in out_arr:
-        out_arr.append(total_pages)
-    
-    out_arr.sort()
-    return out_arr
 
 def get_cleaned(text:str)->str:
     text = text.lower()

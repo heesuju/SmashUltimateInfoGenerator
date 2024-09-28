@@ -8,12 +8,13 @@ import common
 import threading
 import queue
 from PIL import Image, ImageTk
-import tkinter.font as font
 from defs import PAD_H, PAD_V
 from .editor import Editor
 from .config import Config
 from .filter import Filter
+from .paging import Paging
 from utils.loader import Loader
+from utils.preset_manager import PresetManager
 from utils.image_resize import ImageResize
 from utils import load_config
 from utils.update_config import update_config_directory
@@ -25,13 +26,13 @@ class Menu:
         self.root = root
         self.mods = []
         self.filtered_mods = []
-        self.cur_page = 1
-        self.total_pages = 1
-        self.page_size = 30
         self.config = Config(self.on_config_changed)
         self.editor = Editor(self.on_finish_edit)
         self.loader = Loader()
         self.queue = queue.Queue()
+        self.enabled_mods = []
+        self.preset_cache = []
+        self.preset_manager = PresetManager()
         self.progress_count = 0
         self.progress_lock = threading.Lock()
         self.max_count = 0
@@ -55,6 +56,9 @@ class Menu:
             os.startfile(item['values'][-1])
         else:
             print("no item selected!")
+    
+    def enable_mod(self):
+        pass
 
     def refresh(self):
         self.filter_view.clear()
@@ -62,26 +66,26 @@ class Menu:
         self.scan()
 
     def populate(self, mods):
-        self.total_pages = math.ceil(len(mods)/self.page_size)
-        print(f"found {len(mods)} items")
-        self.show_paging()
-        start = (self.cur_page-1) * self.page_size
-        end = common.clamp(self.cur_page * self.page_size, start, len(mods))
+        start, end = self.paging.update(len(mods)) 
+
         for n in range(start,end):
             characters = ", ".join(sorted(mods[n]["character_names"]))
-            #//["Category", "Char", "Slot", "Mod Name", "Author", "Dir"]
-            if mods[n]["img"] == None: 
-                self.treeview.insert("", tk.END, values=(mods[n]["category"], characters, mods[n]["slots"], mods[n]["mod_name"], mods[n]["authors"], mods[n]["path"]))
-            else: 
-                self.treeview.insert("", tk.END, image=mods[n]["img"], values=(mods[n]["category"], characters, mods[n]["slots"], mods[n]["mod_name"], mods[n]["authors"], mods[n]["path"]))
+            enabled = " ✅ " if mods[n]["enabled"] else " ⬜ "
+            tags = "enabled" if mods[n]["enabled"] else "disabled"
+            values = [mods[n]["category"], characters, mods[n]["slots"], mods[n]["mod_name"], mods[n]["authors"], mods[n]["path"]]
 
-        self.treeview.tag_configure('enabled', background='lightgrey')
-        n_count = end - start
-        self.l_page.config(text=f"{n_count} of {len(mods)}")
+            if mods[n]["img"] == None: 
+                self.treeview.insert("", tk.END, text=enabled, values=tuple(values), tags=tags)
+            else: 
+                self.treeview.insert("", tk.END, text=enabled, image=mods[n]["img"], values=tuple(values), tags=tags)
+
+    def on_change_page(self):
+        self.reset()
+        self.populate(self.filtered_mods)
 
     def search(self):
         self.reset()
-        self.cur_page = 1        
+        self.paging.cur_page = 1
         self.filtered_mods = self.filter_view.filter_mods(self.mods)    
         self.populate(self.filtered_mods)
 
@@ -127,21 +131,28 @@ class Menu:
 
     def on_scanned(self, mods):
         self.mods = mods
+        self.enabled_mods = []
+        for mod in self.mods:
+            if mod["enabled"]:
+                self.enabled_mods.append(mod["folder_name"])
         self.filtered_mods = mods
         if len(mods) > 0:
             self.search()
-        # else:
-        #     self.open_config()
-    
+        
     def on_img_resized(self, image):
         self.label_img.config(image=image, width=10, height=10)
         self.label_img.image = image  # Keep a reference to prevent garbage collection
 
     def on_item_selected(self, event):
         selected_item = self.treeview.focus()
+        if not selected_item:
+            return
+        
         item = self.treeview.item(selected_item)
         self.l_desc_v.config(state="normal")
         self.l_desc_v.delete(1.0, tk.END)
+        self.btn_enable.config(text="Enable" if item["tags"][0] == "disabled" else "Disable")
+        
         if self.loader.load_toml(item['values'][-1]): 
             set_text(self.l_desc_v, self.loader.description)
             self.l_ver.config(text=self.loader.version, width=5)
@@ -176,10 +187,12 @@ class Menu:
     def on_space_pressed(self, event):
         selected_item = self.treeview.focus()
         item = self.treeview.item(selected_item)
-        if item["tags"][0] == "checked":
-            self.treeview.change_state(item=selected_item, state="unchecked")
+        if item["tags"][0] == "enabled":
+            self.treeview.item(selected_item, text=" ⬜ ", tags="disabled")
         else:
-            self.treeview.change_state(item=selected_item, state="checked")
+            self.treeview.item(selected_item, text=" ✅ ", tags="enabled")
+            path = item["values"][5].split("/")[-1].split("\\")[-1]
+            self.enabled_mods.append(path)
     
     def on_scan_start(self, max_count):
         self.max_count = max_count
@@ -189,7 +202,8 @@ class Menu:
         config_data = load_config()
         if config_data is not None and config_data["default_directory"]:
             set_text(self.entry_dir, config_data["default_directory"])
-            scan_thread = Scanner(config_data["default_directory"], start_callback=self.on_scan_start, progress_callback=self.on_scan_progress, callback=self.on_scanned)
+            preset_cache = self.preset_manager.load_preset()
+            scan_thread = Scanner(config_data["default_directory"], start_callback=self.on_scan_start, progress_callback=self.on_scan_progress, callback=self.on_scanned, preset=preset_cache)
             scan_thread.start()
         # else:
         #     print("no default directory")
@@ -217,36 +231,11 @@ class Menu:
             self.refresh()
         else:
             print("invalid directory!")
-        
-    def change_page(self, number):
-        self.cur_page = number
-        self.reset()
-        self.populate(self.filtered_mods)
 
-    def next_page(self):
-        self.cur_page = common.clamp(self.cur_page+1, 1, self.total_pages)
-        self.change_page(self.cur_page)
-
-    def prev_page(self):
-        self.cur_page = common.clamp(self.cur_page-1, 1, self.total_pages)
-        self.change_page(self.cur_page)
-
-    def show_paging(self):
-        for child in self.frame_paging.winfo_children():
-            child.destroy()
-
-        prev = 0
-        for index, n in enumerate(common.get_pages(self.cur_page, self.total_pages)):
-            if index > 0 and prev+1 != n:
-                label = tk.Label(self.frame_paging, text="...", width=2)
-                label.grid(row=0, column=n-1)    
-            
-            btn = tk.Button(self.frame_paging, text=n, relief=tk.FLAT, cursor='hand2', command=lambda number=n: self.change_page(number), width=2)
-            if self.cur_page == n:
-                btn["font"]= font.Font(weight="bold")
-                btn["fg"]= "#6563FF"
-            btn.grid(row=0, column=n)
-            prev = n
+    def save_preset(self):
+        self.preset_cache = self.preset_manager.save_preset(self.enabled_mods)
+        for mod in self.mods:
+            mod["enabled"] = mod["folder_name"] in self.enabled_mods
 
     def show(self):
         self.f_dir = tk.Frame(self.root)
@@ -263,10 +252,6 @@ class Menu:
 
         self.btn_dir = tk.Button(self.f_dir, image=self.icon_browse, relief=tk.FLAT, cursor='hand2', command=self.change_working_directory)
         self.btn_dir.pack(side=tk.LEFT, padx = (0, PAD_H))
-
-
-        # self.entry_work_dir.bind("<KeyRelease>", self.on_update_directory)
-        
         
         self.frame_content = tk.Frame(self.root)
         self.frame_content.pack(padx=PAD_H, pady=(0, PAD_V), fill="both", expand=True)
@@ -282,6 +267,7 @@ class Menu:
         self.categories = ["Category", "Character", "Slot", "Mod Name", "Author", "Dir"]
         
         self.treeview = ttk.Treeview(self.frame_list, columns=self.categories, show=("headings", "tree"))
+
         def treeview_sort_column(tv, col, reverse):
             l = [(tv.set(k, col), k) for k in tv.get_children('')]
             l.sort(reverse=reverse)
@@ -291,30 +277,27 @@ class Menu:
 
             tv.heading(col, command=lambda: \
                     treeview_sort_column(tv, col, not reverse))
-    
-        for col in self.categories:
-            self.treeview.heading(col, text=col, command=lambda _col=col: \
-                                  treeview_sort_column(self.treeview, _col, False))
 
         style = ttk.Style(self.root)
-        #style.map("Checkbox.Treeview", background=[("disabled", "#E6E6E6"), ("selected", "#E6E6E6")])
+        
         style.configure("Treeview", rowheight=60)
-        # style.map('Treeview', background=[('selected', '#BFBFBF')])
 
         display_columns = []
-        self.treeview.column("#0", minwidth=140, width=140, stretch=tk.NO)
-        self.treeview.column("Category", minwidth=30, width=30)
-        self.treeview.column("Character", minwidth=30, width=30)
-        self.treeview.column("Slot", minwidth=20, width=30)
-        self.treeview.column("Mod Name", minwidth=100, width=100, stretch=tk.NO)
-        self.treeview.column("Author", minwidth=30, width=50)      
+        self.treeview.column("#0", minwidth=150, width=150, stretch=tk.NO)
+        self.treeview.column("Category", minwidth=70, width=70, stretch=tk.NO)
+        self.treeview.column("Character", minwidth=70, width=70, stretch=tk.YES)
+        self.treeview.column("Slot", minwidth=30, width=30, stretch=tk.YES)
+        self.treeview.column("Mod Name", minwidth=100, width=100, stretch=tk.YES)
+        self.treeview.column("Author", minwidth=30, width=50, stretch=tk.YES)     
+        self.treeview.heading("#0", text="Thumbnail")
 
         for col, category in enumerate(self.categories):
             if col < len(self.categories)-1:
                 display_columns.append(category)
-            self.treeview.heading(category, text=category)
+            self.treeview.heading(category, text=category, command=lambda _col=col: \
+                                  treeview_sort_column(self.treeview, _col, False))
         self.treeview["displaycolumns"]=display_columns
-        self.treeview.pack(padx=10, pady=10, fill="both", expand=True)
+        self.treeview.pack(padx=10, pady=(PAD_V,0), fill="both", expand=True)
 
         self.scrollbar = ttk.Scrollbar(self.treeview, orient="vertical", command=self.treeview.yview)
         self.treeview.configure(yscrollcommand=self.scrollbar.set)
@@ -323,44 +306,23 @@ class Menu:
         self.treeview.bind("<space>", self.on_space_pressed)
         self.scrollbar.pack(side="right", fill="y")
         
+        self.paging = Paging(self.frame_list, self.on_change_page)
+        
         self.f_footer = tk.Frame(self.root)
         self.f_footer.pack(padx = PAD_H, pady = (0, PAD_V), fill="x")
-        self.f_footer.columnconfigure(index=0, weight=1, uniform="equal")
-        self.f_footer.columnconfigure(index=1, weight=1, uniform="equal")
-        self.f_footer.columnconfigure(index=2, weight=1, uniform="equal")
 
-        icon_left = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'left.png'))
-        icon_right = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'right.png'))
-
-        self.f_left = tk.Frame(self.f_footer)
-        self.f_left.grid(row=0, column=0, sticky=tk.EW)
-
-        self.btn_left = tk.Button(self.f_left, image=icon_left, relief=tk.FLAT, cursor='hand2', command=self.prev_page)
-        self.btn_left.image = icon_left
-        self.btn_left.pack(side=tk.RIGHT)
-
-        self.progressbar = ttk.Progressbar(self.f_left, mode="determinate", orient="horizontal", length=200)
+        self.progressbar = ttk.Progressbar(self.f_footer, mode="determinate", orient="horizontal", length=200)
         self.progressbar.pack(side=tk.LEFT)
         
-        self.l_progress = tk.Label(self.f_left, text="")
+        self.l_progress = tk.Label(self.f_footer, text="")
         self.l_progress.pack(side=tk.LEFT)
 
         update_handler = partial(self.updater, self.progressbar, self.l_progress, self.queue)
         self.root.bind('<<Progress>>', update_handler)
         
-        self.f_right = tk.Frame(self.f_footer)
-        self.f_right.grid(row=0, column=2, sticky=tk.EW)
+        self.btn_save = tk.Button(self.f_footer, text="Save Preset", cursor='hand2', command=self.save_preset)
+        self.btn_save.pack(side=tk.RIGHT)
 
-        self.btn_right = tk.Button(self.f_right, image = icon_right, relief=tk.FLAT, cursor='hand2', command=self.next_page)
-        self.btn_right.image = icon_right
-        self.btn_right.pack(side=tk.LEFT)
-
-        self.frame_paging = tk.Frame(self.f_footer)
-        self.frame_paging.grid(row=0, column=1)
-        
-        self.l_page = tk.Label(self.f_right, text="")
-        self.l_page.pack(side=tk.RIGHT)
-        
         self.info_frame.rowconfigure(index=0, weight=1)
         self.info_frame.rowconfigure(index=3, weight=1)
 
@@ -386,10 +348,14 @@ class Menu:
         self.f_selected_mod.grid(row=4, padx=PAD_H, pady=(0, PAD_V), sticky=tk.EW)
         self.f_selected_mod.columnconfigure(index=0, weight=1, uniform="equal")
         self.f_selected_mod.columnconfigure(index=1, weight=1, uniform="equal")
+        self.f_selected_mod.columnconfigure(index=2, weight=1, uniform="equal")
         self.f_selected_mod.rowconfigure(index=0, weight=1)
 
         self.btn_edit = tk.Button(self.f_selected_mod, text="Edit", cursor='hand2', command=self.open_editor)
         self.btn_edit.grid(row=0, column=0, sticky=tk.EW, padx=(0, PAD_H/2))
         
         self.btn_open_folder = tk.Button(self.f_selected_mod, text="Open", cursor='hand2', command=self.open_folder)
-        self.btn_open_folder.grid(row=0, column=1, sticky=tk.EW, padx=(PAD_H/2, 0))
+        self.btn_open_folder.grid(row=0, column=1, sticky=tk.EW, padx=PAD_H/2)
+
+        self.btn_enable = tk.Button(self.f_selected_mod, text="Enable", cursor='hand2', width=2, command=self.enable_mod)
+        self.btn_enable.grid(row=0, column=2, sticky=tk.EW, padx=(PAD_H/2, 0))

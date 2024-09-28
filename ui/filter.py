@@ -39,7 +39,7 @@ class Filter:
         self.frame_slots = tk.Frame(self.frame)
         self.frame_slots.grid(row=1, column=3, sticky=tk.EW, padx=(0,PAD_H), pady=PAD_V/2)
 
-        vcmd = (root.register(self.callback)) 
+        vcmd = (root.register(validate_slot)) 
 
         self.entry_slots_from = tk.Entry(self.frame_slots, width=5, validate='all', validatecommand=(vcmd, '%P'))
         self.entry_slots_from.pack(side=tk.LEFT, fill=tk.X, expand=True)
@@ -79,12 +79,6 @@ class Filter:
 
         self.btn_refresh = tk.Button(self.frame_actions, text="Refresh", cursor='hand2', command=self.refresh_fn)
         self.btn_refresh.pack(side=tk.LEFT, padx=(0, PAD_H))
-    
-    def callback(self, P):
-        if (str.isdigit(P) and len(P) <= 3) or P == "":
-            return True
-        else:
-            return False
         
     def add_filter_entry(self, row, col, name):
         label = ttk.Label(self.frame, text=name)
