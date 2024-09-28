@@ -58,7 +58,20 @@ class Menu:
             print("no item selected!")
     
     def enable_mod(self):
-        pass
+        selected_item = self.treeview.focus()
+        if selected_item:
+            item = self.treeview.item(selected_item)
+            path = item["values"][5].split("/")[-1].split("\\")[-1]
+            if item["tags"][0] == "enabled": # disable mod
+                self.treeview.item(selected_item, text=" ⬜ ", tags="disabled")
+                self.enabled_mods.remove(path)
+                self.btn_enable.config(text="Enable")
+            else: # enable mod
+                self.treeview.item(selected_item, text=" ✅ ", tags="enabled")
+                self.enabled_mods.append(path)
+                self.btn_enable.config(text="Disable")
+        else:
+            print("no item selected!")
 
     def refresh(self):
         self.filter_view.clear()
@@ -185,14 +198,7 @@ class Menu:
         self.config.open_config(self.root)
 
     def on_space_pressed(self, event):
-        selected_item = self.treeview.focus()
-        item = self.treeview.item(selected_item)
-        if item["tags"][0] == "enabled":
-            self.treeview.item(selected_item, text=" ⬜ ", tags="disabled")
-        else:
-            self.treeview.item(selected_item, text=" ✅ ", tags="enabled")
-            path = item["values"][5].split("/")[-1].split("\\")[-1]
-            self.enabled_mods.append(path)
+        self.enable_mod()
     
     def on_scan_start(self, max_count):
         self.max_count = max_count
