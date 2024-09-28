@@ -251,7 +251,9 @@ class Menu:
         for mod in self.mods:
             mod["enabled"] = False
         print("disabled every mod")
-        self.on_change_page()
+        self.reset()
+        self.filtered_mods = self.filter_view.filter_mods(self.mods)    
+        self.populate(self.filtered_mods)
 
     def reload_preset(self):
         self.enabled_mods = []
@@ -262,7 +264,9 @@ class Menu:
             else:
                 mod["enabled"] = False
         print("reloaded preset")
-        self.on_change_page()
+        self.reset()
+        self.filtered_mods = self.filter_view.filter_mods(self.mods)    
+        self.populate(self.filtered_mods)
 
     def show(self):
         self.f_dir = tk.Frame(self.root)
@@ -356,7 +360,7 @@ class Menu:
         self.btn_disable.pack(side=tk.RIGHT, padx=(0, PAD_H))
 
         self.btn_load = tk.Button(self.f_footer, text="Reload Preset", cursor='hand2', command=self.reload_preset)
-        self.btn_load.pack(side=tk.RIGHT)
+        self.btn_load.pack(side=tk.RIGHT, padx=(0, PAD_H))
 
         self.info_frame.rowconfigure(index=0, weight=1)
         self.info_frame.rowconfigure(index=3, weight=1)
