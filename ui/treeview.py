@@ -78,7 +78,7 @@ class Menu:
             print("no item selected!")
 
     def refresh(self):
-        self.filter_view.clear()
+        self.filter_view.reset()
         self.reset()
         self.scan()
 

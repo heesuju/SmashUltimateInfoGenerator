@@ -168,7 +168,7 @@ class Filter:
             "enabled_only": self.show_only_enabled.get()
         }
     
-    def clear(self):
+    def reset(self):
         clear_text(self.entry_mod_name)
         clear_text(self.entry_author)
         chars = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Custom"))
@@ -181,6 +181,9 @@ class Filter:
         clear_text(self.entry_slots_from)
         clear_text(self.entry_slots_to)
         self.show_only_enabled.set(False)
+
+    def clear(self):
+        self.reset()
         self.search_fn()
 
     def filter_mods(self, mods):
