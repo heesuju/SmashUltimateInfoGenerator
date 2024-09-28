@@ -1,11 +1,14 @@
 import os
+from os import listdir
 from functools import partial
 import tkinter as tk
 from tkinter import ttk
 from utils.scanner import Scanner
+import shutil
 import math
 import common
 import threading
+from pathlib import Path
 import queue
 from PIL import Image, ImageTk
 from defs import PAD_H, PAD_V
@@ -243,6 +246,30 @@ class Menu:
         else:
             print("invalid directory!")
 
+    def export_preset(self):
+        if self.preset_manager.is_preset_valid() == False:
+            return
+        
+        preset_path = ""
+        
+        if os.path.exists(self.config.default_dir):
+            preset_path = self.config.default_dir
+            path = Path(self.config.default_dir)
+            preset_path = os.path.join(path.parent.absolute(), "arcropolis", "config")
+            
+            if os.path.exists(preset_path):
+                config_folders = listdir(preset_path)
+                if len(config_folders) == 1:
+                    preset_path = os.path.join(preset_path, config_folders[0])
+                    config_folders = listdir(preset_path)
+                    if len(config_folders) == 1:
+                        preset_path = os.path.join(preset_path, config_folders[0])
+        
+        export_dir = open_file_dialog(preset_path)
+        if os.path.exists(export_dir):    
+            shutil.copy(self.preset_manager.preset_file, export_dir)
+            print("Exported preset to dir")        
+
     def save_preset(self):
         self.preset_cache = self.preset_manager.save_preset(self.enabled_mods)
 
@@ -353,14 +380,17 @@ class Menu:
         update_handler = partial(self.updater, self.progressbar, self.l_progress, self.queue)
         self.root.bind('<<Progress>>', update_handler)
 
-        self.btn_save = tk.Button(self.f_footer, text="Overwrite Preset", cursor='hand2', command=self.save_preset)
-        self.btn_save.pack(side=tk.RIGHT)
+        self.btn_export = tk.Button(self.f_footer, text="Export Preset", cursor='hand2', command=self.export_preset)
+        self.btn_export.pack(side=tk.RIGHT)
 
-        self.btn_disable = tk.Button(self.f_footer, text="Disable All", cursor='hand2', command=self.disable_all)
-        self.btn_disable.pack(side=tk.RIGHT, padx=(0, PAD_H))
+        self.btn_save = tk.Button(self.f_footer, text="Overwrite Preset", cursor='hand2', command=self.save_preset)
+        self.btn_save.pack(side=tk.RIGHT, padx=(0, PAD_H))
 
         self.btn_load = tk.Button(self.f_footer, text="Reload Preset", cursor='hand2', command=self.reload_preset)
         self.btn_load.pack(side=tk.RIGHT, padx=(0, PAD_H))
+
+        self.btn_disable = tk.Button(self.f_footer, text="Disable All", cursor='hand2', command=self.disable_all)
+        self.btn_disable.pack(side=tk.RIGHT, padx=(0, PAD_H))
 
         self.info_frame.rowconfigure(index=0, weight=1)
         self.info_frame.rowconfigure(index=3, weight=1)

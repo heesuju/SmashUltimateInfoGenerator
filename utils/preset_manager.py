@@ -7,6 +7,7 @@ OUTPUT_FILE = "cache/presets"
 
 class PresetManager():
     def __init__(self)->None:
+        self.preset_file = "cache/presets"
         self.enabled = []
 
     def load_preset(self):
@@ -34,3 +35,13 @@ class PresetManager():
         print("enabled mods:", len(outputs))
         self.enabled = outputs
         return outputs
+    
+    def is_preset_valid(self)->bool:
+        preset_dir = "cache"
+        if not os.path.exists(preset_dir):
+            os.makedirs(preset_dir)
+        file = Path(os.path.join(preset_dir, "presets"))
+        if file.is_file():
+            return True
+        else:
+            return False
