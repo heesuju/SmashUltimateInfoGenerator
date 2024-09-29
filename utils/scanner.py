@@ -5,6 +5,7 @@ from utils.loader import Loader
 from utils.generator import Generator
 from PIL import Image, ImageTk
 import common
+from .files import is_valid_dir
 from utils.hash import gen_hash_as_decimal
 from typing import Union
 
@@ -128,4 +129,5 @@ class Scanner(Thread):
         return sorted_result
 
     def run(self):
-        self.find_mods(self.directory)
+        if is_valid_dir(self.directory):
+            self.find_mods(self.directory)

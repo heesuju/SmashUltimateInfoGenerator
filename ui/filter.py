@@ -270,8 +270,12 @@ class Filter:
                     continue
                 
             outputs.append(mod)
-        
-        return sort_by_columns(outputs, load_config()["sort_priority"])
+
+        sort_prioirty = load_config().get("sort_priority", None)
+        if sort_prioirty is not None:
+            return sort_by_columns(outputs, sort_prioirty)
+        else:
+            return outputs
 
     def get_series(self, character_name:str, data):
         for d in data:
