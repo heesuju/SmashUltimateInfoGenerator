@@ -1,11 +1,6 @@
-import json
-import os
 import tkinter as tk
 from tkinter import ttk
-import defs
-from cache import PATH_CONFIG
-from utils.load_config import load_config
-from defs import PAD_H, PAD_V, CATEGORIES
+from defs import PAD_H, PAD_V
 from .config import Config
 from .common_ui import *
 
@@ -56,7 +51,7 @@ class Sorting:
         self.f_actions.grid(row=6, column=0, columnspan=4, sticky=tk.SE)
 
         self.btn_restore = tk.Button(self.f_actions, text="Restore", command=lambda: self.restore())
-        self.btn_restore.pack(side="left", padx=(0, defs.PAD_H))
+        self.btn_restore.pack(side="left", padx=(0, PAD_H))
 
         self.btn_save = tk.Button(self.f_actions, text="Save", command=lambda: self.save())
         self.btn_save.pack()

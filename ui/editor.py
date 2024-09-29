@@ -1,23 +1,20 @@
+import shutil, os, sys
+import common, defs
 import tkinter as tk
-from utils.generator import Generator
-from .config import Config
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from PIL import Image, ImageTk
-import shutil
-import os
-import sys
-import common
-import defs
+from cache import remove_cache
+from utils import open_web, format_version
+from utils.generator import Generator
+from utils.loader import Loader
 from utils.static_scraper import Extractor
 from utils.dynamic_scraper import Selenium
 from utils.downloader import Downloader
-from utils.loader import Loader
-from .comparison import Comparison
 from utils.image_resize import ImageResize
+from .comparison import Comparison
+from .config import Config
 from . import PATH_ICON
-from cache import remove_cache
-from utils import open_web, format_version
-from .common_ui import *
+from .common_ui import get_text, set_text, set_enabled, open_file_dialog, dump_toml, TomlParams
 
 class Editor:
     def __init__(self, callback=None) -> None:

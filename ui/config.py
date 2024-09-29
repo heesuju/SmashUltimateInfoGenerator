@@ -3,7 +3,7 @@ import os
 import tkinter as tk
 import defs
 from cache import PATH_CONFIG
-from utils.load_config import load_config
+from utils.config_manager import load_config
 
 class Config:
     def __init__(self, callback = None):

@@ -1,10 +1,10 @@
 from tkinter import ttk
 from PIL import ImageTk
 import tkinter as tk
+import tkinter.font as font
 from defs import PAD_H, PAD_V
 from . import PATH_ICON
 from .common_ui import get_text, set_text, validate_page
-import tkinter.font as font
 import math
 import os
 from common import clamp

@@ -5,8 +5,6 @@ import tkinter as tk
 from tkinter import ttk
 from utils.scanner import Scanner
 import shutil
-import math
-import common
 import threading
 from pathlib import Path
 import queue
@@ -16,12 +14,12 @@ from .editor import Editor
 from .config import Config
 from .filter import Filter
 from .paging import Paging
-from utils.loader import Loader
-from utils.preset_manager import PresetManager
-from utils.image_resize import ImageResize
-from utils import load_config
-from utils.update_config import update_config_directory
+from .preview import Preview
 from . import PATH_ICON
+from utils import load_config
+from utils.loader import Loader
+from utils.config_manager import update_config_directory
+from utils.preset_manager import PresetManager
 from .common_ui import *
 
 class Menu:    
@@ -45,12 +43,7 @@ class Menu:
     def reset(self):
         self.treeview.selection_clear()
         self.treeview.delete(*self.treeview.get_children())
-        set_enabled(self.l_desc_v)
-        clear_text(self.l_desc_v)
-        set_enabled(self.l_desc_v, False)
-        self.label_img.image = ""
-        clear_text(self.l_ver)
-        clear_text(self.l_author)
+        self.preview.clear()
             
     def open_folder(self):
         selected_item = self.treeview.focus()
@@ -68,11 +61,11 @@ class Menu:
             if item["tags"][0] == "enabled": # disable mod
                 self.treeview.item(selected_item, text=" ⬜ ", tags="disabled")
                 self.enabled_mods.remove(path)
-                self.btn_enable.config(text="Enable")
+                self.preview.set_toggle_label(False)
             else: # enable mod
                 self.treeview.item(selected_item, text=" ✅ ", tags="enabled")
                 self.enabled_mods.append(path)
-                self.btn_enable.config(text="Disable")
+                self.preview.set_toggle_label(True)
             for mod in self.mods:
                 if mod["folder_name"] == path:
                     mod["enabled"] = mod["folder_name"] in self.enabled_mods
@@ -159,10 +152,6 @@ class Menu:
         self.filtered_mods = mods
         if len(mods) > 0:
             self.search()
-        
-    def on_img_resized(self, image):
-        self.label_img.config(image=image, width=10, height=10)
-        self.label_img.image = image  # Keep a reference to prevent garbage collection
 
     def on_item_selected(self, event):
         selected_item = self.treeview.focus()
@@ -170,25 +159,9 @@ class Menu:
             return
         
         item = self.treeview.item(selected_item)
-        self.l_desc_v.config(state="normal")
-        self.l_desc_v.delete(1.0, tk.END)
-        self.btn_enable.config(text="Enable" if item["tags"][0] == "disabled" else "Disable")
-        
-        if self.loader.load_toml(item['values'][-1]): 
-            set_text(self.l_desc_v, self.loader.description)
-            self.l_ver.config(text=self.loader.version, width=5)
-            self.l_author.config(text=self.loader.authors, width=1)
-        else: 
-            set_text(self.l_desc_v, "No info.toml found")
-        self.l_desc_v.config(state="disabled")
-        img_preview = os.path.join(item['values'][-1], "preview.webp")
-        if os.path.exists(img_preview):
-            resize_thread = ImageResize(img_preview, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
-            resize_thread.start()
-        else:
-            self.label_img.image = ""
-            self.l_ver.config(text="")
-            self.l_author.config(text="")
+        self.preview.update(item["tags"][0] == "enabled", 
+                            self.loader if self.loader.load_toml(item['values'][-1]) else None,
+                            item['values'][-1])
             
     def on_double_clicked(self, event):
         self.open_editor()
@@ -219,9 +192,6 @@ class Menu:
             preset_cache = self.preset_manager.load_preset()
             scan_thread = Scanner(config_data["default_directory"], start_callback=self.on_scan_start, progress_callback=self.on_scan_progress, callback=self.on_scanned, preset=preset_cache)
             scan_thread.start()
-        # else:
-        #     print("no default directory")
-        #     self.open_config()
     
     def change_working_directory(self):
         config_data = load_config()
@@ -395,36 +365,4 @@ class Menu:
         self.info_frame.rowconfigure(index=0, weight=1)
         self.info_frame.rowconfigure(index=3, weight=1)
 
-        self.label_img = tk.Label(self.info_frame, bg="black")
-        self.label_img.grid(row=0, padx=PAD_H, pady=(PAD_V, 0), sticky=tk.NSEW)
-
-        self.ver_auth_frame = tk.Frame(self.info_frame)
-        self.ver_auth_frame.grid(row=1, padx=PAD_H, pady=(0, PAD_V), sticky=tk.NSEW)
-
-        self.l_ver = tk.Label(self.ver_auth_frame, anchor="w", justify="left")
-        self.l_ver.pack(side=tk.LEFT)
-
-        self.l_author = tk.Label(self.ver_auth_frame, anchor="e", justify="right", width=1)
-        self.l_author.pack(side=tk.RIGHT, fill="x", expand=True)
-
-        l_desc = tk.Label(self.info_frame, text="Description", anchor="w", justify="left")
-        l_desc.grid(row=2, padx=PAD_H, sticky=tk.W)
-
-        self.l_desc_v = tk.Text(self.info_frame, height=1, width=10, state="disabled")
-        self.l_desc_v.grid(row=3, padx=PAD_H, pady=(0, PAD_V), sticky=tk.NSEW)
-
-        self.f_selected_mod = tk.Frame(self.info_frame)
-        self.f_selected_mod.grid(row=4, padx=PAD_H, pady=(0, PAD_V), sticky=tk.EW)
-        self.f_selected_mod.columnconfigure(index=0, weight=1, uniform="equal")
-        self.f_selected_mod.columnconfigure(index=1, weight=1, uniform="equal")
-        self.f_selected_mod.columnconfigure(index=2, weight=1, uniform="equal")
-        self.f_selected_mod.rowconfigure(index=0, weight=1)
-
-        self.btn_edit = tk.Button(self.f_selected_mod, text="Edit", cursor='hand2', command=self.open_editor)
-        self.btn_edit.grid(row=0, column=0, sticky=tk.EW, padx=(0, PAD_H/2))
-        
-        self.btn_open_folder = tk.Button(self.f_selected_mod, text="Open", cursor='hand2', command=self.open_folder)
-        self.btn_open_folder.grid(row=0, column=1, sticky=tk.EW, padx=PAD_H/2)
-
-        self.btn_enable = tk.Button(self.f_selected_mod, text="Enable", cursor='hand2', width=2, command=self.enable_mod)
-        self.btn_enable.grid(row=0, column=2, sticky=tk.EW, padx=(PAD_H/2, 0))
+        self.preview = Preview(self.info_frame, self.open_editor, self.open_folder, self.enable_mod)

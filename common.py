@@ -3,7 +3,7 @@ import re
 import sys
 import csv
 from data import PATH_CHAR_NAMES
-from utils.load_config import load_config
+from utils.config_manager import load_config
 
 def get_project_dir():
     return os.path.abspath(os.path.dirname(sys.argv[0]))
