@@ -154,6 +154,10 @@ class Menu:
         if len(mods) > 0:
             self.search()
 
+    def on_item_deselected(self, event):
+        self.preview.clear()
+        self.preview.close_callback()
+
     def on_item_selected(self, event):
         selected_item = self.treeview.focus()
         if not selected_item:
@@ -340,6 +344,7 @@ class Menu:
         self.scrollbar = ttk.Scrollbar(self.treeview, orient="vertical", command=self.treeview.yview)
         self.treeview.configure(yscrollcommand=self.scrollbar.set)
         self.treeview.bind('<<TreeviewSelect>>', self.on_item_selected)
+        self.treeview.bind('<Escape>', self.on_item_deselected)
         self.treeview.bind("<Double-1>", self.on_double_clicked)
         self.treeview.bind("<space>", self.on_enable_mod)
         self.treeview.bind("<Return>", self.on_enable_mod)

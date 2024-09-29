@@ -99,6 +99,10 @@ class Preview:
             self.label_author.config(text="")
             self.label_title.config(text="")
 
+        set_enabled(self.btn_edit)
+        set_enabled(self.btn_open)
+        set_enabled(self.btn_toggle)
+
     def close_callback(self):
         self.root.pack_forget()
 
@@ -113,13 +117,26 @@ class Preview:
         self.label_img.image = ""
         clear_text(self.label_version)
         clear_text(self.label_author)
-        self.close_callback()
+        clear_text(self.label_title)
+        self.set_toggle_label(False)
+        set_enabled(self.btn_edit, False)
+        set_enabled(self.btn_open, False)
+        set_enabled(self.btn_toggle, False)
+        # self.close_callback()
 
     def set_toggle_label(self, is_enabled:bool):
         if is_enabled:
-            self.btn_toggle.config(image=self.icon_on, text="Enabled ", foreground="#3FB54D")
+            self.btn_toggle.config(image=self.icon_on, 
+                                   text="Enabled ", 
+                                   foreground="#3FB54D",
+                                   activeforeground="#3FB54D",
+                                   disabledforeground="#F5C0C0")
         else:
-            self.btn_toggle.config(image=self.icon_off, text="Disabled ", foreground="#FF6363")
+            self.btn_toggle.config(image=self.icon_off, 
+                                   text="Disabled ", 
+                                   foreground="#FF6363",
+                                   activeforeground="#FF6363",
+                                    disabledforeground="#F5C0C0")
 
     def set_image(self, directory):
         if not directory or not os.path.exists(directory):
