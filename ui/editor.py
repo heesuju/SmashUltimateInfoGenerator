@@ -5,6 +5,7 @@ from tkinter import ttk, filedialog
 from PIL import Image, ImageTk
 from cache import remove_cache
 from utils import open_web, format_version
+from utils.cleaner import clean_mod_name
 from utils.generator import Generator
 from utils.loader import Loader
 from utils.static_scraper import Extractor
@@ -55,8 +56,8 @@ class Editor:
         
     def on_bs4_result(self, mod_title, authors):
         if mod_title:
-            self.generator.mod_title_web = mod_title
-            set_text(self.entry_mod_name, common.trim_mod_name(self.generator.mod_title_web, self.generator.ignore_names))
+            self.generator.mod_title_web = clean_mod_name(mod_title)
+            set_text(self.entry_mod_name, self.generator.mod_title_web)
         elif self.generator.mod_name:
             set_text(self.entry_mod_name, self.generator.mod_name)
             
