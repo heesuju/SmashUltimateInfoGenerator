@@ -129,5 +129,9 @@ class Scanner(Thread):
         return sorted_result
 
     def run(self):
-        if is_valid_dir(self.directory):
-            self.find_mods(self.directory)
+        if isinstance(self.directory, str):
+            if is_valid_dir(self.directory):
+                self.find_mods(self.directory)
+        elif isinstance(self.directory, list):
+            if False not in [is_valid_dir(d) for d in self.directory]:
+                self.find_mods(self.directory)
