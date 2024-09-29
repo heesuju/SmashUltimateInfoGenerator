@@ -130,6 +130,7 @@ class Filter:
         self.char_values = chars
 
         new_char = get_completion(get_text(self.cbox_char), self.char_values)
+        self.cbox_char.config(values=self.char_values)
         self.cbox_char.set(new_char if new_char else "All")
 
         new_wifi = get_completion(get_text(self.cbox_wifi), WIFI_VALUES)
