@@ -159,7 +159,7 @@ class Menu:
         if not selected_item:
             return
         
-        self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
         item = self.treeview.item(selected_item)
         self.preview.update(item["tags"][0] == "enabled", 
                             self.loader if self.loader.load_toml(item['values'][-1]) else None,
@@ -294,11 +294,11 @@ class Menu:
         self.frame_content.pack(padx=PAD_H, pady=(0, PAD_V), fill="both", expand=True)
 
         self.frame_list = ttk.LabelFrame(self.frame_content, text="Mods")
-        self.frame_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0,PAD_H))
+        self.frame_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.filter_view = Filter(self.frame_list, self.search, self.refresh)
 
         self.info_frame = ttk.LabelFrame(self.frame_content, text="Preview")
-        self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
         self.info_frame.columnconfigure(0, weight=1)     
         self.info_frame.pack_forget()
 

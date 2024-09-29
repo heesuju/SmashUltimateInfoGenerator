@@ -117,9 +117,9 @@ class Preview:
 
     def set_toggle_label(self, is_enabled:bool):
         if is_enabled:
-            self.btn_toggle.config(image=self.icon_on, text="Enabled ", foreground="green")
+            self.btn_toggle.config(image=self.icon_on, text="Enabled ", foreground="#3FB54D")
         else:
-            self.btn_toggle.config(image=self.icon_off, text="Disabled ", foreground="red")
+            self.btn_toggle.config(image=self.icon_off, text="Disabled ", foreground="#FF6363")
 
     def set_image(self, directory):
         if not directory or not os.path.exists(directory):
