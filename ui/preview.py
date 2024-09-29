@@ -16,7 +16,6 @@ class Preview:
         self.show()
 
     def show(self):
-        
         self.label_img = tk.Label(self.root, bg="black")
         self.label_img.grid(row=0, padx=PAD_H, pady=(PAD_V, 0), sticky=tk.NSEW)
 

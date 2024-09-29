@@ -51,6 +51,7 @@ class Filter:
 
         self.entry_slots_to = tk.Entry(self.frame_slots, width=5, validate='all', validatecommand=(vcmd, '%P'))
         self.entry_slots_to.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.entry_slots_to.bind("<Return>", self.on_filter_submitted)
 
         self.series = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Series"))
         self.series = [remove_redundant_spacing(i) for i in self.series]
