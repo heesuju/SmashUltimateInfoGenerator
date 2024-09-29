@@ -6,10 +6,11 @@ build_exe_options = {
     "zip_include_packages": ["tomli_w", "Pillow", "requests", "beautifulsoup4", "selenium", "tomli", "webdriver_manager"],
 }
 
+# change base to console to show console logs
 setup(
     name="Info Toml Generator",
-    version="1.4.1",
+    version="1.5.1",
     description="Info.toml generator for Smash Ultimate",
     options={"build_exe": build_exe_options},
-    executables=[Executable("main.py", base="console")],
+    executables=[Executable("main.py", base="Win32GUI")],
 )
