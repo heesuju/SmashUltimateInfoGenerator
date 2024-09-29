@@ -216,6 +216,13 @@ class Menu:
         else:
             print("invalid directory!")
 
+    def on_window_resize(self, event):
+        selected_item = self.treeview.focus()
+        if selected_item:
+            item = self.treeview.item(selected_item)
+            path = item["values"][-1]
+            self.preview.set_image(os.path.join(path, "preview.webp"))
+
     def export_preset(self):
         if self.preset_manager.is_preset_valid() == False:
             return
@@ -366,3 +373,4 @@ class Menu:
         self.info_frame.rowconfigure(index=3, weight=1)
 
         self.preview = Preview(self.info_frame, self.open_editor, self.open_folder, self.enable_mod)
+        self.root.bind("<Configure>", self.on_window_resize)

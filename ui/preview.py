@@ -13,9 +13,10 @@ class Preview:
         self.edit_callback = edit_callback 
         self.open_callback = open_callback
         self.toggle_callback = toggle_callback
-        self.open()
+        self.show()
 
-    def open(self):
+    def show(self):
+        
         self.label_img = tk.Label(self.root, bg="black")
         self.label_img.grid(row=0, padx=PAD_H, pady=(PAD_V, 0), sticky=tk.NSEW)
 
@@ -64,9 +65,9 @@ class Preview:
 
         set_enabled(self.label_desc, False)
         img_preview = os.path.join(path, "preview.webp")
+
         if os.path.exists(img_preview):
-            resize_thread = ImageResize(img_preview, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
-            resize_thread.start()
+            self.set_image(img_preview)
         else:
             self.label_img.image = ""
             self.label_version.config(text="")
@@ -89,3 +90,10 @@ class Preview:
             self.btn_toggle.config(text="Disable")
         else:
             self.btn_toggle.config(text="Enable")
+
+    def set_image(self, directory):
+        if not directory or not os.path.exists(directory):
+            return
+        
+        resize_thread = ImageResize(directory, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
+        resize_thread.start()
