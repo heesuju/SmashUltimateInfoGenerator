@@ -27,9 +27,11 @@ class Selenium(Thread):
     def run(self):
         try:
             chrome_options = Options()
-            chrome_options.add_argument("--headless=new") 
-            chrome_options.add_argument("user-agent=fake-useragent")
-            
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--disable-gpu")
+            user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.2420.81"
+            chrome_options.add_argument(f"user-agent={user_agent}")
+
             driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
             driver.get(self.url)
             page_source = driver.execute_script("return document.body.outerHTML;")
