@@ -23,7 +23,7 @@ def clean_mod_name(mod_name:str)->str:
         mod_name = match.group(1)
     mod_name = substitute_characters(mod_name, FOLDER_NAME_BLACKLIST)
     mod_name = remove_redundant_spacing(mod_name)
-    print(mod_name)
+    return mod_name
 
 def substitute_characters(text:str, chars_to_substitute:list)->str:
     chars_set = set(chars_to_substitute)
