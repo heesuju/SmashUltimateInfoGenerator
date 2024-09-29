@@ -74,8 +74,9 @@ class Sorting:
         self.config = Config()
         sort_priority = self.config.sort_priority
         if sort_priority is not None:
-            self.ddl_sort1.set(SORTING_CATEGORIES[sort_priority[0]["column"]])
-            self.ddl_order1.set(sort_priority[0]["order"])
+            if len(sort_priority) >= 1:
+                self.ddl_sort1.set(SORTING_CATEGORIES[sort_priority[0]["column"]])
+                self.ddl_order1.set(sort_priority[0]["order"])
             
             if len(sort_priority) >= 2:
                 self.ddl_order2.config(state="normal")
