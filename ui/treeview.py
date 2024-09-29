@@ -159,6 +159,7 @@ class Menu:
         if not selected_item:
             return
         
+        self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         item = self.treeview.item(selected_item)
         self.preview.update(item["tags"][0] == "enabled", 
                             self.loader if self.loader.load_toml(item['values'][-1]) else None,
@@ -296,9 +297,10 @@ class Menu:
         self.frame_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0,PAD_H))
         self.filter_view = Filter(self.frame_list, self.search, self.refresh)
 
-        self.info_frame = ttk.LabelFrame(self.frame_content, text="Details")
+        self.info_frame = ttk.LabelFrame(self.frame_content, text="Preview")
         self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.info_frame.columnconfigure(0, weight=1)     
+        self.info_frame.pack_forget()
 
         self.categories = ["Category", "Character", "Slot", "Mod Name", "Author", "Dir"]
         
@@ -370,8 +372,8 @@ class Menu:
         self.btn_disable = tk.Button(self.f_footer, text="Disable All", cursor='hand2', command=self.disable_all)
         self.btn_disable.pack(side=tk.RIGHT, padx=(0, PAD_H))
 
-        self.info_frame.rowconfigure(index=0, weight=1)
-        self.info_frame.rowconfigure(index=3, weight=1)
+        self.info_frame.rowconfigure(index=1, weight=1)
+        self.info_frame.rowconfigure(index=4, weight=1)
 
         self.preview = Preview(self.info_frame, self.open_editor, self.open_folder, self.enable_mod)
         self.root.bind("<Configure>", self.on_window_resize)

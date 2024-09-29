@@ -1,6 +1,7 @@
 from tkinter import ttk
 from PIL import ImageTk
 import tkinter as tk
+from idlelib.tooltip import Hovertip
 from defs import PAD_H, PAD_V, CATEGORIES
 from . import PATH_ICON
 from .sorting import Sorting, sort_by_columns
@@ -30,14 +31,14 @@ class Filter:
         self.refresh_fn = refresh_fn
         
         self.entry_mod_name = self.add_filter_entry(0, 0, "Mod Name")
-        self.entry_author = self.add_filter_entry(0, 2, "Author")
+        self.entry_author = self.add_filter_entry(0, 2, "Author", False)
         
         self.cbox_category = self.add_filter_dropdown(1, 0, "Category", ["All"] + CATEGORIES)
         label_slots = ttk.Label(self.frame, text="Slots")
         label_slots.grid(row=1, column=2, sticky=tk.EW, padx=(0,PAD_H))
         
         self.frame_slots = tk.Frame(self.frame)
-        self.frame_slots.grid(row=1, column=3, sticky=tk.EW, padx=(0,PAD_H), pady=PAD_V/2)
+        self.frame_slots.grid(row=1, column=3, sticky=tk.EW, pady=PAD_V/2)
 
         vcmd = (root.register(validate_slot)) 
 
@@ -60,10 +61,10 @@ class Filter:
 
         chars = ["All"] + sorted(csv_to_dict(PATH_CHAR_NAMES, "Custom"))
         self.char_values = chars
-        self.cbox_char = self.add_filter_dropdown(2, 2, "Character", chars)
+        self.cbox_char = self.add_filter_dropdown(2, 2, "Character", chars, False)
 
         self.cbox_info = self.add_filter_dropdown(3, 0, "Info.toml", INFO_VALUES)
-        self.cbox_wifi = self.add_filter_dropdown(3, 2, "Wifi-Safe", WIFI_VALUES)
+        self.cbox_wifi = self.add_filter_dropdown(3, 2, "Wifi-Safe", WIFI_VALUES, False)
         
         self.show_only_enabled = tk.IntVar()
         self.ckbox_enabled = tk.Checkbutton(self.frame, text="Show only enabled", variable=self.show_only_enabled, cursor='hand2')
@@ -72,33 +73,49 @@ class Filter:
         self.frame_actions = tk.Frame(self.frame)
         self.frame_actions.grid(row=4, column=2, columnspan=2, pady=(PAD_V/2, 0), sticky=tk.E)
 
-        self.icon_sort = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'sort.png'))
+        self.icon_sort = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'config.png'))
         self.btn_sort = tk.Button(self.frame_actions, image=self.icon_sort, relief=tk.FLAT, cursor='hand2', command=self.show_sort)
-        self.btn_sort.pack(side=tk.LEFT, padx=(0, PAD_H))
+        self.btn_sort.pack(side=tk.LEFT)
+        sort_tip = Hovertip(self.btn_sort,'Sort Config')
 
-        self.btn_search = tk.Button(self.frame_actions, text="Search", cursor='hand2', command=self.search_fn)
-        self.btn_search.pack(side=tk.LEFT, padx=(0, PAD_H))
+        separator = ttk.Separator(self.frame_actions, orient='vertical')
+        separator.pack(side=tk.LEFT, fill=tk.Y, padx=PAD_H)
 
-        self.btn_clear = tk.Button(self.frame_actions, text="Clear", cursor='hand2', command=self.clear)
-        self.btn_clear.pack(side=tk.LEFT, padx=(0, PAD_H))
-
-        self.btn_refresh = tk.Button(self.frame_actions, text="Refresh", cursor='hand2', command=self.refresh_fn)
-        self.btn_refresh.pack(side=tk.LEFT, padx=(0, PAD_H))
+        self.icon_refresh = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'refresh.png'))
+        self.btn_refresh = tk.Button(self.frame_actions, image=self.icon_refresh, relief=tk.FLAT, cursor='hand2', command=self.refresh_fn)
+        self.btn_refresh.pack(side=tk.LEFT)
+        refresh_tip = Hovertip(self.btn_refresh,'Refresh')
         
-    def add_filter_entry(self, row, col, name):
+        separator = ttk.Separator(self.frame_actions, orient='vertical')
+        separator.pack(side=tk.LEFT, fill=tk.Y, padx=PAD_H)
+
+        self.icon_clear = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'clear.png'))
+        self.btn_clear = tk.Button(self.frame_actions, image=self.icon_clear, relief=tk.FLAT, cursor='hand2', command=self.clear)
+        self.btn_clear.pack(side=tk.LEFT)
+        clear_tip = Hovertip(self.btn_clear,'Clear')
+
+        separator = ttk.Separator(self.frame_actions, orient='vertical')
+        separator.pack(side=tk.LEFT, fill=tk.Y, padx=PAD_H)
+
+        self.icon_search = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'search.png'))
+        self.btn_search = tk.Button(self.frame_actions, image=self.icon_search, relief=tk.FLAT, cursor='hand2', command=self.search_fn)
+        self.btn_search.pack(side=tk.LEFT)
+        search_tip = Hovertip(self.btn_search,'Search')
+        
+    def add_filter_entry(self, row, col, name, add_padding:bool=True):
         label = ttk.Label(self.frame, text=name)
         label.grid(row=row, column=col, sticky=tk.EW, padx=(0,PAD_H))
         entry = tk.Entry(self.frame)
-        entry.grid(row=row, column=col+1, sticky=tk.EW, padx=(0,PAD_H), pady=PAD_V/2)
+        entry.grid(row=row, column=col+1, sticky=tk.EW, padx=(0,PAD_H if add_padding else 0), pady=PAD_V/2)
         entry.bind("<Return>", self.on_filter_submitted)
         return entry
     
-    def add_filter_dropdown(self, row, col, name, data):
+    def add_filter_dropdown(self, row, col, name, data, add_padding:bool=True):
         label = ttk.Label(self.frame, text=name)
         label.grid(row=row, column=col, sticky=tk.EW, padx=(0,PAD_H))
 
         combobox = ttk.Combobox(self.frame, values=data, width=10)
-        combobox.grid(row=row, column=col+1, sticky=tk.EW, padx=(0,PAD_H), pady=PAD_V/2)
+        combobox.grid(row=row, column=col+1, sticky=tk.EW, padx=(0,PAD_H if add_padding else 0), pady=PAD_V/2)
         combobox.bind("<Return>", self.on_combobox_submitted)
         combobox.set(data[0])
         return combobox

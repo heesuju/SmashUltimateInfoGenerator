@@ -6,3 +6,4 @@ tomli
 cx_Freeze
 webdriver_manager
 selenium
+pyglet
