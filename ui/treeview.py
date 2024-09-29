@@ -38,6 +38,8 @@ class Menu:
         self.progress_count = 0
         self.progress_lock = threading.Lock()
         self.max_count = 0
+        self.x = 0
+        self.y = 0
         self.show()
         self.scan()
     
@@ -163,11 +165,20 @@ class Menu:
         if not selected_item:
             return
         
-        self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
+        if self.x >= 120 and self.x <= 145:
+            self.enable_mod()
+            self.x, self.y  = 0, 0
+
         item = self.treeview.item(selected_item)
         self.preview.update(item["tags"][0] == "enabled", 
                             self.loader if self.loader.load_toml(item['values'][-1]) else None,
                             item['values'][-1])
+        
+        self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
+        
+    def on_item_clicked(self, event):
+        self.x = event.x
+        self.y = event.y
             
     def on_double_clicked(self, event):
         self.open_editor()
@@ -344,6 +355,7 @@ class Menu:
         self.scrollbar = ttk.Scrollbar(self.treeview, orient="vertical", command=self.treeview.yview)
         self.treeview.configure(yscrollcommand=self.scrollbar.set)
         self.treeview.bind('<<TreeviewSelect>>', self.on_item_selected)
+        self.treeview.bind('<Button-1>', self.on_item_clicked)
         self.treeview.bind('<Escape>', self.on_item_deselected)
         self.treeview.bind("<Double-1>", self.on_double_clicked)
         self.treeview.bind("<space>", self.on_enable_mod)
