@@ -3,7 +3,7 @@ from tkinter import ttk
 from tkinter import filedialog
 import tomli_w as tomli
 import os
-from common import is_valid_dir
+from utils.files import is_valid_dir
 from typing import List
 
 def set_text(widget, text:str)->None:

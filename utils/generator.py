@@ -1,4 +1,5 @@
 import common
+from .files import is_valid_dir
 import string
 import tomli_w as tomli
 import re
@@ -73,7 +74,7 @@ class Generator:
                     group_arr.append(dict['Group'])
                     
                     slots = []
-                    if common.is_valid_dir(self.working_dir + "/fighter/" + child + "/model"):
+                    if is_valid_dir(self.working_dir + "/fighter/" + child + "/model"):
                         models = common.get_all_children_in_path(self.working_dir + "/fighter/" + child + "/model")
                         for model in models:
                             all_slots = common.get_all_children_in_path(self.working_dir + "/fighter/" + child + "/model/" + model)
@@ -100,7 +101,7 @@ class Generator:
         self.description = "Includes:\n"
         self.reset()
 
-        if common.is_valid_dir(self.working_dir + "/fighter"):
+        if is_valid_dir(self.working_dir + "/fighter"):
             self.slots, self.char_names, self.group_names, self.char_keys = self.get_characters()
             
             if common.search_dir_for_keyword(self.working_dir + "/fighter", "model"):
@@ -114,10 +115,10 @@ class Generator:
             if "kirby" in self.display_name == False and common.search_dir_for_keyword(self.working_dir + "/fighter", "kirby"):
                 self.is_kirby = True
           
-        if common.is_valid_dir(self.working_dir + "/stage"):  
+        if is_valid_dir(self.working_dir + "/stage"):  
             self.is_stage = True
                 
-        if common.is_valid_dir(self.working_dir + "/effect"):
+        if is_valid_dir(self.working_dir + "/effect"):
             for file in common.get_children_by_extension(self.working_dir + "/effect", ".eff"):
                 
                 if common.search_files_for_pattern(file, r"c\d+"):
@@ -126,7 +127,7 @@ class Generator:
                     self.is_effect = True
                 break
             
-        if common.is_valid_dir(self.working_dir + "/sound"):
+        if is_valid_dir(self.working_dir + "/sound"):
             if common.search_dir_for_keyword(self.working_dir + "/sound", "fighter_voice"):
                 self.is_voice = True
 
@@ -136,17 +137,17 @@ class Generator:
             if common.search_dir_for_keyword(self.working_dir + "/sound", "narration"):
                 self.is_narrator_voice = True
             
-        if common.is_valid_dir(self.working_dir + "/stream;"):
+        if is_valid_dir(self.working_dir + "/stream;"):
             self.is_victory_theme = True
 
-        if common.is_valid_dir(self.working_dir + "/camera"):
+        if is_valid_dir(self.working_dir + "/camera"):
             self.is_victory_animation = True
 
 
         self.is_single_name = False
 
         # Check if the "ui" directory exists
-        if common.is_valid_dir(self.working_dir + "/ui"):
+        if is_valid_dir(self.working_dir + "/ui"):
             if common.search_dir_for_keyword(self.working_dir + "/ui", "message"):
                 custom_name = common.get_children_by_extension(self.working_dir + "/ui/message", ".msbt")
                 single_name = common.get_children_by_extension(self.working_dir + "/ui/message", ".xmsbt")

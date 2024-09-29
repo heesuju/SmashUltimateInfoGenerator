@@ -1,7 +1,7 @@
 import tkinter as tk
 import defs
 from tkinter import ttk
-import common
+from utils.files import get_dir_name
 
 class Comparison:
     def __init__(self):
@@ -40,7 +40,7 @@ class Comparison:
 
         e_folder_name_prev = tk.Entry(f_prev, width=10)
         e_folder_name_prev.grid(row=1, column=0, sticky=tk.EW, pady = (0, defs.PAD_V))
-        e_folder_name_prev.insert(0,common.get_dir_name(generated_data['working_dir']))
+        e_folder_name_prev.insert(0,get_dir_name(generated_data['working_dir']))
 
         l_display_name_prev = tk.Label(f_prev, text="Display Name")
         l_display_name_prev.grid(row=2, column=0, sticky=tk.W)

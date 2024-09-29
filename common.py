@@ -39,15 +39,6 @@ def search_files_for_pattern(file, pattern):
         return True
     return False
 
-def get_dir_name(directory):
-    return os.path.basename(directory)
-
-def is_valid_dir(directory:str)->bool:
-    if directory:
-        return os.path.exists(directory) and os.path.isdir(directory)
-    else:
-        return False
-
 def get_children_by_extension(directory, extension):
     list = []
     for root, dirs, files in os.walk(directory):

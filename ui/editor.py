@@ -11,6 +11,7 @@ from utils.static_scraper import Extractor
 from utils.dynamic_scraper import Selenium
 from utils.downloader import Downloader
 from utils.image_resize import ImageResize
+from utils.files import get_dir_name, rename_if_valid
 from .comparison import Comparison
 from .config import Config
 from . import PATH_ICON
@@ -213,7 +214,7 @@ class Editor:
 
         mod_name = ""
         if not self.entry_url.get():
-            dir_name = common.get_dir_name(self.generator.working_dir)
+            dir_name = get_dir_name(self.generator.working_dir)
             title = common.get_mod_title(dir_name, self.generator.char_names, self.config.folder_name_format)
             capitalized = common.add_spaces_to_camel_case(title)
             mod_name = capitalized
@@ -256,12 +257,20 @@ class Editor:
                        self.generator.slots)
         )
         
-        old_directory = self.generator.working_dir
-        
-        self.move_file()
-        new_directory = self.rename_directory()
-        set_text(self.label_output, "Applied changes")
-        self.callback(old_directory, new_directory)
+        if get_text(self.entry_work_dir):
+            old_directory = self.generator.working_dir
+            self.move_file()
+            new_directory = rename_if_valid(old_directory, get_text(self.entry_folder_name))
+            if new_directory:
+                set_text(self.label_output, "Applied changes")
+                set_text(self.entry_work_dir, new_directory)
+                self.generator.working_dir = new_directory
+                self.find_image()
+                self.callback(old_directory, new_directory)
+            else:
+                set_text(self.label_output, "Folder is open in another browser! Please close the folder and try again.")
+        else:
+            set_text(self.label_output, "Working directory is empty!")
 
     def update_image(self):
         image_path =  filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.gif;*.webp")])
@@ -319,30 +328,6 @@ class Editor:
         self.entry_img_dir.delete(0, tk.END)
         self.label_img.config(image=None)
         self.label_img.image = None
-
-    def rename_directory(self):
-        if not self.generator.working_dir or not self.entry_folder_name.get():
-            return ""
-        
-        # Define the old folder name and the new folder name
-        old_directory_path = self.generator.working_dir
-        dir_name = common.get_dir_name(old_directory_path)
-        new_directory_path = old_directory_path[0:-len(dir_name)]
-        new_directory_path += self.entry_folder_name.get()
-        # Check if the old directory exists
-        if common.is_valid_dir(old_directory_path):
-            try:
-                # Rename the directory
-                os.rename(old_directory_path, new_directory_path)
-                set_text(self.entry_work_dir, new_directory_path)
-                self.generator.working_dir = new_directory_path
-                self.find_image()
-            except OSError as e:
-                print(f"Error renaming directory: {e}")
-        else:
-            print(f"The directory '{old_directory_path}' does not exist.")
-        
-        return new_directory_path
 
     def set_description(self):
         description = "Includes:\n"

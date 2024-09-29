@@ -20,6 +20,7 @@ from utils import load_config
 from utils.loader import Loader
 from utils.config_manager import update_config_directory
 from utils.preset_manager import PresetManager
+from utils.files import is_valid_dir
 from .common_ui import *
 
 class Menu:    
