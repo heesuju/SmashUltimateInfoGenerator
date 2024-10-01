@@ -18,9 +18,9 @@ from .preview import Preview
 from .preset import Preset
 from . import PATH_ICON
 from utils.loader import Loader
-from utils.preset_manager import PresetManager
 from utils.files import is_valid_dir
 from .common_ui import *
+from utils.hash import gen_hash_as_decimal
 
 class Menu:    
     def __init__(self, root) -> None:
@@ -31,9 +31,8 @@ class Menu:
         self.editor = Editor(self.on_finish_edit)
         self.loader = Loader()
         self.queue = queue.Queue()
-        self.enabled_mods = []
+        
         self.preset_cache = []
-        self.preset_manager = PresetManager()
         self.progress_count = 0
         self.progress_lock = threading.Lock()
         self.max_count = 0
@@ -55,23 +54,25 @@ class Menu:
         else:
             print("no item selected!")
     
-    def enable_mod(self):
+    def toggle_mod(self):
         selected_item = self.treeview.focus()
         if selected_item:
             item = self.treeview.item(selected_item)
             path = item["values"][5].split("/")[-1].split("\\")[-1]
-            if item["tags"][0] == "enabled": # disable mod
+            hash = gen_hash_as_decimal(path)
+            workspace = load_config()["workspace"]
+            enabled_mods = self.preset.workspace_list[workspace]["mod_list"]
+        
+            if hash in enabled_mods: # Disable
                 self.treeview.item(selected_item, text=" ⬜ ", tags="disabled")
-                self.enabled_mods.remove(path)
                 self.preview.set_toggle_label(False)
-            else: # enable mod
+                self.preset.workspace_list[workspace]["mod_list"].remove(hash)
+            else: # Enable
                 self.treeview.item(selected_item, text=" ✅ ", tags="enabled")
-                self.enabled_mods.append(path)
                 self.preview.set_toggle_label(True)
-            for mod in self.mods:
-                if mod["folder_name"] == path:
-                    mod["enabled"] = mod["folder_name"] in self.enabled_mods
-                    break
+                self.preset.workspace_list[workspace]["mod_list"].append(hash)
+
+            self.preset.update_workspace_count()
         else:
             print("no item selected!")
 
@@ -82,26 +83,32 @@ class Menu:
 
     def populate(self, mods):
         start, end = self.paging.update(len(mods)) 
-
+        workspace = load_config()["workspace"]
         for n in range(start,end):
             characters = ", ".join(sorted(mods[n]["character_names"]))
-            enabled = " ✅ " if mods[n]["enabled"] else " ⬜ "
-            tags = "enabled" if mods[n]["enabled"] else "disabled"
+            check_mark = " ⬜ "
+            tags = "disabled"
+            if mods[n]["hash"] in self.preset.workspace_list[workspace]["mod_list"]:
+                check_mark = " ✅ "
+                tags = "enabled"
+
             values = [mods[n]["category"], characters, mods[n]["slots"], mods[n]["mod_name"], mods[n]["authors"], mods[n]["path"]]
 
             if mods[n]["img"] == None: 
-                self.treeview.insert("", tk.END, text=enabled, values=tuple(values), tags=tags)
+                self.treeview.insert("", tk.END, text=check_mark, values=tuple(values), tags=tags)
             else: 
-                self.treeview.insert("", tk.END, text=enabled, image=mods[n]["img"], values=tuple(values), tags=tags)
+                self.treeview.insert("", tk.END, text=check_mark, image=mods[n]["img"], values=tuple(values), tags=tags)
 
     def on_change_page(self):
         self.reset()
         self.populate(self.filtered_mods)
 
     def search(self):
+        workspace = load_config()["workspace"]
+        enabled_mods = self.preset.workspace_list[workspace]["mod_list"]
         self.reset()
         self.paging.cur_page = 1
-        self.filtered_mods = self.filter_view.filter_mods(self.mods)    
+        self.filtered_mods = self.filter_view.filter_mods(self.mods, enabled_mods)
         self.populate(self.filtered_mods)
 
     def on_config_changed(self, dir:str):
@@ -146,11 +153,6 @@ class Menu:
 
     def on_scanned(self, mods):
         self.mods = mods
-        self.enabled_mods = []
-        for mod in self.mods:
-            if mod["enabled"]:
-                self.enabled_mods.append(mod["folder_name"])
-                self.preset_cache.append(mod["hash"])
         self.filtered_mods = mods
         if len(mods) > 0:
             self.search()
@@ -168,7 +170,7 @@ class Menu:
             return
         
         if self.x >= 20 and self.x <= 145:
-            self.enable_mod()
+            self.toggle_mod()
             self.x, self.y  = 0, 0
 
         item = self.treeview.item(selected_item)
@@ -196,7 +198,7 @@ class Menu:
         self.config.open_config(self.root)
 
     def on_enable_mod(self, event):
-        self.enable_mod()
+        self.toggle_mod()
     
     def on_scan_start(self, max_count):
         self.max_count = max_count
@@ -206,8 +208,11 @@ class Menu:
         config_data = load_config()
         if config_data is not None and config_data["default_directory"]:
             set_text(self.entry_dir, config_data["default_directory"])
-            preset_cache = self.preset_manager.load_preset()
-            scan_thread = Scanner(config_data["default_directory"], start_callback=self.on_scan_start, progress_callback=self.on_scan_progress, callback=self.on_scanned, preset=preset_cache)
+            scan_thread = Scanner(
+                config_data["default_directory"], 
+                start_callback=self.on_scan_start, 
+                progress_callback=self.on_scan_progress, 
+                callback=self.on_scanned)
             scan_thread.start()
     
     def on_browse(self):
@@ -239,32 +244,33 @@ class Menu:
             path = item["values"][-1]
             self.preview.set_image(os.path.join(path, "preview.webp"))
 
-    def export_preset(self):
-        if self.preset_manager.is_preset_valid() == False:
-            return
+    # def export_preset(self):
+    #     if self.preset_manager.is_preset_valid() == False:
+    #         return
         
-        preset_path = ""
+    #     preset_path = ""
         
-        if os.path.exists(self.config.default_dir):
-            preset_path = self.config.default_dir
-            path = Path(self.config.default_dir)
-            preset_path = os.path.join(path.parent.absolute(), "arcropolis", "config")
+    #     if os.path.exists(self.config.default_dir):
+    #         preset_path = self.config.default_dir
+    #         path = Path(self.config.default_dir)
+    #         preset_path = os.path.join(path.parent.absolute(), "arcropolis", "config")
             
-            if os.path.exists(preset_path):
-                config_folders = listdir(preset_path)
-                if len(config_folders) == 1:
-                    preset_path = os.path.join(preset_path, config_folders[0])
-                    config_folders = listdir(preset_path)
-                    if len(config_folders) == 1:
-                        preset_path = os.path.join(preset_path, config_folders[0])
+    #         if os.path.exists(preset_path):
+    #             config_folders = listdir(preset_path)
+    #             if len(config_folders) == 1:
+    #                 preset_path = os.path.join(preset_path, config_folders[0])
+    #                 config_folders = listdir(preset_path)
+    #                 if len(config_folders) == 1:
+    #                     preset_path = os.path.join(preset_path, config_folders[0])
         
-        export_dir = open_file_dialog(preset_path)
-        if os.path.exists(export_dir):    
-            shutil.copy(self.preset_manager.preset_file, export_dir)
-            print("Exported preset to dir")        
+    #     export_dir = open_file_dialog(preset_path)
+    #     if os.path.exists(export_dir):    
+    #         shutil.copy(self.preset_manager.preset_file, export_dir)
+    #         print("Exported preset to dir")        
 
     def save_preset(self):
-        self.preset_cache = self.preset_manager.save_preset(self.enabled_mods)
+        pass
+        # self.preset_cache = self.preset_manager.save_preset(self.enabled_mods)
 
     def toggle_preset(self):
         if not self.preset.is_shown:
@@ -286,27 +292,27 @@ class Menu:
 
         self.preview.toggle()
 
-    def disable_all(self):
-        self.enabled_mods = []
-        for mod in self.mods:
-            mod["enabled"] = False
-        print("disabled every mod")
-        self.reset()
-        self.filtered_mods = self.filter_view.filter_mods(self.mods)    
-        self.populate(self.filtered_mods)
+    # def disable_all(self):
+    #     self.enabled_mods = []
+    #     for mod in self.mods:
+    #         mod["enabled"] = False
+    #     print("disabled every mod")
+    #     self.reset()
+    #     self.filtered_mods = self.filter_view.filter_mods(self.mods)    
+    #     self.populate(self.filtered_mods)
 
-    def reload_preset(self):
-        self.enabled_mods = []
-        for mod in self.mods:
-            if mod["hash"] in self.preset_cache:
-                mod["enabled"] = True
-                self.enabled_mods.append(mod["folder_name"])
-            else:
-                mod["enabled"] = False
-        print("reloaded preset")
-        self.reset()
-        self.filtered_mods = self.filter_view.filter_mods(self.mods)    
-        self.populate(self.filtered_mods)
+    # def reload_preset(self):
+    #     self.enabled_mods = []
+    #     for mod in self.mods:
+    #         if mod["hash"] in self.preset_cache:
+    #             mod["enabled"] = True
+    #             self.enabled_mods.append(mod["folder_name"])
+    #         else:
+    #             mod["enabled"] = False
+    #     print("reloaded preset")
+    #     self.reset()
+    #     self.filtered_mods = self.filter_view.filter_mods(self.mods)    
+    #     self.populate(self.filtered_mods)
 
     def show(self):
         self.f_dir = tk.Frame(self.root)
@@ -331,7 +337,7 @@ class Menu:
         self.filter_view = Filter(self.frame_list, self.search, self.refresh)
 
         self.workspace_frame = ttk.LabelFrame(self.frame_content, text="Preset")
-        self.preset = Preset(self.workspace_frame)
+        self.preset = Preset(self.workspace_frame, self.search)
 
         self.info_frame = ttk.LabelFrame(self.frame_content, text="Preview")
         self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
@@ -442,5 +448,5 @@ class Menu:
         self.info_frame.rowconfigure(index=1, weight=1)
         self.info_frame.rowconfigure(index=4, weight=1)
 
-        self.preview = Preview(self.info_frame, self.open_editor, self.open_folder, self.enable_mod)
+        self.preview = Preview(self.info_frame, self.open_editor, self.open_folder, self.toggle_mod)
         self.root.bind("<Configure>", self.on_window_resize)

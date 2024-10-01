@@ -10,13 +10,12 @@ from utils.hash import gen_hash_as_decimal
 from typing import Union
 
 class Scanner(Thread):
-    def __init__(self, directory:Union[str, list], start_callback = None, progress_callback = None, callback = None, preset = []):
+    def __init__(self, directory:Union[str, list], start_callback = None, progress_callback = None, callback = None):
         super().__init__()
         self.directory = directory
         self.start_callback = start_callback
         self.progress_callback = progress_callback
         self.callback = callback
-        self.preset = preset
         
     def find_image(self, directory, width, height, keep_ratio:bool = True):
         img = Image.open(directory)
@@ -54,7 +53,6 @@ class Scanner(Thread):
             "wifi_safe" : "Uncertain",
             "info_toml" : False,
             "img" : None,
-            "enabled": False,
             "hash": ""
         }
 
@@ -63,7 +61,6 @@ class Scanner(Thread):
             mod = self.init_mod(name)
             mod["path"] = path
             mod["hash"] = gen_hash_as_decimal(name)
-            mod["enabled"] = mod["hash"] in self.preset
             loader = Loader()
             generator = Generator()
             if loader.load_toml(path):

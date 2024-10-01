@@ -10,12 +10,15 @@ from utils.loader import Loader
 from .config import load_config, Config
 from utils.files import read_json, is_valid_file
 import os, re
+from pathlib import Path
+from utils.hash import gen_hash_as_decimal
 
 COLUMNS = ["Preset Name", "Total Enabled"]
 
 class Preset:
-    def __init__(self, root, edit_callback=None, open_callback=None, toggle_callback=None) -> None:
+    def __init__(self, root, callback=None) -> None:
         self.root = root
+        self.callback = callback
         self.workspace_list = {}
         self.open()
         self.load_workspace()
@@ -48,6 +51,7 @@ class Preset:
         config = Config()
         config.workspace = self.cbox_workspace.get()
         config.save_config()
+        self.callback()
 
     def on_add_new_submitted(self, event):
         self.add_new()
@@ -62,7 +66,19 @@ class Preset:
             self.add_workspace(new_name, 0)
             filename = self.format_workspace_filename(new_name)
             self.workspace_list[new_name] = {"filename":filename, "mod_list":[]}
+            self.update_workspace_dropdown()
             clear_text(self.entry_new)
+
+    def update_workspace_dropdown(self):
+        workspaces = [key for key, value in self.workspace_list.items()]
+        selected_workspace = self.cbox_workspace.get()
+        self.cbox_workspace.config(values=workspaces)
+        if selected_workspace not in workspaces:
+            self.cbox_workspace.set("Default")
+            config = Config()
+            config.workspace = "Default"
+            config.save_config()
+            self.callback()
 
     def add_workspace(self, name:str, count:int):
         self.treeview.insert("", tk.END, text=name, values=tuple([count]), tags=["unchecked", "inactive"])
@@ -77,6 +93,26 @@ class Preset:
         if data["text"] != "Default":
             self.treeview.delete(item)
             self.workspace_list.pop(data["text"], None)
+            self.update_workspace_dropdown()
+
+    def restore_workspaces(self):
+        checked_items = self.treeview.get_checked()
+        for item in checked_items:
+            self.restore_workspace(item)
+
+    def restore_workspace(self, item):
+        data = self.treeview.item(item)
+        config = load_config()
+        config["cache_dir"]
+        path = os.path.join(config["cache_dir"], self.workspace_list[data["text"]]["filename"])
+        self.workspace_list[data["text"]]["mod_list"] = load_preset_mods(path)
+        self.update_workspace_count()
+
+    def update_workspace_count(self):        
+        for item_id in self.treeview.get_children():
+            item = self.treeview.item(item_id)
+            name = item["text"]
+            self.treeview.item(item_id, values=tuple([len(self.workspace_list[name]["mod_list"])]))
 
     def open(self):
         self.frame = tk.Frame(self.root)
@@ -104,10 +140,6 @@ class Preset:
         self.cbox_workspace = ttk.Combobox(self.top_frame)
         self.cbox_workspace.pack(side=tk.LEFT, padx=(0,PAD_H), fill="x", expand=tk.YES)
         self.cbox_workspace.bind("<<ComboboxSelected>>", self.on_workspace_selected)
-
-        self.icon_reload = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'reload.png'))
-        self.btn_load = tk.Button(self.top_frame, image=self.icon_reload, compound="left", text=" Load", cursor='hand2')
-        self.btn_load.pack(side=tk.LEFT, fill=tk.X)
 
         separator = ttk.Separator(self.frame, orient='horizontal')
         separator.pack(fill=tk.X, pady=PAD_V)
@@ -194,7 +226,7 @@ class Preset:
             self.reset_workspace()
         
     def populate(self, cache_dir:str):
-        self.workspace_list = get_workspace_list(cache_dir)
+        self.workspace_list = get_workspace_lists(cache_dir)
         workspaces = []
 
         for key, value in self.workspace_list.items():
@@ -238,7 +270,24 @@ def load_preset_mods(preset_file:str):
             preset_mods = read_json(preset_dir)
     return preset_mods
 
-def get_workspace_list(dir:str):
+
+# def save_preset(mods:list):
+#     outputs = []
+#     preset_dir = "cache"
+#     if not os.path.exists(preset_dir):
+#         os.makedirs(preset_dir)
+
+#     for mod in mods:
+#         outputs.append(gen_hash_as_decimal(mod))
+    
+#     with open(OUTPUT_FILE, mode='w', encoding='utf-8') as o:
+#         o.write(json.dumps(outputs, separators=(',', ':')))
+
+#     print("enabled mods:", len(outputs))
+#     self.enabled = outputs
+#     return outputs
+
+def get_workspace_lists(dir:str):
     outputs = {}
     file_dir = os.path.join(dir, "workspace_list")
     if is_valid_file(file_dir):

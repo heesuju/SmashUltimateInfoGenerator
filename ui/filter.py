@@ -205,14 +205,14 @@ class Filter:
         self.reset()
         self.search_fn()
 
-    def filter_mods(self, mods):
+    def filter_mods(self, mods, enabled_list:list = []):
         filter_params = self.get_filter_params()
         outputs = []
         data = csv_to_dict(PATH_CHAR_NAMES)
         
         for mod in mods:
             if filter_params.get("enabled_only", False):
-                if not mod["enabled"]: 
+                if mod["hash"] not in enabled_list: 
                     continue
 
             if filter_params.get("mod_name") not in mod["mod_name"].lower(): 
