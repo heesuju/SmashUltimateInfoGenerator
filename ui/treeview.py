@@ -269,8 +269,8 @@ class Menu:
     #         print("Exported preset to dir")        
 
     def save_preset(self):
-        pass
-        # self.preset_cache = self.preset_manager.save_preset(self.enabled_mods)
+        self.preset.save_presets()
+        self.preset.save_workspaces()
 
     def toggle_preset(self):
         if not self.preset.is_shown:

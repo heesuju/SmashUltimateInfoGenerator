@@ -9,7 +9,7 @@ from utils.image_resize import ImageResize
 from utils.loader import Loader
 from .config import load_config, Config
 from utils.files import read_json, is_valid_file, is_valid_dir
-import os, re
+import os, re, json
 from pathlib import Path
 from utils.hash import gen_hash_as_decimal
 
@@ -305,6 +305,47 @@ class Preset:
                         available_num = int(num)
         return available_num
 
+    def save_presets(self): # Saves all workspace presets
+        results = []
+        for key, value in self.workspace_list.items():
+            results.append(self.save_preset(value["filename"], value["mod_list"]))
+        if False not in results:
+            print("Successfully saved all presets")
+
+    def save_preset(self, filename:str, enabled_mods:list)->bool: # Saves to workspace preset
+        config = load_config()
+        cache_dir = config["cache_dir"]
+        result = False
+        try:
+            if is_valid_dir(cache_dir):
+                with open(os.path.join(cache_dir, filename), mode='w') as output:
+                    output.write(json.dumps(enabled_mods))
+                    result = True
+        except Exception as e:
+            print("Error occurred while writing to preset file:", e)
+        finally:
+            return result
+
+    def save_workspaces(self): # Saves to workspace_list and workspace in config directory
+        config = load_config()
+        cache_dir = config["cache_dir"]
+        result = False
+        workspaces = {}
+        for key, value in self.workspace_list.items():
+            workspaces[key] = value["filename"]
+        try:
+            with open(os.path.join(cache_dir, "workspace_list"), mode='w') as output:
+                output.write(json.dumps(workspaces))
+            
+            with open(os.path.join(cache_dir, "workspace"), mode='w') as output:
+                output.write(config["workspace"] if config["workspace"] else "Default")
+
+            result = True
+        except Exception as e:
+            print("Error occurred while writing to workspace_list file:", e)
+        finally:
+            return result
+
 def extract_number_from_preset(input_str):
     match = re.search(r'_preset(\d+)$', input_str)
     if match:
@@ -320,23 +361,6 @@ def load_preset_mods(preset_file:str):
         if is_valid_file(preset_dir):
             preset_mods = read_json(preset_dir)
     return preset_mods
-
-
-# def save_preset(mods:list):
-#     outputs = []
-#     preset_dir = "cache"
-#     if not os.path.exists(preset_dir):
-#         os.makedirs(preset_dir)
-
-#     for mod in mods:
-#         outputs.append(gen_hash_as_decimal(mod))
-    
-#     with open(OUTPUT_FILE, mode='w', encoding='utf-8') as o:
-#         o.write(json.dumps(outputs, separators=(',', ':')))
-
-#     print("enabled mods:", len(outputs))
-#     self.enabled = outputs
-#     return outputs
 
 def get_workspace_lists(dir:str):
     outputs = {}
