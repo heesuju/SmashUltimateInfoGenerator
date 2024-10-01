@@ -15,7 +15,7 @@ from .config import Config, load_config
 from .filter import Filter
 from .paging import Paging
 from .preview import Preview
-from .workspaces import Workspaces
+from .preset import Preset
 from . import PATH_ICON
 from utils.loader import Loader
 from utils.preset_manager import PresetManager
@@ -155,9 +155,12 @@ class Menu:
         if len(mods) > 0:
             self.search()
 
-    def on_item_deselected(self, event):
+    def on_escape(self, event):
         self.preview.clear()
-        self.preview.close_callback()
+        if self.preview.is_shown:
+            self.preview.toggle()
+        elif self.preset.is_shown:
+            self.preset.toggle()
 
     def on_item_selected(self, event):
         selected_item = self.treeview.focus()
@@ -224,7 +227,7 @@ class Menu:
         if new_dir and is_valid_dir(new_dir):
             self.config.set_default_dir(new_dir)
             set_text(self.entry_dir, new_dir)
-            self.workspaces.load_workspace()
+            self.preset.load_workspace()
             self.refresh()
         else:
             print("invalid directory!")
@@ -264,12 +267,24 @@ class Menu:
         self.preset_cache = self.preset_manager.save_preset(self.enabled_mods)
 
     def toggle_preset(self):
-        self.workspaces.toggle()
-        self.btn_show_preset.config(text=" Hide Preset" if self.workspaces.is_shown else " Show Preset")
+        if not self.preset.is_shown:
+            if self.preview.is_shown:
+                self.toggle_preview()
+            self.btn_show_preset.config(image=self.icon_visible)
+        else:
+            self.btn_show_preset.config(image=self.icon_invisible)
+
+        self.preset.toggle()
 
     def toggle_preview(self):
+        if not self.preview.is_shown:
+            if self.preset.is_shown:
+                self.toggle_preset()
+            self.btn_show_preview.config(image=self.icon_visible)
+        else:
+            self.btn_show_preview.config(image=self.icon_invisible)
+
         self.preview.toggle()
-        self.btn_show_preview.config(text=" Hide Preview" if self.preview.is_shown else " Show Preview")
 
     def disable_all(self):
         self.enabled_mods = []
@@ -316,8 +331,7 @@ class Menu:
         self.filter_view = Filter(self.frame_list, self.search, self.refresh)
 
         self.workspace_frame = ttk.LabelFrame(self.frame_content, text="Preset")
-        self.workspace_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
-        self.workspaces = Workspaces(self.workspace_frame)
+        self.preset = Preset(self.workspace_frame)
 
         self.info_frame = ttk.LabelFrame(self.frame_content, text="Preview")
         self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
@@ -367,7 +381,7 @@ class Menu:
         self.treeview.configure(yscrollcommand=self.scrollbar.set)
         self.treeview.bind('<<TreeviewSelect>>', self.on_item_selected)
         self.treeview.bind('<Button-1>', self.on_item_clicked)
-        self.treeview.bind('<Escape>', self.on_item_deselected)
+        self.treeview.bind('<Escape>', self.on_escape)
         self.treeview.bind("<Double-1>", self.on_double_clicked)
         self.treeview.bind("<space>", self.on_enable_mod)
         self.treeview.bind("<Return>", self.on_enable_mod)
@@ -388,17 +402,42 @@ class Menu:
         update_handler = partial(self.updater, self.progressbar, self.l_progress, self.queue)
         self.root.bind('<<Progress>>', update_handler)
 
-        self.icon_export = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'export.png'))
-        self.btn_show_preset = tk.Button(self.f_footer,  image=self.icon_export, compound="left", text=" Show Preset", cursor='hand2', command=self.toggle_preset)
-        self.btn_show_preset.pack(side=tk.RIGHT)
-
-        
-        self.btn_show_preview = tk.Button(self.f_footer,  image=self.icon_export, compound="left", text=" Show Preview", cursor='hand2', command=self.toggle_preview)
-        self.btn_show_preview.pack(side=tk.RIGHT)
-
         self.icon_save = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'save.png'))
-        self.btn_save = tk.Button(self.f_footer, image=self.icon_save, text=" Save", compound=tk.LEFT, cursor='hand2', command=self.save_preset)
+        self.btn_save = tk.Button(self.f_footer, image=self.icon_save, text=" Save", compound=tk.LEFT, cursor='hand2', command=self.save_preset, width=100)
         self.btn_save.pack(side=tk.RIGHT, padx=(0, PAD_H))
+
+        self.icon_visible = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'visible.png'))
+        self.icon_invisible = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'invisible.png'))
+
+        self.btn_show_preset = tk.Button(
+            self.f_footer,  
+            image=self.icon_invisible, 
+            compound="left", 
+            text=" Preset", 
+            cursor='hand2', 
+            command=self.toggle_preset, 
+            borderwidth=0,
+            relief=tk.FLAT
+        )
+        self.btn_show_preset.pack(
+            side=tk.RIGHT,
+            padx=(0, PAD_H)
+        )
+
+        self.btn_show_preview = tk.Button(
+            self.f_footer,  
+            image=self.icon_invisible, 
+            compound="left", 
+            text=" Preview", 
+            cursor='hand2', 
+            command=self.toggle_preview, 
+            borderwidth=0,
+            relief=tk.FLAT
+        )
+        self.btn_show_preview.pack(
+            side=tk.RIGHT,
+            padx=(0, PAD_H)
+        )
 
         self.info_frame.rowconfigure(index=1, weight=1)
         self.info_frame.rowconfigure(index=4, weight=1)

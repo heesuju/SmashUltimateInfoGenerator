@@ -11,9 +11,9 @@ from .config import load_config
 from utils.files import read_json
 import os, re
 
-COLUMNS = ["Name", "Total", "Added", "Removed"]
+COLUMNS = ["Name", "Total"]
 
-class Workspaces:
+class Preset:
     def __init__(self, root, edit_callback=None, open_callback=None, toggle_callback=None) -> None:
         self.root = root
         self.workspace_list = []
@@ -89,7 +89,7 @@ class Workspaces:
         self.top_frame = tk.Frame(self.frame)
         self.top_frame.pack(pady=(PAD_V/2,PAD_V), fill="x")
 
-        label_workspace = tk.Label(self.top_frame, text="Current Workspace")
+        label_workspace = tk.Label(self.top_frame, text="Selected")
         label_workspace.pack(side=tk.LEFT, padx=(0,PAD_H), pady=(0,PAD_V), fill="x")
 
         self.cbox_workspace = ttk.Combobox(self.top_frame)
@@ -115,19 +115,16 @@ class Workspaces:
         separator = ttk.Separator(self.header, orient='vertical')
         separator.pack(side=tk.LEFT, fill=tk.Y, padx=PAD_H)
 
-        label_new = tk.Label(self.header, text="Add New")
-        label_new.pack(side=tk.LEFT, fill="x")
-
+        label_new = tk.Label(self.header, text="New")
+        label_new.pack(side=tk.LEFT, fill="x", padx=(0, PAD_H))
 
         self.entry_new = tk.Entry(self.header)
-        self.entry_new.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES)
+        self.entry_new.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES, padx=(0, PAD_H))
         self.entry_new.bind('<Return>', self.on_add_new_submitted)
-
 
         self.icon_new = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'new.png'))
         self.btn_new = tk.Button(self.header, image=self.icon_new, relief=tk.FLAT, cursor='hand2', command=self.add_new)
-        self.btn_new.pack(side=tk.RIGHT)
-        
+        self.btn_new.pack(side=tk.RIGHT)        
 
         style = ttk.Style(self.root)
         style.configure("Custom.Treeview", rowheight=20)

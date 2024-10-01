@@ -54,7 +54,6 @@ class Preview:
         frame_actions.grid(row=5, padx=PAD_H, pady=(0, PAD_V), sticky=tk.EW)
         frame_actions.columnconfigure(index=0, weight=1, uniform="equal")
         frame_actions.columnconfigure(index=2, weight=1, uniform="equal")
-        frame_actions.columnconfigure(index=4, weight=1, uniform="equal")
 
         frame_actions.rowconfigure(index=0, weight=1)
 
@@ -68,13 +67,6 @@ class Preview:
         self.icon_open = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'open.png'))
         self.btn_open = tk.Button(frame_actions, image=self.icon_open, text=" Open", cursor='hand2', relief=tk.FLAT, compound="left", command=self.open_callback)
         self.btn_open.grid(row=0, column=2, sticky=tk.EW, padx=PAD_H/2)
-
-        separator = ttk.Separator(frame_actions, orient='vertical')
-        separator.grid(row=0, column=3, padx=PAD_H/2, sticky=tk.NS)
-
-        self.icon_close = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'close.png'))
-        self.btn_close = tk.Button(frame_actions, image=self.icon_close, text=" Close", cursor='hand2', relief=tk.FLAT, compound="left", width=2, command=self.close_callback)
-        self.btn_close.grid(row=0, column=4, sticky=tk.EW, padx=(PAD_H/2, 0))
 
     def update(self, is_enabled:bool, loader:Loader, path:str):
         self.set_toggle_label(is_enabled)
@@ -104,9 +96,6 @@ class Preview:
         set_enabled(self.btn_open)
         set_enabled(self.btn_toggle)
 
-    def close_callback(self):
-        self.root.pack_forget()
-
     def on_img_resized(self, image):
         self.label_img.config(image=image, width=10, height=10)
         self.label_img.image = image  # Keep a reference to prevent garbage collection
@@ -123,7 +112,6 @@ class Preview:
         set_enabled(self.btn_edit, False)
         set_enabled(self.btn_open, False)
         set_enabled(self.btn_toggle, False)
-        # self.close_callback()
 
     def set_toggle_label(self, is_enabled:bool):
         if is_enabled:
