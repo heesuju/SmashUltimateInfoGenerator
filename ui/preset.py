@@ -7,16 +7,16 @@ from . import PATH_ICON
 from .common_ui import get_text, set_text, set_enabled, clear_text
 from utils.image_resize import ImageResize
 from utils.loader import Loader
-from .config import load_config
-from utils.files import read_json
+from .config import load_config, Config
+from utils.files import read_json, is_valid_file
 import os, re
 
-COLUMNS = ["Name", "Total"]
+COLUMNS = ["Preset Name", "Total Enabled"]
 
 class Preset:
     def __init__(self, root, edit_callback=None, open_callback=None, toggle_callback=None) -> None:
         self.root = root
-        self.workspace_list = []
+        self.workspace_list = {}
         self.open()
         self.load_workspace()
         self.is_shown = False
@@ -44,15 +44,24 @@ class Preset:
             else:
                 self.treeview.item(item, tags=[checked_state, "inactive"])
 
+    def on_workspace_selected(self, event):
+        config = Config()
+        config.workspace = self.cbox_workspace.get()
+        config.save_config()
+
     def on_add_new_submitted(self, event):
         self.add_new()
 
     def add_new(self):
         new_name = get_text(self.entry_new)
+        
+        if not new_name:
+            return
+        
         if new_name.lower() not in [key.lower() for key, value in self.workspace_list.items()]:
             self.add_workspace(new_name, 0)
             filename = self.format_workspace_filename(new_name)
-            self.workspace_list[new_name] = filename
+            self.workspace_list[new_name] = {"filename":filename, "mod_list":[]}
             clear_text(self.entry_new)
 
     def add_workspace(self, name:str, count:int):
@@ -77,30 +86,31 @@ class Preset:
         self.workspace_frame.pack(pady=(PAD_V/2,PAD_V), fill="x")
 
         label_work_dir = tk.Label(self.workspace_frame, text="Cache Dir")
-        label_work_dir.pack(side=tk.LEFT, padx=(0,PAD_H), pady=(0,PAD_V), fill="x")
+        label_work_dir.pack(side=tk.LEFT, padx=(0,PAD_H), fill="x")
 
         self.entry_dir = tk.Entry(self.workspace_frame)
-        self.entry_dir.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES)
+        self.entry_dir.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES, padx = (0, PAD_H))
 
         self.icon_browse = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'browse.png'))
         self.btn_dir = tk.Button(self.workspace_frame, image=self.icon_browse, relief=tk.FLAT, cursor='hand2')
-        self.btn_dir.pack(side=tk.LEFT, padx = (0, PAD_H))
+        self.btn_dir.pack(side=tk.LEFT)
 
         self.top_frame = tk.Frame(self.frame)
-        self.top_frame.pack(pady=(PAD_V/2,PAD_V), fill="x")
+        self.top_frame.pack(pady=(0,PAD_V), fill=tk.X)
 
         label_workspace = tk.Label(self.top_frame, text="Selected")
-        label_workspace.pack(side=tk.LEFT, padx=(0,PAD_H), pady=(0,PAD_V), fill="x")
+        label_workspace.pack(side=tk.LEFT, padx=(0,PAD_H), fill="x")
 
         self.cbox_workspace = ttk.Combobox(self.top_frame)
-        self.cbox_workspace.pack(side=tk.LEFT, padx=(0,PAD_H), pady=(0,PAD_V), fill="x", expand=tk.YES)
+        self.cbox_workspace.pack(side=tk.LEFT, padx=(0,PAD_H), fill="x", expand=tk.YES)
+        self.cbox_workspace.bind("<<ComboboxSelected>>", self.on_workspace_selected)
 
         self.icon_reload = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'reload.png'))
         self.btn_load = tk.Button(self.top_frame, image=self.icon_reload, compound="left", text=" Load", cursor='hand2')
-        self.btn_load.pack(side=tk.LEFT, pady=(0,PAD_V), fill=tk.X)
+        self.btn_load.pack(side=tk.LEFT, fill=tk.X)
 
         separator = ttk.Separator(self.frame, orient='horizontal')
-        separator.pack(fill=tk.X)
+        separator.pack(fill=tk.X, pady=PAD_V)
 
         label_workspace = tk.Label(self.frame, text="Workspaces", anchor=tk.W)
         label_workspace.pack(pady=(0,PAD_V), fill="x")
@@ -133,11 +143,11 @@ class Preset:
         self.treeview.bind("<<TreeviewSelect>>", self.on_row_select)
 
         display_columns = COLUMNS
-        self.treeview.column("#0", minwidth=100, width=140, stretch=tk.YES)
+        self.treeview.column("#0", minwidth=140, width=200, stretch=tk.YES)
         
         for idx, column in enumerate(COLUMNS):
             if idx > 0:
-                self.treeview.column(f"#{idx}", minwidth=70, width=70, stretch=tk.YES)
+                self.treeview.column(f"#{idx}", minwidth=140, width=160, stretch=tk.YES)
             self.treeview.heading(f"#{idx}", text=column)
         
         self.treeview["displaycolumns"]=display_columns
@@ -147,23 +157,18 @@ class Preset:
         self.scrollbar.pack(side="right", fill="y")
         
         self.footer = tk.Frame(self.frame)
-        self.footer.pack(padx=PAD_H, pady=(PAD_V, PAD_V/2), fill="x")
+        self.footer.pack(pady=(PAD_V, PAD_V/2), fill="x")
 
-        self.icon_save = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'save.png'))
-        self.btn_save = tk.Button(self.footer, image=self.icon_save, text=" Close", relief=tk.FLAT, compound="left", cursor='hand2')
-        self.btn_save.pack(side=tk.LEFT)
-        separator = ttk.Separator(self.footer, orient='vertical')
-        separator.pack(side=tk.LEFT, fill=tk.Y, padx=PAD_H)
-        
         self.icon_export = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'export.png'))
         self.btn_remove = tk.Button(self.footer, image=self.icon_export, relief=tk.FLAT, compound="left", text=" Remove", cursor='hand2', command=self.remove_workspaces)
-        self.btn_remove.pack(side=tk.LEFT)
+        self.btn_remove.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES)
+
         separator = ttk.Separator(self.footer, orient='vertical')
         separator.pack(side=tk.LEFT, fill=tk.Y, padx=PAD_H)
 
         self.icon_reset = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'reset.png'))
         self.btn_disable = tk.Button(self.footer, image=self.icon_reset, relief=tk.FLAT, compound="left", text=" Reset", cursor='hand2')
-        self.btn_disable.pack(side=tk.LEFT)
+        self.btn_disable.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES)
 
     def toggle(self):
         if self.is_shown:
@@ -179,7 +184,7 @@ class Preset:
         set_text(self.entry_dir, config["cache_dir"])
         if config["cache_dir"]:
             self.reset_workspace()
-            self.populate_workspace(config["cache_dir"])
+            self.populate(config["cache_dir"])
 
             if config["workspace"]:
                 self.cbox_workspace.set(config["workspace"])
@@ -188,13 +193,12 @@ class Preset:
         else:
             self.reset_workspace()
         
-    def populate_workspace(self, cache_dir:str):
-        self.workspace_list = read_json(os.path.join(cache_dir, "workspace_list"))
-        
+    def populate(self, cache_dir:str):
+        self.workspace_list = get_workspace_list(cache_dir)
         workspaces = []
 
         for key, value in self.workspace_list.items():
-            self.add_workspace(key, value)
+            self.add_workspace(key, len(value["mod_list"]))
             workspaces.append(key)
 
         self.cbox_workspace.config(values=workspaces)
@@ -207,11 +211,11 @@ class Preset:
     def format_workspace_filename(self, name):
         num = self.get_available_num()
         return f"{name}_preset{num + 1}"
-        
+    
     def get_available_num(self):
         available_num = 0
         for key, value in self.workspace_list.items():
-            num = extract_number_from_preset(value)
+            num = extract_number_from_preset(value["filename"])
             if isinstance(num, str):
                 if num.isdigit():
                     if int(num) > available_num:
@@ -223,3 +227,22 @@ def extract_number_from_preset(input_str):
     if match:
         return match.group(1)
     return ""
+
+def load_preset_mods(preset_file:str):
+    preset_mods = []
+    if preset_file: 
+        config = load_config()
+        cache_dir = config["cache_dir"]
+        preset_dir = os.path.join(cache_dir, preset_file)
+        if is_valid_file(preset_dir):
+            preset_mods = read_json(preset_dir)
+    return preset_mods
+
+def get_workspace_list(dir:str):
+    outputs = {}
+    file_dir = os.path.join(dir, "workspace_list")
+    if is_valid_file(file_dir):
+        workspace_list = read_json(file_dir)
+        for key, value in workspace_list.items():
+            outputs[key] = {"filename":value, "mod_list":load_preset_mods(value)}
+    return outputs

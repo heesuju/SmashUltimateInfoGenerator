@@ -1,11 +1,16 @@
 import os
 import json
+from pathlib import Path
 
 def is_valid_dir(directory:str)->bool:
     if directory:
         return os.path.exists(directory) and os.path.isdir(directory)
     else:
         return False
+    
+def is_valid_file(directory:str)->bool:
+    file = Path(directory)
+    return file.is_file()
     
 def get_dir_name(directory):
     return os.path.basename(directory)

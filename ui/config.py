@@ -81,6 +81,10 @@ class Config:
         self.cache_dir = get_cache_dir(self.default_dir)
         self.save_config()
 
+    def set_cache_dir(self, cache_dir:str):
+        self.cache_dir = cache_dir
+        self.save_config()
+
     def set_config(self, default_dir, display_name_format, folder_name_format, additional_elements, is_slot_capped=True, start_with_editor=False):
         self.default_dir = default_dir
         self.display_name_format = display_name_format
