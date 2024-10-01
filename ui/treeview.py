@@ -82,7 +82,7 @@ class Menu:
         self.scan()
 
     def populate(self, mods):
-        start, end = self.paging.update(len(mods)) 
+        start, end = self.paging.update(len(mods), len(self.mods)) 
         workspace = load_config()["workspace"]
         for n in range(start,end):
             characters = ", ".join(sorted(mods[n]["character_names"]))

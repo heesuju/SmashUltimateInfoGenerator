@@ -31,11 +31,17 @@ class Paging:
 
         vcmd = (self.root.register(validate_page)) 
         
-        label_page = tk.Label(left_frame, text="Page:", width=4)
+        label_page = tk.Label(left_frame, text="Page:", width=3)
         label_page.pack(side=tk.LEFT, padx=(0, PAD_H))
         self.entry_page = ttk.Entry(left_frame, width=4, validate='all', validatecommand=(vcmd, '%P'))
         self.entry_page.pack(side=tk.LEFT, padx=(0, PAD_H))
         self.entry_page.bind("<Return>", self.on_page_submitted)
+        
+        label_size = tk.Label(left_frame, text="Size:", width=3)
+        label_size.pack(side=tk.LEFT, padx=(0, PAD_H))
+        self.entry_size = ttk.Entry(left_frame, width=3, validate='all', validatecommand=(vcmd, '%P'))
+        self.entry_size.pack(side=tk.LEFT, padx=(0, PAD_H))
+        self.entry_size.bind("<Return>", self.on_size_submitted)
 
         self.btn_left = tk.Button(left_frame, image=icon_left, relief=tk.FLAT, cursor='hand2', command=self.prev_page)
         self.btn_left.image = icon_left
@@ -51,7 +57,7 @@ class Paging:
         self.frame_paging = tk.Frame(self.frame, width=2)
         self.frame_paging.grid(row=0, column=1)
         
-        self.l_page = tk.Label(right_frame, text="", width=8)
+        self.l_page = tk.Label(right_frame, text="", width=24, anchor=tk.E)
         self.l_page.pack(side=tk.RIGHT, padx=(PAD_H * 2,0))
     
     def show_paging(self):
@@ -87,14 +93,15 @@ class Paging:
         self.cur_page = clamp(self.cur_page-1, 1, self.total_pages)
         self.change_page(self.cur_page)
 
-    def update(self, num:int):
+    def update(self, num:int, total:int):
         self.total_pages = math.ceil(num/self.page_size)
         print(f"found {num} items")
         self.show_paging()
         start, end = self.get_range(num)
         n_count = end - start
-        self.l_page.config(text=f"{n_count} of {num}")
+        self.l_page.config(text=f"Showing {num} of {total}")
         set_text(self.entry_page, self.cur_page)
+        set_text(self.entry_size, self.page_size)
         return start, end
 
     def get_range(self, num:int):
@@ -108,6 +115,14 @@ class Paging:
             page_num = int(new_page)
             self.cur_page = clamp(page_num, 1, self.total_pages)
             self.change_page(self.cur_page)
+
+    def on_size_submitted(self, event):
+        page_size = get_text(self.entry_size)
+        if page_size:
+            num = int(page_size)
+            self.page_size = clamp(num, 1, 100)
+            set_text(self.entry_size, self.page_size)
+            self.change_page(1)
 
 def get_pages(current_page=1, total_pages=1, max_size=5):
     out_arr = []
