@@ -10,7 +10,7 @@ from common import get_completion
 from data import PATH_CHAR_NAMES
 from common import csv_to_dict
 from utils.cleaner import remove_redundant_spacing
-from utils.config_manager import load_config
+from .config import load_config
 
 INFO_VALUES = ["All", "Included", "Not Included"]
 WIFI_VALUES = ["All", "Safe", "Not Safe", "Uncertain"]

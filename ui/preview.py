@@ -14,6 +14,7 @@ class Preview:
         self.edit_callback = edit_callback 
         self.open_callback = open_callback
         self.toggle_callback = toggle_callback
+        self.is_shown = False
         self.show()
 
     def show(self):
@@ -144,3 +145,11 @@ class Preview:
         
         resize_thread = ImageResize(directory, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
         resize_thread.start()
+
+    def toggle(self):
+        if self.is_shown:
+            self.root.pack_forget()
+        else:
+            self.root.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
+
+        self.is_shown = False if self.is_shown else True

@@ -1,4 +1,5 @@
 import os
+import json
 
 def is_valid_dir(directory:str)->bool:
     if directory:
@@ -45,3 +46,7 @@ def is_folder_locked(folder_path):
         return False
     except OSError:
         return True 
+    
+def read_json(json_path:str):
+    with open(json_path, mode='r', encoding='utf-8') as f:
+        return json.loads(f.read())

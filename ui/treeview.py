@@ -11,14 +11,13 @@ import queue
 from PIL import Image, ImageTk
 from defs import PAD_H, PAD_V
 from .editor import Editor
-from .config import Config
+from .config import Config, load_config
 from .filter import Filter
 from .paging import Paging
 from .preview import Preview
+from .workspaces import Workspaces
 from . import PATH_ICON
-from utils import load_config
 from utils.loader import Loader
-from utils.config_manager import update_config_directory
 from utils.preset_manager import PresetManager
 from utils.files import is_valid_dir
 from .common_ui import *
@@ -165,7 +164,7 @@ class Menu:
         if not selected_item:
             return
         
-        if self.x >= 120 and self.x <= 145:
+        if self.x >= 20 and self.x <= 145:
             self.enable_mod()
             self.x, self.y  = 0, 0
 
@@ -173,9 +172,7 @@ class Menu:
         self.preview.update(item["tags"][0] == "enabled", 
                             self.loader if self.loader.load_toml(item['values'][-1]) else None,
                             item['values'][-1])
-        
-        self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
-        
+                
     def on_item_clicked(self, event):
         self.x = event.x
         self.y = event.y
@@ -210,25 +207,24 @@ class Menu:
             scan_thread = Scanner(config_data["default_directory"], start_callback=self.on_scan_start, progress_callback=self.on_scan_progress, callback=self.on_scanned, preset=preset_cache)
             scan_thread.start()
     
-    def change_working_directory(self):
+    def on_browse(self):
         config_data = load_config()
         if config_data is not None and config_data["default_directory"]:
             working_dir = open_file_dialog(config_data["default_directory"])
         else:
             working_dir = open_file_dialog()
-
-        if not working_dir:
-            return
         
-        if is_valid_dir(working_dir):
-            update_config_directory(working_dir)
-            set_text(self.entry_dir, working_dir)
-            self.refresh()
+        self.change_directory(working_dir)
     
     def on_directory_changed(self, event):
         new_directory = get_text(self.entry_dir)
-        if is_valid_dir(new_directory):
-            update_config_directory(new_directory)
+        self.change_directory(new_directory)
+
+    def change_directory(self, new_dir:str):
+        if new_dir and is_valid_dir(new_dir):
+            self.config.set_default_dir(new_dir)
+            set_text(self.entry_dir, new_dir)
+            self.workspaces.load_workspace()
             self.refresh()
         else:
             print("invalid directory!")
@@ -267,6 +263,14 @@ class Menu:
     def save_preset(self):
         self.preset_cache = self.preset_manager.save_preset(self.enabled_mods)
 
+    def toggle_preset(self):
+        self.workspaces.toggle()
+        self.btn_show_preset.config(text=" Hide Preset" if self.workspaces.is_shown else " Show Preset")
+
+    def toggle_preview(self):
+        self.preview.toggle()
+        self.btn_show_preview.config(text=" Hide Preview" if self.preview.is_shown else " Show Preview")
+
     def disable_all(self):
         self.enabled_mods = []
         for mod in self.mods:
@@ -301,8 +305,7 @@ class Menu:
         self.entry_dir.bind('<Return>', self.on_directory_changed)
 
         self.icon_browse = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'browse.png'))
-
-        self.btn_dir = tk.Button(self.f_dir, image=self.icon_browse, relief=tk.FLAT, cursor='hand2', command=self.change_working_directory)
+        self.btn_dir = tk.Button(self.f_dir, image=self.icon_browse, relief=tk.FLAT, cursor='hand2', command=self.on_browse)
         self.btn_dir.pack(side=tk.LEFT, padx = (0, PAD_H))
         
         self.frame_content = tk.Frame(self.root)
@@ -312,6 +315,10 @@ class Menu:
         self.frame_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.filter_view = Filter(self.frame_list, self.search, self.refresh)
 
+        self.workspace_frame = ttk.LabelFrame(self.frame_content, text="Preset")
+        self.workspace_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
+        self.workspaces = Workspaces(self.workspace_frame)
+
         self.info_frame = ttk.LabelFrame(self.frame_content, text="Preview")
         self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
         self.info_frame.columnconfigure(0, weight=1)     
@@ -319,7 +326,14 @@ class Menu:
 
         self.categories = ["Category", "Character", "Slot", "Mod Name", "Author", "Dir"]
         
-        self.treeview = ttk.Treeview(self.frame_list, columns=self.categories, show=("headings", "tree"))
+        style = ttk.Style(self.root)
+        style.configure("Treeview", rowheight=20)
+        # style.map('Treeview', background=[('selected', 'lightblue')])
+
+        style.configure("Custom1.Treeview",background="white", foreground="Black",fieldbackground="red", rowheight=60)
+        style.map('Custom1.Treeview', background=[('selected','lightblue')],foreground=[('selected','Black')])
+
+        self.treeview = ttk.Treeview(self.frame_list, style="Custom1.Treeview", columns=self.categories, show=("headings", "tree"))
 
         def treeview_sort_column(tv, col, reverse):
             l = [(tv.set(k, col), k) for k in tv.get_children('')]
@@ -331,9 +345,6 @@ class Menu:
             tv.heading(col, command=lambda: \
                     treeview_sort_column(tv, col, not reverse))
 
-        style = ttk.Style(self.root)
-        
-        style.configure("Treeview", rowheight=60)
 
         display_columns = []
         self.treeview.column("#0", minwidth=150, width=150, stretch=tk.NO)
@@ -377,17 +388,17 @@ class Menu:
         update_handler = partial(self.updater, self.progressbar, self.l_progress, self.queue)
         self.root.bind('<<Progress>>', update_handler)
 
-        self.btn_export = tk.Button(self.f_footer, text="Export Preset", cursor='hand2', command=self.export_preset)
-        self.btn_export.pack(side=tk.RIGHT)
+        self.icon_export = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'export.png'))
+        self.btn_show_preset = tk.Button(self.f_footer,  image=self.icon_export, compound="left", text=" Show Preset", cursor='hand2', command=self.toggle_preset)
+        self.btn_show_preset.pack(side=tk.RIGHT)
 
-        self.btn_save = tk.Button(self.f_footer, text="Overwrite Preset", cursor='hand2', command=self.save_preset)
+        
+        self.btn_show_preview = tk.Button(self.f_footer,  image=self.icon_export, compound="left", text=" Show Preview", cursor='hand2', command=self.toggle_preview)
+        self.btn_show_preview.pack(side=tk.RIGHT)
+
+        self.icon_save = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'save.png'))
+        self.btn_save = tk.Button(self.f_footer, image=self.icon_save, text=" Save", compound=tk.LEFT, cursor='hand2', command=self.save_preset)
         self.btn_save.pack(side=tk.RIGHT, padx=(0, PAD_H))
-
-        self.btn_load = tk.Button(self.f_footer, text="Reload Preset", cursor='hand2', command=self.reload_preset)
-        self.btn_load.pack(side=tk.RIGHT, padx=(0, PAD_H))
-
-        self.btn_disable = tk.Button(self.f_footer, text="Disable All", cursor='hand2', command=self.disable_all)
-        self.btn_disable.pack(side=tk.RIGHT, padx=(0, PAD_H))
 
         self.info_frame.rowconfigure(index=1, weight=1)
         self.info_frame.rowconfigure(index=4, weight=1)

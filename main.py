@@ -1,7 +1,7 @@
 import tkinter as tk
 from ui.treeview import Menu
 from ui.editor import Editor 
-from utils import load_config
+from ui.config import load_config
 
 root = tk.Tk()
 root.minsize(640, 340)

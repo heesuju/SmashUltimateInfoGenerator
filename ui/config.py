@@ -3,7 +3,8 @@ import os
 import tkinter as tk
 import defs
 from cache import PATH_CONFIG
-from utils.config_manager import load_config
+from pathlib import Path
+from os import listdir
 
 class Config:
     def __init__(self, callback = None):
@@ -20,6 +21,8 @@ class Config:
         self.folder_name_format = "{category}_{characters}[{slots}]_{mod}"
         self.additional_elements = []
         self.sort_priority = []
+        self.cache_dir = ""
+        self.workspace = "Default"
             
     def save_config(self):
         config_dict = {
@@ -29,7 +32,9 @@ class Config:
             "additional_elements":self.additional_elements,
             "is_slot_capped":self.is_slot_capped,
             "start_with_editor":self.start_with_editor,
-            "sort_priority": self.sort_priority}
+            "sort_priority": self.sort_priority,
+            "cache_dir": self.cache_dir,
+            "workspace": self.workspace}
         
         with open(PATH_CONFIG, 'w') as f:
             json.dump(config_dict, f, indent=4)
@@ -54,6 +59,11 @@ class Config:
                 self.start_with_editor = data["start_with_editor"]
             if data.get("sort_priority") is not None:
                 self.sort_priority = data["sort_priority"]
+            if data.get("cache_dir") is not None:
+                self.cache_dir = data["cache_dir"]
+            if data.get("workspace") is not None:
+                self.workspace = data["workspace"]
+
             print("Loaded config")
         else:
             print("No saved config")
@@ -68,6 +78,7 @@ class Config:
 
     def set_default_dir(self, default_dir):
         self.default_dir = default_dir
+        self.cache_dir = get_cache_dir(self.default_dir)
         self.save_config()
 
     def set_config(self, default_dir, display_name_format, folder_name_format, additional_elements, is_slot_capped=True, start_with_editor=False):
@@ -182,3 +193,38 @@ class Config:
         self.entry_folder_name_format.insert(0, self.folder_name_format)
         self.entry_additional_elements.delete(0, tk.END)
         self.entry_additional_elements.insert(0, self.get_additional_elements_as_str())
+
+def load_config():
+    if(os.path.isfile(PATH_CONFIG)):
+        try:
+            json_file = open(PATH_CONFIG, "r")
+            data = json.loads(json_file.read())
+            json_file.close()
+            print("Loaded config")
+            return data
+        except Exception as e:
+            print(f"error: {e}")
+            return None
+    else:
+        print("No saved config")
+        return None
+    
+def get_cache_dir(default_dir:str = ""):
+    if not default_dir:
+        config = load_config()
+        default_dir = config["default_directory"]
+
+    if os.path.exists(default_dir):
+        preset_path = default_dir
+        path = Path(default_dir)
+        preset_path = os.path.join(path.parent.absolute(), "arcropolis", "config")
+        
+        if os.path.exists(preset_path):
+            config_folders = listdir(preset_path)
+            if len(config_folders) == 1:
+                preset_path = os.path.join(preset_path, config_folders[0])
+                config_folders = listdir(preset_path)
+                if len(config_folders) == 1:
+                    preset_path = os.path.join(preset_path, config_folders[0])
+                    return preset_path
+    return ""
