@@ -4,11 +4,11 @@ from PIL import ImageTk
 import tkinter as tk
 from defs import PAD_H, PAD_V
 from . import PATH_ICON
-from .common_ui import get_text, set_text, set_enabled, clear_text
+from .common_ui import get_text, set_text, set_enabled, clear_text, open_file_dialog
 from utils.image_resize import ImageResize
 from utils.loader import Loader
 from .config import load_config, Config
-from utils.files import read_json, is_valid_file
+from utils.files import read_json, is_valid_file, is_valid_dir
 import os, re
 from pathlib import Path
 from utils.hash import gen_hash_as_decimal
@@ -25,7 +25,10 @@ class Preset:
         self.is_shown = False
 
     def on_select_all(self):
-        if self.select_all.get():
+        self.set_select_all(self.select_all.get())
+
+    def set_select_all(self, is_selected:bool):
+        if is_selected:
             for item in self.treeview.get_children():
                 self.treeview.item(item, tags='checked')
         else:
@@ -87,6 +90,7 @@ class Preset:
         checked_items = self.treeview.get_checked()
         for item in checked_items:
             self.remove_workspace(item)
+        self.set_select_all(False)
 
     def remove_workspace(self, item):
         data = self.treeview.item(item)
@@ -99,6 +103,8 @@ class Preset:
         checked_items = self.treeview.get_checked()
         for item in checked_items:
             self.restore_workspace(item)
+        self.set_select_all(False)
+        self.callback()
 
     def restore_workspace(self, item):
         data = self.treeview.item(item)
@@ -106,6 +112,18 @@ class Preset:
         config["cache_dir"]
         path = os.path.join(config["cache_dir"], self.workspace_list[data["text"]]["filename"])
         self.workspace_list[data["text"]]["mod_list"] = load_preset_mods(path)
+        self.update_workspace_count()
+
+    def disable_workspaces(self):
+        checked_items = self.treeview.get_checked()
+        for item in checked_items:
+            self.disable_workspace(item)
+        self.set_select_all(False)
+        self.callback()
+
+    def disable_workspace(self, item):
+        data = self.treeview.item(item)
+        self.workspace_list[data["text"]]["mod_list"] = []
         self.update_workspace_count()
 
     def update_workspace_count(self):        
@@ -126,9 +144,10 @@ class Preset:
 
         self.entry_dir = tk.Entry(self.workspace_frame)
         self.entry_dir.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES, padx = (0, PAD_H))
+        self.entry_dir.bind('<Return>', self.on_dir_submitted)
 
         self.icon_browse = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'browse.png'))
-        self.btn_dir = tk.Button(self.workspace_frame, image=self.icon_browse, relief=tk.FLAT, cursor='hand2')
+        self.btn_dir = tk.Button(self.workspace_frame, image=self.icon_browse, relief=tk.FLAT, cursor='hand2', command=self.get_cache_dir)
         self.btn_dir.pack(side=tk.LEFT)
 
         self.top_frame = tk.Frame(self.frame)
@@ -191,15 +210,22 @@ class Preset:
         self.footer = tk.Frame(self.frame)
         self.footer.pack(pady=(PAD_V, PAD_V/2), fill="x")
 
-        self.icon_export = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'export.png'))
+        self.icon_export = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'close.png'))
         self.btn_remove = tk.Button(self.footer, image=self.icon_export, relief=tk.FLAT, compound="left", text=" Remove", cursor='hand2', command=self.remove_workspaces)
         self.btn_remove.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES)
 
         separator = ttk.Separator(self.footer, orient='vertical')
         separator.pack(side=tk.LEFT, fill=tk.Y, padx=PAD_H)
 
-        self.icon_reset = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'reset.png'))
-        self.btn_disable = tk.Button(self.footer, image=self.icon_reset, relief=tk.FLAT, compound="left", text=" Reset", cursor='hand2')
+        self.icon_reset = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'reload.png'))
+        self.btn_restore = tk.Button(self.footer, image=self.icon_reset, relief=tk.FLAT, compound="left", text=" Restore", cursor='hand2', command = self.restore_workspaces)
+        self.btn_restore.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES)
+
+        separator = ttk.Separator(self.footer, orient='vertical')
+        separator.pack(side=tk.LEFT, fill=tk.Y, padx=PAD_H)
+
+        self.icon_disable = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'reset.png'))
+        self.btn_disable = tk.Button(self.footer, image=self.icon_disable, relief=tk.FLAT, compound="left", text=" Disable All", cursor='hand2', command = self.disable_workspaces)
         self.btn_disable.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES)
 
     def toggle(self):
@@ -209,7 +235,30 @@ class Preset:
             self.root.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
 
         self.is_shown = False if self.is_shown else True
-   
+    
+    def on_dir_submitted(self, event):
+        new_dir = get_text(self.entry_dir)
+        if is_valid_dir(new_dir):
+            config = Config()
+            config.cache_dir = new_dir
+            config.save_config()
+            self.load_workspace()
+            self.callback()
+
+    def get_cache_dir(self):
+        config_data = load_config()
+        if config_data is not None and config_data["cache_dir"]:
+            working_dir = open_file_dialog(config_data["cache_dir"])
+        else:
+            working_dir = open_file_dialog()
+        
+        if is_valid_dir(working_dir):
+            config = Config()
+            config.cache_dir = working_dir
+            config.save_config()
+            self.load_workspace()
+            self.callback()
+
     def load_workspace(self):
         config = load_config()
         
@@ -239,6 +288,8 @@ class Preset:
         self.cbox_workspace.config(values=[])
         self.cbox_workspace.select_clear()
         self.cbox_workspace.set("Default")
+        for item in self.treeview.get_children():
+            self.treeview.delete(item)
     
     def format_workspace_filename(self, name):
         num = self.get_available_num()

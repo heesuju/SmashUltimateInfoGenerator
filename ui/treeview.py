@@ -292,28 +292,6 @@ class Menu:
 
         self.preview.toggle()
 
-    # def disable_all(self):
-    #     self.enabled_mods = []
-    #     for mod in self.mods:
-    #         mod["enabled"] = False
-    #     print("disabled every mod")
-    #     self.reset()
-    #     self.filtered_mods = self.filter_view.filter_mods(self.mods)    
-    #     self.populate(self.filtered_mods)
-
-    # def reload_preset(self):
-    #     self.enabled_mods = []
-    #     for mod in self.mods:
-    #         if mod["hash"] in self.preset_cache:
-    #             mod["enabled"] = True
-    #             self.enabled_mods.append(mod["folder_name"])
-    #         else:
-    #             mod["enabled"] = False
-    #     print("reloaded preset")
-    #     self.reset()
-    #     self.filtered_mods = self.filter_view.filter_mods(self.mods)    
-    #     self.populate(self.filtered_mods)
-
     def show(self):
         self.f_dir = tk.Frame(self.root)
         self.f_dir.pack(padx=PAD_H, pady=PAD_V, fill="x")
