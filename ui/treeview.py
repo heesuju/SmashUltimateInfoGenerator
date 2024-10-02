@@ -78,11 +78,17 @@ class Menu:
 
     def refresh(self):
         self.filter_view.reset()
+        self.paging.clear()
+        clear_text(self.label_count)
         self.reset()
         self.scan()
 
     def populate(self, mods):
-        start, end = self.paging.update(len(mods), len(self.mods)) 
+        start, end = self.paging.update(len(mods)) 
+        filtered_len = len(mods)
+        total = len(self.mods)
+        set_text(self.label_count, f"Showing {filtered_len} of {total}" if total > filtered_len else f"Showing {total}")
+        
         workspace = load_config()["workspace"]
         for n in range(start,end):
             characters = ", ".join(sorted(mods[n]["character_names"]))
@@ -322,6 +328,9 @@ class Menu:
         self.info_frame.columnconfigure(0, weight=1)     
         self.info_frame.pack_forget()
 
+        self.label_count = tk.Label(self.frame_list, text="Showing 0", anchor=tk.W)
+        self.label_count.pack(fill=tk.BOTH, padx=(PAD_H, 0))
+
         self.categories = ["Category", "Character", "Slot", "Mod Name", "Author", "Dir"]
         
         style = ttk.Style(self.root)
@@ -388,7 +397,7 @@ class Menu:
 
         self.icon_save = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'save.png'))
         self.btn_save = tk.Button(self.f_footer, image=self.icon_save, text=" Save", compound=tk.LEFT, cursor='hand2', command=self.save_preset, width=100)
-        self.btn_save.pack(side=tk.RIGHT, padx=(0, PAD_H))
+        self.btn_save.pack(side=tk.RIGHT)
 
         self.icon_visible = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'visible.png'))
         self.icon_invisible = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'invisible.png'))

@@ -4,7 +4,7 @@ import tkinter as tk
 import tkinter.font as font
 from defs import PAD_H, PAD_V
 from . import PATH_ICON
-from .common_ui import get_text, set_text, validate_page
+from .common_ui import get_text, set_text, clear_text, validate_page
 import math
 import os
 from common import clamp
@@ -24,7 +24,10 @@ class Paging:
         
         self.frame = tk.Frame(self.root, width=10)
         self.frame.pack(padx=10, pady=10, fill=tk.X)
-        self.frame.columnconfigure(index=1, weight=1, uniform="equal")
+        self.frame.columnconfigure(index=1, weight=2)
+        self.frame.columnconfigure(index=0, weight=1, minsize=40)
+        self.frame.columnconfigure(index=2, weight=1, minsize=40)
+    
 
         left_frame = tk.Frame(self.frame)
         left_frame.grid(row=0, column=0, sticky=tk.EW)
@@ -36,12 +39,6 @@ class Paging:
         self.entry_page = ttk.Entry(left_frame, width=4, validate='all', validatecommand=(vcmd, '%P'))
         self.entry_page.pack(side=tk.LEFT, padx=(0, PAD_H))
         self.entry_page.bind("<Return>", self.on_page_submitted)
-        
-        label_size = tk.Label(left_frame, text="Size:", width=3)
-        label_size.pack(side=tk.LEFT, padx=(0, PAD_H))
-        self.entry_size = ttk.Entry(left_frame, width=3, validate='all', validatecommand=(vcmd, '%P'))
-        self.entry_size.pack(side=tk.LEFT, padx=(0, PAD_H))
-        self.entry_size.bind("<Return>", self.on_size_submitted)
 
         self.btn_left = tk.Button(left_frame, image=icon_left, relief=tk.FLAT, cursor='hand2', command=self.prev_page)
         self.btn_left.image = icon_left
@@ -57,9 +54,18 @@ class Paging:
         self.frame_paging = tk.Frame(self.frame, width=2)
         self.frame_paging.grid(row=0, column=1)
         
-        self.l_page = tk.Label(right_frame, text="", width=24, anchor=tk.E)
-        self.l_page.pack(side=tk.RIGHT, padx=(PAD_H * 2,0))
-    
+        self.entry_size = ttk.Entry(right_frame, width=4, validate='all', validatecommand=(vcmd, '%P'))
+        self.entry_size.pack(side=tk.RIGHT)
+        self.entry_size.bind("<Return>", self.on_size_submitted)
+        label_size = tk.Label(right_frame, text="Size:", width=3)
+        label_size.pack(side=tk.RIGHT, padx=(0, PAD_H))
+   
+    def clear(self):
+        clear_text(self.entry_size)
+        clear_text(self.entry_page)
+        for child in self.frame_paging.winfo_children():
+            child.destroy()
+
     def show_paging(self):
         for child in self.frame_paging.winfo_children():
             child.destroy()
@@ -93,13 +99,13 @@ class Paging:
         self.cur_page = clamp(self.cur_page-1, 1, self.total_pages)
         self.change_page(self.cur_page)
 
-    def update(self, num:int, total:int):
+
+    def update(self, num:int):
         self.total_pages = math.ceil(num/self.page_size)
         print(f"found {num} items")
         self.show_paging()
         start, end = self.get_range(num)
         n_count = end - start
-        self.l_page.config(text=f"Showing {num} of {total}")
         set_text(self.entry_page, self.cur_page)
         set_text(self.entry_size, self.page_size)
         return start, end
