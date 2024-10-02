@@ -27,7 +27,7 @@ class Menu:
         self.root = root
         self.mods = []
         self.filtered_mods = []
-        self.config = Config(self.on_config_changed)
+        self.config = Config()
         self.editor = Editor(self.on_finish_edit)
         self.loader = Loader()
         self.queue = queue.Queue()
@@ -116,10 +116,6 @@ class Menu:
         self.paging.cur_page = 1
         self.filtered_mods = self.filter_view.filter_mods(self.mods, enabled_mods)
         self.populate(self.filtered_mods)
-
-    def on_config_changed(self, dir:str):
-        if dir:
-            self.refresh()
 
     def on_finish_edit(self, old_dir:str, new_dir:str):
         is_dir_same = True if old_dir == new_dir else False
@@ -249,30 +245,6 @@ class Menu:
             item = self.treeview.item(selected_item)
             path = item["values"][-1]
             self.preview.set_image(os.path.join(path, "preview.webp"))
-
-    # def export_preset(self):
-    #     if self.preset_manager.is_preset_valid() == False:
-    #         return
-        
-    #     preset_path = ""
-        
-    #     if os.path.exists(self.config.default_dir):
-    #         preset_path = self.config.default_dir
-    #         path = Path(self.config.default_dir)
-    #         preset_path = os.path.join(path.parent.absolute(), "arcropolis", "config")
-            
-    #         if os.path.exists(preset_path):
-    #             config_folders = listdir(preset_path)
-    #             if len(config_folders) == 1:
-    #                 preset_path = os.path.join(preset_path, config_folders[0])
-    #                 config_folders = listdir(preset_path)
-    #                 if len(config_folders) == 1:
-    #                     preset_path = os.path.join(preset_path, config_folders[0])
-        
-    #     export_dir = open_file_dialog(preset_path)
-    #     if os.path.exists(export_dir):    
-    #         shutil.copy(self.preset_manager.preset_file, export_dir)
-    #         print("Exported preset to dir")        
 
     def save_preset(self):
         self.preset.save_presets()
