@@ -5,7 +5,7 @@ from ui.config import load_config
 
 root = tk.Tk()
 root.minsize(640, 340)
-root.geometry("920x540")
+root.geometry("920x580")
 root.title("Toml Manager")
 
 menu = None
