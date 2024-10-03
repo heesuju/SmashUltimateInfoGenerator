@@ -35,20 +35,21 @@ def clean_mod_name(mod_name:str)->str:
 
 def extract_mod_name(display_name:str, characters:list, slots:list, category:str)->str:
     name = remove_text(display_name, [category])
-    name = remove_characters(name, characters)
     name = remove_special_chars(name)
+    name = remove_characters(name, characters)
     name = remove_text(name, ["Even", "Odd"])
     name = remove_numbers(name, slots)
     name = clean_mod_name(name)
     name = remove_paranthesis(name)
-    name = add_spaces_to_camel_case(name)
+    if len(name) > 4:
+        name = add_spaces_to_camel_case(name)
     return name
 
 def remove_text(text:str, texts_to_remove:list):
     if len(texts_to_remove) > 0:
         pattern = r'\b(?:' + '|'.join(re.escape(name) for name in texts_to_remove) + r')(?=\s|_)'
         # pattern = r'\b(?:' + '|'.join(re.escape(name) for name in texts_to_remove) + r')[^\s_]*'
-        text = re.sub(pattern, '', text, flags=re.IGNORECASE, count=1).strip()
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE).strip()
     return text
 
 def remove_special_chars(text:str):
@@ -62,25 +63,25 @@ def remove_numbers(text:str, numbers:list):
     return cleaned_string
 
 def remove_paranthesis(text:str):
-    text = remove_redundant_spacing(text)
-    
     if text:
-        if text[0] == "(":
-            text = text.removeprefix("(")
-            text = text.replace(")", "", 1)
-
-        if text[0] == "{":
-            text = text.removeprefix("{")
-            text = text.replace("}", "", 1)
-
-        if text[0] == "-":
-            text = text.removeprefix("-")
-
-        if text[0] == "_":
-            text = text.removeprefix("_")
-    
-    text = text.removeprefix(" ")
-    text = text.removesuffix(" ")
+        text = remove_redundant_spacing(text)
+        starts_with = ["(", "{", "-", "_", "~"]
+        while text[0] in starts_with:
+            if text[0] == "(":
+                text = text.removeprefix("(")
+                text = text.replace(")", "", 1)
+            if text[0] == "{":
+                text = text.removeprefix("{")
+                text = text.replace("}", "", 1)
+            if text[0] == "-":
+                text = text.removeprefix("-")
+            if text[0] == "_":
+                text = text.removeprefix("_")
+            if text[0] == "~":
+                text = text.removeprefix("~")
+            text = remove_redundant_spacing(text)
+            text = text.removeprefix(" ")
+            text = text.removesuffix(" ")
     return text
 
 def substitute_characters(text:str, chars_to_substitute:list)->str:

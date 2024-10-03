@@ -80,6 +80,9 @@ class Preview:
             self.label_title.config(text=loader.display_name)
         else: 
             set_text(self.label_desc, "No info.toml found")
+            clear_text(self.label_version)
+            clear_text(self.label_author)
+            clear_text(self.label_title)
 
         set_enabled(self.label_desc, False)
         img_preview = os.path.join(path, "preview.webp")
