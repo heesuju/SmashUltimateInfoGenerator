@@ -1,4 +1,5 @@
 from ui.config import load_config
+from .cleaner import clean_folder_name
 
 def format_folder_name(characters:str, slots:str, mod_name:str, category:str):
     format = load_config().get("folder_name_format")
@@ -6,7 +7,7 @@ def format_folder_name(characters:str, slots:str, mod_name:str, category:str):
     folder_name = folder_name.replace("{slots}", slots)
     folder_name = folder_name.replace("{mod}", mod_name)
     folder_name = folder_name.replace("{category}", category)
-    return folder_name
+    return clean_folder_name(folder_name)
 
 def format_slots(slots):
     if len(slots) <= 0:

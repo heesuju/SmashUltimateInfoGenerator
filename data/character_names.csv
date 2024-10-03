@@ -1,94 +1,94 @@
-Key,Value,Custom,Group,Series
-mario,Mario,Mario,,Super Mario
-donkey,Donkey Kong,Donkey Kong,,Donkey Kong
-link,Link,Link,,Zelda
-samus,Samus,Samus,,Metroid
-samusd,Dark Samus,Dark Samus,,Metroid
-yoshi,Yoshi,Yoshi,,Super Mario
-kirby,Kirby,Kirby,,Kirby
-fox,Fox,Fox,,StarFox
-pikachu,Pikachu,Pikachu,,Pokemon
-luigi,Luigi,Luigi,,Super Mario
-ness,Ness,Ness,,EarthBound
-captain,Captain Falcon,Captain Falcon,,F-Zero
-purin,Jigglypuff,Jigglypuff,,Pokemon
-peach,Peach,Peach,,Super Mario
-daisy,Daisy,Daisy,,Super Mario
-koopa,Bowser,Bowser,,Super Mario
-koopag,Giga Bowser,Giga Bowser,,Super Mario
-nana,Ice Climbers Nana,Nana,Ice Climbers,Ice Climber
-popo,Ice Climbers Popo,Popo,Ice Climbers,Ice Climber
-sheik,Sheik,Sheik,,Zelda
-zelda,Zelda,Zelda,,Zelda
-mariod,Dr. Mario,Dr. Mario,,Super Mario
-pichu,Pichu,Pichu,,Pokemon
-falco,Falco,Falco,,StarFox
-marth,Marth,Marth,,Fire Emblem
-lucina,Lucina,Lucina,,Fire Emblem
-younglink,Young Link,Young Link,,Zelda
-ganon,Ganondorf,Ganondorf,,Zelda
-mewtwo,Mewtwo,Mewtwo,,Pokemon
-roy,Roy,Roy,,Fire Emblem
-chrom,Chrom,Chrom,,Fire Emblem
-gamewatch,Mr. Game & Watch,Mr. Game & Watch,,Game & Watch
-metaknight,Meta Knight,Meta Knight,,Kirby
-pit,Pit,Pit,,Kid Icarus
-pitb,Dark Pit,Dark Pit,,Kid Icarus
-szerosuit,Zero Suit Samus,ZSS,,Metroid
-wario,Wario,Wario,,WarioWare
-snake,Snake,Snake,,Metal Gear Solid
-ike,Ike,Ike,,Fire Emblem
-ptrainer,Trainer,Trainer,Pkm,Pokemon
-pzenigame,Squirtle,Squirtle,Pkm,Pokemon
-pfushigisou,Ivysaur,Ivysaur,Pkm,Pokemon
-plizardon,Charizard,Charizard,Pkm,Pokemon
-diddy,Diddy Kong,Diddy Kong,,Donkey Kong
-lucas,Lucas,Lucas,,EarthBound
-sonic,Sonic,Sonic,,Sonic
-dedede,King Dedede,King Dedede,,Kirby
-pikmin,Olimar,Olimar,,Pikmin
-lucario,Lucario,Lucario,,Pokemon
-robot,R.O.B.,R.O.B.,,R.O.B
-toonlink,Toon Link,Toon Link,,Zelda
-wolf,Wolf,Wolf,,StarFox
-murabito,Villager,Villager,,Animal Crossing
-rockman,Mega Man,Mega Man,,Mega Man
-wiifit,Wii Fit Trainer,Wii Fit Trainer,,Wii Fit
-rosetta,Rosalina & Luma,Rosalina,,Super Mario
-littlemac,Little Mac,Little Mac,,Punch-Out
-gekkouga,Greninja,Greninja,,Pokemon
-miifighter,Mii Brawler,Mii Brawler,,Mii
-miiswordsman,Mii Swordfighter,Mii Swordfighter,,Mii
-miigunner,Mii Gunner,Mii Gunner,,Mii
-palutena,Palutena,Palutena,,Kid Icarus
-pacman,Pac-man,Pac-man,,Pac-Man
-reflet,Robin,Robin,,Fire Emblem
-shulk,Shulk,Shulk,,Xenoblade
-koopajr,Bowser JR.,Bowser JR.,,Super Mario
-duckhunt,Duck Hunt,Duck Hunt,,Duck Hunt
-ryu,Ryu,Ryu,,Street Fighter
-ken,Ken,Ken,,Street Fighter
-cloud,Cloud,Cloud,,Final Fantasy
-kamui,Corrin,Corrin,,Fire Emblem
-bayonetta,Bayonetta,Bayonetta,,Bayonetta
-inkling,Inkling,Inkling,,Splatoon
-ridley,Ridley,Ridley,,Metroid
-simon,Simon,Simon,,Castlevania
-richter,Richter,Richter,,Castlevania
-krool,King K. Rool,King K. Rool,,Donkey Kong
-shizue,Isabelle,Isabelle,,Animal Crossing
-gaogaen,Incineroar,Incineroar,,Pokemon
-packun,Piranha Plant,Piranha Plant,,Super Mario
-jack,Joker,Joker,,Persona
-brave,Hero,Hero,,Dragon Quest
-buddy,Banjo & Kazooie,Banjo & Kazooie,,Banjo-Kazooie
-dolly,Terry,Terry,,Fatal Fury
-master,Byleth,Byleth,,Fire Emblem
-tantan,Min Min,Min Min,,Arms
-pickel,Steve,Steve,,Minecraft
-edge,Sephiroth,Sephiroth,,Final Fantasy
-eflame,Pyra,Pyra,Aegis,Xenoblade
-element,Rex,Rex,Aegis,Xenoblade
-elight,Mythra,Mythra,Aegis,Xenoblade
-demon,Kazuya,Kazuya,,Tekken
-trail,Sora,Sora,,Kingdom Hearts
+Key,Value,Custom,Group,Series,Alt,Gender
+mario,Mario,Mario,,Super Mario,,False
+donkey,Donkey Kong,Donkey Kong,,Donkey Kong,,False
+link,Link,Link,,Zelda,,False
+samus,Samus,Samus,,Metroid,,False
+samusd,Dark Samus,Dark Samus,,Metroid,,False
+yoshi,Yoshi,Yoshi,,Super Mario,,False
+kirby,Kirby,Kirby,,Kirby,,False
+fox,Fox,Fox,,StarFox,,False
+pikachu,Pikachu,Pikachu,,Pokemon,,False
+luigi,Luigi,Luigi,,Super Mario,,False
+ness,Ness,Ness,,EarthBound,,False
+captain,Captain Falcon,Captain Falcon,,F-Zero,Falcon,False
+purin,Jigglypuff,Jigglypuff,,Pokemon,,False
+peach,Peach,Peach,,Super Mario,,False
+daisy,Daisy,Daisy,,Super Mario,,False
+koopa,Bowser,Bowser,,Super Mario,,False
+koopag,Giga Bowser,Giga Bowser,,Super Mario,Bowser,False
+nana,Ice Climbers Nana,Nana,Ice Climbers,Ice Climber,,False
+popo,Ice Climbers Popo,Popo,Ice Climbers,Ice Climber,,False
+sheik,Sheik,Sheik,,Zelda,,False
+zelda,Zelda,Zelda,,Zelda,,False
+mariod,Dr. Mario,Dr. Mario,,Super Mario,Mario,False
+pichu,Pichu,Pichu,,Pokemon,,False
+falco,Falco,Falco,,StarFox,,False
+marth,Marth,Marth,,Fire Emblem,,False
+lucina,Lucina,Lucina,,Fire Emblem,,False
+younglink,Young Link,Young Link,,Zelda,Link,False
+ganon,Ganondorf,Ganondorf,,Zelda,,False
+mewtwo,Mewtwo,Mewtwo,,Pokemon,,False
+roy,Roy,Roy,,Fire Emblem,,False
+chrom,Chrom,Chrom,,Fire Emblem,,False
+gamewatch,Mr. Game & Watch,Mr. Game & Watch,,Game & Watch,Game & Watch,False
+metaknight,Meta Knight,Meta Knight,,Kirby,,False
+pit,Pit,Pit,,Kid Icarus,,False
+pitb,Dark Pit,Dark Pit,,Kid Icarus,,False
+szerosuit,Zero Suit Samus,ZSS,,Metroid,Samus,False
+wario,Wario,Wario,,WarioWare,,False
+snake,Snake,Snake,,Metal Gear Solid,,False
+ike,Ike,Ike,,Fire Emblem,,False
+ptrainer,Trainer,Trainer,Pkm,Pokemon,Pokemon Trainer,True
+pzenigame,Squirtle,Squirtle,Pkm,Pokemon,,False
+pfushigisou,Ivysaur,Ivysaur,Pkm,Pokemon,,False
+plizardon,Charizard,Charizard,Pkm,Pokemon,,False
+diddy,Diddy Kong,Diddy Kong,,Donkey Kong,,False
+lucas,Lucas,Lucas,,EarthBound,,False
+sonic,Sonic,Sonic,,Sonic,,False
+dedede,King Dedede,King Dedede,,Kirby,,False
+pikmin,Olimar,Olimar,,Pikmin,,False
+lucario,Lucario,Lucario,,Pokemon,,False
+robot,R.O.B.,R.O.B.,,R.O.B,ROB,False
+toonlink,Toon Link,Toon Link,,Zelda,Link,False
+wolf,Wolf,Wolf,,StarFox,,False
+murabito,Villager,Villager,,Animal Crossing,,True
+rockman,Mega Man,Mega Man,,Mega Man,,False
+wiifit,Wii Fit Trainer,Wii Fit Trainer,,Wii Fit,Trainer,True
+rosetta,Rosalina & Luma,Rosalina,,Super Mario,,False
+littlemac,Little Mac,Little Mac,,Punch-Out,Mac,False
+gekkouga,Greninja,Greninja,,Pokemon,,False
+miifighter,Mii Brawler,Mii Brawler,,Mii,Brawler,True
+miiswordsman,Mii Swordfighter,Mii Swordfighter,,Mii,Swordsman,True
+miigunner,Mii Gunner,Mii Gunner,,Mii,Gunner,True
+palutena,Palutena,Palutena,,Kid Icarus,,False
+pacman,Pac-man,Pac-man,,Pac-Man,,False
+reflet,Robin,Robin,,Fire Emblem,,True
+shulk,Shulk,Shulk,,Xenoblade,,False
+koopajr,Bowser JR.,Bowser JR.,,Super Mario,Bowser,False
+duckhunt,Duck Hunt,Duck Hunt,,Duck Hunt,,False
+ryu,Ryu,Ryu,,Street Fighter,,False
+ken,Ken,Ken,,Street Fighter,,False
+cloud,Cloud,Cloud,,Final Fantasy,,False
+kamui,Corrin,Corrin,,Fire Emblem,,True
+bayonetta,Bayonetta,Bayonetta,,Bayonetta,,False
+inkling,Inkling,Inkling,,Splatoon,,True
+ridley,Ridley,Ridley,,Metroid,,False
+simon,Simon,Simon,,Castlevania,,False
+richter,Richter,Richter,,Castlevania,,False
+krool,King K. Rool,King K. Rool,,Donkey Kong,,False
+shizue,Isabelle,Isabelle,,Animal Crossing,,False
+gaogaen,Incineroar,Incineroar,,Pokemon,,False
+packun,Piranha Plant,Piranha Plant,,Super Mario,Piranha,False
+jack,Joker,Joker,,Persona,,False
+brave,Hero,Hero,,Dragon Quest,,False
+buddy,Banjo & Kazooie,Banjo & Kazooie,,Banjo-Kazooie,,False
+dolly,Terry,Terry,,Fatal Fury,,False
+master,Byleth,Byleth,,Fire Emblem,,True
+tantan,Min Min,Min Min,,Arms,,False
+pickel,Steve,Steve,,Minecraft,,True
+edge,Sephiroth,Sephiroth,,Final Fantasy,,False
+eflame,Pyra,Pyra,Aegis,Xenoblade,Homura,False
+element,Rex,Rex,Aegis,Xenoblade,,False
+elight,Mythra,Mythra,Aegis,Xenoblade,Hikari,False
+demon,Kazuya,Kazuya,,Tekken,,False
+trail,Sora,Sora,,Kingdom Hearts,,False

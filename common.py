@@ -77,7 +77,7 @@ def csv2dict(directory:str):
         csv_reader = csv.reader(file)
         for row in csv_reader:
             key = row[0]
-            values = row[2:]
+            values = row[1:]
             output[key] = values
     return output
 
