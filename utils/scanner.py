@@ -5,6 +5,7 @@ from utils.loader import Loader
 from utils.generator import Generator
 from PIL import Image, ImageTk
 import common
+from .cleaner import extract_mod_name
 from .format import format_slots
 from .files import is_valid_dir
 from utils.hash import gen_hash_as_decimal
@@ -80,17 +81,16 @@ class Scanner(Thread):
             mod["character_names"] = generator.char_names
             mod["character_name"] = ", ".join(sorted(mod["character_names"]))
             mod["character_list"] = generator.char_keys
+            if mod["category"] == "Misc":
+                mod["category"] = generator.category
 
             if not mod["mod_name"]:
-                mod["mod_name"] = mod["display_name"].replace(mod["slots"].lower(), "", 1)
-                mod["mod_name"] = mod["mod_name"].replace(mod["slots"].lower().replace(" ", ""), "", 1)
-                mod["mod_name"] = mod["mod_name"].replace(mod["slots"].upper(), "", 1)
-                mod["mod_name"] = mod["mod_name"].replace(mod["slots"].upper().replace(" ", ""), "", 1)
+                mod["mod_name"] = extract_mod_name(
+                    mod["display_name"], 
+                    mod["character_names"], 
+                    mod["slot_list"], 
+                    mod["category"])
                 
-                mod["mod_name"] = mod["mod_name"].replace(mod["characters"], "", 1)
-                mod["mod_name"] = mod["mod_name"].replace(mod["category"], "", 1)
-                mod["mod_name"] = common.trim_redundant_spaces(mod["mod_name"])
-            
             img_path = path + "/preview.webp"
             if os.path.exists(img_path):
                 mod["img"] = self.find_image(path + "\\preview.webp", 100, 60, False)

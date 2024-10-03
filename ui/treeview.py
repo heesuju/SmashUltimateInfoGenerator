@@ -437,26 +437,36 @@ class Menu:
         config = load_config()
         default_dir = config.get("default_directory")
         if is_valid_dir(default_dir) and is_valid_dir(dir):
-            generator = Generator()
-            data = generator.preview_info_toml(dir, "", "", "")
-            folder_name = format_folder_name(
-                data.get("character_names")[0],
-                format_slots(data.get("slots")),
-                data.get("mod_name"),
-                data.get("category"))
+            scan_thread = Scanner([dir], callback=self.on_drop_scanned)
+            scan_thread.start()
+
+    def on_drop_scanned(self, mods:list):
+        if len(mods) <= 0: 
+            return
         
-            new_dir = os.path.join(default_dir, folder_name)
-            num = 0
-            new_name = folder_name
-            while os.path.exists(new_dir): 
-                num+=1
-                new_name = f"{folder_name}{num}"
-                new_dir = os.path.join(default_dir, new_name)
-            try:
-                copy_directory_contents(dir, default_dir, new_name)
-                print("successfully added dir:", dir)
-                self.on_finish_edit("", new_dir)
-            except PermissionError:
-                print(f"PermissionError: You do not have the required permissions to copy to '{new_dir}'.")
-            except Exception as e:
-                print(f"An unexpected error occurred: {e}")
+        scanned_mod = mods[0]
+        dir = scanned_mod.get("path")
+        config = load_config()
+        default_dir = config.get("default_directory")
+
+        folder_name = format_folder_name(
+            scanned_mod.get("characters"),
+            scanned_mod.get("slots"),
+            scanned_mod.get("mod_name"),
+            scanned_mod.get("category"))
+        
+        new_dir = os.path.join(default_dir, folder_name)
+        num = 0
+        new_name = folder_name
+        while os.path.exists(new_dir): 
+            num+=1
+            new_name = f"{folder_name}{num}"
+            new_dir = os.path.join(default_dir, new_name)
+        try:
+            copy_directory_contents(dir, default_dir, new_name)
+            print("successfully added dir:", dir)
+            self.on_finish_edit("", new_dir)
+        except PermissionError:
+            print(f"PermissionError: You do not have the required permissions to copy to '{new_dir}'.")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
