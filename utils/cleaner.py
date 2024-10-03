@@ -26,7 +26,7 @@ def clean_mod_name(mod_name:str)->str:
     mod_name = remove_redundant_spacing(mod_name)
     return mod_name
 
-def extract_mod_name(display_name:str, characters:list, slots:list, category:str)->str:# remove consecutive commas!
+def extract_mod_name(display_name:str, characters:list, slots:list, category:str)->str:
     name = remove_text(display_name, [category])
     name = remove_characters(name, characters)
     name = remove_special_chars(name)
@@ -37,8 +37,9 @@ def extract_mod_name(display_name:str, characters:list, slots:list, category:str
     return name
 
 def remove_text(text:str, texts_to_remove:list):
-    pattern = r'\b(?:' + '|'.join(re.escape(name) for name in texts_to_remove) + r')[^\s_]*'
-    text = re.sub(pattern, '', text, flags=re.IGNORECASE).strip()
+    if len(texts_to_remove) > 0:
+        pattern = r'\b(?:' + '|'.join(re.escape(name) for name in texts_to_remove) + r')[^\s_]*'
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE).strip()
     return text
 
 def remove_special_chars(text:str):
@@ -54,9 +55,10 @@ def remove_numbers(text:str, numbers:list):
 
 def remove_paranthesis(text:str):
     text = remove_redundant_spacing(text)
-    if text[0] == "(":
-        text = text.removeprefix("(")
-        text = text.replace(")", "", 1)
+    if text:
+        if text[0] == "(":
+            text = text.removeprefix("(")
+            text = text.replace(")", "", 1)
     return text
 
 def substitute_characters(text:str, chars_to_substitute:list)->str:
@@ -96,5 +98,5 @@ def remove_characters(text:str, characters:list):
         set_char.add(remove_special_chars(item))
         set_char.add(remove_special_chars(item).replace(" ", ""))
     arr_to_remove = list(set_char)
-    text = remove_text(arr_to_remove)
+    text = remove_text(text, arr_to_remove)
     return text
