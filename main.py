@@ -1,9 +1,10 @@
 import tkinter as tk
+from tkinterdnd2 import DND_FILES, TkinterDnD
 from ui.treeview import Menu
 from ui.editor import Editor 
 from ui.config import load_config
 
-root = tk.Tk()
+root = TkinterDnD.Tk()
 root.minsize(640, 340)
 root.geometry("920x580")
 root.title("Toml Manager")

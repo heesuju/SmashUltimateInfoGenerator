@@ -1,6 +1,7 @@
 import os
 import json
 from pathlib import Path
+import shutil
 
 def is_valid_dir(directory:str)->bool:
     if directory:
@@ -55,3 +56,21 @@ def is_folder_locked(folder_path):
 def read_json(json_path:str):
     with open(json_path, mode='r', encoding='utf-8') as f:
         return json.loads(f.read())
+
+def copy_directory_contents(source_dir:str, new_dir_parent:str, new_dir_name:str):
+    new_dir_path = os.path.join(new_dir_parent, new_dir_name)
+    os.makedirs(new_dir_path, exist_ok=True)
+
+    # Copy all contents from the old directory to the new directory
+    for item in os.listdir(source_dir):
+        source_item = os.path.join(source_dir, item)
+        destination_item = os.path.join(new_dir_path, item)
+
+        if os.path.isfile(source_item):
+            # If it's a file, copy it
+            shutil.copyfile(source_item, destination_item)
+        elif os.path.isdir(source_item):
+            # If it's a directory, create it and copy its contents recursively
+            os.makedirs(destination_item, exist_ok=True)
+            # Recursively call this function to copy contents of the directory
+            copy_directory_contents(source_item, new_dir_path, item)

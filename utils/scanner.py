@@ -5,6 +5,7 @@ from utils.loader import Loader
 from utils.generator import Generator
 from PIL import Image, ImageTk
 import common
+from .format import format_slots
 from .files import is_valid_dir
 from utils.hash import gen_hash_as_decimal
 from typing import Union
@@ -73,7 +74,7 @@ class Scanner(Thread):
                 mod["mod_name"] = loader.mod_name
             
             generator.preview_info_toml(path, "", "", "")
-            mod["slots"] = common.slots_to_string(generator.slots)
+            mod["slots"] = format_slots(generator.slots)
             mod["slot_list"] = generator.slots
             mod["characters"] = common.group_char_name(generator.char_names, generator.group_names)  
             mod["character_names"] = generator.char_names

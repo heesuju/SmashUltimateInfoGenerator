@@ -76,44 +76,6 @@ def get_all_children_in_path(directory):
     child_folders = [item for item in all_items if os.path.isdir(os.path.join(directory, item))]
     return child_folders
 
-def slots_to_string(slots):
-    if len(slots) <= 0:
-        return ""
-    
-    ranges = []
-    current_idx = 0
-    out_str = ""
-    start = slots[0] 
-    prev = slots[0]
-    if not isinstance(start,int):
-        ranges.append(start)
-    else:
-        ranges.append(f"{start:02}")
-
-        for n in range(1, len(slots)):
-            if prev + 1 == slots[n]:
-                ranges[current_idx] = f"{start:02}" + "-" + f"{slots[n]:02}"
-            else:
-                current_idx+=1
-                ranges.append(f"{slots[n]:02}")
-                start = slots[n]
-            prev = slots[n]
-
-    for item in ranges:
-        if not out_str:
-            out_str += item
-        else:
-            out_str += "," + item
-    
-    slot_prefix = "C"
-    loaded_config = load_config()
-    if loaded_config is not None:
-        is_cap = loaded_config.get("is_slot_capped")
-        if is_cap == False:
-            slot_prefix = "c"
-            
-    return slot_prefix + out_str
-
 def trim_mod_name(mod_name, ignored_list):
     words_pattern = '|'.join(re.escape(word) for word in ignored_list)
     pattern = r'\b(?:' + words_pattern + r')\b'

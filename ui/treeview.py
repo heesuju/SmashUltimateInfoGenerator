@@ -4,6 +4,7 @@ from functools import partial
 import tkinter as tk
 from tkinter import ttk
 from utils.scanner import Scanner
+from tkinterdnd2 import DND_FILES, TkinterDnD
 import shutil
 import threading
 from pathlib import Path
@@ -18,9 +19,11 @@ from .preview import Preview
 from .preset import Preset
 from . import PATH_ICON
 from utils.loader import Loader
-from utils.files import is_valid_dir
+from utils.files import is_valid_dir, get_dir_name, is_valid_file, copy_directory_contents
 from .common_ui import *
 from utils.hash import gen_hash_as_decimal
+from utils.format import format_folder_name, format_slots
+from utils.generator import Generator
 
 class Menu:    
     def __init__(self, root) -> None:
@@ -94,7 +97,10 @@ class Menu:
             characters = ", ".join(sorted(mods[n]["character_names"]))
             check_mark = " ⬜ "
             tags = "disabled"
-            if mods[n]["hash"] in self.preset.workspace_list[workspace]["mod_list"]:
+            
+            enabled_mods = self.preset.workspace_list[workspace]["mod_list"] if self.preset.workspace_list.get(workspace) else []
+
+            if mods[n]["hash"] in enabled_mods:
                 check_mark = " ✅ "
                 tags = "enabled"
 
@@ -111,7 +117,8 @@ class Menu:
 
     def search(self):
         workspace = self.get_valid_workspace()
-        enabled_mods = self.preset.workspace_list[workspace]["mod_list"]
+        workspace_data = self.preset.workspace_list.get(workspace)
+        enabled_mods = workspace_data.get("mod_list")if workspace_data else []
         self.reset()
         self.paging.cur_page = 1
         self.filtered_mods = self.filter_view.filter_mods(self.mods, enabled_mods)
@@ -346,6 +353,8 @@ class Menu:
         self.treeview.pack(padx=10, pady=(PAD_V,0), fill="both", expand=True)
 
         self.scrollbar = ttk.Scrollbar(self.treeview, orient="vertical", command=self.treeview.yview)
+        self.treeview.drop_target_register(DND_FILES)
+        self.treeview.dnd_bind('<<Drop>>', lambda e: self.on_drag_drop(e.data))
         self.treeview.configure(yscrollcommand=self.scrollbar.set)
         self.treeview.bind('<<TreeviewSelect>>', self.on_item_selected)
         self.treeview.bind('<Button-1>', self.on_item_clicked)
@@ -422,3 +431,32 @@ class Menu:
             return "Default"
         else:
             return name
+        
+    def on_drag_drop(self, dir):
+        dir = dir.strip('{}')
+        config = load_config()
+        default_dir = config.get("default_directory")
+        if is_valid_dir(default_dir) and is_valid_dir(dir):
+            generator = Generator()
+            data = generator.preview_info_toml(dir, "", "", "")
+            folder_name = format_folder_name(
+                data.get("character_names")[0],
+                format_slots(data.get("slots")),
+                data.get("mod_name"),
+                data.get("category"))
+        
+            new_dir = os.path.join(default_dir, folder_name)
+            num = 0
+            new_name = folder_name
+            while os.path.exists(new_dir): 
+                num+=1
+                new_name = f"{folder_name}{num}"
+                new_dir = os.path.join(default_dir, new_name)
+            try:
+                copy_directory_contents(dir, default_dir, new_name)
+                print("successfully added dir:", dir)
+                self.on_finish_edit("", new_dir)
+            except PermissionError:
+                print(f"PermissionError: You do not have the required permissions to copy to '{new_dir}'.")
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}")

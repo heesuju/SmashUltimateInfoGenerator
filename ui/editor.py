@@ -13,6 +13,7 @@ from utils.dynamic_scraper import Selenium
 from utils.downloader import Downloader
 from utils.image_resize import ImageResize
 from utils.files import get_dir_name, rename_if_valid
+from utils.format import format_folder_name, format_slots
 from .comparison import Comparison
 from .config import Config
 from . import PATH_ICON
@@ -127,7 +128,11 @@ class Editor:
             open_web(self.entry_url.get())
 
     def on_combobox_select(self, event):
-        set_text(self.entry_folder_name, self.combobox_cat.get() + "_" + self.entry_char_names.get().replace(" ", "") + "[" + self.entry_slots.get().replace(" ", "")  + "]_" + self.entry_mod_name.get().replace(" ", "") ) 
+        self.set_folder_name(
+            self.entry_char_names.get().replace(" ", ""), 
+            self.entry_slots.get().replace(" ", ""), 
+            self.entry_mod_name.get().replace(" ", ""), 
+            self.combobox_cat.get()) 
     
     def on_img_url_selected(self, event):
         selected_idx = self.cbox_img.current()
@@ -159,13 +164,7 @@ class Editor:
         self.entry_display_name.insert(0, display_name) 
 
     def set_folder_name(self, character_names, slots, mod_name, category):
-        self.entry_folder_name.delete(0, tk.END)
-        folder_name = self.config.folder_name_format
-        folder_name = folder_name.replace("{characters}", character_names)
-        folder_name = folder_name.replace("{slots}", slots)
-        folder_name = folder_name.replace("{mod}", mod_name)
-        folder_name = folder_name.replace("{category}", category)
-        self.entry_folder_name.insert(0, folder_name)
+        set_text(self.entry_folder_name, format_folder_name(character_names, slots, mod_name, category))
 
     def toggle_checkbox(self, index):
         self.checkbox_states[index] = not self.checkbox_states[index]
@@ -210,7 +209,7 @@ class Editor:
         
         slots_cleaned = ""
         if self.generator.slots:
-            slots_cleaned = common.slots_to_string(dict_info["slots"])
+            slots_cleaned = format_slots(dict_info["slots"])
             self.entry_slots.insert(0, slots_cleaned)    
 
         mod_name = ""
