@@ -37,7 +37,7 @@ def extract_mod_name(display_name:str, characters:list, slots:list, category:str
     name = remove_text(display_name, [category])
     name = remove_special_chars(name)
     name = remove_characters(name, characters)
-    name = remove_text(name, ["Even", "Odd"])
+    name = remove_text(name, ["Even Slots", "Odd Slots", "EvenSlots", "OddSlots", "Even", "Odd"])
     name = remove_numbers(name, slots)
     name = clean_mod_name(name)
     name = remove_paranthesis(name)
