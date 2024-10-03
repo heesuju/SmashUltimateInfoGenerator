@@ -43,7 +43,7 @@ def remove_text(text:str, texts_to_remove:list):
     return text
 
 def remove_special_chars(text:str):
-    to_remove = FOLDER_NAME_BLACKLIST + ["[", "]", "_", ",", "!", "?"]
+    to_remove = FOLDER_NAME_BLACKLIST + ["[", "]", "_", ",", "!", "&", "#", "^"]
     for b in to_remove:
         text = text.replace(b, " ")
     return text

@@ -26,4 +26,6 @@ def get_workspace_lists(dir:str):
         workspace_list = read_json(file_dir)
         for key, value in workspace_list.items():
             outputs[key] = {"filename":value, "mod_list":load_preset_mods(value)}
+    if not outputs:
+        outputs["Default"] = {"filename":"preset", "mod_list":[]}
     return outputs
