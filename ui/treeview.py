@@ -1,13 +1,10 @@
 import os
-from os import listdir
 from functools import partial
 import tkinter as tk
 from tkinter import ttk
 from utils.scanner import Scanner
-from tkinterdnd2 import DND_FILES, TkinterDnD
-import shutil
+from tkinterdnd2 import DND_FILES
 import threading
-from pathlib import Path
 import queue
 from PIL import Image, ImageTk
 from defs import PAD_H, PAD_V
@@ -19,11 +16,10 @@ from .preview import Preview
 from .preset import Preset
 from . import PATH_ICON
 from utils.loader import Loader
-from utils.files import is_valid_dir, get_dir_name, is_valid_file, copy_directory_contents
+from utils.files import is_valid_dir, copy_directory_contents
 from .common_ui import *
 from utils.hash import gen_hash_as_decimal
-from utils.format import format_folder_name, format_slots
-from utils.generator import Generator
+from utils.format import format_folder_name
 
 class Menu:    
     def __init__(self, root) -> None:
@@ -64,18 +60,22 @@ class Menu:
             path = item["values"][5].split("/")[-1].split("\\")[-1]
             hash = gen_hash_as_decimal(path)
             workspace = self.get_valid_workspace()
-            enabled_mods = self.preset.workspace_list[workspace]["mod_list"]
-        
-            if hash in enabled_mods: # Disable
-                self.treeview.item(selected_item, text=" ⬜ ", tags="disabled")
-                self.preview.set_toggle_label(False)
-                self.preset.workspace_list[workspace]["mod_list"].remove(hash)
-            else: # Enable
-                self.treeview.item(selected_item, text=" ✅ ", tags="enabled")
-                self.preview.set_toggle_label(True)
-                self.preset.workspace_list[workspace]["mod_list"].append(hash)
+            workspace_data = self.preset.workspace_list.get(workspace)
+            if workspace_data:
+                enabled_mods = workspace_data["mod_list"]
+            
+                if hash in enabled_mods: # Disable
+                    self.treeview.item(selected_item, text=" ⬜ ", tags="disabled")
+                    self.preview.set_toggle_label(False)
+                    self.preset.workspace_list[workspace]["mod_list"].remove(hash)
+                else: # Enable
+                    self.treeview.item(selected_item, text=" ✅ ", tags="enabled")
+                    self.preview.set_toggle_label(True)
+                    self.preset.workspace_list[workspace]["mod_list"].append(hash)
 
-            self.preset.update_workspace_count()
+                self.preset.update_workspace_count()
+            else:
+                print("no workspace found")
         else:
             print("no item selected!")
 

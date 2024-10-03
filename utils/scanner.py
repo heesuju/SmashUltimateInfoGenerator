@@ -87,7 +87,7 @@ class Scanner(Thread):
             if not mod["mod_name"]:
                 mod["mod_name"] = extract_mod_name(
                     mod["display_name"], 
-                    mod["character_names"], 
+                    generator.char_keys, 
                     mod["slot_list"], 
                     mod["category"])
                 

@@ -5,7 +5,7 @@ from tkinter import ttk, filedialog
 from PIL import Image, ImageTk
 from cache import remove_cache
 from utils import open_web, format_version
-from utils.cleaner import clean_mod_name
+from utils.cleaner import clean_mod_name, extract_mod_name
 from utils.generator import Generator
 from utils.loader import Loader
 from utils.static_scraper import Extractor
@@ -17,7 +17,7 @@ from utils.format import format_folder_name, format_slots
 from .comparison import Comparison
 from .config import Config
 from . import PATH_ICON
-from .common_ui import get_text, set_text, set_enabled, open_file_dialog, dump_toml, TomlParams
+from .common_ui import get_text, set_text, clear_text, set_enabled, open_file_dialog, dump_toml, TomlParams
 
 class Editor:
     def __init__(self, callback=None) -> None:
@@ -177,7 +177,7 @@ class Editor:
         for i, item in enumerate(defs.ELEMENTS + self.config.additional_elements):
             if i >= len(self.checkbox_states):
                 self.checkbox_states.append(False)
-            checkbox = "[O]" if self.checkbox_states[i] else "[X]"
+            checkbox = "✅" if self.checkbox_states[i] else "⬜"
             self.listbox.insert(tk.END, f"{checkbox} {item}")
 
         self.set_description()
@@ -187,16 +187,12 @@ class Editor:
         self.cbox_img.set(selected_option)
 
     def update_preview(self):
-        self.entry_url.delete(0, tk.END)
+        clear_text(self.entry_url)
         self.config.load()
-        #self.config.set_default_dir(os.path.dirname(self.entry_work_dir.get()))
 
         dict_info = self.generator.preview_info_toml(
-            get_text(self.entry_work_dir), 
-            "", 
-            get_text(self.entry_ver), 
-            ""
-        )
+            working_dir = get_text(self.entry_work_dir),
+            version = get_text(self.entry_ver))
 
         set_text(self.label_output, "Changed working directory")
         self.update_description()
@@ -205,30 +201,34 @@ class Editor:
         names = common.group_char_name(self.generator.char_names, self.generator.group_names)           
         set_text(self.entry_char_names, names)
 
-        self.entry_slots.delete(0, tk.END)
+        clear_text(self.entry_slots)
         
         slots_cleaned = ""
         if self.generator.slots:
             slots_cleaned = format_slots(dict_info["slots"])
-            self.entry_slots.insert(0, slots_cleaned)    
+            set_text(self.entry_slots, slots_cleaned)    
 
         mod_name = ""
-        if not self.entry_url.get():
-            dir_name = get_dir_name(self.generator.working_dir)
-            title = common.get_mod_title(dir_name, self.generator.char_names, self.config.folder_name_format)
-            capitalized = common.add_spaces_to_camel_case(title)
-            mod_name = capitalized
-            self.generator.mod_name = mod_name
+        display_name = ""
+        dir_name = get_dir_name(self.generator.working_dir)
 
-            if self.loader.load_toml(self.entry_work_dir.get()):
-                set_text(self.entry_authors, self.loader.authors)
-                set_text(self.entry_ver, self.loader.version)
-                set_text(self.entry_url, self.loader.url)
-                self.combobox_cat.set(self.loader.category)
-                self.cbox_wifi_safe.set(self.loader.wifi_safe)
-        else:
-            mod_name = self.generator.mod_title_web
+        if self.loader.load_toml(self.entry_work_dir.get()):
+            display_name = self.loader.display_name
+            set_text(self.entry_authors, self.loader.authors)
+            self.combobox_cat.set(self.loader.category)
+            set_text(self.entry_ver, self.loader.version)
+            self.cbox_wifi_safe.set(self.loader.wifi_safe)
+            mod_name = self.loader.mod_name
+            set_text(self.entry_url, self.loader.url)
         
+        if not mod_name:
+            mod_name = extract_mod_name(
+                display_name if display_name else dir_name, 
+                self.generator.char_keys,
+                self.generator.slots, 
+                self.generator.category)
+            
+        self.generator.mod_name = mod_name
         set_text(self.entry_mod_name, mod_name)
         self.set_display_name(names, slots_cleaned, mod_name, dict_info["category"])
         self.set_folder_name(names.replace(" ", "") , slots_cleaned.replace(" ", ""), mod_name.replace(" ", ""), dict_info["category"])
@@ -244,7 +244,7 @@ class Editor:
         set_text(self.entry_work_dir, working_dir)
         self.update_preview()
 
-    def on_update_directory(self,event):
+    def on_update_directory(self, event):
         work_dir = get_text(self.entry_work_dir)
         if work_dir and os.path.exists(work_dir):
             self.update_preview()
@@ -416,7 +416,7 @@ class Editor:
 
         self.entry_work_dir = tk.Entry(self.frame_work_dir, width=10)
         self.entry_work_dir.pack(fill=tk.X, expand=True)
-        self.entry_work_dir.bind("<KeyRelease>", self.on_update_directory)
+        self.entry_work_dir.bind("<Enter>", self.on_update_directory)
 
         self.label_url = tk.Label(self.new_window, text="Url")
         self.label_url.grid(row=3, column=0, sticky=tk.W)

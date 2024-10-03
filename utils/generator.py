@@ -93,7 +93,7 @@ class Generator:
         elif self.is_ui:                                return "UI"
         else:                                           return "Misc"
 
-    def preview_info_toml(self, working_dir:string=None, authors:string=None, version:string=None, additional_info:string=None):
+    def preview_info_toml(self, working_dir:str="", authors:str="", version:str="", additional_info:str=""):
         self.working_dir = working_dir
         self.version = version
         self.additional_info = additional_info

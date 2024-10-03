@@ -1,4 +1,5 @@
 import re
+from common import csv2dict, PATH_CHAR_NAMES
 
 FOLDER_NAME_BLACKLIST = ["<", ">", "?", "\"", ":", "|", "\\", "/", "*", ".", "’"]
 
@@ -26,21 +27,17 @@ def clean_mod_name(mod_name:str)->str:
     return mod_name
 
 def extract_mod_name(display_name:str, characters:list, slots:list, category:str)->str:# remove consecutive commas!
-    name = remove_text(display_name, characters + [category])
+    name = remove_text(display_name, [category])
+    name = remove_characters(name, characters)
     name = remove_special_chars(name)
     name = remove_numbers(name, slots)
     name = clean_mod_name(name)
     name = remove_paranthesis(name)
+    name = add_spaces_to_camel_case(name)
     return name
 
 def remove_text(text:str, texts_to_remove:list):
-    arr_to_remove = []
-    arr_to_remove = [remove_special_chars(t).replace(" ", "") for t in texts_to_remove]
-    for t in texts_to_remove:
-        cleaned_t = remove_special_chars(t)
-        if cleaned_t not in arr_to_remove:
-            arr_to_remove.append(cleaned_t)
-    pattern = r'\b(?:' + '|'.join(re.escape(name) for name in arr_to_remove) + r')[^\s_]*'
+    pattern = r'\b(?:' + '|'.join(re.escape(name) for name in texts_to_remove) + r')[^\s_]*'
     text = re.sub(pattern, '', text, flags=re.IGNORECASE).strip()
     return text
 
@@ -66,3 +63,38 @@ def substitute_characters(text:str, chars_to_substitute:list)->str:
     chars_set = set(chars_to_substitute)
     result = ''.join([char if char not in chars_set else ' ' for char in text])
     return result
+
+def add_spaces_to_camel_case(input_string:str):
+    result = [input_string[0]]
+    
+    for i in range(1, len(input_string)):
+        char = input_string[i]
+        prev_char = input_string[i - 1]
+        
+        if char.isupper() and prev_char.islower():
+            result.append(' ')
+        result.append(char)
+    
+    return ''.join(result)
+
+def remove_characters(text:str, characters:list):
+    arr_to_remove = []
+    set_char = set()
+    char_dict = csv2dict(PATH_CHAR_NAMES)
+    for ch in characters:
+        set_char.add(ch)
+        data = char_dict.get(ch, None)
+        if data is None: 
+            continue
+        
+        for v in data[:-1]:
+            if v:
+                set_char.add(v)
+    
+    list_char = list(set_char)
+    for item in list_char:
+        set_char.add(remove_special_chars(item))
+        set_char.add(remove_special_chars(item).replace(" ", ""))
+    arr_to_remove = list(set_char)
+    text = remove_text(arr_to_remove)
+    return text
