@@ -58,7 +58,8 @@ def remove_special_chars(text:str):
     return text
 
 def remove_numbers(text:str, numbers:list):
-    pattern = r'\b[Cc]?0*(' + '|'.join(map(str, numbers)) + r')\b'
+    # pattern = r'\b[Cc]?0*(' + '|'.join(map(str, numbers)) + r')\b'
+    pattern = r'(?<![^\s_Cc\-])[Cc]?0*(' + '|'.join(map(str, numbers)) + r')(?![^\s_Cc\-])'
     cleaned_string = re.sub(pattern, '', text).strip()
     return cleaned_string
 
