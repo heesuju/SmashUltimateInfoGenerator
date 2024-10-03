@@ -40,7 +40,7 @@ def remove_text(text:str, texts_to_remove:list):
     if len(texts_to_remove) > 0:
         pattern = r'\b(?:' + '|'.join(re.escape(name) for name in texts_to_remove) + r')(?=\s|_)'
         # pattern = r'\b(?:' + '|'.join(re.escape(name) for name in texts_to_remove) + r')[^\s_]*'
-        text = re.sub(pattern, '', text, flags=re.IGNORECASE).strip()
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE, count=1).strip()
     return text
 
 def remove_special_chars(text:str):

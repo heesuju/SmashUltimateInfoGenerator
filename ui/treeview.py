@@ -111,9 +111,22 @@ class Menu:
             else: 
                 self.treeview.insert("", tk.END, text=check_mark, image=mods[n]["img"], values=tuple(values), tags=tags)
 
+        children = self.treeview.get_children()
+        if len(children) > 0:
+            first_row = children[0]
+            self.treeview.focus(first_row)
+            self.treeview.selection_set(first_row)
+        self.treeview.yview_moveto(0)
+
     def on_change_page(self):
         self.reset()
         self.populate(self.filtered_mods)
+
+    def on_prev_page(self, event):
+        self.paging.prev_page()
+
+    def on_next_page(self, event):
+        self.paging.next_page()
 
     def search(self):
         workspace = self.get_valid_workspace()
@@ -368,7 +381,8 @@ class Menu:
         self.scrollbar.pack(side="right", fill="y")
         
         self.paging = Paging(self.frame_list, self.on_change_page)
-        
+        self.treeview.bind('<Right>', self.on_next_page)
+        self.treeview.bind('<Left>', self.on_prev_page)
         self.f_footer = tk.Frame(self.root)
         self.f_footer.pack(padx = PAD_H, pady = (0, PAD_V), fill="x")
 
