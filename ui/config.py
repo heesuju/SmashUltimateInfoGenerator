@@ -232,3 +232,6 @@ def get_cache_dir(default_dir:str = ""):
                     preset_path = os.path.join(preset_path, config_folders[0])
                     return preset_path
     return ""
+
+def get_workspace():
+    return load_config().get("workspace", "Default")

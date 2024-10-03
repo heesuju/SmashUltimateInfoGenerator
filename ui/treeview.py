@@ -11,7 +11,7 @@ import queue
 from PIL import Image, ImageTk
 from defs import PAD_H, PAD_V
 from .editor import Editor
-from .config import Config, load_config
+from .config import Config, load_config, get_workspace
 from .filter import Filter
 from .paging import Paging
 from .preview import Preview
@@ -60,7 +60,7 @@ class Menu:
             item = self.treeview.item(selected_item)
             path = item["values"][5].split("/")[-1].split("\\")[-1]
             hash = gen_hash_as_decimal(path)
-            workspace = load_config()["workspace"]
+            workspace = self.get_valid_workspace()
             enabled_mods = self.preset.workspace_list[workspace]["mod_list"]
         
             if hash in enabled_mods: # Disable
@@ -89,7 +89,7 @@ class Menu:
         total = len(self.mods)
         set_text(self.label_count, f"Showing {filtered_len} of {total}" if total > filtered_len else f"Showing {total}")
         
-        workspace = load_config()["workspace"]
+        workspace = self.get_valid_workspace()
         for n in range(start,end):
             characters = ", ".join(sorted(mods[n]["character_names"]))
             check_mark = " ⬜ "
@@ -110,7 +110,7 @@ class Menu:
         self.populate(self.filtered_mods)
 
     def search(self):
-        workspace = load_config()["workspace"]
+        workspace = self.get_valid_workspace()
         enabled_mods = self.preset.workspace_list[workspace]["mod_list"]
         self.reset()
         self.paging.cur_page = 1
@@ -201,6 +201,9 @@ class Menu:
 
     def on_enable_mod(self, event):
         self.toggle_mod()
+
+    def on_key_press(self, event):
+        self.x, self.y  = 0, 0
     
     def on_scan_start(self, max_count):
         self.max_count = max_count
@@ -350,6 +353,8 @@ class Menu:
         self.treeview.bind("<Double-1>", self.on_double_clicked)
         self.treeview.bind("<space>", self.on_enable_mod)
         self.treeview.bind("<Return>", self.on_enable_mod)
+        self.treeview.bind('<Up>', self.on_key_press)
+        self.treeview.bind('<Down>', self.on_key_press)
 
         self.scrollbar.pack(side="right", fill="y")
         
@@ -409,3 +414,11 @@ class Menu:
 
         self.preview = Preview(self.info_frame, self.open_editor, self.open_folder, self.toggle_mod)
         self.root.bind("<Configure>", self.on_window_resize)
+
+    def get_valid_workspace(self):
+        name = get_workspace()
+        workspace = self.preset.workspace_list.get(name, None)
+        if workspace is None:
+            return "Default"
+        else:
+            return name

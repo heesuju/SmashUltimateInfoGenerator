@@ -1,19 +1,15 @@
+import os, json
 from tkinter import ttk
-from ttkwidgets import CheckboxTreeview
 from PIL import ImageTk
 import tkinter as tk
 from defs import PAD_H, PAD_V
 from . import PATH_ICON
 from .common_ui import get_text, set_text, set_enabled, clear_text, open_file_dialog
-from utils.image_resize import ImageResize
-from utils.loader import Loader
 from .config import load_config, Config
-from utils.files import read_json, is_valid_file, is_valid_dir
-import os, re, json
-from pathlib import Path
-from utils.hash import gen_hash_as_decimal
+from utils.files import is_valid_dir
+from utils.workspace import extract_number_from_preset, get_workspace_lists, load_preset_mods
 
-COLUMNS = ["Preset Name", "Total Enabled"]
+COLUMNS = ["Workspace Name", "Total Enabled"]
 
 class Preset:
     def __init__(self, root, callback=None) -> None:
@@ -23,32 +19,14 @@ class Preset:
         self.open()
         self.load_workspace()
         self.is_shown = False
+        self.x = 0
 
     def on_select_all(self):
         self.set_select_all(self.select_all.get())
 
     def set_select_all(self, is_selected:bool):
-        if is_selected:
-            for item in self.treeview.get_children():
-                self.treeview.item(item, tags='checked')
-        else:
-            for item in self.treeview.get_children():
-                self.treeview.item(item, tags='unchecked')
-
-    def on_row_select(self, event):
-        selected_item = self.treeview.focus()
-        if not selected_item:
-            return
-        
-        selected_name = self.treeview.item(selected_item)["text"]
-
         for item in self.treeview.get_children():
-            data = self.treeview.item(item)
-            checked_state = "checked" if  "checked" in data["tags"] else "unchecked"
-            if selected_name == data["text"]:
-                self.treeview.item(item, tags=[checked_state, "active"])
-            else:
-                self.treeview.item(item, tags=[checked_state, "inactive"])
+            self.set_row_checked(item, is_selected)
 
     def on_workspace_selected(self, event):
         config = Config()
@@ -58,6 +36,30 @@ class Preset:
 
     def on_add_new_submitted(self, event):
         self.add_new()
+    
+    def on_row_select(self, event):
+        selected_item = self.treeview.focus()
+        if not selected_item or self.x == 0:
+            return
+        self.x = 0
+        selected_data = self.treeview.item(selected_item)
+        is_checked = "checked" in selected_data.get("tags")
+        self.set_row_checked(selected_item, False if is_checked else True)
+
+    def on_row_selected(self, event):
+        selected_item = self.treeview.focus()
+        if not selected_item:
+            return
+        self.x = 0
+        selected_data = self.treeview.item(selected_item)
+        is_checked = "checked" in selected_data.get("tags")
+        self.set_row_checked(selected_item, False if is_checked else True)
+
+    def on_item_clicked(self, event):
+        self.x = 1
+    
+    def on_key_press(self, event):
+        self.x = 0
 
     def add_new(self):
         new_name = get_text(self.entry_new)
@@ -83,53 +85,54 @@ class Preset:
             config.save_config()
             self.callback()
 
-    def add_workspace(self, name:str, count:int):
-        self.treeview.insert("", tk.END, text=name, values=tuple([count]), tags=["unchecked", "inactive"])
+    def add_workspace(self, name:str, count:int, checked:bool = False):
+        tags = "checked" if checked else "unchecked"
+        check_mark = "✅ " if checked else "⬜ "
+        self.treeview.insert("", tk.END, text=check_mark + " " + name, values=tuple([count]), tags=[tags])
 
     def remove_workspaces(self):
-        checked_items = self.treeview.get_checked()
+        checked_items = self.get_checked()
         for item in checked_items:
             self.remove_workspace(item)
         self.set_select_all(False)
 
     def remove_workspace(self, item):
-        data = self.treeview.item(item)
-        if data["text"] != "Default":
+        name = self.get_row_text(item)
+        if name != "Default":
             self.treeview.delete(item)
-            self.workspace_list.pop(data["text"], None)
+            self.workspace_list.pop(name, None)
             self.update_workspace_dropdown()
 
     def restore_workspaces(self):
-        checked_items = self.treeview.get_checked()
+        checked_items = self.get_checked()
         for item in checked_items:
             self.restore_workspace(item)
         self.set_select_all(False)
         self.callback()
 
     def restore_workspace(self, item):
-        data = self.treeview.item(item)
         config = load_config()
         config["cache_dir"]
-        path = os.path.join(config["cache_dir"], self.workspace_list[data["text"]]["filename"])
-        self.workspace_list[data["text"]]["mod_list"] = load_preset_mods(path)
+        name = self.get_row_text(item)
+        path = os.path.join(config["cache_dir"], self.workspace_list[name]["filename"])
+        self.workspace_list[name]["mod_list"] = load_preset_mods(path)
         self.update_workspace_count()
 
     def disable_workspaces(self):
-        checked_items = self.treeview.get_checked()
+        checked_items = self.get_checked()
         for item in checked_items:
             self.disable_workspace(item)
         self.set_select_all(False)
         self.callback()
 
     def disable_workspace(self, item):
-        data = self.treeview.item(item)
-        self.workspace_list[data["text"]]["mod_list"] = []
+        name = self.get_row_text(item)
+        self.workspace_list[name]["mod_list"] = []
         self.update_workspace_count()
 
     def update_workspace_count(self):        
         for item_id in self.treeview.get_children():
-            item = self.treeview.item(item_id)
-            name = item["text"]
+            name = self.get_row_text(item_id)
             self.treeview.item(item_id, values=tuple([len(self.workspace_list[name]["mod_list"])]))
 
     def open(self):
@@ -189,9 +192,14 @@ class Preset:
 
         style = ttk.Style(self.root)
         style.configure("Custom.Treeview", rowheight=20)
-        self.treeview = CheckboxTreeview(self.frame, columns=COLUMNS, show=("headings", "tree"))
+        self.treeview = ttk.Treeview(self.frame, columns=COLUMNS, show=("headings", "tree"))
         self.treeview.tag_configure('active', background='lightblue')
+        self.treeview.bind('<Button-1>', self.on_item_clicked)
         self.treeview.bind("<<TreeviewSelect>>", self.on_row_select)
+        self.treeview.bind('<Up>', self.on_key_press)
+        self.treeview.bind('<Down>', self.on_key_press)
+        self.treeview.bind("<space>", self.on_row_selected)
+        self.treeview.bind("<Return>", self.on_row_selected)
 
         display_columns = COLUMNS
         self.treeview.column("#0", minwidth=140, width=200, stretch=tk.YES)
@@ -345,28 +353,30 @@ class Preset:
             print("Error occurred while writing to workspace_list file:", e)
         finally:
             return result
+        
+    def get_checked(self):
+        outputs = []
+        for item in self.treeview.get_children():
+            data = self.treeview.item(item)
+            if "checked" in data.get("tags"):
+                outputs.append(item)
+        return outputs
+    
+    def set_row_checked(self, item, is_checked:bool=True):
+        name = self.get_row_text(item)
+        if is_checked:
+            self.treeview.item(item, tags=["checked"], text="✅  " + name)
+        else:
+            self.treeview.item(item, tags=["unchecked"], text="⬜  " + name)
 
-def extract_number_from_preset(input_str):
-    match = re.search(r'_preset(\d+)$', input_str)
-    if match:
-        return match.group(1)
-    return ""
-
-def load_preset_mods(preset_file:str):
-    preset_mods = []
-    if preset_file: 
-        config = load_config()
-        cache_dir = config["cache_dir"]
-        preset_dir = os.path.join(cache_dir, preset_file)
-        if is_valid_file(preset_dir):
-            preset_mods = read_json(preset_dir)
-    return preset_mods
-
-def get_workspace_lists(dir:str):
-    outputs = {}
-    file_dir = os.path.join(dir, "workspace_list")
-    if is_valid_file(file_dir):
-        workspace_list = read_json(file_dir)
-        for key, value in workspace_list.items():
-            outputs[key] = {"filename":value, "mod_list":load_preset_mods(value)}
-    return outputs
+    def get_row_text(self, item):
+        data = self.treeview.item(item)
+        text = data["text"]
+        if "✅  " in text:
+            split = text.split("✅  ")
+            text = split[-1]
+        elif "⬜  " in text:
+            split = text.split("⬜  ")
+            text = split[-1]
+        
+        return text

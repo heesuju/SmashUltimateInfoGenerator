@@ -9,8 +9,8 @@ build_exe_options = {
 # change base to console to show console logs
 setup(
     name="Info Toml Generator",
-    version="1.5.1",
-    description="Info.toml generator for Smash Ultimate",
+    version="1.6.0",
+    description="Info.toml Generator for Smash Ultimate",
     options={"build_exe": build_exe_options},
     executables=[Executable("main.py", base="Win32GUI")],
 )
