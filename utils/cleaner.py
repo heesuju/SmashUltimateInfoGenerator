@@ -38,7 +38,8 @@ def extract_mod_name(display_name:str, characters:list, slots:list, category:str
 
 def remove_text(text:str, texts_to_remove:list):
     if len(texts_to_remove) > 0:
-        pattern = r'\b(?:' + '|'.join(re.escape(name) for name in texts_to_remove) + r')[^\s_]*'
+        pattern = r'\b(?:' + '|'.join(re.escape(name) for name in texts_to_remove) + r')(?=\s|_)'
+        # pattern = r'\b(?:' + '|'.join(re.escape(name) for name in texts_to_remove) + r')[^\s_]*'
         text = re.sub(pattern, '', text, flags=re.IGNORECASE).strip()
     return text
 
@@ -67,8 +68,11 @@ def substitute_characters(text:str, chars_to_substitute:list)->str:
     return result
 
 def add_spaces_to_camel_case(input_string:str):
+    if not input_string:
+        return input_string
+
     result = [input_string[0]]
-    
+
     for i in range(1, len(input_string)):
         char = input_string[i]
         prev_char = input_string[i - 1]
@@ -92,6 +96,8 @@ def remove_characters(text:str, characters:list):
         for v in data[:-1]:
             if v:
                 set_char.add(v)
+                set_char.add(v+".M")
+                set_char.add(v+".F")
     
     list_char = list(set_char)
     for item in list_char:

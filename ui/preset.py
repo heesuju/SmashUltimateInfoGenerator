@@ -191,10 +191,10 @@ class Preset:
         self.btn_new.pack(side=tk.RIGHT)        
 
         style = ttk.Style(self.root)
-        style.configure("Custom.Treeview", background="white", foreground="Black",fieldbackground="red", rowheight=20)
+        style.configure("Custom.Treeview", background="white", foreground="Black", rowheight=20)
         style.map('Custom.Treeview', background=[('selected','lightblue')],foreground=[('selected','Black')])
 
-        self.treeview = ttk.Treeview(self.frame, columns=COLUMNS, show=("headings", "tree"))
+        self.treeview = ttk.Treeview(self.frame, style="Custom.Treeview", columns=COLUMNS, show=("headings", "tree"))
         self.treeview.tag_configure('active', background='lightblue')
         self.treeview.bind('<Button-1>', self.on_item_clicked)
         self.treeview.bind("<<TreeviewSelect>>", self.on_row_select)

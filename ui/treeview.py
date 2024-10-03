@@ -319,7 +319,7 @@ class Menu:
         style.configure("Treeview", rowheight=20)
         # style.map('Treeview', background=[('selected', 'lightblue')])
 
-        style.configure("Custom1.Treeview",background="white", foreground="Black",fieldbackground="red", rowheight=60)
+        style.configure("Custom1.Treeview",background="white", foreground="Black", rowheight=60)
         style.map('Custom1.Treeview', background=[('selected','lightblue')],foreground=[('selected','Black')])
 
         self.treeview = ttk.Treeview(self.frame_list, style="Custom1.Treeview", columns=self.categories, show=("headings", "tree"))
