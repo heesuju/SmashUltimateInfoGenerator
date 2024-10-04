@@ -416,7 +416,7 @@ class Editor:
 
         self.entry_work_dir = tk.Entry(self.frame_work_dir, width=10)
         self.entry_work_dir.pack(fill=tk.X, expand=True)
-        self.entry_work_dir.bind("<Enter>", self.on_update_directory)
+        self.entry_work_dir.bind("<Return>", self.on_update_directory)
 
         self.label_url = tk.Label(self.new_window, text="Url")
         self.label_url.grid(row=3, column=0, sticky=tk.W)
