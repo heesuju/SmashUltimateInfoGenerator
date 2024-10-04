@@ -19,6 +19,7 @@ from .comparison import Comparison
 from .config import Config
 from . import PATH_ICON
 from .common_ui import get_text, set_text, clear_text, set_enabled, open_file_dialog
+from .checkbox_treeview import Treeview
 
 class Editor:
     def __init__(self, callback=None) -> None:
@@ -172,16 +173,17 @@ class Editor:
         self.update_listbox()
 
     def update_listbox(self):
-        self.listbox.delete(0, tk.END)
+        pass
+        # self.listbox.delete(0, tk.END)
 
-        # Add items with checkboxes
-        for i, item in enumerate(defs.ELEMENTS + self.config.additional_elements):
-            if i >= len(self.checkbox_states):
-                self.checkbox_states.append(False)
-            checkbox = "✅" if self.checkbox_states[i] else "⬜"
-            self.listbox.insert(tk.END, f"{checkbox} {item}")
+        # # Add items with checkboxes
+        # for i, item in enumerate(defs.ELEMENTS + self.config.additional_elements):
+        #     if i >= len(self.checkbox_states):
+        #         self.checkbox_states.append(False)
+        #     checkbox = "✅" if self.checkbox_states[i] else "⬜"
+        #     self.listbox.insert(tk.END, f"{checkbox} {item}")
 
-        self.set_description()
+        # self.set_description()
  
     def set_img_cbox(self, values=[], selected_option=""):
         self.cbox_img.config(values=values)
@@ -351,21 +353,21 @@ class Editor:
             self.txt_desc.insert(tk.END, description)
 
     def update_description(self):
-        self.listbox.selection_clear(0, tk.END)
-        self.checkbox_states[0] = self.generator.is_skin
-        self.checkbox_states[1] = self.generator.is_motion
-        self.checkbox_states[2] = self.generator.is_effect
-        self.checkbox_states[3] = self.generator.is_single_effect
-        self.checkbox_states[4] = self.generator.is_voice
-        self.checkbox_states[5] = self.generator.is_sfx
-        self.checkbox_states[6] = self.generator.is_narrator_voice
-        self.checkbox_states[7] = self.generator.is_victory_theme
-        self.checkbox_states[8] = self.generator.is_victory_animation
-        self.checkbox_states[9] = self.generator.is_custom_name
-        self.checkbox_states[10] = self.generator.is_single_name
-        self.checkbox_states[11] = self.generator.is_ui
-        self.checkbox_states[12] = self.generator.is_kirby
-        self.checkbox_states[13] = self.generator.is_stage
+        # self.listbox.selection_clear(0, tk.END)
+        # self.checkbox_states[0] = self.generator.is_skin
+        # self.checkbox_states[1] = self.generator.is_motion
+        # self.checkbox_states[2] = self.generator.is_effect
+        # self.checkbox_states[3] = self.generator.is_single_effect
+        # self.checkbox_states[4] = self.generator.is_voice
+        # self.checkbox_states[5] = self.generator.is_sfx
+        # self.checkbox_states[6] = self.generator.is_narrator_voice
+        # self.checkbox_states[7] = self.generator.is_victory_theme
+        # self.checkbox_states[8] = self.generator.is_victory_animation
+        # self.checkbox_states[9] = self.generator.is_custom_name
+        # self.checkbox_states[10] = self.generator.is_single_name
+        # self.checkbox_states[11] = self.generator.is_ui
+        # self.checkbox_states[12] = self.generator.is_kirby
+        # self.checkbox_states[13] = self.generator.is_stage
 
         self.update_listbox()
 
@@ -531,9 +533,10 @@ class Editor:
         self.label_list = tk.Label(self.new_window, text="Includes")
         self.label_list.grid(row=11, column=1, sticky=tk.W)
 
-        self.listbox = tk.Listbox(self.new_window, selectmode=tk.SINGLE, width=10)
-        self.listbox.grid(row=12, column=1, sticky=tk.NSEW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
-
+        self.treeview = Treeview(self.new_window, False)
+        self.treeview.construct(defs.ELEMENTS + self.config.additional_elements)
+        self.treeview.widget.grid(row=12, column=1, sticky=tk.NSEW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
+        
         # column 2
         self.label_folder_name = tk.Label(self.new_window, text="Folder Name")
         self.label_folder_name .grid(row=5, column=2, sticky=tk.W)
@@ -564,11 +567,7 @@ class Editor:
 
         self.label_output = tk.Label(self.new_window)
         self.label_output .grid(row=13, column=0, sticky=tk.W, columnspan=2)
-
-        self.checkbox_states = [False] * len(defs.ELEMENTS + self.config.additional_elements)
-        self.update_listbox()
-        self.listbox.bind("<Button-1>", lambda event: self.toggle_checkbox(self.listbox.nearest(event.y)))
-
+        
         self.new_window.bind("<Configure>", self.on_window_resize)
 
         self.entry_work_dir.delete(0, tk.END)

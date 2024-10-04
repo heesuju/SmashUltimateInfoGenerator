@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinterdnd2 import DND_FILES, TkinterDnD
-from ui.treeview import Menu
+from ui.menu import Menu
 from ui.editor import Editor 
 from ui.config import load_config
 

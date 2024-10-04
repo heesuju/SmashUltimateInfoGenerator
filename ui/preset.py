@@ -6,6 +6,7 @@ from defs import PAD_H, PAD_V
 from . import PATH_ICON
 from .common_ui import get_text, set_text, set_enabled, clear_text, open_file_dialog
 from .config import load_config, Config
+from .checkbox_treeview import Treeview
 from utils.files import is_valid_dir
 from utils.workspace import extract_number_from_preset, get_workspace_lists, load_preset_mods
 
@@ -19,14 +20,9 @@ class Preset:
         self.open()
         self.load_workspace()
         self.is_shown = False
-        self.x = 0
 
     def on_select_all(self):
-        self.set_select_all(self.select_all.get())
-
-    def set_select_all(self, is_selected:bool):
-        for item in self.treeview.get_children():
-            self.set_row_checked(item, is_selected)
+        self.treeview.select_all(self.select_all.get())
 
     def on_workspace_selected(self, event):
         config = Config()
@@ -36,30 +32,6 @@ class Preset:
 
     def on_add_new_submitted(self, event):
         self.add_new()
-    
-    def on_row_select(self, event):
-        selected_item = self.treeview.focus()
-        if not selected_item or self.x == 0:
-            return
-        self.x = 0
-        selected_data = self.treeview.item(selected_item)
-        is_checked = "checked" in selected_data.get("tags")
-        self.set_row_checked(selected_item, False if is_checked else True)
-
-    def on_row_selected(self, event):
-        selected_item = self.treeview.focus()
-        if not selected_item:
-            return
-        self.x = 0
-        selected_data = self.treeview.item(selected_item)
-        is_checked = "checked" in selected_data.get("tags")
-        self.set_row_checked(selected_item, False if is_checked else True)
-
-    def on_item_clicked(self, event):
-        self.x = 1
-    
-    def on_key_press(self, event):
-        self.x = 0
 
     def add_new(self):
         new_name = get_text(self.entry_new)
@@ -86,54 +58,52 @@ class Preset:
             self.callback()
 
     def add_workspace(self, name:str, count:int, checked:bool = False):
-        tags = "checked" if checked else "unchecked"
-        check_mark = "✅ " if checked else "⬜ "
-        self.treeview.insert("", tk.END, text=check_mark + " " + name, values=tuple([count]), tags=[tags])
+        self.treeview.add_item([name, count], checked)
 
     def remove_workspaces(self):
-        checked_items = self.get_checked()
+        checked_items = self.treeview.get_checked_items()
         for item in checked_items:
             self.remove_workspace(item)
-        self.set_select_all(False)
+        self.treeview.select_all(False)
 
     def remove_workspace(self, item):
-        name = self.get_row_text(item)
+        name = self.treeview.get_row_text(item)
         if name != "Default":
-            self.treeview.delete(item)
+            self.treeview.remove_item(item)
             self.workspace_list.pop(name, None)
             self.update_workspace_dropdown()
 
     def restore_workspaces(self):
-        checked_items = self.get_checked()
+        checked_items = self.treeview.get_checked_items()
         for item in checked_items:
             self.restore_workspace(item)
-        self.set_select_all(False)
+        self.treeview.select_all(False)
         self.callback()
 
     def restore_workspace(self, item):
         config = load_config()
         config["cache_dir"]
-        name = self.get_row_text(item)
+        name = self.treeview.get_row_text(item)
         path = os.path.join(config["cache_dir"], self.workspace_list[name]["filename"])
         self.workspace_list[name]["mod_list"] = load_preset_mods(path)
         self.update_workspace_count()
 
     def disable_workspaces(self):
-        checked_items = self.get_checked()
+        checked_items = self.treeview.get_checked_items()
         for item in checked_items:
             self.disable_workspace(item)
-        self.set_select_all(False)
+        self.treeview.select_all(False)
         self.callback()
 
     def disable_workspace(self, item):
-        name = self.get_row_text(item)
+        name = self.treeview.get_row_text(item)
         self.workspace_list[name]["mod_list"] = []
         self.update_workspace_count()
 
     def update_workspace_count(self):        
-        for item_id in self.treeview.get_children():
-            name = self.get_row_text(item_id)
-            self.treeview.item(item_id, values=tuple([len(self.workspace_list[name]["mod_list"])]))
+        for item_id in self.treeview.get_items():
+            name = self.treeview.get_row_text(item_id)
+            self.treeview.set_row(item_id, [name, len(self.workspace_list[name]["mod_list"])])
 
     def open(self):
         self.frame = tk.Frame(self.root)
@@ -190,32 +160,9 @@ class Preset:
         self.btn_new = tk.Button(self.header, image=self.icon_new, relief=tk.FLAT, cursor='hand2', command=self.add_new)
         self.btn_new.pack(side=tk.RIGHT)        
 
-        style = ttk.Style(self.root)
-        style.configure("Custom.Treeview", background="white", foreground="Black", rowheight=20)
-        style.map('Custom.Treeview', background=[('selected','lightblue')],foreground=[('selected','Black')])
-
-        self.treeview = ttk.Treeview(self.frame, style="Custom.Treeview", columns=COLUMNS, show=("headings", "tree"))
-        self.treeview.tag_configure('active', background='lightblue')
-        self.treeview.bind('<Button-1>', self.on_item_clicked)
-        self.treeview.bind("<<TreeviewSelect>>", self.on_row_select)
-        self.treeview.bind('<Up>', self.on_key_press)
-        self.treeview.bind('<Down>', self.on_key_press)
-        self.treeview.bind("<space>", self.on_row_selected)
-        self.treeview.bind("<Return>", self.on_row_selected)
-
-        display_columns = COLUMNS
-        self.treeview.column("#0", minwidth=140, width=200, stretch=tk.YES)
-        
-        for idx, column in enumerate(COLUMNS):
-            if idx > 0:
-                self.treeview.column(f"#{idx}", minwidth=140, width=160, stretch=tk.YES)
-            self.treeview.heading(f"#{idx}", text=column)
-        
-        self.treeview["displaycolumns"]=display_columns
-        self.treeview.pack(fill="both", expand=True)        
-        self.scrollbar = ttk.Scrollbar(self.treeview, orient="vertical", command=self.treeview.yview)
-        self.treeview.configure(yscrollcommand=self.scrollbar.set)
-        self.scrollbar.pack(side="right", fill="y")
+        self.treeview = Treeview(self.frame, True)
+        self.treeview.construct(COLUMNS)
+        self.treeview.widget.pack(fill="both", expand=True)
         
         self.footer = tk.Frame(self.frame)
         self.footer.pack(pady=(PAD_V, PAD_V/2), fill="x")
@@ -298,8 +245,7 @@ class Preset:
         self.cbox_workspace.config(values=[])
         self.cbox_workspace.select_clear()
         self.cbox_workspace.set("Default")
-        for item in self.treeview.get_children():
-            self.treeview.delete(item)
+        self.treeview.clear()
     
     def format_workspace_filename(self, name):
         num = self.get_available_num()
@@ -355,30 +301,3 @@ class Preset:
             print("Error occurred while writing to workspace_list file:", e)
         finally:
             return result
-        
-    def get_checked(self):
-        outputs = []
-        for item in self.treeview.get_children():
-            data = self.treeview.item(item)
-            if "checked" in data.get("tags"):
-                outputs.append(item)
-        return outputs
-    
-    def set_row_checked(self, item, is_checked:bool=True):
-        name = self.get_row_text(item)
-        if is_checked:
-            self.treeview.item(item, tags=["checked"], text="✅  " + name)
-        else:
-            self.treeview.item(item, tags=["unchecked"], text="⬜  " + name)
-
-    def get_row_text(self, item):
-        data = self.treeview.item(item)
-        text = data["text"]
-        if "✅  " in text:
-            split = text.split("✅  ")
-            text = split[-1]
-        elif "⬜  " in text:
-            split = text.split("⬜  ")
-            text = split[-1]
-        
-        return text
