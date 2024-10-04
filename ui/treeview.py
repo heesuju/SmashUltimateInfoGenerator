@@ -320,7 +320,9 @@ class Menu:
 
         self.info_frame = ttk.LabelFrame(self.frame_content, text="Preview")
         self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
-        self.info_frame.columnconfigure(0, weight=1)     
+        self.info_frame.columnconfigure(0, weight=1)
+        self.info_frame.rowconfigure(index=1, weight=1)
+        self.info_frame.rowconfigure(index=3, weight=1)
         self.info_frame.pack_forget()
 
         self.label_count = tk.Label(self.frame_list, text="Showing 0", anchor=tk.W)
@@ -431,9 +433,6 @@ class Menu:
             side=tk.RIGHT,
             padx=(0, PAD_H)
         )
-
-        self.info_frame.rowconfigure(index=1, weight=1)
-        self.info_frame.rowconfigure(index=4, weight=1)
 
         self.preview = Preview(self.info_frame, self.open_editor, self.open_folder, self.toggle_mod)
         self.root.bind("<Configure>", self.on_window_resize)

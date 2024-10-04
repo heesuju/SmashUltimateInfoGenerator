@@ -14,10 +14,11 @@ from utils.downloader import Downloader
 from utils.image_resize import ImageResize
 from utils.files import get_dir_name, rename_if_valid
 from utils.format import format_folder_name, format_slots
+from utils.dump_tomli import dump_toml, TomlParams
 from .comparison import Comparison
 from .config import Config
 from . import PATH_ICON
-from .common_ui import get_text, set_text, clear_text, set_enabled, open_file_dialog, dump_toml, TomlParams
+from .common_ui import get_text, set_text, clear_text, set_enabled, open_file_dialog
 
 class Editor:
     def __init__(self, callback=None) -> None:
@@ -252,8 +253,15 @@ class Editor:
     def apply_changes(self):
         dump_toml(
             self.generator.working_dir,
-            TomlParams(self.entry_display_name, self.entry_authors, self.txt_desc, self.entry_ver, 
-                       self.combobox_cat, self.entry_url, self.entry_mod_name, self.cbox_wifi_safe,
+            TomlParams(get_text(self.entry_display_name), 
+                       get_text(self.entry_authors), 
+                       get_text(self.txt_desc), 
+                       get_text(self.entry_ver), 
+                       get_text(self.combobox_cat), 
+                       get_text(self.entry_url), 
+                       get_text(self.entry_mod_name), 
+                       get_text(self.cbox_wifi_safe),
+                       [],
                        self.generator.slots)
         )
         

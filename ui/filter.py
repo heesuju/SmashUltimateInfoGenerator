@@ -1,3 +1,4 @@
+import os
 from tkinter import ttk
 from PIL import ImageTk
 import tkinter as tk

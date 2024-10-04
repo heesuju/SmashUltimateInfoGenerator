@@ -15,6 +15,9 @@ class Preview:
         self.open_callback = open_callback
         self.toggle_callback = toggle_callback
         self.is_shown = False
+        self.is_desc_shown = True
+        self.is_incl_shown = False
+        self.loader = None
         self.show()
 
     def show(self):
@@ -44,14 +47,29 @@ class Preview:
         self.label_author = tk.Label(info_frame, anchor="e", justify="right", width=1)
         self.label_author.pack(side=tk.RIGHT, fill="x", expand=True)
 
-        label_d = tk.Label(self.root, text="Description", anchor="w", justify="left")
-        label_d.grid(row=3, padx=PAD_H, sticky=tk.W)
+        self.frame_details = tk.Frame(self.root, borderwidth=1, relief='ridge')
+        self.frame_details.grid(row=3, padx=PAD_H, pady=(0, PAD_V), sticky=tk.NSEW)
+        self.frame_details.rowconfigure(index=2, weight=1)
+        self.frame_details.columnconfigure(index=0, weight=1, uniform="equal")
+        self.frame_details.columnconfigure(index=2, weight=1, uniform="equal")
+        self.btn_desc = tk.Button(self.frame_details, text="Description", relief=tk.FLAT, background="SystemButtonFace", font=("Helvetica", 10, "bold"), command=self.on_show_desc, cursor="hand2")
+        self.btn_desc.grid(row=0, column=0, sticky=tk.EW)
+        separator = ttk.Separator(self.frame_details, orient='vertical')
+        separator.grid(row=0, column=1, sticky=tk.NS)
+        
+        self.btn_incl = tk.Button(self.frame_details, text="Includes", relief=tk.FLAT, background="#dcdcdc", foreground="snow4", command=self.on_show_incl, cursor="hand2")
+        self.btn_incl.grid(row=0, column=2, sticky=tk.EW)
+        self.desc_separator = ttk.Separator(self.frame_details, orient='horizontal')
+        self.desc_separator.grid(row=1, column=0, sticky=tk.EW)
+        self.desc_separator.grid_forget()
+        self.incl_separator = ttk.Separator(self.frame_details, orient='horizontal')
+        self.incl_separator.grid(row=1, column=2, sticky=tk.EW)
 
-        self.label_desc = tk.Text(self.root, height=1, width=10, state="disabled")
-        self.label_desc.grid(row=4, padx=PAD_H, pady=(0, PAD_V), sticky=tk.NSEW)
+        self.label_desc = tk.Text(self.frame_details, height=1, width=10, state="disabled")
+        self.label_desc.grid(row=2, column=0, columnspan=3, sticky=tk.NSEW, padx=PAD_H/2, pady=PAD_V/2)
 
         frame_actions = tk.Frame(self.root)
-        frame_actions.grid(row=5, padx=PAD_H, pady=(0, PAD_V), sticky=tk.EW)
+        frame_actions.grid(row=4, padx=PAD_H, pady=(0, PAD_V), sticky=tk.EW)
         frame_actions.columnconfigure(index=0, weight=1, uniform="equal")
         frame_actions.columnconfigure(index=2, weight=1, uniform="equal")
 
@@ -69,12 +87,16 @@ class Preview:
         self.btn_open.grid(row=0, column=2, sticky=tk.EW, padx=PAD_H/2)
 
     def update(self, is_enabled:bool, loader:Loader, path:str):
+        self.loader = loader
         self.set_toggle_label(is_enabled)
         set_enabled(self.label_desc, True)
         self.label_desc.delete(1.0, tk.END)
         
         if loader is not None: 
-            set_text(self.label_desc, loader.description)
+            if self.is_desc_shown:
+                set_text(self.label_desc, loader.description)
+            else:
+                set_text(self.label_desc, self.format_includes(self.loader.includes))
             self.label_version.config(text=loader.version, width=5)
             self.label_author.config(text=loader.authors, width=1)
             self.label_title.config(text=loader.display_name)
@@ -144,3 +166,28 @@ class Preview:
             self.root.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
 
         self.is_shown = False if self.is_shown else True
+
+    def format_includes(self, includes:list):
+        return "\n".join([f"• {i}" for i in includes])
+
+    def on_show_desc(self):
+        self.btn_desc.config(background="SystemButtonFace", font=("Helvetica", 10, "bold"), foreground="black")
+        self.btn_incl.config(background="#dcdcdc", font=("Helvetica", 10), foreground="snow4")
+        self.desc_separator.grid_forget()
+        self.incl_separator.grid(row=1, column=2, sticky=tk.EW)
+        self.is_desc_shown = True
+        self.is_incl_shown = False
+        set_enabled(self.label_desc)
+        set_text(self.label_desc, self.loader.description)
+        set_enabled(self.label_desc, False)
+
+    def on_show_incl(self):
+        self.btn_desc.config(background="#dcdcdc", font=("Helvetica", 10), foreground="snow4")
+        self.btn_incl.config(background="SystemButtonFace", font=("Helvetica", 10, "bold"), foreground="black")
+        self.desc_separator.grid(row=1, column=0, sticky=tk.EW)
+        self.incl_separator.grid_forget()
+        self.is_desc_shown = False
+        self.is_incl_shown = True
+        set_enabled(self.label_desc)
+        set_text(self.label_desc, self.format_includes(self.loader.includes))
+        set_enabled(self.label_desc, False)

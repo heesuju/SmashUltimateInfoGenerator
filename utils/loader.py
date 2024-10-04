@@ -8,6 +8,8 @@ class Loader:
     def reset(self):
         self.display_name = ""
         self.description = ""
+        self.includes = []
+        self.slots = []
         self.authors = ""
         self.category = ""
         self.version = ""
@@ -30,6 +32,8 @@ class Loader:
                 if "mod_name" in loaded_dict: self.mod_name = loaded_dict["mod_name"]
                 if "url" in loaded_dict: self.url = loaded_dict["url"]
                 if "wifi_safe" in loaded_dict: self.wifi_safe = loaded_dict["wifi_safe"]
+                if "includes" in loaded_dict: self.includes = loaded_dict["includes"]
+                if "slots" in loaded_dict: self.slots = loaded_dict["slots"]
             
                 print("successfully loaded info.toml in working directory")
                 return True
