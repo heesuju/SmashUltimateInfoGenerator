@@ -66,7 +66,7 @@ class Preview:
         self.incl_separator.grid(row=1, column=2, sticky=tk.EW)
 
         self.label_desc = tk.Text(self.frame_details, height=1, width=10, state="disabled")
-        self.label_desc.grid(row=2, column=0, columnspan=3, sticky=tk.NSEW, padx=PAD_H/2, pady=PAD_V/2)
+        self.label_desc.grid(row=2, column=0, columnspan=3, sticky=tk.NSEW, padx=PAD_H, pady=PAD_V)
 
         frame_actions = tk.Frame(self.root)
         frame_actions.grid(row=4, padx=PAD_H, pady=(0, PAD_V), sticky=tk.EW)
@@ -168,6 +168,8 @@ class Preview:
         self.is_shown = False if self.is_shown else True
 
     def format_includes(self, includes:list):
+        if includes is None:
+            return ""
         return "\n".join([f"• {i}" for i in includes])
 
     def on_show_desc(self):
@@ -178,7 +180,7 @@ class Preview:
         self.is_desc_shown = True
         self.is_incl_shown = False
         set_enabled(self.label_desc)
-        set_text(self.label_desc, self.loader.description)
+        set_text(self.label_desc, self.loader.description if self.loader else "")
         set_enabled(self.label_desc, False)
 
     def on_show_incl(self):
@@ -189,5 +191,5 @@ class Preview:
         self.is_desc_shown = False
         self.is_incl_shown = True
         set_enabled(self.label_desc)
-        set_text(self.label_desc, self.format_includes(self.loader.includes))
+        set_text(self.label_desc, self.format_includes(self.loader.includes) if self.loader else "")
         set_enabled(self.label_desc, False)

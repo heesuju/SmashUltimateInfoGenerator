@@ -349,7 +349,6 @@ class Menu:
             tv.heading(col, command=lambda: \
                     treeview_sort_column(tv, col, not reverse))
 
-
         display_columns = []
         self.treeview.column("#0", minwidth=150, width=150, stretch=tk.NO)
         self.treeview.column("Category", minwidth=70, width=70, stretch=tk.NO)

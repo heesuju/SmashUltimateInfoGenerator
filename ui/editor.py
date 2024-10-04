@@ -1,5 +1,6 @@
 import shutil, os, sys
 import common, defs
+from defs import ELEMENTS
 import tkinter as tk
 from tkinter import ttk, filedialog
 from PIL import Image, ImageTk
@@ -167,23 +168,6 @@ class Editor:
 
     def set_folder_name(self, character_names, slots, mod_name, category):
         set_text(self.entry_folder_name, format_folder_name(character_names, slots, mod_name, category))
-
-    def toggle_checkbox(self, index):
-        self.checkbox_states[index] = not self.checkbox_states[index]
-        self.update_listbox()
-
-    def update_listbox(self):
-        pass
-        # self.listbox.delete(0, tk.END)
-
-        # # Add items with checkboxes
-        # for i, item in enumerate(defs.ELEMENTS + self.config.additional_elements):
-        #     if i >= len(self.checkbox_states):
-        #         self.checkbox_states.append(False)
-        #     checkbox = "✅" if self.checkbox_states[i] else "⬜"
-        #     self.listbox.insert(tk.END, f"{checkbox} {item}")
-
-        # self.set_description()
  
     def set_img_cbox(self, values=[], selected_option=""):
         self.cbox_img.config(values=values)
@@ -198,7 +182,7 @@ class Editor:
             version = get_text(self.entry_ver))
 
         set_text(self.label_output, "Changed working directory")
-        self.update_description()
+        self.update_includes(self.generator.includes)
         self.combobox_cat.set(dict_info["category"])
 
         names = common.group_char_name(self.generator.char_names, self.generator.group_names)           
@@ -223,6 +207,7 @@ class Editor:
             self.cbox_wifi_safe.set(self.loader.wifi_safe)
             mod_name = self.loader.mod_name
             set_text(self.entry_url, self.loader.url)
+            set_text(self.txt_desc, self.loader.description)
         
         if not mod_name:
             mod_name = extract_mod_name(
@@ -263,7 +248,7 @@ class Editor:
                        get_text(self.entry_url), 
                        get_text(self.entry_mod_name), 
                        get_text(self.cbox_wifi_safe),
-                       [],
+                       self.get_includes(),
                        self.generator.slots)
         )
         
@@ -293,7 +278,7 @@ class Editor:
         if self.generator.image_dir == image_dir:
             return
         self.generator.image_dir = image_dir
-        image_extensions = [".png", ".jpg", ".jpeg", ".gif", ".webp"]
+        image_extensions = [".webp", ".png", ".jpg", ".jpeg", ".gif"]
         if image_dir and os.path.exists(image_dir):
             for extension in image_extensions:
                 if image_dir.endswith(extension):
@@ -339,37 +324,18 @@ class Editor:
         self.label_img.config(image=None)
         self.label_img.image = None
 
-    def set_description(self):
-        description = "Includes:\n"
-        self.txt_desc.delete(1.0, tk.END)
-        combined_list = defs.ELEMENTS + self.config.additional_elements
-        for n in range(len(self.checkbox_states)):
-            if n >= len(combined_list):
-                self.checkbox_states[n] = False
-            elif self.checkbox_states[n]:
-                description += "- " + combined_list[n] + "\n"
+    def update_includes(self, includes:list):
+        self.treeview.clear()
+        for element in ELEMENTS + self.config.additional_elements:
+            self.treeview.add_item([element], element in includes)
 
-        if True in self.checkbox_states:
-            self.txt_desc.insert(tk.END, description)
-
-    def update_description(self):
-        # self.listbox.selection_clear(0, tk.END)
-        # self.checkbox_states[0] = self.generator.is_skin
-        # self.checkbox_states[1] = self.generator.is_motion
-        # self.checkbox_states[2] = self.generator.is_effect
-        # self.checkbox_states[3] = self.generator.is_single_effect
-        # self.checkbox_states[4] = self.generator.is_voice
-        # self.checkbox_states[5] = self.generator.is_sfx
-        # self.checkbox_states[6] = self.generator.is_narrator_voice
-        # self.checkbox_states[7] = self.generator.is_victory_theme
-        # self.checkbox_states[8] = self.generator.is_victory_animation
-        # self.checkbox_states[9] = self.generator.is_custom_name
-        # self.checkbox_states[10] = self.generator.is_single_name
-        # self.checkbox_states[11] = self.generator.is_ui
-        # self.checkbox_states[12] = self.generator.is_kirby
-        # self.checkbox_states[13] = self.generator.is_stage
-
-        self.update_listbox()
+    def get_includes(self):
+        outputs = []
+        for item in self.treeview.get_checked_items():
+            text = self.treeview.get_row_text(item)
+            if text not in outputs:
+                outputs.append(text)
+        return outputs
 
     def on_window_resize(self, event):
         self.set_image(self.entry_img_dir.get())
@@ -404,7 +370,7 @@ class Editor:
 
         self.new_window.rowconfigure(12, weight=1)
         self.new_window.minsize(640, 340)
-        self.new_window.geometry("920x540")
+        self.new_window.geometry("920x560")
         self.new_window.configure(padx=10, pady=10) 
 
         self.icon_browse = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'browse.png'))
@@ -450,7 +416,6 @@ class Editor:
         self.entry_mod_name = tk.Entry(self.new_window, width=10)
         self.entry_mod_name.grid(row=6, column=0, sticky=tk.EW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
         self.entry_mod_name.bind("<KeyRelease>", self.on_entry_change)
-
 
         self.label_authors = tk.Label(self.new_window, text="Authors")
         self.label_authors.grid(row=7, column=0, sticky=tk.W)
@@ -534,7 +499,7 @@ class Editor:
         self.label_list.grid(row=11, column=1, sticky=tk.W)
 
         self.treeview = Treeview(self.new_window, False)
-        self.treeview.construct(defs.ELEMENTS + self.config.additional_elements)
+        self.treeview.construct(["Elements"])
         self.treeview.widget.grid(row=12, column=1, sticky=tk.NSEW, padx = (0, defs.PAD_H), pady = (0, defs.PAD_V))
         
         # column 2

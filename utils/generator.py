@@ -1,9 +1,6 @@
 import common
 from .files import is_valid_dir
-import string
 import tomli_w as tomli
-import re
-import defs
 from data import PATH_CHAR_NAMES
 
 class Generator:
@@ -26,6 +23,7 @@ class Generator:
         self.ignore_names = []                  # A set of names to ignore in the mod title
         self.group_names = []                   # The name that groups Characters sharing the same slot 
         self.slots = []                         # Slots used up by the mod
+        self.includes = []
         self.is_skin = False                    # Whether skins are included
         self.is_stage = False                   # Whether stages are included
         self.is_motion = False                  # Whether animation or physics are included
@@ -97,25 +95,25 @@ class Generator:
         self.working_dir = working_dir
         self.version = version
         self.additional_info = additional_info
-        
-        self.description = "Includes:\n"
         self.reset()
 
         if is_valid_dir(self.working_dir + "/fighter"):
             self.slots, self.char_names, self.group_names, self.char_keys = self.get_characters()
             
             if common.search_dir_for_keyword(self.working_dir + "/fighter", "model"):
-                self.description += "Skin\n"
                 self.is_skin = True
+                self.includes.append("Skin")
 
             if common.search_dir_for_keyword(self.working_dir + "/fighter", "motion"):
-                             
+                self.includes.append("Motion")
                 self.is_motion = True
 
             if "kirby" in self.display_name == False and common.search_dir_for_keyword(self.working_dir + "/fighter", "kirby"):
+                self.includes.append("Kirby")
                 self.is_kirby = True
           
         if is_valid_dir(self.working_dir + "/stage"):  
+            self.includes.append("Stage")
             self.is_stage = True
                 
         if is_valid_dir(self.working_dir + "/effect"):
@@ -123,26 +121,32 @@ class Generator:
                 
                 if common.search_files_for_pattern(file, r"c\d+"):
                     self.is_single_effect = True
+                    self.includes.append("Single Effect")
                 else:
                     self.is_effect = True
+                    self.includes.append("Effect")
                 break
             
         if is_valid_dir(self.working_dir + "/sound"):
             if common.search_dir_for_keyword(self.working_dir + "/sound", "fighter_voice"):
                 self.is_voice = True
+                self.includes.append("Voice")
 
             if common.search_dir_for_keyword(self.working_dir + "/sound", "fighter"):
                 self.is_sfx = True
+                self.includes.append("SFX")
             
             if common.search_dir_for_keyword(self.working_dir + "/sound", "narration"):
                 self.is_narrator_voice = True
+                self.includes.append("Narrator Voice")
             
         if is_valid_dir(self.working_dir + "/stream;"):
             self.is_victory_theme = True
+            self.includes.append("Custom Victory Theme")
 
         if is_valid_dir(self.working_dir + "/camera"):
             self.is_victory_animation = True
-
+            self.includes.append("Custom Victory Animation")
 
         self.is_single_name = False
 
@@ -153,16 +157,17 @@ class Generator:
                 single_name = common.get_children_by_extension(self.working_dir + "/ui/message", ".xmsbt")
                 if len(custom_name) > 0:
                     self.is_custom_name = True
+                    self.includes.append("Custom Name")
                 elif len(single_name) > 0:
                     self.is_single_name = True
+                    self.includes.append("Single Custom Name")
             
             if common.search_dir_for_keyword(self.working_dir + "/ui", "replace") or common.search_dir_for_keyword(self.working_dir + "/ui", "replace_patch"):
                 self.is_ui = True
+                self.includes.append("UI")
         
-        # Get the description from the multiline Text widget
-        self.description += self.additional_info
         self.category = self.set_category()
-        return {"description":self.description, 
+        return {"includes":self.includes, 
                 "category":self.category, 
                 "character_names": self.char_names, 
                 "mod_name":self.mod_name,
