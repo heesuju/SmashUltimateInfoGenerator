@@ -147,7 +147,7 @@ class Filter:
         chars.extend(sorted(filtered_chars))
         self.char_values = chars
 
-        new_char = get_completion(get_text(self.cbox_char), self.char_values)
+        new_char = get_char_completion(get_text(self.cbox_char), self.char_values)
         self.cbox_char.config(values=self.char_values)
         self.cbox_char.set(new_char if new_char else "All")
 
@@ -289,3 +289,48 @@ class Filter:
 
     def on_sorting_changed(self):
         self.search_fn()
+
+def get_char_completion(text:str, values:list)->None:
+    if len(values) == 1:
+        result = values[0]
+    elif len(values) > 1:
+        chars = csv_to_dict(PATH_CHAR_NAMES)
+        options = set()
+        for c in chars:
+            name = c.get("Custom")
+            if name in values:
+                key = c.get("Key")
+                org = c.get("Value")
+                alt = c.get("Alt")
+                if key: 
+                    options.add(key)
+                if org:
+                    options.add(org)
+                if alt:
+                    options.add(alt)
+                options.add(name)
+        options.add("All")
+        sorted_list = list(options)
+        sorted_list = sorted(sorted_list)
+        match = get_completion(text, sorted_list)
+        
+        result = "All" if "All" in values else values[0]
+
+        for c in chars:
+            name = c.get("Custom")
+            key = c.get("Key")
+            org = c.get("Value")
+            alt = c.get("Alt")
+            if match == name:
+                result = name
+                break
+            elif match == key:
+                result = name
+                break
+            elif match == org:
+                result = name
+                break
+            elif match == alt:
+                result = name
+                break
+    return result
