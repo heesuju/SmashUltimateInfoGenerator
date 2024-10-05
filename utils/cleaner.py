@@ -22,7 +22,9 @@ def clean_display_name(display_name:str)->str:
     display_name = display_name.replace("[]", "")
     display_name = display_name.replace("()", "")
     display_name = display_name.replace("{}", "")
+
     display_name = remove_redundant_spacing(display_name)
+    display_name = trim_consecutive(display_name, [",", ".", "_", "-", "~"])
     return display_name 
 
 def clean_folder_name(folder_name:str)->str:
@@ -32,6 +34,7 @@ def clean_folder_name(folder_name:str)->str:
     folder_name = folder_name.replace("()", "")
     folder_name = folder_name.replace("{}", "")
     folder_name = folder_name.replace(" ", "")
+    folder_name = trim_consecutive(folder_name, [",", ".", "_", "-", "~"])
     return folder_name
 
 def clean_mod_name(mod_name:str)->str:
@@ -42,6 +45,11 @@ def clean_mod_name(mod_name:str)->str:
     mod_name = substitute_characters(mod_name, MOD_NAME_BLACKLIST)
     mod_name = remove_redundant_spacing(mod_name)
     return mod_name
+
+def trim_consecutive(text:str, chars_to_remove:list):
+    pattern = f"[{''.join(re.escape(c) for c in chars_to_remove)}]+"
+    cleaned_text = re.sub(pattern, lambda m: m.group(0)[0], text)
+    return cleaned_text
 
 def extract_mod_name(display_name:str, characters:list, slots:list, category:str)->str:
     name = remove_text(display_name, [category])
