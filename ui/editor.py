@@ -311,7 +311,14 @@ class Editor:
         shutil.copy(source_file, new_path)
 
     def find_image(self):
-        for type in defs.IMAGE_TYPES:
+        img_list = common.get_direct_child_by_extension(self.generator.working_dir, ".webp")
+        if len(img_list) > 0:
+            self.set_image(self.generator.working_dir +  "/" + img_list[0])
+            self.replace_img_state.set(False)
+            return
+        
+        other_types = [type for type in defs.IMAGE_TYPES if type != ".webp"]
+        for type in other_types:
             img_list = common.get_direct_child_by_extension(self.generator.working_dir, type)
             if len(img_list) > 0:
                 self.set_image(self.generator.working_dir +  "/" + img_list[0])
