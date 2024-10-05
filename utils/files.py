@@ -26,12 +26,9 @@ def rename_if_valid(dir:str, new_folder_name:str):
     new_dir = os.path.join(new_dir, new_folder_name)
     
     if is_valid_dir(old_dir):
-        if is_valid_dir(new_dir) == False:
-            if rename_folder(old_dir, new_dir):
-                output = new_dir
-                msg = f"Applied changes to {new_folder_name}"
-        else:
-            msg = f"File name {new_folder_name} already exists."
+        result, msg = rename_folder(old_dir, new_dir) 
+        if result:
+            output = new_dir
     else:
         msg = f"Cannot find {dir}"
     
@@ -39,21 +36,26 @@ def rename_if_valid(dir:str, new_folder_name:str):
 
 def rename_folder(old_dir:str, new_dir:str):
     result = False
+    msg = ""
     if is_folder_locked(old_dir):
         print("Folder is currently in use. Please close any open windows and try again.")
-        return result
+        return result, "Folder is currently in use. Please close all remaining browsers first."
     try:
         os.rename(old_dir, new_dir)
-        print(f"Successfully renamed folder {old_dir} to {new_dir}")
         result = True
+        msg = f"Applied changes to {new_dir}"
+        print(f"Successfully renamed folder {old_dir} to {new_dir}")
     except PermissionError as e:
+        msg = f"File permission error"
         print(f"Failed to rename folder due to permission error: {e}")
     except FileExistsError as e:
-        print(f"Existing folder with the same name: {e}")
+        msg = "Existing folder with the same name"
+        print("Existing folder with the same name: {e}")
     except Exception as e:
         print(f"An error occurred: {e}")
+        msg = "Unknown error!"
     finally:
-        return result
+        return result, msg
 
 def is_folder_locked(folder_path):
     try:

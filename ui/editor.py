@@ -534,8 +534,8 @@ class Editor:
         self.btn_apply = tk.Button(self.frame_btn, text="Apply", command=self.apply_changes)
         self.btn_apply.pack(fill="y")
 
-        self.label_output = tk.Label(self.new_window)
-        self.label_output .grid(row=13, column=0, sticky=tk.W, columnspan=2)
+        self.label_output = tk.Label(self.new_window, width=80, anchor=tk.W)
+        self.label_output .grid(row=13, column=0, sticky=tk.EW, columnspan=2)
         
         self.new_window.bind("<Configure>", self.on_window_resize)
 
