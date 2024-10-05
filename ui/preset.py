@@ -130,7 +130,7 @@ class Preset:
         label_workspace.pack(side=tk.LEFT, padx=(0,PAD_H), fill="x")
 
         self.cbox_workspace = ttk.Combobox(self.top_frame)
-        self.cbox_workspace.pack(side=tk.LEFT, padx=(0,PAD_H), fill="x", expand=tk.YES)
+        self.cbox_workspace.pack(side=tk.LEFT, fill="x", expand=tk.YES)
         self.cbox_workspace.bind("<<ComboboxSelected>>", self.on_workspace_selected)
 
         separator = ttk.Separator(self.frame, orient='horizontal')
