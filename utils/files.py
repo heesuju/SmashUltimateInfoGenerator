@@ -18,17 +18,24 @@ def get_dir_name(directory):
 
 def rename_if_valid(dir:str, new_folder_name:str):
     output = ""
-    
+    msg = ""
+
     old_dir = dir
     dir_name = get_dir_name(old_dir)
     new_dir = old_dir[0:-len(dir_name)]
     new_dir = os.path.join(new_dir, new_folder_name)
     
     if is_valid_dir(old_dir):
-        if rename_folder(old_dir, new_dir):
-            output = new_dir
+        if is_valid_dir(new_dir) == False:
+            if rename_folder(old_dir, new_dir):
+                output = new_dir
+                msg = f"Applied changes to {new_folder_name}"
+        else:
+            msg = f"File name {new_folder_name} already exists."
+    else:
+        msg = f"Cannot find {dir}"
     
-    return output
+    return output, msg
 
 def rename_folder(old_dir:str, new_dir:str):
     result = False
@@ -41,6 +48,8 @@ def rename_folder(old_dir:str, new_dir:str):
         result = True
     except PermissionError as e:
         print(f"Failed to rename folder due to permission error: {e}")
+    except FileExistsError as e:
+        print(f"Existing folder with the same name: {e}")
     except Exception as e:
         print(f"An error occurred: {e}")
     finally:

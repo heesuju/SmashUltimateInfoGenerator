@@ -197,6 +197,7 @@ class Editor:
         mod_name = ""
         display_name = ""
         dir_name = get_dir_name(self.generator.working_dir)
+        includes = []
 
         if self.loader.load_toml(self.entry_work_dir.get()):
             display_name = self.loader.display_name
@@ -207,9 +208,11 @@ class Editor:
             mod_name = self.loader.mod_name
             set_text(self.entry_url, self.loader.url)
             set_text(self.txt_desc, self.loader.description)
-            self.update_includes(self.loader.includes)
-        else:
-            self.update_includes(self.generator.includes)
+            includes = self.loader.includes
+        
+        if len(includes) <= 0:
+            includes = self.generator.includes
+        self.update_includes(includes)
         
         if not mod_name:
             mod_name = extract_mod_name(
@@ -257,15 +260,14 @@ class Editor:
         if get_text(self.entry_work_dir):
             old_directory = self.generator.working_dir
             self.move_file()
-            new_directory = rename_if_valid(old_directory, get_text(self.entry_folder_name))
+            new_directory, msg = rename_if_valid(old_directory, get_text(self.entry_folder_name))
             if new_directory:
-                set_text(self.label_output, "Applied changes")
                 set_text(self.entry_work_dir, new_directory)
                 self.generator.working_dir = new_directory
                 self.find_image()
                 self.callback(old_directory, new_directory)
-            else:
-                set_text(self.label_output, "Folder is open in another browser! Please close the folder and try again.")
+
+            set_text(self.label_output, msg)
         else:
             set_text(self.label_output, "Working directory is empty!")
 
