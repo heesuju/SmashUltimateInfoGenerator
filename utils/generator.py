@@ -130,7 +130,7 @@ class Generator:
                     self.is_effect = True
                     self.includes.append("Effect")
                 break
-            if "Effects" not in self.includes and "Single Effects" not in self.includes:
+            if "Effect" not in self.includes and "Single Effect" not in self.includes:
                 self.is_effect = True
                 self.includes.append("Effect")
             
