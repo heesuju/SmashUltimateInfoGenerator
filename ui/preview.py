@@ -117,7 +117,6 @@ class Preview:
             self.label_img.image = ""
             self.label_version.config(text="")
             self.label_author.config(text="")
-            self.label_title.config(text="")
 
         set_enabled(self.btn_edit)
         set_enabled(self.btn_open)
