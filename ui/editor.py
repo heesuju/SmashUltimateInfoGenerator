@@ -14,7 +14,7 @@ from utils.dynamic_scraper import Selenium
 from utils.downloader import Downloader
 from utils.image_resize import ImageResize
 from utils.files import get_dir_name, rename_if_valid
-from utils.format import format_folder_name, format_slots
+from utils.format import format_folder_name, format_display_name, format_slots
 from utils.dump_tomli import dump_toml, TomlParams
 from .comparison import Comparison
 from .config import Config
@@ -158,13 +158,7 @@ class Editor:
         self.set_folder_name(self.entry_char_names.get().replace(" ", ""), self.entry_slots.get().replace(" ", ""), self.entry_mod_name.get().replace(" ", ""), self.combobox_cat.get())
 
     def set_display_name(self, character_names, slots, mod_name, category):
-        self.entry_display_name.delete(0, tk.END)
-        display_name = self.config.display_name_format
-        display_name = display_name.replace("{characters}", character_names)
-        display_name = display_name.replace("{slots}", slots)
-        display_name = display_name.replace("{mod}", mod_name)
-        display_name = display_name.replace("{category}", category)
-        self.entry_display_name.insert(0, display_name) 
+        set_text(self.entry_display_name, format_display_name(character_names, slots, mod_name, category))
 
     def set_folder_name(self, character_names, slots, mod_name, category):
         set_text(self.entry_folder_name, format_folder_name(character_names, slots, mod_name, category))
@@ -203,7 +197,7 @@ class Editor:
             display_name = self.loader.display_name
             set_text(self.entry_authors, self.loader.authors)
             self.combobox_cat.set(self.loader.category)
-            set_text(self.entry_ver, self.loader.version)
+            set_text(self.entry_ver, format_version(self.loader.version))
             self.cbox_wifi_safe.set(self.loader.wifi_safe)
             mod_name = self.loader.mod_name
             set_text(self.entry_url, self.loader.url)
@@ -223,8 +217,8 @@ class Editor:
             
         self.generator.mod_name = mod_name
         set_text(self.entry_mod_name, mod_name)
-        self.set_display_name(names, slots_cleaned, mod_name, dict_info["category"])
-        self.set_folder_name(names.replace(" ", "") , slots_cleaned.replace(" ", ""), mod_name.replace(" ", ""), dict_info["category"])
+        self.set_display_name(names, slots_cleaned, mod_name, get_text(self.combobox_cat))
+        self.set_folder_name(names.replace(" ", "") , slots_cleaned.replace(" ", ""), mod_name.replace(" ", ""), get_text(self.combobox_cat))
         self.generator.url = self.entry_url.get()
 
         self.find_image()
@@ -526,16 +520,16 @@ class Editor:
         self.txt_desc.grid(row=12, column=2, sticky=tk.NSEW, pady = (0, defs.PAD_V))
 
         self.frame_btn = tk.Frame(self.new_window)
-        self.frame_btn.grid(row=13, column=2, sticky=tk.E, pady = (0, defs.PAD_V))
-
-        self.btn_compare = tk.Button(self.frame_btn, text="Compare", command=self.open_comparison)
-        self.btn_compare.pack(side='left', fill="y", padx=(0, defs.PAD_H))
+        self.frame_btn.grid(row=13, column=0, columnspan=3, sticky=tk.NSEW)
 
         self.btn_apply = tk.Button(self.frame_btn, text="Apply", command=self.apply_changes)
-        self.btn_apply.pack(fill="y")
+        self.btn_apply.pack(side=tk.RIGHT, fill="y")
 
-        self.label_output = tk.Label(self.new_window, width=80, anchor=tk.W)
-        self.label_output .grid(row=13, column=0, sticky=tk.EW, columnspan=2)
+        self.btn_compare = tk.Button(self.frame_btn, text="Compare", command=self.open_comparison)
+        self.btn_compare.pack(side=tk.RIGHT, fill="y", padx=(0, defs.PAD_H))
+
+        self.label_output = tk.Label(self.frame_btn)
+        self.label_output.pack(side=tk.LEFT)
         
         self.new_window.bind("<Configure>", self.on_window_resize)
 

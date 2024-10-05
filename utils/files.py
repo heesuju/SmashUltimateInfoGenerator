@@ -85,3 +85,11 @@ def copy_directory_contents(source_dir:str, new_dir_parent:str, new_dir_name:str
             os.makedirs(destination_item, exist_ok=True)
             # Recursively call this function to copy contents of the directory
             copy_directory_contents(source_item, new_dir_path, item)
+
+def get_children(directory:str):
+    child_folders = []
+    if is_valid_dir(directory):
+        all_items = os.listdir(directory)
+        # Filter out only the subdirectories
+        child_folders = [item for item in all_items if os.path.isdir(os.path.join(directory, item))]
+    return child_folders

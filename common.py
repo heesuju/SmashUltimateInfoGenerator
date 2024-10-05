@@ -81,12 +81,6 @@ def csv2dict(directory:str):
             output[key] = values
     return output
 
-def get_all_children_in_path(directory):
-    all_items = os.listdir(directory)
-    # Filter out only the subdirectories
-    child_folders = [item for item in all_items if os.path.isdir(os.path.join(directory, item))]
-    return child_folders
-
 def trim_mod_name(mod_name, ignored_list):
     words_pattern = '|'.join(re.escape(word) for word in ignored_list)
     pattern = r'\b(?:' + words_pattern + r')\b'

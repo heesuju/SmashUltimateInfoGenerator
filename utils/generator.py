@@ -1,5 +1,6 @@
+import os
 import common
-from .files import is_valid_dir
+from .files import is_valid_dir, get_children
 import tomli_w as tomli
 from data import PATH_CHAR_NAMES
 
@@ -53,8 +54,7 @@ class Generator:
         numbers.sort()
         return numbers
     
-    def get_characters(self):
-        children = common.get_all_children_in_path(self.working_dir + "/fighter")
+    def get_characters(self, children):
         dict_arr = common.csv_to_dict(PATH_CHAR_NAMES) 
         key_arr = []
         name_arr = []        
@@ -73,9 +73,9 @@ class Generator:
                     
                     slots = []
                     if is_valid_dir(self.working_dir + "/fighter/" + child + "/model"):
-                        models = common.get_all_children_in_path(self.working_dir + "/fighter/" + child + "/model")
+                        models = get_children(self.working_dir + "/fighter/" + child + "/model")
                         for model in models:
-                            all_slots = common.get_all_children_in_path(self.working_dir + "/fighter/" + child + "/model/" + model)
+                            all_slots = get_children(self.working_dir + "/fighter/" + child + "/model/" + model)
                             slots = self.get_slots(all_slots)
                             for slot in slots:
                                 if slot not in slot_arr:
@@ -98,8 +98,9 @@ class Generator:
         self.reset()
 
         if is_valid_dir(self.working_dir + "/fighter"):
-            self.slots, self.char_names, self.group_names, self.char_keys = self.get_characters()
-            
+            children = get_children(self.working_dir + "/fighter")
+            self.slots, self.char_names, self.group_names, self.char_keys = self.get_characters(children)
+
             if common.search_dir_for_keyword(self.working_dir + "/fighter", "model"):
                 self.is_skin = True
                 self.includes.append("Skin")
@@ -117,8 +118,11 @@ class Generator:
             self.is_stage = True
                 
         if is_valid_dir(self.working_dir + "/effect"):
+            if len(self.char_names) <= 0:
+                children = get_children(self.working_dir + "/effect/fighter")
+                slots, self.char_names, self.group_names, self.char_keys = self.get_characters(children)
+
             for file in common.get_children_by_extension(self.working_dir + "/effect", ".eff"):
-                
                 if common.search_files_for_pattern(file, r"c\d+"):
                     self.is_single_effect = True
                     self.includes.append("Single Effect")
@@ -126,6 +130,9 @@ class Generator:
                     self.is_effect = True
                     self.includes.append("Effect")
                 break
+            if "Effects" not in self.includes and "Single Effects" not in self.includes:
+                self.is_effect = True
+                self.includes.append("Effect")
             
         if is_valid_dir(self.working_dir + "/sound"):
             if common.search_dir_for_keyword(self.working_dir + "/sound", "fighter_voice"):

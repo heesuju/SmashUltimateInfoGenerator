@@ -18,9 +18,19 @@ def remove_redundant_spacing(input:str):
     arr = [i for i in input.split(' ') if i]
     return " ".join(arr)
 
+def clean_display_name(display_name:str)->str:
+    display_name = display_name.replace("[]", "")
+    display_name = display_name.replace("()", "")
+    display_name = display_name.replace("{}", "")
+    display_name = remove_redundant_spacing(display_name)
+    return display_name 
+
 def clean_folder_name(folder_name:str)->str:
     for b in FOLDER_NAME_BLACKLIST:
         folder_name = folder_name.replace(b, " ")
+    folder_name = folder_name.replace("[]", "")
+    folder_name = folder_name.replace("()", "")
+    folder_name = folder_name.replace("{}", "")
     folder_name = folder_name.replace(" ", "")
     return folder_name
 
