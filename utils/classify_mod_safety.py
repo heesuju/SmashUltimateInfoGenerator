@@ -9,6 +9,7 @@ Do not use it in ranked games, as it might get you banned.
 # Define positive keywords/phrases
 POSITIVE_PATTERNS = [
     r"wifi[-\s]?safe", 
+    r"wi-fi[-\s]?safe", 
     r"safe\sfor\swifi", 
     r"compatible\swith\sonline\splay",
     r"tested\sfor\smultiplayer",
