@@ -182,7 +182,6 @@ class Editor:
             version = get_text(self.entry_ver))
 
         set_text(self.label_output, "Changed working directory")
-        self.update_includes(self.generator.includes)
         self.combobox_cat.set(dict_info["category"])
 
         names = common.group_char_name(self.generator.char_names, self.generator.group_names)           
@@ -208,6 +207,9 @@ class Editor:
             mod_name = self.loader.mod_name
             set_text(self.entry_url, self.loader.url)
             set_text(self.txt_desc, self.loader.description)
+            self.update_includes(self.loader.includes)
+        else:
+            self.update_includes(self.generator.includes)
         
         if not mod_name:
             mod_name = extract_mod_name(

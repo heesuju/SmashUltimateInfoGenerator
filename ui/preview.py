@@ -94,7 +94,7 @@ class Preview:
         
         if loader is not None: 
             if self.is_desc_shown:
-                set_text(self.label_desc, loader.description)
+                set_text(self.label_desc, self.clean_description(self.loader.description))
             else:
                 set_text(self.label_desc, self.format_includes(self.loader.includes))
             self.label_version.config(text=loader.version, width=5)
@@ -170,7 +170,11 @@ class Preview:
     def format_includes(self, includes:list):
         if includes is None:
             return ""
-        return "\n".join([f"• {i}" for i in includes])
+        return "\n".join([f"⁃ {i}" for i in includes])
+    
+    def clean_description(self, description:str):
+        cleaned_text = description.strip('\n')
+        return cleaned_text
 
     def on_show_desc(self):
         self.btn_desc.config(background="SystemButtonFace", font=("Helvetica", 10, "bold"), foreground="black")
@@ -180,7 +184,7 @@ class Preview:
         self.is_desc_shown = True
         self.is_incl_shown = False
         set_enabled(self.label_desc)
-        set_text(self.label_desc, self.loader.description if self.loader else "")
+        set_text(self.label_desc, self.clean_description(self.loader.description) if self.loader else "")
         set_enabled(self.label_desc, False)
 
     def on_show_incl(self):

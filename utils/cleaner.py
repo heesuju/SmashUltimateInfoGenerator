@@ -65,6 +65,8 @@ def remove_numbers(text:str, numbers:list):
     for match in matches:
         if match.end() == len(text):
             match_at_end = match.group() 
+            if "C"  in match_at_end or "c" in match_at_end:
+                match_at_end = None
             break 
     
     text = re.sub(pattern, '', text).strip()
