@@ -3,6 +3,7 @@ import common
 from .files import is_valid_dir, get_children
 import tomli_w as tomli
 from data import PATH_CHAR_NAMES
+from .cleaner import get_slot
 
 class Generator:
     def __init__(self):
@@ -82,6 +83,33 @@ class Generator:
                                     slot_arr.append(slot)
 
         return slot_arr, name_arr, group_arr, key_arr
+    
+    def get_char_from_effect(self, children):
+        dict_arr = common.csv_to_dict(PATH_CHAR_NAMES) 
+        key_arr = []
+        name_arr = []        
+        group_arr = []
+        slot_arr = []
+
+        if len(children) > 1 and "kirby" in children:
+            children.remove("kirby")
+
+        for child in children:
+            for dict in dict_arr:
+                if child == dict['Key']:
+                    key_arr.append(dict['Key'])
+                    name_arr.append(dict['Custom'])
+                    group_arr.append(dict['Group'])
+                    
+                    path = os.path.join(self.working_dir, "effect", "fighter", child)
+                    all_slots = common.get_direct_child_by_extension(path, ".eff")
+                    for file_name in all_slots:
+                        slots = get_slot(file_name)
+                        for s in slots:
+                            if s not in slot_arr:
+                                slot_arr.append(s)
+
+        return slot_arr, name_arr, group_arr, key_arr
         
     def set_category(self):
         if self.is_skin or self.is_motion:              return "Fighter"
@@ -120,7 +148,7 @@ class Generator:
         if is_valid_dir(self.working_dir + "/effect"):
             if len(self.char_names) <= 0:
                 children = get_children(self.working_dir + "/effect/fighter")
-                self.slots, self.char_names, self.group_names, self.char_keys = self.get_characters(children)
+                self.slots, self.char_names, self.group_names, self.char_keys = self.get_char_from_effect(children)
 
             for file in common.get_children_by_extension(self.working_dir + "/effect", ".eff"):
                 if common.search_files_for_pattern(file, r"c\d+"):

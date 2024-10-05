@@ -180,3 +180,10 @@ def remove_non_eng(text:str)->str:
     cleaned_text = re.sub(r'[^a-zA-Z]', ' ', text)
     cleaned_text = remove_redundant_spacing(cleaned_text)
     return cleaned_text
+
+def get_slot(text:str):
+    numbers = []
+    pattern = r'c(\d+)'
+    matches = re.findall(pattern, text)
+    numbers = [int(match) for match in matches]
+    return numbers
