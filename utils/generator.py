@@ -120,7 +120,7 @@ class Generator:
         if is_valid_dir(self.working_dir + "/effect"):
             if len(self.char_names) <= 0:
                 children = get_children(self.working_dir + "/effect/fighter")
-                slots, self.char_names, self.group_names, self.char_keys = self.get_characters(children)
+                self.slots, self.char_names, self.group_names, self.char_keys = self.get_characters(children)
 
             for file in common.get_children_by_extension(self.working_dir + "/effect", ".eff"):
                 if common.search_files_for_pattern(file, r"c\d+"):
