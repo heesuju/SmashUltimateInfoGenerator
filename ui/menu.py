@@ -196,9 +196,17 @@ class Menu:
             self.x, self.y  = 0, 0
 
         item = self.treeview.item(selected_item)
+        path = item['values'][-1]
+        selected_mod = None
+        for mod in self.mods:
+            if mod.get("path") == path:
+                selected_mod = mod
+                break
+        
         self.preview.update(item["tags"][0] == "enabled", 
                             self.loader if self.loader.load_toml(item['values'][-1]) else None,
-                            item['values'][-1])
+                            selected_mod,
+                            path)
                 
     def on_item_clicked(self, event):
         self.x = event.x

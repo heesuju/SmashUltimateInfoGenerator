@@ -55,7 +55,8 @@ class Scanner(Thread):
             "wifi_safe" : "Uncertain",
             "info_toml" : False,
             "img" : None,
-            "hash": ""
+            "hash": "",
+            "includes": []
         }
 
     def find_mod(self, name:str, path:str):
@@ -81,6 +82,8 @@ class Scanner(Thread):
             mod["character_names"] = generator.char_names
             mod["character_name"] = ", ".join(sorted(mod["character_names"]))
             mod["character_list"] = generator.char_keys
+            mod["includes"] = generator.includes
+            
             if mod["category"] == "Misc":
                 mod["category"] = generator.category
 

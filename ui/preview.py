@@ -4,6 +4,7 @@ import tkinter as tk
 from defs import PAD_H, PAD_V
 from . import PATH_ICON
 from .common_ui import get_text, set_text, set_enabled, clear_text
+from utils.files import get_dir_name
 from utils.image_resize import ImageResize
 from utils.loader import Loader
 import os
@@ -18,6 +19,7 @@ class Preview:
         self.is_desc_shown = True
         self.is_incl_shown = False
         self.loader = None
+        self.mod = None
         self.show()
 
     def show(self):
@@ -86,27 +88,27 @@ class Preview:
         self.btn_open = tk.Button(frame_actions, image=self.icon_open, text=" Open", cursor='hand2', relief=tk.FLAT, compound="left", command=self.open_callback)
         self.btn_open.grid(row=0, column=2, sticky=tk.EW, padx=PAD_H/2)
 
-    def update(self, is_enabled:bool, loader:Loader, path:str):
+    def update(self, is_enabled:bool, loader:Loader, mod:dict, path:str):
         self.loader = loader
+        self.mod = mod
         self.set_toggle_label(is_enabled)
-        set_enabled(self.label_desc, True)
-        self.label_desc.delete(1.0, tk.END)
         
+        title = ""
+
         if loader is not None: 
-            if self.is_desc_shown:
-                set_text(self.label_desc, self.clean_description(self.loader.description))
-            else:
-                set_text(self.label_desc, self.format_includes(self.loader.includes))
             self.label_version.config(text=loader.version, width=5)
             self.label_author.config(text=loader.authors, width=1)
-            self.label_title.config(text=loader.display_name)
+            title = loader.display_name
         else: 
-            set_text(self.label_desc, "No info.toml found")
             clear_text(self.label_version)
             clear_text(self.label_author)
-            clear_text(self.label_title)
 
-        set_enabled(self.label_desc, False)
+        if not title:
+            title = get_dir_name(path)
+
+        set_text(self.label_title, title)
+        self.set_description()
+
         img_preview = os.path.join(path, "preview.webp")
 
         if os.path.exists(img_preview):
@@ -126,6 +128,8 @@ class Preview:
         self.label_img.image = image  # Keep a reference to prevent garbage collection
 
     def clear(self):
+        self.loader = None
+        self.mod = None
         set_enabled(self.label_desc)
         clear_text(self.label_desc)
         set_enabled(self.label_desc, False)
@@ -183,9 +187,7 @@ class Preview:
         self.incl_separator.grid(row=1, column=2, sticky=tk.EW)
         self.is_desc_shown = True
         self.is_incl_shown = False
-        set_enabled(self.label_desc)
-        set_text(self.label_desc, self.clean_description(self.loader.description) if self.loader else "")
-        set_enabled(self.label_desc, False)
+        self.set_description()
 
     def on_show_incl(self):
         self.btn_desc.config(background="#dcdcdc", font=("Helvetica", 10), foreground="snow4")
@@ -194,6 +196,27 @@ class Preview:
         self.incl_separator.grid_forget()
         self.is_desc_shown = False
         self.is_incl_shown = True
+        self.set_description()
+
+    def set_description(self):
+        description = ""
+        includes = []
+
+        if self.loader is not None:
+            description = self.loader.description
+            includes = self.loader.includes
+        
+        if not description:
+            description = "No info.toml found\nClick 'Edit' to make one."
+
+        if len(includes) <= 0:
+            includes = self.mod.get("includes", [])
+        
         set_enabled(self.label_desc)
-        set_text(self.label_desc, self.format_includes(self.loader.includes) if self.loader else "")
+
+        if self.is_desc_shown:
+            set_text(self.label_desc, self.clean_description(description))
+        else:    
+            set_text(self.label_desc, self.format_includes(includes))
+
         set_enabled(self.label_desc, False)
