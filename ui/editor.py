@@ -516,7 +516,7 @@ class Editor:
         self.label_desc = tk.Label(self.new_window, text="Description")
         self.label_desc.grid(row=11, column=2, sticky=tk.W)
 
-        self.txt_desc = tk.Text(self.new_window, height=10, width=10)
+        self.txt_desc = tk.Text(self.new_window, height=10, width=10, wrap="word")
         self.txt_desc.grid(row=12, column=2, sticky=tk.NSEW, pady = (0, defs.PAD_V))
 
         self.frame_btn = tk.Frame(self.new_window)

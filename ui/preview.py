@@ -67,7 +67,7 @@ class Preview:
         self.incl_separator = ttk.Separator(self.frame_details, orient='horizontal')
         self.incl_separator.grid(row=1, column=2, sticky=tk.EW)
 
-        self.label_desc = tk.Text(self.frame_details, height=1, width=10, state="disabled")
+        self.label_desc = tk.Text(self.frame_details, height=1, width=10, state="disabled", wrap="word")
         self.label_desc.grid(row=2, column=0, columnspan=3, sticky=tk.NSEW, padx=PAD_H, pady=PAD_V)
 
         frame_actions = tk.Frame(self.root)
