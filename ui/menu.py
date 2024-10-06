@@ -1,7 +1,7 @@
 import os
 from functools import partial
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from utils.scanner import Scanner
 from tkinterdnd2 import DND_FILES
 import threading
@@ -485,6 +485,7 @@ class Menu:
         try:
             copy_directory_contents(dir, default_dir, new_name)
             print("successfully added dir:", dir)
+            messagebox.showinfo("Info", "Successfully copied contents into mod directory!")
             self.on_finish_edit("", new_dir)
         except PermissionError:
             print(f"PermissionError: You do not have the required permissions to copy to '{new_dir}'.")
