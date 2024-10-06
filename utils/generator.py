@@ -28,6 +28,7 @@ class Generator:
         self.includes = []
         self.is_skin = False                    # Whether skins are included
         self.is_stage = False                   # Whether stages are included
+        self.is_item = False
         self.is_motion = False                  # Whether animation or physics are included
         self.is_effect = False                  # Whether effects are included
         self.is_single_effect = False           # Whether single slot effects are included
@@ -116,6 +117,7 @@ class Generator:
         elif self.is_stage:                             return "Stage"
         elif self.is_effect or self.is_single_effect:   return "Effects"
         elif self.is_voice or self.is_sfx:              return "Audio"
+        elif self.is_item:                              return "Misc"
         elif self.is_ui:                                return "UI"
         else:                                           return "Misc"
 
@@ -144,6 +146,10 @@ class Generator:
         if is_valid_dir(self.working_dir + "/stage"):  
             self.includes.append("Stage")
             self.is_stage = True
+
+        if is_valid_dir(self.working_dir + "/item"):  
+            self.includes.append("Item")
+            self.is_item = True
                 
         if is_valid_dir(self.working_dir + "/effect"):
             if len(self.char_names) <= 0:
