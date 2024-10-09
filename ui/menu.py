@@ -22,21 +22,21 @@ from utils.hash import gen_hash_as_decimal
 from utils.format import format_folder_name
 
 class Menu:    
-    def __init__(self, root) -> None:
+    def __init__(self, root, webdriver_manager) -> None:
         self.root = root
+        self.webdriver_manager = webdriver_manager
+
         self.mods = []
         self.filtered_mods = []
         self.config = Config()
-        self.editor = Editor(self.on_finish_edit)
         self.loader = Loader()
         self.queue = queue.Queue()
-        
-        self.preset_cache = []
         self.progress_count = 0
         self.progress_lock = threading.Lock()
         self.max_count = 0
         self.x = 0
         self.y = 0
+       
         self.show()
         self.scan()
     
@@ -227,7 +227,7 @@ class Menu:
         selected_item = self.treeview.focus()
         if selected_item:
             item = self.treeview.item(selected_item)
-            self.editor.open(self.root, item['values'][-1])
+            Editor(self.root, self.webdriver_manager, item['values'][-1], self.on_finish_edit)
         else:
             print("nothing selected in treeview!")
 

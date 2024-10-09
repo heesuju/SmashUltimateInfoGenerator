@@ -4,5 +4,6 @@ IMAGE_TYPES = [".webp", ".png", ".jpg", ".jpeg", ".gif"]
 TIMEOUT_DURATION = 10
 DEFAULT_VERSION = "1.0.0"
 IMAGE_NAME = "preview.webp"
+
 PAD_H = 10
 PAD_V = 10

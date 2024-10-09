@@ -5,12 +5,11 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from PIL import Image, ImageTk
 from cache import remove_cache
-from utils import open_web, format_version
+from utils import open_web, clean_vesion
 from utils.cleaner import clean_mod_name, extract_mod_name
 from utils.generator import Generator
 from utils.loader import Loader
 from utils.static_scraper import Extractor
-from utils.dynamic_scraper import Selenium
 from utils.downloader import Downloader
 from utils.image_resize import ImageResize
 from utils.files import get_base_name, get_parent_dir, rename_folder
@@ -21,9 +20,12 @@ from .config import Config
 from . import PATH_ICON
 from .common_ui import get_text, set_text, clear_text, set_enabled, open_file_dialog
 from .checkbox_treeview import Treeview
+from web.scraper_thread import ScraperThread
 
 class Editor:
-    def __init__(self, callback=None) -> None:
+    def __init__(self, root, webdriver_manager, directory:str, callback=None) -> None:
+        self.root = root
+        self.webdriver_manager = webdriver_manager
         self.new_window = None
         self.generator = Generator()
         self.config = Config()
@@ -33,6 +35,8 @@ class Editor:
         self.img_descriptions = []
         self.is_running = True
         self.callback = callback
+        self.directory = directory
+        self.open(self.root, self.directory)
     
     def on_close(self):
         self.is_running = False
@@ -92,7 +96,7 @@ class Editor:
         self.img_urls = img_urls
         self.img_descriptions = img_descriptions
         set_text(self.label_output, "Fetched elements")
-        set_text(self.entry_ver, format_version(version))
+        set_text(self.entry_ver, clean_vesion(version))
         self.cbox_wifi_safe.set(wifi_safe)
 
         if len(self.img_urls) > 0:
@@ -124,10 +128,8 @@ class Editor:
         self.cbox_img.config(state="disabled")
         self.replace_img_state.set(False)
         bs4_thread = Extractor(self.entry_url.get(), self.on_bs4_result)
-        selenium_thread = Selenium(self.entry_url.get(), self.on_selenium_result)
-        
         bs4_thread.start()
-        selenium_thread.start()
+        ScraperThread(self.entry_url.get(), self.webdriver_manager, self.on_selenium_result)
 
     def on_url_changed(self, event):
         self.generator.url = get_text(self.entry_url)
@@ -203,7 +205,7 @@ class Editor:
             display_name = self.loader.display_name
             set_text(self.entry_authors, self.loader.authors)
             self.combobox_cat.set(self.loader.category)
-            set_text(self.entry_ver, format_version(self.loader.version))
+            set_text(self.entry_ver, clean_vesion(self.loader.version))
             self.cbox_wifi_safe.set(self.loader.wifi_safe)
             mod_name = self.loader.mod_name
             set_text(self.entry_url, self.loader.url)
