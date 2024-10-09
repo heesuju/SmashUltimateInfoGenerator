@@ -31,6 +31,9 @@ def get_thumbnails(driver) -> List[str]:
         
     except TimeoutException:
         print("Thumbnails not found")
+
+    except Exception as e:
+        print("Unknown Exception:", e)
         
     finally:
         # Return both the thumbnails and processed descriptions (number_dups logic is assumed)
