@@ -9,6 +9,8 @@ class ImageResize(Thread):
         self.directory = directory
         self.width = width
         self.height = height
+        self.daemon = True
+        self.start()
 
     def set_image(self):
         image_path =  self.directory    

@@ -7,7 +7,7 @@ from PIL import Image, ImageTk
 import common
 from .cleaner import extract_mod_name
 from .format import format_slots
-from .files import is_valid_dir, get_dir_name
+from .files import is_valid_dir, get_base_name
 from utils.hash import gen_hash_as_decimal
 from typing import Union
 
@@ -18,6 +18,8 @@ class Scanner(Thread):
         self.start_callback = start_callback
         self.progress_callback = progress_callback
         self.callback = callback
+        self.daemon = True
+        self.start()
         
     def find_image(self, directory, width, height, keep_ratio:bool = True):
         img = Image.open(directory)
@@ -112,7 +114,7 @@ class Scanner(Thread):
             if isinstance(directory, str):
                 futures = [executor.submit(self.find_mod, folder_name, os.path.join(directory, folder_name)) for folder_name in os.listdir(directory)]
             elif isinstance(directory, list):
-                futures = [executor.submit(self.find_mod, get_dir_name(d), d) for d in directory]
+                futures = [executor.submit(self.find_mod, get_base_name(d), d) for d in directory]
             if self.progress_callback is not None:
                 [future.add_done_callback(self.progress_callback) for future in futures]
             for future in concurrent.futures.as_completed(futures):

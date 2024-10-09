@@ -4,7 +4,7 @@ import tkinter as tk
 from defs import PAD_H, PAD_V
 from . import PATH_ICON
 from .common_ui import get_text, set_text, set_enabled, clear_text
-from utils.files import get_dir_name
+from utils.files import get_base_name, is_valid_dir
 from utils.image_resize import ImageResize
 from utils.loader import Loader
 import os
@@ -104,7 +104,7 @@ class Preview:
             clear_text(self.label_author)
 
         if not title:
-            title = get_dir_name(path)
+            title = get_base_name(path)
 
         set_text(self.label_title, title)
         self.set_description()
@@ -156,11 +156,8 @@ class Preview:
                                     disabledforeground="#F5C0C0")
 
     def set_image(self, directory):
-        if not directory or not os.path.exists(directory):
-            return
-        
-        resize_thread = ImageResize(directory, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
-        resize_thread.start()
+        if is_valid_dir(directory):
+            ImageResize(directory, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
 
     def toggle(self):
         if self.is_shown:

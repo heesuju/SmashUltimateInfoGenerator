@@ -2,7 +2,7 @@ import shutil, os, sys
 import common, defs
 from defs import ELEMENTS
 import tkinter as tk
-from tkinter import ttk, filedialog
+from tkinter import ttk, messagebox, filedialog
 from PIL import Image, ImageTk
 from cache import remove_cache
 from utils import open_web, format_version
@@ -13,7 +13,7 @@ from utils.static_scraper import Extractor
 from utils.dynamic_scraper import Selenium
 from utils.downloader import Downloader
 from utils.image_resize import ImageResize
-from utils.files import get_dir_name, rename_if_valid
+from utils.files import get_base_name, get_parent_dir, rename_folder
 from utils.format import format_folder_name, format_display_name, format_slots
 from utils.dump_tomli import dump_toml, TomlParams
 from .comparison import Comparison
@@ -31,11 +31,17 @@ class Editor:
         self.comparison = Comparison()
         self.img_urls = []
         self.img_descriptions = []
+        self.is_running = True
         self.callback = callback
+    
+    def on_close(self):
+        self.is_running = False
+        self.new_window.destroy()
 
     def on_img_resized(self, image):
-        self.label_img.config(image=image, width=10, height=10)
-        self.label_img.image = image  # Keep a reference to prevent garbage collection
+        if self.is_running:
+            self.label_img.config(image=image, width=10, height=10)
+            self.label_img.image = image  # Keep a reference to prevent garbage collection
 
     def download_img(self):
         download_data = []
@@ -190,7 +196,7 @@ class Editor:
 
         mod_name = ""
         display_name = ""
-        dir_name = get_dir_name(self.generator.working_dir)
+        dir_name = get_base_name(self.generator.working_dir)
         includes = []
 
         if self.loader.load_toml(self.entry_work_dir.get()):
@@ -252,16 +258,19 @@ class Editor:
         )
         
         if get_text(self.entry_work_dir):
-            old_directory = self.generator.working_dir
+            old_dir = self.generator.working_dir
             self.move_file()
-            new_directory, msg = rename_if_valid(old_directory, get_text(self.entry_folder_name))
-            if new_directory:
-                set_text(self.entry_work_dir, new_directory)
-                self.generator.working_dir = new_directory
+            new_dir = os.path.join(get_parent_dir(old_dir), get_text(self.entry_folder_name)) 
+            result, msg = rename_folder(old_dir, new_dir)
+            if result:
+                set_text(self.entry_work_dir, new_dir)
+                self.generator.working_dir = new_dir
                 self.find_image()
-                self.callback(old_directory, new_directory)
+                self.callback(old_dir, new_dir)
 
-            set_text(self.label_output, msg)
+                messagebox.showinfo("Info", msg)
+            else:
+                messagebox.showwarning("Error", msg)
         else:
             set_text(self.label_output, "Working directory is empty!")
 
@@ -289,8 +298,7 @@ class Editor:
         
         self.entry_img_dir.delete(0, tk.END)
         self.entry_img_dir.insert(tk.END, directory)
-        resize_thread = ImageResize(directory, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
-        resize_thread.start()
+        ImageResize(directory, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
         
     def move_file(self):
         source_file = get_text(self.entry_img_dir) 
@@ -362,9 +370,11 @@ class Editor:
     def open(self, root, working_dir = ""):
         if self.new_window is not None:
             self.new_window.destroy()
-            
+        
         self.new_window = tk.Toplevel(root)
         self.new_window.title("Edit")
+        self.new_window.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.is_running = True
         self.show(self.new_window, working_dir)
 
     def show(self, root, working_dir = ""):

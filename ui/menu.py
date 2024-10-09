@@ -16,7 +16,7 @@ from .preview import Preview
 from .preset import Preset
 from . import PATH_ICON
 from utils.loader import Loader
-from utils.files import is_valid_dir, copy_directory_contents
+from utils.files import is_valid_dir, copy_directory_contents, is_case_sensitive, get_base_name
 from .common_ui import *
 from utils.hash import gen_hash_as_decimal
 from utils.format import format_folder_name
@@ -140,20 +140,28 @@ class Menu:
     def on_finish_edit(self, old_dir:str, new_dir:str):
         is_dir_same = True if old_dir == new_dir else False
         dir_to_update = old_dir if is_dir_same else new_dir
-        scan_thread = Scanner([dir_to_update], callback=self.on_finish_update)
-        scan_thread.start()
+        Scanner([dir_to_update], callback=self.on_finish_update)
 
     def on_finish_update(self, mods):
         valid_mods = [mod for mod in self.mods if os.path.isdir(mod["path"])]
+        case_sensitive = is_case_sensitive()
 
         for n in mods:
             found_match = False
             for idx, m in enumerate(valid_mods):
-                if n["path"] == m["path"]:
+                new_path = get_base_name(n.get("path", ""))
+                mod_path = get_base_name(m.get("path", ""))
+
+                if not case_sensitive:
+                    new_path = new_path.lower()
+                    mod_path = mod_path.lower()
+
+                if new_path == mod_path:
                     valid_mods[idx] = n
                     found_match = True
                     print("updated dir:", n["path"])
                     break
+
             if found_match == False:
                 valid_mods.append(n)
                 print("added dir:", n["path"])
@@ -241,12 +249,11 @@ class Menu:
         config_data = load_config()
         if config_data is not None and config_data["default_directory"]:
             set_text(self.entry_dir, config_data["default_directory"])
-            scan_thread = Scanner(
+            Scanner(
                 config_data["default_directory"], 
                 start_callback=self.on_scan_start, 
                 progress_callback=self.on_scan_progress, 
                 callback=self.on_scanned)
-            scan_thread.start()
     
     def on_browse(self):
         config_data = load_config()
@@ -457,8 +464,7 @@ class Menu:
         config = load_config()
         default_dir = config.get("default_directory")
         if is_valid_dir(default_dir) and is_valid_dir(dir):
-            scan_thread = Scanner([dir], callback=self.on_drop_scanned)
-            scan_thread.start()
+            Scanner([dir], callback=self.on_drop_scanned)
 
     def on_drop_scanned(self, mods:list):
         if len(mods) <= 0: 

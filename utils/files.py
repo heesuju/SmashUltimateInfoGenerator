@@ -2,60 +2,28 @@ import os
 import json
 from pathlib import Path
 import shutil
+import random
+import string
+import tempfile
 
-def is_valid_dir(directory:str)->bool:
-    if directory:
-        return os.path.exists(directory) and os.path.isdir(directory)
-    else:
-        return False
+def is_valid_dir(dir:str)->bool:
+    return os.path.exists(dir) and os.path.isdir(dir)
     
-def is_valid_file(directory:str)->bool:
-    file = Path(directory)
-    return file.is_file()
+def is_valid_file(dir:str)->bool:
+    return Path(dir).is_file()
     
-def get_dir_name(directory):
+def get_base_name(directory)->str:
     return os.path.basename(directory)
 
-def rename_if_valid(dir:str, new_folder_name:str):
-    output = ""
-    msg = ""
+def get_parent_dir(dir:str)->str:
+    return Path(dir).parent
 
-    old_dir = dir
-    dir_name = get_dir_name(old_dir)
-    new_dir = old_dir[0:-len(dir_name)]
-    new_dir = os.path.join(new_dir, new_folder_name)
-    
-    if is_valid_dir(old_dir):
-        result, msg = rename_folder(old_dir, new_dir) 
-        if result:
-            output = new_dir
-    else:
-        msg = f"Cannot find {dir}"
-    
-    return output, msg
+def sanitize_path(dir:str)->str:
+    return os.path.normpath(dir)
 
-def rename_folder(old_dir:str, new_dir:str):
-    result = False
-    msg = ""
-    if is_folder_locked(old_dir):
-        print("Folder is currently in use. Please close any open windows and try again.")
-        return result, "Folder is currently in use. Please close all remaining browsers first."
-    try:
-        os.rename(old_dir, new_dir)
-        result = True
-        msg = f"Applied changes to {new_dir}"
-        print(f"Successfully renamed folder {old_dir} to {new_dir}")
-    except PermissionError as e:
-        msg = f"File permission error"
-        print(f"Failed to rename folder due to permission error: {e}")
-    except FileExistsError as e:
-        msg = "Existing folder with the same name"
-        print("Existing folder with the same name: {e}")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        msg = "Unknown error!"
-    finally:
-        return result, msg
+def generate_unique_name(base_name: str) -> str:
+    random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+    return f"{base_name}_{random_suffix}"
 
 def is_folder_locked(folder_path):
     try:
@@ -64,6 +32,45 @@ def is_folder_locked(folder_path):
     except OSError:
         return True 
     
+def rename_folder(old_dir:str, new_dir:str):
+    result = False
+    msg = ""
+    old_dir = sanitize_path(old_dir)
+    new_dir = sanitize_path(new_dir)
+    
+    if is_valid_dir(old_dir):
+        if is_folder_locked(old_dir):
+            msg = "Folder is currently locked.\nPlease close any open File Explorer windows and try again."
+        else:
+            try:
+                if old_dir != new_dir:
+                    tmp_name = old_dir
+                    if old_dir.lower() == new_dir.lower():
+                        tmp_name = generate_unique_name(old_dir)
+                        os.rename(old_dir, tmp_name)
+                    os.rename(tmp_name, new_dir)
+                    msg = f"Applied changes to {get_base_name(new_dir)}"
+                else:
+                    msg = f"Applied changes to {get_base_name(old_dir)}"
+                result = True
+            except PermissionError as e:
+                msg = f"Failed to rename folder due to file access privilege"
+            except FileExistsError as e:
+                msg = "Another folder with the same name already exists.\nPlease change the folder name and try again."
+            except Exception as e:
+                msg = "Unknown error occurred"
+    else:
+        msg = f"Invalid directory"
+    
+    return result, msg
+
+def is_case_sensitive():
+    tmphandle, tmppath = tempfile.mkstemp()
+    if os.path.exists(tmppath.upper()):
+        return False
+    else:
+        return True
+
 def read_json(json_path:str):
     with open(json_path, mode='r', encoding='utf-8') as f:
         return json.loads(f.read())
