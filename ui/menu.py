@@ -470,7 +470,7 @@ class Menu:
             height=50
         )
         self.btn_show_preset.pack()
-        Hovertip(self.btn_show_preset,'Show Preset')
+        Hovertip(self.btn_show_preset,'Show Workspace')
 
         self.btn_show_preview = tk.Button(
             self.nav_frame,  

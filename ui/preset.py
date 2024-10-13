@@ -115,7 +115,7 @@ class Preset:
         self.workspace_frame = tk.Frame(self.frame)
         self.workspace_frame.pack(pady=(PAD_V/2,PAD_V), fill="x")
 
-        label_work_dir = tk.Label(self.workspace_frame, text="Cache Dir")
+        label_work_dir = tk.Label(self.workspace_frame, text="Workspace Directory")
         label_work_dir.pack(side=tk.LEFT, padx=(0,PAD_H), fill="x")
 
         self.entry_dir = tk.Entry(self.workspace_frame)
@@ -129,15 +129,12 @@ class Preset:
         self.top_frame = tk.Frame(self.frame)
         self.top_frame.pack(pady=(0,PAD_V), fill=tk.X)
 
-        label_workspace = tk.Label(self.top_frame, text="Selected")
+        label_workspace = tk.Label(self.top_frame, text="Selected Workspace")
         label_workspace.pack(side=tk.LEFT, padx=(0,PAD_H), fill="x")
 
         self.cbox_workspace = ttk.Combobox(self.top_frame)
         self.cbox_workspace.pack(side=tk.LEFT, fill="x", expand=tk.YES)
         self.cbox_workspace.bind("<<ComboboxSelected>>", self.on_workspace_selected)
-
-        label_workspace = tk.Label(self.frame, text="Workspaces", anchor=tk.W)
-        label_workspace.pack(pady=(0,PAD_V), fill="x")
 
         self.frame_workspace = tk.Frame(self.frame, borderwidth=1, relief='ridge')
         self.frame_workspace.pack(fill="both", expand=True)
