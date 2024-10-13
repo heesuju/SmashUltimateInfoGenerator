@@ -5,8 +5,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from PIL import Image, ImageTk
 from cache import remove_cache
-from utils import open_web, clean_vesion
-from utils.cleaner import clean_mod_name, extract_mod_name
+from web.open_web import open_web
+from utils.cleaner import clean_mod_name, extract_mod_name, clean_vesion
 from utils.generator import Generator
 from utils.loader import Loader
 from utils.static_scraper import Extractor

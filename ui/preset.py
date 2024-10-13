@@ -107,7 +107,10 @@ class Preset:
 
     def open(self):
         self.frame = tk.Frame(self.root)
-        self.frame.pack(padx=PAD_H, pady=PAD_V/2, fill="both", expand=True)
+        self.frame.pack(side=tk.LEFT, padx=PAD_H, pady=PAD_V/2, fill="both", expand=True)
+        
+        separator = ttk.Separator(self.root, orient='vertical')
+        separator.pack(side=tk.RIGHT, fill=tk.Y)
         
         self.workspace_frame = tk.Frame(self.frame)
         self.workspace_frame.pack(pady=(PAD_V/2,PAD_V), fill="x")
@@ -133,14 +136,14 @@ class Preset:
         self.cbox_workspace.pack(side=tk.LEFT, fill="x", expand=tk.YES)
         self.cbox_workspace.bind("<<ComboboxSelected>>", self.on_workspace_selected)
 
-        separator = ttk.Separator(self.frame, orient='horizontal')
-        separator.pack(fill=tk.X, pady=PAD_V)
-
         label_workspace = tk.Label(self.frame, text="Workspaces", anchor=tk.W)
         label_workspace.pack(pady=(0,PAD_V), fill="x")
 
-        self.header = tk.Frame(self.frame)
-        self.header.pack(pady=(0,PAD_V), fill="x")
+        self.frame_workspace = tk.Frame(self.frame, borderwidth=1, relief='ridge')
+        self.frame_workspace.pack(fill="both", expand=True)
+
+        self.header = tk.Frame(self.frame_workspace)
+        self.header.pack(fill="x", padx=PAD_H, pady=(PAD_V, 0))
 
         self.select_all = tk.IntVar()
         self.ckbox_all = tk.Checkbutton(self.header, text="Select All", variable=self.select_all, command=self.on_select_all, cursor='hand2')
@@ -160,9 +163,9 @@ class Preset:
         self.btn_new = tk.Button(self.header, image=self.icon_new, relief=tk.FLAT, cursor='hand2', command=self.add_new)
         self.btn_new.pack(side=tk.RIGHT)        
 
-        self.treeview = Treeview(self.frame, True)
+        self.treeview = Treeview(self.frame_workspace, True)
         self.treeview.construct(COLUMNS)
-        self.treeview.widget.pack(fill="both", expand=True)
+        self.treeview.widget.pack(fill="both", expand=True, padx=PAD_H, pady=PAD_V)
         
         self.footer = tk.Frame(self.frame)
         self.footer.pack(pady=(PAD_V, PAD_V/2), fill="x")
@@ -189,7 +192,7 @@ class Preset:
         if self.is_shown:
             self.root.pack_forget()
         else:
-            self.root.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
+            self.root.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         self.is_shown = False if self.is_shown else True
     

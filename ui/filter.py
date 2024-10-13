@@ -67,9 +67,16 @@ class Filter:
         self.cbox_info = self.add_filter_dropdown(3, 0, "Info.toml", INFO_VALUES)
         self.cbox_wifi = self.add_filter_dropdown(3, 2, "Wifi-Safe", WIFI_VALUES, False)
         
+        self.frame_ckbox = tk.Frame(self.frame)
+        self.frame_ckbox.grid(row=4, column=0, columnspan=2, pady=(PAD_V/2, 0), sticky=tk.EW)
+
         self.show_only_enabled = tk.IntVar()
-        self.ckbox_enabled = tk.Checkbutton(self.frame, text="Show only enabled", variable=self.show_only_enabled, cursor='hand2')
-        self.ckbox_enabled.grid(row=4, column=0, columnspan=2, pady=(PAD_V/2, 0), sticky=tk.W)
+        self.ckbox_enabled = tk.Checkbutton(self.frame_ckbox, text="Show only enabled", variable=self.show_only_enabled, cursor='hand2')
+        self.ckbox_enabled.pack(side=tk.LEFT)
+
+        self.include_hidden = tk.IntVar()
+        self.ckbox_hidden = tk.Checkbutton(self.frame_ckbox, text="Include hidden", variable=self.include_hidden, cursor='hand2')
+        self.ckbox_hidden.pack(side=tk.LEFT)
 
         self.frame_actions = tk.Frame(self.frame)
         self.frame_actions.grid(row=4, column=2, columnspan=2, pady=(PAD_V/2, 0), sticky=tk.E)
@@ -185,7 +192,8 @@ class Filter:
             "wifi_safe": get_text(self.cbox_wifi).lower() if lowercase else get_text(self.cbox_wifi),
             "slot_from": get_text(self.entry_slots_from).lower() if lowercase else get_text(self.entry_slots_from),
             "slot_to": get_text(self.entry_slots_to).lower() if lowercase else get_text(self.entry_slots_to),
-            "enabled_only": self.show_only_enabled.get()
+            "enabled_only": self.show_only_enabled.get(),
+            "include_hidden": self.include_hidden.get()
         }
     
     def reset(self):
@@ -201,6 +209,7 @@ class Filter:
         clear_text(self.entry_slots_from)
         clear_text(self.entry_slots_to)
         self.show_only_enabled.set(False)
+        self.include_hidden.set(False)
 
     def clear(self):
         self.reset()

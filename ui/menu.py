@@ -7,7 +7,7 @@ from tkinterdnd2 import DND_FILES
 import threading
 import queue
 from PIL import Image, ImageTk
-from defs import PAD_H, PAD_V
+from defs import PAD_H, PAD_V, GIT_URL
 from .editor import Editor
 from .config import Config, load_config, get_workspace
 from .filter import Filter
@@ -21,6 +21,8 @@ from .common_ui import *
 from utils.hash import gen_hash_as_decimal
 from utils.format import format_folder_name
 from utils.hide_folder import filter_hidden
+from web.open_web import open_web
+from idlelib.tooltip import Hovertip
 
 class Menu:    
     def __init__(self, root, webdriver_manager) -> None:
@@ -141,8 +143,12 @@ class Menu:
         workspace_data = self.preset.workspace_list.get(workspace)
         enabled_mods = workspace_data.get("mod_list")if workspace_data else []
         self.reset()
-        self.filtered_mods = filter_hidden(self.mods)
-        self.filtered_mods = self.filter_view.filter_mods(self.filtered_mods, enabled_mods)
+        include_hidden = self.filter_view.get_filter_params().get("include_hidden", False)
+        if not include_hidden:
+            self.filtered_mods = filter_hidden(self.mods)
+            self.filtered_mods = self.filter_view.filter_mods(self.filtered_mods, enabled_mods)
+        else:
+            self.filtered_mods = self.filter_view.filter_mods(self.mods, enabled_mods)
         self.populate(self.filtered_mods)
 
     def on_finish_edit(self, old_dir:str, new_dir:str):
@@ -299,9 +305,9 @@ class Menu:
         if not self.preset.is_shown:
             if self.preview.is_shown:
                 self.toggle_preview()
-            self.btn_show_preset.config(image=self.icon_visible)
+            self.btn_show_preset.config(bg="white", image=self.icon_preset)
         else:
-            self.btn_show_preset.config(image=self.icon_invisible)
+            self.btn_show_preset.config(bg="SystemButtonFace", image=self.icon_preset_off)
 
         self.preset.toggle()
 
@@ -309,11 +315,14 @@ class Menu:
         if not self.preview.is_shown:
             if self.preset.is_shown:
                 self.toggle_preset()
-            self.btn_show_preview.config(image=self.icon_visible)
+            self.btn_show_preview.config(bg="white", image=self.icon_preview)
         else:
-            self.btn_show_preview.config(image=self.icon_invisible)
+            self.btn_show_preview.config(bg="SystemButtonFace", image=self.icon_preview_off)
 
         self.preview.toggle()
+
+    def open_git(self):
+        open_web(GIT_URL)
 
     def show(self):
         self.f_dir = tk.Frame(self.root)
@@ -330,22 +339,34 @@ class Menu:
         self.btn_dir = tk.Button(self.f_dir, image=self.icon_browse, relief=tk.FLAT, cursor='hand2', command=self.on_browse)
         self.btn_dir.pack(side=tk.LEFT, padx = (0, PAD_H))
         
-        self.frame_content = tk.Frame(self.root)
-        self.frame_content.pack(padx=PAD_H, pady=(0, PAD_V), fill="both", expand=True)
+        separator = ttk.Separator(self.root, orient='horizontal')
+        separator.pack(fill=tk.X, padx=(0,0))
 
-        self.frame_list = ttk.LabelFrame(self.frame_content, text="Mods")
+        self.frame_content = tk.Frame(self.root)
+        self.frame_content.pack(fill="both", expand=True)
+
+        self.frame_list = tk.Frame(self.frame_content)
         self.frame_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.filter_view = Filter(self.frame_list, self.search, self.refresh)
+        
+        separator = ttk.Separator(self.frame_content, orient='vertical')
+        separator.pack(side=tk.LEFT, fill=tk.Y, padx=(0,0))
 
-        self.workspace_frame = ttk.LabelFrame(self.frame_content, text="Preset")
+        self.workspace_frame = ttk.Frame(self.frame_content)
         self.preset = Preset(self.workspace_frame, self.search)
 
-        self.info_frame = ttk.LabelFrame(self.frame_content, text="Preview")
-        self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
+        self.info_frame = ttk.Frame(self.frame_content)
+        self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.info_frame.columnconfigure(0, weight=1)
         self.info_frame.rowconfigure(index=1, weight=1)
         self.info_frame.rowconfigure(index=3, weight=1)
         self.info_frame.pack_forget()
+
+        self.nav_frame = tk.Frame(self.frame_content)
+        self.nav_frame.pack(side=tk.RIGHT, fill=tk.BOTH)
+
+        separator = ttk.Separator(self.frame_list, orient='horizontal')
+        separator.pack(fill=tk.X, pady=(0, PAD_V))
 
         self.frame_count = tk.Frame(self.frame_list)
         self.frame_count.pack(fill=tk.BOTH, padx=PAD_H)
@@ -392,7 +413,7 @@ class Menu:
             self.treeview.heading(category, text=category, command=lambda _col=col: \
                                   treeview_sort_column(self.treeview, _col, False))
         self.treeview["displaycolumns"]=display_columns
-        self.treeview.pack(padx=10, pady=(PAD_V,0), fill="both", expand=True)
+        self.treeview.pack(padx=10, fill="both", expand=True)
 
         self.scrollbar = ttk.Scrollbar(self.treeview, orient="vertical", command=self.treeview.yview)
         self.treeview.drop_target_register(DND_FILES)
@@ -412,6 +433,10 @@ class Menu:
         self.paging = Paging(self.frame_list, self.on_change_page)
         self.treeview.bind('<Right>', self.on_next_page)
         self.treeview.bind('<Left>', self.on_prev_page)
+
+        separator = ttk.Separator(self.root, orient='horizontal')
+        separator.pack(fill=tk.X, pady=(0,PAD_V))
+
         self.f_footer = tk.Frame(self.root)
         self.f_footer.pack(padx = PAD_H, pady = (0, PAD_V), fill="x")
 
@@ -428,38 +453,50 @@ class Menu:
         self.btn_save = tk.Button(self.f_footer, image=self.icon_save, text=" Save", compound=tk.LEFT, cursor='hand2', command=self.save_preset, width=100)
         self.btn_save.pack(side=tk.RIGHT)
 
-        self.icon_visible = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'visible.png'))
-        self.icon_invisible = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'invisible.png'))
+        self.icon_preview = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'details.png'))
+        self.icon_preview_off = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'details_inactive.png'))
+        self.icon_preset = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'workspace.png'))
+        self.icon_preset_off = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'workspace_inactive.png'))
+        self.icon_git = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'github_off.png'))
 
         self.btn_show_preset = tk.Button(
-            self.f_footer,  
-            image=self.icon_invisible, 
-            compound="left", 
-            text=" Preset", 
+            self.nav_frame,  
+            image=self.icon_preset_off, 
             cursor='hand2', 
             command=self.toggle_preset, 
             borderwidth=0,
-            relief=tk.FLAT
+            relief=tk.FLAT,
+            width=50,
+            height=50
         )
-        self.btn_show_preset.pack(
-            side=tk.RIGHT,
-            padx=(0, PAD_H)
-        )
+        self.btn_show_preset.pack()
+        Hovertip(self.btn_show_preset,'Show Preset')
 
         self.btn_show_preview = tk.Button(
-            self.f_footer,  
-            image=self.icon_invisible, 
-            compound="left", 
-            text=" Preview", 
+            self.nav_frame,  
+            image=self.icon_preview_off,  
             cursor='hand2', 
             command=self.toggle_preview, 
             borderwidth=0,
-            relief=tk.FLAT
+            relief=tk.FLAT,
+            width=50,
+            height=50
         )
-        self.btn_show_preview.pack(
-            side=tk.RIGHT,
-            padx=(0, PAD_H)
+        self.btn_show_preview.pack()
+        Hovertip(self.btn_show_preview,'Show Preview')
+
+        self.btn_github = tk.Button(
+            self.nav_frame,  
+            image=self.icon_git,  
+            cursor='hand2', 
+            borderwidth=0,
+            relief=tk.FLAT,
+            width=50,
+            height=50,
+            command=self.open_git
         )
+        self.btn_github.pack(side=tk.BOTTOM)
+        Hovertip(self.btn_github,'Go to github page')
 
         self.preview = Preview(self.info_frame, self.open_editor, self.open_folder, self.toggle_mod, self.apply_filters)
         self.root.bind("<Configure>", self.on_window_resize)

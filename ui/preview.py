@@ -7,7 +7,7 @@ from .common_ui import get_text, set_text, set_enabled, clear_text
 from utils.files import get_base_name, is_valid_dir, is_valid_file, get_parent_dir
 from utils.image_resize import ImageResize
 from utils.loader import Loader
-from utils.hide_folder import hide_folder
+from utils.hide_folder import hide_folder, is_hidden
 import os
 
 class Preview:
@@ -27,6 +27,9 @@ class Preview:
     def show(self):
         self.top_frame = tk.Frame(self.root)
         self.top_frame.grid(row=0, padx=PAD_H, pady=(PAD_V/2, 0), sticky=tk.NSEW)
+
+        separator = ttk.Separator(self.root, orient='vertical')
+        separator.grid(row=0, column=4, rowspan=5, sticky=tk.NS)
         
         self.label_title = tk.Label(self.top_frame, width=10, justify="left", anchor='w')
         self.label_title.pack(side=tk.LEFT, fill=tk.X, expand=True)
@@ -81,21 +84,24 @@ class Preview:
         frame_actions.rowconfigure(index=0, weight=1)
 
         self.icon_edit = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'edit.png'))
-        self.btn_edit = tk.Button(frame_actions, image=self.icon_edit, text=" Edit", cursor='hand2', relief=tk.FLAT, compound="left", command=self.edit_callback)
+        self.btn_edit = tk.Button(frame_actions, image=self.icon_edit, text=" Edit", cursor='hand2', relief=tk.FLAT, compound="left", command=self.edit_callback, width=10)
         self.btn_edit.grid(row=0, column=0, sticky=tk.EW, padx=(0, PAD_H/2))
 
         separator = ttk.Separator(frame_actions, orient='vertical')
         separator.grid(row=0, column=1, padx=PAD_H/2, sticky=tk.NS)
 
         self.icon_open = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'open.png'))
-        self.btn_open = tk.Button(frame_actions, image=self.icon_open, text=" Open", cursor='hand2', relief=tk.FLAT, compound="left", command=self.open_callback)
+        self.btn_open = tk.Button(frame_actions, image=self.icon_open, text=" Open", cursor='hand2', relief=tk.FLAT, compound="left", command=self.open_callback, width=10)
         self.btn_open.grid(row=0, column=2, sticky=tk.EW, padx=PAD_H/2)
 
         separator = ttk.Separator(frame_actions, orient='vertical')
         separator.grid(row=0, column=3, padx=PAD_H/2, sticky=tk.NS)
 
+        self.icon_visible = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'visible.png'))
+        self.icon_invisible = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'invisible.png'))
+
         self.icon_hide = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'open.png'))
-        self.btn_hide = tk.Button(frame_actions, image=self.icon_open, text=" Hide", cursor='hand2', relief=tk.FLAT, compound="left", command=self.on_hide_folder)
+        self.btn_hide = tk.Button(frame_actions, image=self.icon_invisible, text=" Hide", cursor='hand2', relief=tk.FLAT, compound="left", command=self.on_hide_folder, width=10)
         self.btn_hide.grid(row=0, column=4, sticky=tk.EW, padx=PAD_H/2)
 
     def update(self, is_enabled:bool, loader:Loader, mod:dict, path:str):
@@ -128,9 +134,15 @@ class Preview:
             self.label_version.config(text="")
             self.label_author.config(text="")
 
+        is_hidden_item = is_hidden(get_base_name(path))
+        if is_hidden_item:
+            self.btn_hide.config(text=" Show", image=self.icon_visible)
+        else:
+            self.btn_hide.config(text=" Hide", image=self.icon_invisible)
         set_enabled(self.btn_edit)
         set_enabled(self.btn_open)
         set_enabled(self.btn_toggle)
+        set_enabled(self.btn_hide)
 
     def on_img_resized(self, image):
         self.label_img.config(image=image, width=10, height=10)
@@ -150,6 +162,7 @@ class Preview:
         set_enabled(self.btn_edit, False)
         set_enabled(self.btn_open, False)
         set_enabled(self.btn_toggle, False)
+        set_enabled(self.btn_hide, False)
 
     def on_hide_folder(self):
         path = self.mod.get("path", "")
@@ -181,7 +194,7 @@ class Preview:
         if self.is_shown:
             self.root.pack_forget()
         else:
-            self.root.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(PAD_H, 0))
+            self.root.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         self.is_shown = False if self.is_shown else True
 
