@@ -72,8 +72,18 @@ def is_case_sensitive():
         return True
 
 def read_json(json_path:str):
-    with open(json_path, mode='r', encoding='utf-8') as f:
-        return json.loads(f.read())
+    result = None
+    try:
+        with open(json_path, mode='r', encoding='utf-8') as f:
+            result = json.loads(f.read())
+    except FileNotFoundError:
+        print(f"Error: The file '{json_path}' was not found.")
+    except json.JSONDecodeError:
+        print(f"Error: The file '{json_path}' is not a valid JSON.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+    finally:
+        return result
 
 def copy_directory_contents(source_dir:str, new_dir_parent:str, new_dir_name:str):
     new_dir_path = os.path.join(new_dir_parent, new_dir_name)

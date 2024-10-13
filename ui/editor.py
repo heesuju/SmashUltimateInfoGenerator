@@ -179,6 +179,8 @@ class Editor:
         clear_text(self.entry_url)
         self.config.load()
 
+        self.close_on_apply.set(self.config.close_on_apply)
+
         dict_info = self.generator.preview_info_toml(
             working_dir = get_text(self.entry_work_dir),
             version = get_text(self.entry_ver))
@@ -271,6 +273,8 @@ class Editor:
                 self.callback(old_dir, new_dir)
 
                 messagebox.showinfo("Info", msg)
+                if self.config.close_on_apply:
+                    self.on_close()
             else:
                 messagebox.showwarning("Error", msg)
         else:
@@ -354,6 +358,9 @@ class Editor:
 
     def on_window_resize(self, event):
         self.set_image(self.entry_img_dir.get())
+
+    def on_change_close_on_apply(self):
+        self.config.set_close_on_apply(self.close_on_apply.get())
 
     def open_config(self):
         self.config.open_config(self.new_window) 
@@ -546,6 +553,10 @@ class Editor:
 
         self.btn_compare = tk.Button(self.frame_btn, text="Compare", command=self.open_comparison)
         self.btn_compare.pack(side=tk.RIGHT, fill="y", padx=(0, defs.PAD_H))
+
+        self.close_on_apply = tk.IntVar()
+        self.ckbtn_close = tk.Checkbutton(self.frame_btn, text="Close window when applied", variable=self.close_on_apply, command=self.on_change_close_on_apply, cursor='hand2')
+        self.ckbtn_close.pack(side=tk.RIGHT)
 
         self.label_output = tk.Label(self.frame_btn)
         self.label_output.pack(side=tk.LEFT)

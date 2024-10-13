@@ -7,14 +7,16 @@ from .common_ui import get_text, set_text, set_enabled, clear_text
 from utils.files import get_base_name, is_valid_dir, is_valid_file, get_parent_dir
 from utils.image_resize import ImageResize
 from utils.loader import Loader
+from utils.hide_folder import hide_folder
 import os
 
 class Preview:
-    def __init__(self, root, edit_callback=None, open_callback=None, toggle_callback=None) -> None:
+    def __init__(self, root, edit_callback=None, open_callback=None, toggle_callback=None, hide_callback=None) -> None:
         self.root = root
         self.edit_callback = edit_callback 
         self.open_callback = open_callback
         self.toggle_callback = toggle_callback
+        self.hide_callback = hide_callback
         self.is_shown = False
         self.is_desc_shown = True
         self.is_incl_shown = False
@@ -74,6 +76,7 @@ class Preview:
         frame_actions.grid(row=4, padx=PAD_H, pady=(0, PAD_V), sticky=tk.EW)
         frame_actions.columnconfigure(index=0, weight=1, uniform="equal")
         frame_actions.columnconfigure(index=2, weight=1, uniform="equal")
+        frame_actions.columnconfigure(index=4, weight=1, uniform="equal")
 
         frame_actions.rowconfigure(index=0, weight=1)
 
@@ -87,6 +90,13 @@ class Preview:
         self.icon_open = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'open.png'))
         self.btn_open = tk.Button(frame_actions, image=self.icon_open, text=" Open", cursor='hand2', relief=tk.FLAT, compound="left", command=self.open_callback)
         self.btn_open.grid(row=0, column=2, sticky=tk.EW, padx=PAD_H/2)
+
+        separator = ttk.Separator(frame_actions, orient='vertical')
+        separator.grid(row=0, column=3, padx=PAD_H/2, sticky=tk.NS)
+
+        self.icon_hide = ImageTk.PhotoImage(file=os.path.join(PATH_ICON, 'open.png'))
+        self.btn_hide = tk.Button(frame_actions, image=self.icon_open, text=" Hide", cursor='hand2', relief=tk.FLAT, compound="left", command=self.on_hide_folder)
+        self.btn_hide.grid(row=0, column=4, sticky=tk.EW, padx=PAD_H/2)
 
     def update(self, is_enabled:bool, loader:Loader, mod:dict, path:str):
         self.loader = loader
@@ -140,6 +150,13 @@ class Preview:
         set_enabled(self.btn_edit, False)
         set_enabled(self.btn_open, False)
         set_enabled(self.btn_toggle, False)
+
+    def on_hide_folder(self):
+        path = self.mod.get("path", "")
+        if path:
+            hide_folder(path)
+            if self.hide_callback:
+                self.hide_callback()
 
     def set_toggle_label(self, is_enabled:bool):
         if is_enabled:

@@ -23,6 +23,7 @@ class Config:
         self.sort_priority = []
         self.cache_dir = ""
         self.workspace = "Default"
+        self.close_on_apply = True
             
     def save_config(self):
         config_dict = {
@@ -34,7 +35,8 @@ class Config:
             "start_with_editor":self.start_with_editor,
             "sort_priority": self.sort_priority,
             "cache_dir": self.cache_dir,
-            "workspace": self.workspace}
+            "workspace": self.workspace,
+            "close_on_apply": self.close_on_apply}
         
         with open(PATH_CONFIG, 'w') as f:
             json.dump(config_dict, f, indent=4)
@@ -63,11 +65,17 @@ class Config:
                 self.cache_dir = data["cache_dir"]
             if data.get("workspace") is not None:
                 self.workspace = data["workspace"]
+            if data.get("close_on_apply") is not None:
+                self.close_on_apply = data["close_on_apply"]
 
             print("Loaded config")
         else:
             print("No saved config")
             self.set_sort_priority()
+
+    def set_close_on_apply(self, close_on_apply:bool):
+        self.close_on_apply = close_on_apply
+        self.save_config()
 
     def set_sort_priority(self, priorities = [{"column":"category", "order":"Ascending"}, 
                                  {"column":"character_name", "order":"Ascending"}, 

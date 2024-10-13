@@ -20,6 +20,7 @@ from utils.files import is_valid_dir, copy_directory_contents, is_case_sensitive
 from .common_ui import *
 from utils.hash import gen_hash_as_decimal
 from utils.format import format_folder_name
+from utils.hide_folder import filter_hidden
 
 class Menu:    
     def __init__(self, root, webdriver_manager) -> None:
@@ -36,7 +37,7 @@ class Menu:
         self.max_count = 0
         self.x = 0
         self.y = 0
-       
+        self.case_sensitive = is_case_sensitive()
         self.show()
         self.scan()
     
@@ -83,6 +84,7 @@ class Menu:
         self.filter_view.reset()
         self.paging.clear()
         clear_text(self.label_count)
+        clear_text(self.label_total)
         self.reset()
         self.scan()
 
@@ -90,8 +92,10 @@ class Menu:
         start, end = self.paging.update(len(mods)) 
         filtered_len = len(mods)
         total = len(self.mods)
-        set_text(self.label_count, f"Showing {filtered_len} of {total}" if total > filtered_len else f"Showing {total}")
-        
+        current_count = end - start
+        set_text(self.label_count, f"Showing {current_count} of {filtered_len}" if filtered_len > current_count else f"Showing {filtered_len}")
+        set_text(self.label_total, f"Total: {total}")
+
         workspace = self.get_valid_workspace()
         for n in range(start,end):
             characters = ", ".join(sorted(mods[n]["character_names"]))
@@ -129,12 +133,16 @@ class Menu:
         self.paging.next_page()
 
     def search(self):
+        self.paging.cur_page = 1
+        self.apply_filters()
+
+    def apply_filters(self):
         workspace = self.get_valid_workspace()
         workspace_data = self.preset.workspace_list.get(workspace)
         enabled_mods = workspace_data.get("mod_list")if workspace_data else []
         self.reset()
-        self.paging.cur_page = 1
-        self.filtered_mods = self.filter_view.filter_mods(self.mods, enabled_mods)
+        self.filtered_mods = filter_hidden(self.mods)
+        self.filtered_mods = self.filter_view.filter_mods(self.filtered_mods, enabled_mods)
         self.populate(self.filtered_mods)
 
     def on_finish_edit(self, old_dir:str, new_dir:str):
@@ -144,7 +152,6 @@ class Menu:
 
     def on_finish_update(self, mods):
         valid_mods = [mod for mod in self.mods if os.path.isdir(mod["path"])]
-        case_sensitive = is_case_sensitive()
 
         for n in mods:
             found_match = False
@@ -152,7 +159,7 @@ class Menu:
                 new_path = get_base_name(n.get("path", ""))
                 mod_path = get_base_name(m.get("path", ""))
 
-                if not case_sensitive:
+                if not self.case_sensitive:
                     new_path = new_path.lower()
                     mod_path = mod_path.lower()
 
@@ -340,8 +347,14 @@ class Menu:
         self.info_frame.rowconfigure(index=3, weight=1)
         self.info_frame.pack_forget()
 
-        self.label_count = tk.Label(self.frame_list, text="Showing 0", anchor=tk.W)
-        self.label_count.pack(fill=tk.BOTH, padx=(PAD_H, 0))
+        self.frame_count = tk.Frame(self.frame_list)
+        self.frame_count.pack(fill=tk.BOTH, padx=PAD_H)
+
+        self.label_count = tk.Label(self.frame_count, text="Showing 0", anchor=tk.W)
+        self.label_count.pack(side=tk.LEFT)
+
+        self.label_total = tk.Label(self.frame_count, text="Total: 0", anchor=tk.W)
+        self.label_total.pack(side=tk.RIGHT)
 
         self.categories = ["Category", "Character", "Slot", "Mod Name", "Author", "Dir"]
         
@@ -448,7 +461,7 @@ class Menu:
             padx=(0, PAD_H)
         )
 
-        self.preview = Preview(self.info_frame, self.open_editor, self.open_folder, self.toggle_mod)
+        self.preview = Preview(self.info_frame, self.open_editor, self.open_folder, self.toggle_mod, self.apply_filters)
         self.root.bind("<Configure>", self.on_window_resize)
 
     def get_valid_workspace(self):
