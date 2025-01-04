@@ -1,3 +1,7 @@
+"""
+comparison.py: View for comparing changes to the info.toml file
+"""
+
 import tkinter as tk
 from src.constants.ui_params import PAD_H, PAD_V
 from src.constants.categories import CATEGORIES

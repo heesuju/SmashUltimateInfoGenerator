@@ -1,3 +1,7 @@
+"""
+editor.py: The editor view from which info.toml parameters can be modified manually
+"""
+
 import shutil, os, sys
 from src.constants.elements import ELEMENTS
 from src.constants.ui_params import PAD_H, PAD_V
@@ -24,7 +28,7 @@ from src.ui.components.checkbox_treeview import Treeview
 from src.core.web.scraper_thread import ScraperThread
 
 class Editor:
-    def __init__(self, root, webdriver_manager, directory:str, callback=None) -> None:
+    def __init__(self, root, webdriver_manager, directory:str="", callback=None) -> None:
         self.root = root
         self.webdriver_manager = webdriver_manager
         self.new_window = None

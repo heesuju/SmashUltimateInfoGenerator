@@ -1,3 +1,7 @@
+"""
+config.py: The view where various settings can be changed
+"""
+
 import json
 import tkinter as tk
 from src.constants.ui_params import PAD_H, PAD_V

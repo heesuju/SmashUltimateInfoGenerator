@@ -1,3 +1,7 @@
+"""
+menu.py: The main view that contains list view showing all of the existing mods and various filters
+"""
+
 import os
 import tkinter as tk
 from tkinter import ttk, messagebox

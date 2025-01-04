@@ -1,17 +1,20 @@
+"""
+Module that contains various methods to format strings used in this application
+"""
+
 import re
 from src.core.data import load_config, get_folder_name_format, get_display_name_format
 from src.utils.csv_helper import csv_to_dict, csv_to_key_value
 from src.utils.string_helper import (
-    clean_folder_name,
-    clean_display_name,
-    remove_text,
+    remove_texts,
     remove_special_chars,
     remove_non_eng,
-    remove_numbers,
-    clean_mod_name,
     remove_paranthesis,
+    remove_redundant_spacing,
     add_spaces_to_camel_case,
-    add_spacing
+    trim_consecutive,
+    SPECIAL_CHARS,
+    BLACKLIST_CHARS
 )
 
 from data import PATH_CHAR_NAMES
@@ -25,7 +28,7 @@ def format_folder_name(characters:str, slots:str, mod_name:str, category:str):
     return clean_folder_name(folder_name)
 
 def format_display_name(characters:str, slots:str, mod_name:str, category:str):
-    format = get_display_name_format
+    format = get_display_name_format()
     display_name = format.replace("{characters}", characters)
     display_name = display_name.replace("{slots}", slots)
     display_name = display_name.replace("{mod}", mod_name)
@@ -74,7 +77,7 @@ def format_slots(slots:list[int]):
     return slot_prefix + out_str
 
 def remove_characters(text:str, characters:list[str]):
-    text = add_spacing(text)
+    text = text.replace("&", " ")
     arr_to_remove = []
     set_char = set()
     char_dict = csv_to_key_value(PATH_CHAR_NAMES)
@@ -116,7 +119,7 @@ def remove_characters(text:str, characters:list[str]):
         set_char.add(remove_non_eng(item).replace(" ", ""))
     arr_to_remove = list(set_char)
     arr_to_remove = sorted(arr_to_remove, key=len, reverse=True)
-    text = remove_text(text, arr_to_remove)
+    text = remove_texts(text, arr_to_remove)
     return text
 
 def group_char_name(char_names, group_names):
@@ -156,10 +159,26 @@ def get_group_count(group_name):
     return count
 
 def get_mod_name(display_name:str, character_keys:list, slots:list, category:str)->str:
-    name = remove_text(display_name, [category])
+    def remove_numbers(text:str, numbers:list):
+        pattern = r'(?<![^\s_Cc\-])[Cc]?0*(' + '|'.join(map(str, numbers)) + r')(?![^\s_Cc\-])'
+        matches = re.finditer(pattern, text)
+        match_at_end = None
+        for match in matches:
+            if match.end() == len(text):
+                match_at_end = match.group() 
+                if "C"  in match_at_end or "c" in match_at_end:
+                    match_at_end = None
+                break 
+        
+        text = re.sub(pattern, '', text).strip()
+        if match_at_end is not None:
+            text = text + " " + match_at_end
+        return text
+
+    name = remove_texts(display_name, [category])
     name = remove_special_chars(name)
     name = remove_characters(name, character_keys)
-    name = remove_text(name, ["Even Slots", "Odd Slots", "EvenSlots", "OddSlots", "Even", "Odd"])
+    name = remove_texts(name, ["Even Slots", "Odd Slots", "EvenSlots", "OddSlots", "Even", "Odd"])
     name = remove_numbers(name, slots)
     name = clean_mod_name(name)
     name = remove_paranthesis(name)
@@ -171,3 +190,45 @@ def trim_mod_name(mod_name, ignored_list):
     words_pattern = '|'.join(re.escape(word) for word in ignored_list)
     pattern = r'\b(?:' + words_pattern + r')\b'
     return re.sub(pattern, '', mod_name)
+
+def clean_mod_name(mod_name:str)->str:
+    def substitute_characters(text:str, chars_to_substitute:list)->str:
+        """
+        Removes characters from string
+        """
+        chars_set = set(chars_to_substitute)
+        result = ''.join([char if char not in chars_set else ' ' for char in text])
+        return result
+
+    pattern = r"^(.*?)\s+over\s+"
+    match = re.match(pattern, mod_name)
+    if match:
+        mod_name = match.group(1)
+    mod_name = substitute_characters(mod_name, SPECIAL_CHARS)
+    mod_name = remove_redundant_spacing(mod_name)
+    return mod_name
+
+def clean_display_name(display_name:str)->str:
+    """
+    Returns cleaned display name
+    """
+    display_name = display_name.replace("[]", "")
+    display_name = display_name.replace("()", "")
+    display_name = display_name.replace("{}", "")
+
+    display_name = remove_redundant_spacing(display_name)
+    display_name = trim_consecutive(display_name, [",", ".", "_", "-", "~"])
+    return display_name 
+
+def clean_folder_name(folder_name:str)->str:
+    """
+    Returns cleaned folder name
+    """
+    for b in BLACKLIST_CHARS:
+        folder_name = folder_name.replace(b, " ")
+    folder_name = folder_name.replace("[]", "")
+    folder_name = folder_name.replace("()", "")
+    folder_name = folder_name.replace("{}", "")
+    folder_name = folder_name.replace(" ", "")
+    folder_name = trim_consecutive(folder_name, [",", ".", "_", "-", "~"])
+    return folder_name

@@ -1,3 +1,7 @@
+"""
+base.py: Contains shared methods for UI
+"""
+
 import os
 import tkinter as tk
 from tkinter import ttk

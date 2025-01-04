@@ -44,16 +44,16 @@ def get_cache_directory(default_dir:str = ""):
                     return preset_path
     return ""
 
-def get_workspace():
+def get_workspace()->str:
     return load_config().get("workspace", "Default")
 
-def get_folder_name_format():
+def get_folder_name_format()->str:
     return load_config().get("folder_name_format")
 
-def get_display_name_format():
+def get_display_name_format()->str:
     return load_config().get("display_name_format")
 
-def get_start_w_editor():
+def get_start_w_editor()->bool:
     config = load_config()
     if config:
         return config.get("start_w_editor", False)

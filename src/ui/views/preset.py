@@ -1,3 +1,7 @@
+"""
+preset.py: A panel that can be toggled from the main menu to show the list of presets available
+"""
+
 import os, json
 from tkinter import ttk
 from PIL import ImageTk

@@ -1,3 +1,7 @@
+"""
+filter.py: View containing various filters for searching mods
+"""
+
 import os
 from tkinter import ttk
 from PIL import ImageTk

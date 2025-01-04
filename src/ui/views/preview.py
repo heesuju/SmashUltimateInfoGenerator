@@ -1,3 +1,7 @@
+"""
+preview.py: A panel that can be toggled from the main menu to show a preview of the mod
+"""
+
 from tkinter import ttk
 from PIL import ImageTk
 import tkinter as tk
