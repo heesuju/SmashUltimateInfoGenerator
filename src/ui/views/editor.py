@@ -14,7 +14,7 @@ from src.utils.downloader import Downloader
 from src.utils.image_handler import ImageHandler
 from src.utils.file import get_base_name, get_parent_dir, rename_folder
 from src.utils.toml import dump_toml
-from src.core.formatting import format_folder_name, format_display_name, format_slots, group_char_name, extract_mod_name
+from src.core.formatting import format_folder_name, format_display_name, format_slots, group_char_name, get_mod_name
 from src.utils.common import get_project_dir
 from .comparison import Comparison
 from .config import Config
@@ -218,7 +218,7 @@ class Editor:
         self.update_includes(includes)
         
         if not mod_name:
-            mod_name = extract_mod_name(
+            mod_name = get_mod_name(
                 display_name if display_name else dir_name, 
                 self.generator.char_keys,
                 self.generator.slots, 

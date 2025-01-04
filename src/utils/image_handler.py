@@ -3,7 +3,7 @@ from threading import Thread, Event
 import concurrent.futures
 from PIL import Image, ImageTk
 from typing import Union
-from src.utils.file import is_valid_file
+from .common import is_valid_file
 
 def get_image(path:str, width:int, height:int, keep_ratio:bool = True):
     if not is_valid_file(path):

@@ -4,15 +4,16 @@ from src.utils.file import (
     is_valid_file,
     get_children, 
     search_dir_by_keyword, 
-    csv_to_dict, 
     get_direct_child_by_extension, 
     get_children_by_extension, 
     search_files_for_pattern
 )
-from src.utils.common import str_to_int
+from src.utils.csv_helper import csv_to_dict
+from src.utils.string_helper import str_to_int
 from src.models.mod import Mod
 from src.constants.elements import *
 from src.constants.categories import *
+from .formatting import get_mod_name
 from data import PATH_CHAR_NAMES
 
 def scan_character(root_dir:str, subfolders:list[str], mod:Mod)->Mod:
@@ -221,5 +222,7 @@ def scan_mod(mod:Mod)->Mod:
     mod = scan_ui(mod)
     mod = scan_thumbnail(mod)
     mod.category = get_category(mod)
+    if not mod.mod_name:
+        mod.mod_name = get_mod_name(mod.display_name, mod.character_keys, mod.character_slots, mod.category)
 
     return mod

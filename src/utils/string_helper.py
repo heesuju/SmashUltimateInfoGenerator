@@ -176,3 +176,23 @@ def is_digit(text:str, num_digits:int=3):
         return True
     else:
         return False
+    
+def trim_redundant_spaces(input, split_char = ' '):
+    arr = input.split(split_char)
+    result = ""
+    
+    for it in arr:
+        if result:
+            result += " " + it
+        else:
+            result += it
+    
+    return result
+
+def str_to_int(s:str, start_index:int = 0)->int:
+    text = str(s[start_index:]) 
+    num = 0
+    if text.isdigit():
+        num = int(text)
+
+    return num

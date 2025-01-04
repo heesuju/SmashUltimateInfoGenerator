@@ -1,5 +1,5 @@
 import os
-from .file import is_valid_file
+from .common import is_valid_file
 import tomli as tomli
 import tomli_w as tomli_w
 

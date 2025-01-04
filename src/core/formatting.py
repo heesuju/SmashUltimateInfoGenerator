@@ -1,5 +1,6 @@
+import re
 from src.core.data import load_config, get_folder_name_format, get_display_name_format
-from src.utils.csv_helper import csv_to_dict
+from src.utils.csv_helper import csv_to_dict, csv_to_key_value
 from src.utils.string_helper import (
     clean_folder_name,
     clean_display_name,
@@ -72,18 +73,15 @@ def format_slots(slots:list[int]):
             
     return slot_prefix + out_str
 
-# from src.ui.config import load_config
-# from .cleaner import clean_folder_name, clean_display_name
-# from data import PATH_CHAR_NAMES
-
-def remove_characters(text:str, characters:list):
+def remove_characters(text:str, characters:list[str]):
     text = add_spacing(text)
     arr_to_remove = []
     set_char = set()
-    char_dict = csv2dict(PATH_CHAR_NAMES)
-    for ch in characters:
-        set_char.add(ch)
-        data = char_dict.get(ch, None)
+    char_dict = csv_to_key_value(PATH_CHAR_NAMES)
+    
+    for key in characters:
+        set_char.add(key)
+        data = char_dict.get(key, None)
         if data is None: 
             continue
         
@@ -157,10 +155,10 @@ def get_group_count(group_name):
 
     return count
 
-def extract_mod_name(display_name:str, characters:list, slots:list, category:str)->str:
+def get_mod_name(display_name:str, character_keys:list, slots:list, category:str)->str:
     name = remove_text(display_name, [category])
     name = remove_special_chars(name)
-    name = remove_characters(name, characters)
+    name = remove_characters(name, character_keys)
     name = remove_text(name, ["Even Slots", "Odd Slots", "EvenSlots", "OddSlots", "Even", "Odd"])
     name = remove_numbers(name, slots)
     name = clean_mod_name(name)
@@ -168,3 +166,8 @@ def extract_mod_name(display_name:str, characters:list, slots:list, category:str
     if len(name) > 4:
         name = add_spaces_to_camel_case(name)
     return name
+
+def trim_mod_name(mod_name, ignored_list):
+    words_pattern = '|'.join(re.escape(word) for word in ignored_list)
+    pattern = r'\b(?:' + words_pattern + r')\b'
+    return re.sub(pattern, '', mod_name)

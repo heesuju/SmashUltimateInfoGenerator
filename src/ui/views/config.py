@@ -1,9 +1,11 @@
 import json
 import tkinter as tk
 from src.constants.ui_params import PAD_H, PAD_V
+from src.core.data import get_cache_directory
 from pathlib import Path
 from os import listdir
 from src.core.data import load_config
+from data.cache import PATH_CONFIG
 
 class Config:
     def __init__(self, callback = None):
@@ -85,7 +87,7 @@ class Config:
 
     def set_default_dir(self, default_dir):
         self.default_dir = default_dir
-        self.cache_dir = get_cache_dir(self.default_dir)
+        self.cache_dir = get_cache_directory(self.default_dir)
         self.save_config()
 
     def set_cache_dir(self, cache_dir:str):
