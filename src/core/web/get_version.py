@@ -2,7 +2,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from src.utils.string_helper import clean_vesion
+from src.core.formatting import clean_vesion
 
 TIMEOUT_DELAY = 1
 DEFAULT_VERSION = "1.0.0"

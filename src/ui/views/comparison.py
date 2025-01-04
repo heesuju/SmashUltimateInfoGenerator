@@ -3,24 +3,23 @@ comparison.py: View for comparing changes to the info.toml file
 """
 
 import tkinter as tk
+from tkinter import ttk
 from src.constants.ui_params import PAD_H, PAD_V
 from src.constants.categories import CATEGORIES
-from tkinter import ttk
+from src.models.mod import Mod
 from src.utils.file import get_base_name
 
 class Comparison:
     def __init__(self):
-        self.reset()
-    
-    def reset(self):
         self.new_window = None
 
-    def open(self, root, loaded_data, generated_data):
+    def open(self, root, src:Mod, dst:Mod):
         if self.new_window is not None:
             self.new_window.destroy()
             
         self.new_window = tk.Toplevel(root)
         self.new_window.title("Comparison")
+
         for i in range(2):
             self.new_window.columnconfigure(i, weight=1)
             self.new_window.columnconfigure(i, minsize=200)
@@ -45,21 +44,21 @@ class Comparison:
 
         e_folder_name_prev = tk.Entry(f_prev, width=10)
         e_folder_name_prev.grid(row=1, column=0, sticky=tk.EW, pady = (0, PAD_V))
-        e_folder_name_prev.insert(0,get_base_name(generated_data['working_dir']))
+        e_folder_name_prev.insert(0,get_base_name(src.path))
 
         l_display_name_prev = tk.Label(f_prev, text="Display Name")
         l_display_name_prev.grid(row=2, column=0, sticky=tk.W)
 
         e_display_name_prev = tk.Entry(f_prev, width=10)
         e_display_name_prev.grid(row=3, column=0, sticky=tk.EW, pady = (0, PAD_V))
-        e_display_name_prev.insert(0, loaded_data.display_name)
+        e_display_name_prev.insert(0, src.display_name)
 
         l_authors_prev = tk.Label(f_prev, text="Authors")
         l_authors_prev.grid(row=4, column=0, sticky=tk.W)
 
         e_authors_prev = tk.Entry(f_prev, width=10)
         e_authors_prev.grid(row=5, column=0, sticky=tk.EW, pady = (0, PAD_V))
-        e_authors_prev.insert(0, loaded_data.authors)
+        e_authors_prev.insert(0, src.authors)
 
         f_group_prev = tk.Frame(f_prev)
         f_group_prev.grid(row=6, column=0, sticky=tk.NSEW, pady = (0, PAD_V))
@@ -72,21 +71,21 @@ class Comparison:
 
         e_ver_new = tk.Entry(f_group_prev, width=10)
         e_ver_new.grid(row=1, column=0, sticky=tk.EW, padx=(0,PAD_H), pady = (0, PAD_V))
-        e_ver_new.insert(0, loaded_data.version)
+        e_ver_new.insert(0, src.version)
 
         l_cat_prev = tk.Label(f_group_prev, text="Category")
         l_cat_prev.grid(row=0, column=1, sticky=tk.W)
 
         e_cat_prev_v = tk.Entry(f_group_prev, width=10)
         e_cat_prev_v.grid(row=1, column=1, sticky=tk.EW)
-        e_cat_prev_v.insert(0, loaded_data.category)
+        e_cat_prev_v.insert(0, src.category)
 
         l_desc_prev = tk.Label(f_group_prev, text="Description")
         l_desc_prev.grid(row=2, column=0, sticky=tk.W)
 
         t_desc_prev_v = tk.Text(f_group_prev, height=10, width=10)
         t_desc_prev_v.grid(row=3, column=0, columnspan=2, sticky=tk.NSEW)
-        t_desc_prev_v.insert(tk.END, loaded_data.description)
+        t_desc_prev_v.insert(tk.END, src.description)
 
         #-------------------------------new-------------------------------
 
@@ -106,21 +105,21 @@ class Comparison:
         
         e_folder_name_new = tk.Entry(f_new, width=10)
         e_folder_name_new.grid(row=1, column=0, sticky=tk.EW, pady = (0, PAD_V))
-        e_folder_name_new.insert(0,generated_data['folder_name'])
+        e_folder_name_new.insert(0,dst.folder_name)
 
         l_display_name_new = tk.Label(f_new, text="Display Name")
         l_display_name_new.grid(row=2, column=0, sticky=tk.W)
 
         e_display_name_new = tk.Entry(f_new, width=10)
         e_display_name_new.grid(row=3, column=0, sticky=tk.EW, pady = (0, PAD_V))
-        e_display_name_new.insert(0, generated_data['display_name'])
+        e_display_name_new.insert(0, dst.display_name)
 
         l_authors_new = tk.Label(f_new, text="Authors")
         l_authors_new.grid(row=4, column=0, sticky=tk.W)
 
         e_authors_new = tk.Entry(f_new, width=10)
         e_authors_new.grid(row=5, column=0, sticky=tk.EW, pady = (0, PAD_V))
-        e_authors_new.insert(0, generated_data['authors'])
+        e_authors_new.insert(0, dst.authors)
 
         f_group_new = tk.Frame(f_new)
         f_group_new.grid(row=6, column=0, sticky=tk.NSEW, pady = (0, PAD_V))
@@ -133,18 +132,18 @@ class Comparison:
 
         e_ver_new = tk.Entry(f_group_new, width=10)
         e_ver_new.grid(row=1, column=0, sticky=tk.EW, padx=(0,PAD_H), pady = (0, PAD_V))
-        e_ver_new.insert(0, generated_data['version'])
+        e_ver_new.insert(0, dst.version)
 
         l_cat_new = tk.Label(f_group_new, text="Category")
         l_cat_new.grid(row=0, column=1, sticky=tk.W)
 
         c_cat_new = ttk.Combobox(f_group_new, values=CATEGORIES, width=10)
         c_cat_new.grid(row=1, column=1, sticky=tk.EW)
-        c_cat_new.set(generated_data['category'])
+        c_cat_new.set(dst.category)
 
         l_desc_new = tk.Label(f_group_new, text="Description")
         l_desc_new.grid(row=2, column=0, sticky=tk.W)
 
         t_desc_new_v = tk.Text(f_group_new, height=10, width=10)
         t_desc_new_v.grid(row=3, column=0, columnspan=2, sticky=tk.NSEW, padx = (0, PAD_H))
-        t_desc_new_v.insert(tk.END, generated_data['description'])
+        t_desc_new_v.insert(tk.END, dst.description)

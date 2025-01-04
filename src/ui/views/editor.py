@@ -2,35 +2,65 @@
 editor.py: The editor view from which info.toml parameters can be modified manually
 """
 
-import shutil, os, sys
-from src.constants.elements import ELEMENTS
-from src.constants.ui_params import PAD_H, PAD_V
+import shutil
+import os
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from PIL import Image, ImageTk
+from PIL import ImageTk
+from src.constants.elements import ELEMENTS
+from src.constants.ui_params import PAD_H, PAD_V
+from src.constants.defs import IMAGE_TYPES
+from src.constants.categories import CATEGORIES
 from src.core.data import remove_cache
-from src.utils.web import open_page, is_valid_url
-from src.utils.string_helper import clean_mod_name, clean_vesion
 from src.core.mod_loader import ModLoader
 from src.core.web.static_scraper import Extractor
-from src.utils.web import trim_url
+from src.core.web.scraper_thread import ScraperThread
+from src.core.formatting import (
+    format_folder_name,
+    format_display_name,
+    format_slots,
+    group_char_name,
+    clean_mod_name,
+    clean_vesion
+)
+from src.models.mod import Mod
+from src.utils.web import (
+    trim_url,
+    open_page,
+    is_valid_url
+)
 from src.utils.downloader import Downloader
 from src.utils.image_handler import ImageHandler
-from src.utils.file import get_base_name, get_parent_dir, rename_folder
+from src.utils.file import (
+    get_parent_dir,
+    get_direct_child_by_extension,
+    rename_folder
+)
 from src.utils.toml import dump_toml
-from src.core.formatting import format_folder_name, format_display_name, format_slots, group_char_name, get_mod_name
 from src.utils.common import get_project_dir
+from src.ui.base import (
+    get_text,
+    set_text,
+    clear_text,
+    set_enabled,
+    open_file_dialog
+)
+from src.ui.components.checkbox_treeview import Treeview
+
+from assets import ICON_PATH
 from .comparison import Comparison
 from .config import Config
-from assets import ICON_PATH
-from src.ui.base import get_text, set_text, clear_text, set_enabled, open_file_dialog
-from src.ui.components.checkbox_treeview import Treeview
-from src.core.web.scraper_thread import ScraperThread
 
 class Editor:
+    """
+    Tkinter UI class for modifying info.toml
+    """
     def __init__(self, root, webdriver_manager, directory:str="", callback=None) -> None:
         self.root = root
         self.webdriver_manager = webdriver_manager
+        self.mod = None
+        self.org_mod = None
         self.new_window = None
         self.config = Config()
         self.comparison = Comparison()
@@ -73,25 +103,25 @@ class Editor:
         
     def on_bs4_result(self, mod_title, authors):
         if mod_title:
-            self.generator.mod_title_web = clean_mod_name(mod_title)
-            set_text(self.entry_mod_name, self.generator.mod_title_web)
-        elif self.generator.mod_name:
-            set_text(self.entry_mod_name, self.generator.mod_name)
+            self.mod.mod_name = clean_mod_name(mod_title)
+            set_text(self.entry_mod_name, self.mod.mod_name)
+        elif self.mod.mod_name:
+            set_text(self.entry_mod_name, self.mod.mod_name)
             
         if authors:
             set_text(self.entry_authors, authors)
 
         self.set_display_name(
-            get_text(self.entry_char_names), 
-            get_text(self.entry_slots), 
-            get_text(self.entry_mod_name), 
+            get_text(self.entry_char_names),
+            get_text(self.entry_slots),
+            get_text(self.entry_mod_name),
             get_text(self.combobox_cat)
         )
 
         self.set_folder_name(
-            get_text(self.entry_char_names, remove_spacing=True), 
-            get_text(self.entry_slots, remove_spacing=True), 
-            get_text(self.entry_mod_name, remove_spacing=True), 
+            get_text(self.entry_char_names, remove_spacing=True),
+            get_text(self.entry_slots, remove_spacing=True),
+            get_text(self.entry_mod_name, remove_spacing=True),
             get_text(self.combobox_cat)
         )
 
@@ -106,7 +136,7 @@ class Editor:
             self.label_output.config(text="Downloading thumbnails...")
             self.download_img()
             if self.replace_img_state.get():
-                self.generator.img_url = self.img_urls[0]
+                self.mod.thumbnail = self.img_urls[0]
                 download_dir = os.path.join(get_project_dir(), "cache/thumbnails")
                 self.set_image(os.path.join(download_dir, trim_url(self.img_urls[0])))
             else:
@@ -114,7 +144,7 @@ class Editor:
                 set_enabled(self.ckbox_replace_img)
                 set_enabled(self.cbox_img)
         else:
-            self.generator.img_url = ""
+            self.mod.thumbnail = ""
             self.set_img_cbox()
             set_enabled(self.ckbox_replace_img, False)
             set_enabled(self.cbox_img, False)
@@ -127,7 +157,7 @@ class Editor:
         self.btn_fetch_data.config(state="disabled")
         set_text(self.label_output, "Fetching elements...")
         set_enabled(self.ckbox_replace_img, False)
-        self.generator.url = self.entry_url.get()
+        self.mod.url = self.entry_url.get()
         self.cbox_img.config(state="disabled")
         self.replace_img_state.set(False)
         bs4_thread = Extractor(self.entry_url.get(), self.on_bs4_result)
@@ -135,7 +165,7 @@ class Editor:
         ScraperThread(self.entry_url.get(), self.webdriver_manager, self.on_selenium_result)
 
     def on_url_changed(self, event):
-        self.generator.url = get_text(self.entry_url)
+        self.mod.url = get_text(self.entry_url)
 
     def open_url(self):
         if is_valid_url(self.entry_url.get()):
@@ -152,8 +182,8 @@ class Editor:
         selected_idx = self.cbox_img.current()
         self.replace_img_state.set(True)
         if selected_idx < len(self.img_urls):
-            self.generator.img_url = self.img_urls[selected_idx]
-            name = trim_url(self.generator.img_url)
+            self.mod.thumbnail = self.img_urls[selected_idx]
+            name = trim_url(self.mod.thumbnail)
             download_dir = os.path.join(get_project_dir(), "cache/thumbnails")
             self.set_image(os.path.join(download_dir, name))
     
@@ -178,63 +208,57 @@ class Editor:
         self.cbox_img.config(values=values)
         self.cbox_img.set(selected_option)
 
-    def update_preview(self):
-        clear_text(self.entry_url)
-        self.config.load()
+    def on_scanned(self, mods:list[Mod])->None:
+        """
+        callback function when the specific mod directory has been scanned
+        """
+        if len(mods) <= 0:
+            return
+        self.mod = mods[0]
+        self.org_mod = mods[0]
 
-        self.close_on_apply.set(self.config.close_on_apply)
+        self.combobox_cat.set(self.mod.category)
 
-        dict_info = self.generator.preview_info_toml(
-            working_dir = get_text(self.entry_work_dir),
-            version = get_text(self.entry_ver))
-
-        set_text(self.label_output, "Changed working directory")
-        self.combobox_cat.set(dict_info["category"])
-
-        names = group_char_name(self.generator.char_names, self.generator.group_names)           
+        names = group_char_name(self.mod.character_names, self.mod.character_groups)
         set_text(self.entry_char_names, names)
-
         clear_text(self.entry_slots)
-        
+
         slots_cleaned = ""
-        if self.generator.slots:
-            slots_cleaned = format_slots(dict_info["slots"])
-            set_text(self.entry_slots, slots_cleaned)    
+        if self.mod.character_slots:
+            slots_cleaned = format_slots(self.mod.character_slots)
+            set_text(self.entry_slots, slots_cleaned)
 
-        mod_name = ""
-        display_name = ""
-        dir_name = get_base_name(self.generator.working_dir)
-        includes = []
-
-        if self.loader.load_toml(self.entry_work_dir.get()):
-            display_name = self.loader.display_name
-            set_text(self.entry_authors, self.loader.authors)
-            self.combobox_cat.set(self.loader.category)
-            set_text(self.entry_ver, clean_vesion(self.loader.version))
-            self.cbox_wifi_safe.set(self.loader.wifi_safe)
-            mod_name = self.loader.mod_name
-            set_text(self.entry_url, self.loader.url)
-            set_text(self.txt_desc, self.loader.description)
-            includes = self.loader.includes
-        
-        if len(includes) <= 0:
-            includes = self.generator.includes
+        set_text(self.entry_authors, self.mod.authors)
+        self.combobox_cat.set(self.mod.category)
+        set_text(self.entry_ver, clean_vesion(self.mod.version))
+        self.cbox_wifi_safe.set(self.mod.wifi_safe)
+        mod_name = self.mod.mod_name
+        set_text(self.entry_url, self.mod.url)
+        set_text(self.txt_desc, self.mod.description)
+        includes = self.mod.includes
         self.update_includes(includes)
-        
-        if not mod_name:
-            mod_name = get_mod_name(
-                display_name if display_name else dir_name, 
-                self.generator.char_keys,
-                self.generator.slots, 
-                self.generator.category)
-            
-        self.generator.mod_name = mod_name
         set_text(self.entry_mod_name, mod_name)
         self.set_display_name(names, slots_cleaned, mod_name, get_text(self.combobox_cat))
         self.set_folder_name(names.replace(" ", "") , slots_cleaned.replace(" ", ""), mod_name.replace(" ", ""), get_text(self.combobox_cat))
-        self.generator.url = self.entry_url.get()
-
+        self.mod.url = self.entry_url.get()
         self.find_image()
+
+    def update_preview(self):
+        """
+        Auto-fills empty fields
+        """
+        working_dir = self.directory
+        clear_text(self.entry_url)
+        self.config.load()
+        self.close_on_apply.set(self.config.close_on_apply)
+
+        if self.mod is None:
+            ModLoader(
+                [working_dir],
+                self.on_scanned
+            )
+        
+        set_text(self.label_output, "Changed working directory")
 
     def change_working_directory(self):
         working_dir = open_file_dialog(self.config.default_dir)
@@ -251,27 +275,18 @@ class Editor:
 
     def apply_changes(self):
         dump_toml(
-            self.generator.working_dir,
-            TomlParams(get_text(self.entry_display_name), 
-                       get_text(self.entry_authors), 
-                       get_text(self.txt_desc), 
-                       get_text(self.entry_ver), 
-                       get_text(self.combobox_cat), 
-                       get_text(self.entry_url), 
-                       get_text(self.entry_mod_name), 
-                       get_text(self.cbox_wifi_safe),
-                       self.get_includes(),
-                       self.generator.slots)
+            self.mod.path,
+            self.mod.__dict__
         )
         
         if get_text(self.entry_work_dir):
-            old_dir = self.generator.working_dir
+            old_dir = self.mod.path
             self.move_file()
             new_dir = os.path.join(get_parent_dir(old_dir), get_text(self.entry_folder_name)) 
             result, msg = rename_folder(old_dir, new_dir)
             if result:
                 set_text(self.entry_work_dir, new_dir)
-                self.generator.working_dir = new_dir
+                self.mod.path = new_dir
                 self.find_image()
                 self.callback(old_dir, new_dir)
 
@@ -291,9 +306,9 @@ class Editor:
 
     def on_update_image(self, event):
         image_dir = self.entry_img_dir.get()
-        if self.generator.image_dir == image_dir:
+        if self.mod.thumbnail == image_dir:
             return
-        self.generator.image_dir = image_dir
+        self.mod.thumbnail = image_dir
         image_extensions = [".webp", ".png", ".jpg", ".jpeg", ".gif"]
         if image_dir and os.path.exists(image_dir):
             for extension in image_extensions:
@@ -317,7 +332,7 @@ class Editor:
             print("image dir is empty or invalid")
             return
         
-        new_path = os.path.join(dst_dir, IMAGE_NAME)
+        new_path = os.path.join(dst_dir, "info.toml")
         set_text(self.entry_img_dir, new_path)
         
         if os.path.exists(new_path):
@@ -328,17 +343,18 @@ class Editor:
         shutil.copy(source_file, new_path)
 
     def find_image(self):
-        img_list = common.get_direct_child_by_extension(self.generator.working_dir, ".webp")
+        img_list = get_direct_child_by_extension(self.mod.path, ".webp")
+        
         if len(img_list) > 0:
-            self.set_image(self.generator.working_dir +  "/" + img_list[0])
+            self.set_image(self.mod.path +  "/" + img_list[0])
             self.replace_img_state.set(False)
             return
         
         other_types = [type for type in IMAGE_TYPES if type != ".webp"]
-        for type in other_types:
-            img_list = common.get_direct_child_by_extension(self.generator.working_dir, type)
+        for img_type in other_types:
+            img_list = get_direct_child_by_extension(self.mod.path, img_type)
             if len(img_list) > 0:
-                self.set_image(self.generator.working_dir +  "/" + img_list[0])
+                self.set_image(self.mod.path +  "/" + img_list[0])
                 self.replace_img_state.set(False)
                 return
 
@@ -369,15 +385,7 @@ class Editor:
         self.config.open_config(self.new_window) 
 
     def open_comparison(self):
-        self.comparison.open(self.new_window, loaded_data=self.loader, generated_data={
-            'folder_name':self.entry_folder_name.get(), 
-            'display_name':self.entry_display_name.get(),
-            'authors':self.entry_authors.get(),
-            'category':self.combobox_cat.get(),
-            'version':self.entry_ver.get(),
-            'description':self.txt_desc.get(1.0, tk.END),
-            'working_dir':self.generator.working_dir
-            })
+        self.comparison.open(self.new_window, src=self.org_mod, dst=self.mod)
     
     def open(self, root, working_dir = ""):
         if self.new_window is not None:

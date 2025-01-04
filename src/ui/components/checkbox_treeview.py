@@ -110,3 +110,6 @@ class Treeview:
     
     def get_item(self, id:str):
         return self.widget.item(id)
+    
+    def get_values(self, id:str)->list:
+        return self.widget.item(id).get("values", None)

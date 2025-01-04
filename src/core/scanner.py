@@ -16,7 +16,7 @@ from src.constants.categories import *
 from .formatting import get_mod_name
 from data import PATH_CHAR_NAMES
 
-def scan_character(root_dir:str, subfolders:list[str], mod:Mod)->Mod:
+def scan_character(root_dir:str, subfolders:list[str], mod:Mod, is_fighter:bool=True)->Mod:
 
     def get_slots_as_number(slots:list[str])->list[int]:
         numbers = []
@@ -43,7 +43,7 @@ def scan_character(root_dir:str, subfolders:list[str], mod:Mod)->Mod:
             groups.append(dict['Group'])
             tmp_slots = []
 
-            if "effect" in root_dir:
+            if not is_fighter:
                 path = os.path.join(root_dir, "fighter", child)
                 all_slots = get_direct_child_by_extension(path, ".eff")
                 for file_name in all_slots:
@@ -100,7 +100,7 @@ def scan_effect(mod:Mod)->Mod:
         return mod
 
     if len(mod.character_names) <= 0:
-        mod = scan_character(root_dir, get_children(os.path.join(root_dir, "fighter")), mod)
+        mod = scan_character(root_dir, get_children(os.path.join(root_dir, "fighter")), mod, False)
 
     for file in get_children_by_extension(root_dir, ".eff"):
         if search_files_for_pattern(file, r"c\d+"):

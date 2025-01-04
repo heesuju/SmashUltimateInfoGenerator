@@ -28,19 +28,6 @@ SPECIAL_CHARS = [
     "^"
 ] + BLACKLIST_CHARS
 
-def clean_vesion(version:str)->str:
-    """
-    Returns formatted version(e.g. v1.0 -> 1.0.0)
-    """
-    parts = version.split('.')
-    numeric_parts = [str(int(''.join(filter(str.isdigit, part)))) for part in parts]
-
-    while len(numeric_parts) < 3:
-        numeric_parts.append('0')
-
-    formatted_version = '.'.join(numeric_parts)
-    return formatted_version
-
 def trim_consecutive(text:str, chars_to_remove:list[str])->str:
     """
     Removes consecutive characters if it is in the provided list

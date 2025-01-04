@@ -232,3 +232,19 @@ def clean_folder_name(folder_name:str)->str:
     folder_name = folder_name.replace(" ", "")
     folder_name = trim_consecutive(folder_name, [",", ".", "_", "-", "~"])
     return folder_name
+
+def clean_vesion(version:str)->str:
+    """
+    Returns formatted version(e.g. v1.0 -> 1.0.0)
+    """
+    parts = version.split('.')
+    if len(parts) <= 0:
+        return "1.0.0"
+
+    numeric_parts = [str(int(''.join(filter(str.isdigit, part)))) for part in parts]
+
+    while len(numeric_parts) < 3:
+        numeric_parts.append('0')
+
+    formatted_version = '.'.join(numeric_parts)
+    return formatted_version

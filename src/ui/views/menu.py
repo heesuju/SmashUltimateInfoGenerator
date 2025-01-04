@@ -9,7 +9,7 @@ from tkinter import ttk, messagebox
 from src.core.mod_loader import ModLoader
 from src.core.data import load_config, get_workspace
 from src.core.formatting import (
-    format_folder_name, 
+    format_folder_name,
     format_character_names,
     format_slots
 )
@@ -24,23 +24,23 @@ from src.ui.components.image_treeview import ImageTreeview
 from src.ui.components.paging import Paging
 
 from src.ui.base import (
-    get_text, 
-    set_text, 
-    clear_text, 
-    open_file_dialog, 
+    get_text,
+    set_text,
+    clear_text,
+    open_file_dialog,
     get_icon
 )
 
-# from .editor import Editor
+from .editor import Editor
 # from .config import Config
 from .filter import Filter
 from .preview import Preview
 from .preset import Preset
 
 from src.utils.file import (
-    is_valid_dir, 
-    copy_directory_contents, 
-    is_case_sensitive, 
+    is_valid_dir,
+    copy_directory_contents,
+    is_case_sensitive,
     get_base_name
 )
 from src.utils.web import open_page
@@ -163,7 +163,7 @@ class Menu:
     def on_finish_edit(self, old_dir:str, new_dir:str):
         is_dir_same = True if old_dir == new_dir else False
         dir_to_update = old_dir if is_dir_same else new_dir
-        ModLoader(dir_to_update, self.on_finish_update)
+        ModLoader([dir_to_update], self.on_finish_update)
 
     def on_finish_update(self, mods):
         valid_mods = [mod for mod in self.mods if os.path.isdir(mod["path"])]
@@ -229,13 +229,17 @@ class Menu:
         self.open_editor()
 
     def open_editor(self):
-        pass
-        # selected_item = self.treeview.get_selected()
-        # if selected_item:
-        #     item = self.treeview.item(selected_item)
-        #     Editor(self.root, self.webdriver_manager, item['values'][-1], self.on_finish_edit)
-        # else:
-        #     print("nothing selected in treeview!")
+        selected_item = self.treeview.get_selected()
+        if selected_item:
+            values = self.treeview.get_values(selected_item)
+            Editor(
+                self.root,
+                self.webdriver_manager,
+                values[-1],
+                self.on_finish_edit
+            )
+        else:
+            print("nothing selected in treeview!")
 
     def open_config(self):
         pass
@@ -329,7 +333,7 @@ class Menu:
         config = load_config()
         default_dir = config.get("default_directory")
         if is_valid_dir(default_dir) and is_valid_dir(dir):
-            ModLoader(dir, self.on_drop_scanned)
+            ModLoader([dir], self.on_drop_scanned)
 
     def on_drop_scanned(self, mods:list[Mod]):
         if len(mods) <= 0: 
@@ -422,8 +426,8 @@ class Menu:
         self.label_total.pack(side=tk.RIGHT)
 
         self.treeview = ImageTreeview(
-            root=self.root, 
-            parent=self.frame_list, 
+            root=self.root,
+            parent=self.frame_list,
             columns=COLUMNS,
             on_drag_drop=self.on_drag_drop,
             on_selected=self.on_item_selected,
@@ -434,9 +438,9 @@ class Menu:
             on_left=self.on_prev_page,
             on_right=self.on_next_page
         )
-        
+
         self.paging = Paging(
-            root = self.frame_list, 
+            root = self.frame_list,
             callback = self.on_change_page
         )
 
