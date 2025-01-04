@@ -9,8 +9,8 @@ SORTING_CATEGORIES = {
     "mod_name":"Mod Name", 
     "category":"Category", 
     "authors":"Author", 
-    "character_name":"Character", 
-    "slots":"Slot"
+    "character":"Character", 
+    "character_slots":"Slot"
 }
 
 class Sorting:

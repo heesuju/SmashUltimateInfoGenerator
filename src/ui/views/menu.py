@@ -33,7 +33,7 @@ from src.ui.base import (
 
 from .editor import Editor
 # from .config import Config
-from .filter import Filter
+from .search_filter import SearchFilter
 from .preview import Preview
 from .preset import Preset
 
@@ -391,7 +391,7 @@ class Menu:
 
         self.frame_list = tk.Frame(self.frame_content)
         self.frame_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.filter_view = Filter(self.frame_list, self.search, self.refresh)
+        self.filter_view = SearchFilter(self.frame_list, self.search, self.refresh)
         
         separator = ttk.Separator(self.frame_content, orient='vertical')
         separator.pack(side=tk.LEFT, fill=tk.Y, padx=(0,0))

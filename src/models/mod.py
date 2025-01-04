@@ -11,6 +11,7 @@ class Mod:
         self.wifi_safe = ""
         self.folder_name = ""
         self.path = ""
+        self.character = ""
         self.character_slots = []
         self.stage_slots = []
         self.character_names = []

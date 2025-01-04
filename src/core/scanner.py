@@ -13,7 +13,7 @@ from src.utils.string_helper import str_to_int
 from src.models.mod import Mod
 from src.constants.elements import *
 from src.constants.categories import *
-from .formatting import get_mod_name
+from .formatting import get_mod_name, format_character_names
 from data import PATH_CHAR_NAMES
 
 def scan_character(root_dir:str, subfolders:list[str], mod:Mod, is_fighter:bool=True)->Mod:
@@ -202,15 +202,24 @@ def scan_thumbnail(mod:Mod)->Mod:
     return mod
 
 def scan_mod(mod:Mod)->Mod:
-
+    """
+    Scans mod directory and auto-fills information
+    """
     def get_category(mod:Mod)->str:
-        if mod.contains_skin or mod.contains_motion:                            return CATEGORY_FIGHTER
-        elif mod.contains_stage:                                                return CATEGORY_STAGE
-        elif mod.contains_effect or mod.contains_one_slot_effect:               return CATEGORY_EFFECTS 
-        elif mod.contains_voice or mod.contains_sfx or mod.contains_narrator:   return CATEGORY_AUDIO
-        elif mod.contains_ui:                                                   return CATEGORY_UI
-        elif mod.contains_script:                                               return CATEGORY_PARAM
-        else:                                                                   return CATEGORY_MISC
+        if mod.contains_skin or mod.contains_motion:
+            return CATEGORY_FIGHTER
+        elif mod.contains_stage:
+            return CATEGORY_STAGE
+        elif mod.contains_effect or mod.contains_one_slot_effect:
+            return CATEGORY_EFFECTS
+        elif mod.contains_voice or mod.contains_sfx or mod.contains_narrator:
+            return CATEGORY_AUDIO
+        elif mod.contains_ui:
+            return CATEGORY_UI
+        elif mod.contains_script:
+            return CATEGORY_PARAM
+        else:
+            return CATEGORY_MISC
 
     mod = scan_fighter(mod)
     mod = scan_effect(mod)
@@ -222,7 +231,13 @@ def scan_mod(mod:Mod)->Mod:
     mod = scan_ui(mod)
     mod = scan_thumbnail(mod)
     mod.category = get_category(mod)
+    mod.character = format_character_names(mod.character_names)
     if not mod.mod_name:
-        mod.mod_name = get_mod_name(mod.display_name, mod.character_keys, mod.character_slots, mod.category)
+        mod.mod_name = get_mod_name(
+            mod.display_name,
+            mod.character_keys,
+            mod.character_slots,
+            mod.category
+        )
 
     return mod

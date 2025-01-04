@@ -7,22 +7,26 @@ from tkinter import ttk
 from PIL import ImageTk
 import tkinter as tk
 from idlelib.tooltip import Hovertip
+
 from src.constants.ui_params import PAD_H, PAD_V
 from src.constants.categories import CATEGORIES
-from assets import ICON_PATH
-from .sorting import Sorting, sort_by_columns
+
+from src.core.filter import sort_by_columns
 from src.models.mod import Mod
 from src.ui.base import get_text, clear_text, validate_slot
 from src.utils.edit_distance import get_completion
 from src.utils.csv_helper import csv_to_dict
 from src.core.data import load_config
+from src.core.filter import get_similar_character
 from data import PATH_CHAR_NAMES
+from assets import ICON_PATH
 from src.utils.string_helper import remove_redundant_spacing
+from .sorting import Sorting
 
 INFO_VALUES = ["All", "Included", "Not Included"]
 WIFI_VALUES = ["All", "Safe", "Not Safe", "Uncertain"]
 
-class Filter:
+class SearchFilter:
     def __init__(self, root, search_fn, refresh_fn) -> None:
         self.sort_view = None
         self.root = root
@@ -144,7 +148,12 @@ class Filter:
         new_info = get_completion(get_text(self.cbox_info), INFO_VALUES)
         self.cbox_info.set(new_info if new_info else "All")
 
-        new_series = get_completion(get_text(self.cbox_series), self.series)
+        new_series = get_text(self.cbox_series)
+        if new_series:
+            new_series = get_completion(get_text(self.cbox_series), self.series)
+        else:
+            new_series = "All"
+
         self.cbox_series.set(new_series if new_series else "All") 
         
         char_data = csv_to_dict(PATH_CHAR_NAMES)
@@ -161,7 +170,13 @@ class Filter:
         chars.extend(sorted(filtered_chars))
         self.char_values = chars
 
-        new_char = get_char_completion(get_text(self.cbox_char), self.char_values)
+        new_char = get_text(self.cbox_char)
+        if new_char:
+            new_char = get_similar_character(get_text(self.cbox_char), self.char_values)
+        elif "All" in chars:
+            new_char = "All"
+        elif len(chars) > 0:
+            new_char = chars[0]
         self.cbox_char.config(values=self.char_values)
         self.cbox_char.set(new_char if new_char else "All")
 
@@ -239,7 +254,7 @@ class Filter:
 
             if filter_params.get("characters") != "all":
                 found_match = False
-                for ch in mod["character_names"]:
+                for ch in mod.character_names:
                     if ch.lower() == filter_params.get("characters"):
                         found_match = True
                         break
@@ -249,7 +264,7 @@ class Filter:
 
             if filter_params.get("series") != "all":
                 should_include = False
-                for char_name in mod["character_list"]:
+                for char_name in mod.character_keys:
                     if filter_params.get("series") == self.get_series(char_name, data):
                         should_include = True
                 
@@ -277,7 +292,7 @@ class Filter:
                 max_slot = int(filter_params.get("slot_to") if filter_params.get("slot_to") else 255)
                 
                 if max_slot >= min_slot:
-                    for slot in mod["slot_list"]:
+                    for slot in mod.character_slots:
                         if slot >= min_slot and slot <= max_slot:
                             contains_slot = True
                             break
@@ -305,48 +320,3 @@ class Filter:
 
     def on_sorting_changed(self):
         self.search_fn()
-
-def get_char_completion(text:str, values:list)->None:
-    if len(values) == 1:
-        result = values[0]
-    elif len(values) > 1:
-        chars = csv_to_dict(PATH_CHAR_NAMES)
-        options = set()
-        for c in chars:
-            name = c.get("Custom")
-            if name in values:
-                key = c.get("Key")
-                org = c.get("Value")
-                alt = c.get("Alt")
-                if key: 
-                    options.add(key)
-                if org:
-                    options.add(org)
-                if alt:
-                    options.add(alt)
-                options.add(name)
-        options.add("All")
-        sorted_list = list(options)
-        sorted_list = sorted(sorted_list)
-        match = get_completion(text, sorted_list)
-        
-        result = "All" if "All" in values else values[0]
-
-        for c in chars:
-            name = c.get("Custom")
-            key = c.get("Key")
-            org = c.get("Value")
-            alt = c.get("Alt")
-            if match == name:
-                result = name
-                break
-            elif match == key:
-                result = name
-                break
-            elif match == org:
-                result = name
-                break
-            elif match == alt:
-                result = name
-                break
-    return result
