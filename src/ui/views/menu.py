@@ -31,7 +31,8 @@ from src.utils.file import (
     is_valid_dir,
     copy_directory_contents,
     is_case_sensitive,
-    get_base_name
+    get_base_name,
+    is_same_dir
 )
 from src.utils.web import open_page
 from src.utils.hash import get_hash
@@ -159,18 +160,18 @@ class Menu:
         self.populate(self.filtered_mods)
 
     def on_finish_edit(self, old_dir:str, new_dir:str):
-        is_dir_same = True if old_dir == new_dir else False
+        is_dir_same = is_same_dir(old_dir, new_dir)
         dir_to_update = old_dir if is_dir_same else new_dir
         ModLoader([dir_to_update], self.on_finish_update)
 
-    def on_finish_update(self, mods):
-        valid_mods = [mod for mod in self.mods if os.path.isdir(mod["path"])]
+    def on_finish_update(self, mods:list[Mod]):
+        valid_mods = [mod for mod in self.mods if os.path.isdir(mod.path)]
 
         for n in mods:
             found_match = False
             for idx, m in enumerate(valid_mods):
-                new_path = get_base_name(n.get("path", ""))
-                mod_path = get_base_name(m.get("path", ""))
+                new_path = get_base_name(n.path)
+                mod_path = get_base_name(m.path)
 
                 if not self.case_sensitive:
                     new_path = new_path.lower()
@@ -179,12 +180,12 @@ class Menu:
                 if new_path == mod_path:
                     valid_mods[idx] = n
                     found_match = True
-                    print("updated dir:", n["path"])
+                    print("updated dir:", n.path)
                     break
 
             if found_match == False:
                 valid_mods.append(n)
-                print("added dir:", n["path"])
+                print("added dir:", n.path)
         self.mods = valid_mods
         self.search()
 

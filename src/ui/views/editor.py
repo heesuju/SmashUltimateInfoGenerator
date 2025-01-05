@@ -216,12 +216,14 @@ class Editor:
         new_authors = get_text(self.entry_authors)
         new_version = get_text(self.entry_ver)
         category = get_text(self.combobox_cat)
+        new_wifi = get_text(self.cbox_wifi_safe)
 
         self.mod.mod_name = new_mod_name
         self.mod.character = new_char_names
         self.mod.category = category
         self.mod.authors = new_authors
         self.mod.version = new_version
+        self.mod.wifi_safe = new_wifi
 
         self.set_display_name(new_char_names, new_slots, new_mod_name, category)
         self.set_folder_name(new_char_names, new_slots, new_mod_name, category)
@@ -342,6 +344,7 @@ class Editor:
         Applies changes to info.toml
         A new file will be generated if it does not exist
         """
+        self.mod.includes = self.get_includes()
         data = dict(self.mod)
         result = dump_toml(
             self.mod.path,
@@ -349,24 +352,24 @@ class Editor:
         )
         print(result)
         
-        # if get_text(self.entry_work_dir):
-        #     old_dir = self.mod.path
-        #     self.move_file()
-        #     new_dir = os.path.join(get_parent_dir(old_dir), get_text(self.entry_folder_name)) 
-        #     result, msg = rename_folder(old_dir, new_dir)
-        #     if result:
-        #         set_text(self.entry_work_dir, new_dir)
-        #         self.mod.path = new_dir
-        #         self.find_image()
-        #         self.callback(old_dir, new_dir)
+        old_dir = self.mod.path
+        if old_dir:
+            self.move_file()
+            new_dir = os.path.join(get_parent_dir(old_dir), self.mod.folder_name) 
+            result, msg = rename_folder(old_dir, new_dir)
+            if result:
+                self.mod.path = new_dir
+                set_text(self.entry_work_dir, new_dir)
+                self.find_image()
+                self.callback(old_dir, new_dir)
 
-        #         messagebox.showinfo("Info", msg)
-        #         if self.config.close_on_apply:
-        #             self.on_close()
-        #     else:
-        #         messagebox.showwarning("Error", msg)
-        # else:
-        #     set_text(self.label_output, "Working directory is empty!")
+                messagebox.showinfo("Info", msg)
+                if self.config.close_on_apply:
+                    self.on_close()
+            else:
+                messagebox.showwarning("Error", msg)
+        else:
+            set_text(self.label_output, "Working directory is empty!")
 
     def update_image(self):
         """
@@ -407,7 +410,7 @@ class Editor:
         
     def move_file(self):
         source_file = get_text(self.entry_img_dir) 
-        dst_dir = get_text(self.entry_work_dir)
+        dst_dir = get_text(self.mod.path)
         
         if not source_file or not os.path.exists(source_file):
             print("image dir is empty or invalid")
@@ -427,7 +430,8 @@ class Editor:
         img_list = get_direct_child_by_extension(self.mod.path, ".webp")
         
         if len(img_list) > 0:
-            self.set_image(self.mod.path +  "/" + img_list[0])
+            img_path = os.path.join(self.mod.path, img_list[0])
+            self.set_image(img_path)
             self.replace_img_state.set(False)
             return
         
@@ -435,10 +439,11 @@ class Editor:
         for img_type in other_types:
             img_list = get_direct_child_by_extension(self.mod.path, img_type)
             if len(img_list) > 0:
-                self.set_image(self.mod.path +  "/" + img_list[0])
+                img_path = os.path.join(self.mod.path, img_list[0])
+                self.set_image(img_path)
                 self.replace_img_state.set(False)
                 return
-
+        
         self.entry_img_dir.delete(0, tk.END)
         self.label_img.config(image=None)
         self.label_img.image = None
@@ -616,7 +621,7 @@ class Editor:
         self.cbox_wifi_safe = ttk.Combobox(self.new_window, width=10, values=["Uncertain", "Safe", "Not Safe"])
         self.cbox_wifi_safe.grid(row=10, column=1, sticky=tk.EW, padx = (0, PAD_H), pady = (0, PAD_V))
         self.cbox_wifi_safe.set("Uncertain")
-        # self.cbox_wifi_safe.bind("<<ComboboxSelected>>", self.on_img_url_selected)
+        self.cbox_wifi_safe.bind("<<ComboboxSelected>>", self.on_entry_change)
 
         includes_label = tk.Label(self.new_window, text="Includes")
         includes_label.grid(row=11, column=1, sticky=tk.W)

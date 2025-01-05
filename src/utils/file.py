@@ -11,6 +11,14 @@ import tempfile
 import re
 from .common import *
 
+def is_same_dir(dir1:str, dir2:str)->bool:
+    normalized_dir1 = os.path.normpath(dir1)
+    normalized_dir2 = os.path.normpath(dir2)
+    if normalized_dir1 == normalized_dir2:
+        return True
+    else:
+        return False
+
 def generate_unique_name(base_name: str) -> str:
     """
     Generates a unique random string for temporary files

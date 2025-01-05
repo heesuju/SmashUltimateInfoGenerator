@@ -4,6 +4,7 @@ included elements
 """
 
 import os
+import copy
 from threading import Thread
 import concurrent.futures
 from typing import Union
@@ -58,7 +59,11 @@ class ModLoader(Thread):
             mod.update(**data)
             mod.contains_info = True
 
+        tmp_includes = copy.copy(mod.includes)
         mod = scan_mod(mod)
+        if len(tmp_includes) > 0:
+            mod.includes = tmp_includes
+
         return mod
 
     def find_mods(self, directory:Union[str, list[str]])->None:

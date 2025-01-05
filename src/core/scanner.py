@@ -187,9 +187,9 @@ def scan_ui(mod:Mod)->Mod:
                 mod.contains_one_slot_name = True
                 mod.includes.append(ONE_SLOT_NAME)
             
-            if search_dir_by_keyword(root_dir, "replace") or search_dir_by_keyword(root_dir, "replace_patch"):
-                mod.contains_ui = True
-                mod.includes.append(UI)
+        if search_dir_by_keyword(root_dir, "replace") or search_dir_by_keyword(root_dir, "replace_patch"):
+            mod.contains_ui = True
+            mod.includes.append(UI)
         
     return mod
 
@@ -221,6 +221,7 @@ def scan_mod(mod:Mod)->Mod:
         else:
             return CATEGORY_MISC
 
+    mod.includes = []
     mod = scan_fighter(mod)
     mod = scan_effect(mod)
     mod = scan_stage(mod)
