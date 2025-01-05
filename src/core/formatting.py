@@ -241,7 +241,7 @@ def clean_vesion(version:str)->str:
     if len(parts) <= 0:
         return "1.0.0"
 
-    numeric_parts = [str(int(''.join(filter(str.isdigit, part)))) for part in parts]
+    numeric_parts = [str(int(''.join(filter(str.isdigit, part)))) for part in parts if part]
 
     while len(numeric_parts) < 3:
         numeric_parts.append('0')

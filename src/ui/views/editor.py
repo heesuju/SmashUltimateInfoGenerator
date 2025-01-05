@@ -5,6 +5,7 @@ editor.py: The editor view from which info.toml parameters can be modified manua
 import shutil
 import os
 import sys
+import copy
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from PIL import ImageTk
@@ -30,6 +31,7 @@ from src.utils.web import (
     open_page,
     is_valid_url
 )
+from src.utils.string_helper import remove_spacing
 from src.utils.downloader import Downloader
 from src.utils.image_handler import ImageHandler
 from src.utils.file import (
@@ -44,11 +46,10 @@ from src.ui.base import (
     set_text,
     clear_text,
     set_enabled,
-    open_file_dialog
+    open_file_dialog,
+    get_icon
 )
 from src.ui.components.checkbox_treeview import Treeview
-
-from assets import ICON_PATH
 from .comparison import Comparison
 from .config import Config
 
@@ -69,9 +70,15 @@ class Editor:
         self.is_running = True
         self.callback = callback
         self.directory = directory
+        self.icon_browse = get_icon('browse')
+        self.icon_config = get_icon('config')
+        self.icon_download = get_icon('download')
         self.open(self.root, self.directory)
-    
+
     def on_close(self):
+        """
+        Clean-up function called before closing window
+        """
         self.is_running = False
         self.new_window.destroy()
 
@@ -165,19 +172,18 @@ class Editor:
         ScraperThread(self.entry_url.get(), self.webdriver_manager, self.on_selenium_result)
 
     def on_url_changed(self, event):
+        """
+        Function called when url entry is changed
+        """
         self.mod.url = get_text(self.entry_url)
 
     def open_url(self):
+        """
+        Opens the web page in the url entry field
+        """
         if is_valid_url(self.entry_url.get()):
             open_page(self.entry_url.get())
 
-    def on_combobox_select(self, event):
-        self.set_folder_name(
-            self.entry_char_names.get().replace(" ", ""), 
-            self.entry_slots.get().replace(" ", ""), 
-            self.entry_mod_name.get().replace(" ", ""), 
-            self.combobox_cat.get()) 
-    
     def on_img_url_selected(self, event):
         selected_idx = self.cbox_img.current()
         self.replace_img_state.set(True)
@@ -193,17 +199,74 @@ class Editor:
             self.on_img_url_selected(None)
         else:
             self.find_image()
-    
+
+    def on_desc_change(self, event):
+        """
+        Change mod description
+        """
+        self.mod.description = get_text(self.txt_desc)
+
     def on_entry_change(self, event):
-        self.set_display_name(self.entry_char_names.get(), self.entry_slots.get(), self.entry_mod_name.get(), self.combobox_cat.get())
-        self.set_folder_name(self.entry_char_names.get().replace(" ", ""), self.entry_slots.get().replace(" ", ""), self.entry_mod_name.get().replace(" ", ""), self.combobox_cat.get())
+        """
+        Callback called when mod name, character, slot fields are changed
+        """
+        new_mod_name = get_text(self.entry_mod_name)
+        new_char_names = get_text(self.entry_char_names)
+        new_slots = get_text(self.entry_slots)
+        new_authors = get_text(self.entry_authors)
+        new_version = get_text(self.entry_ver)
+        category = get_text(self.combobox_cat)
 
-    def set_display_name(self, character_names, slots, mod_name, category):
-        set_text(self.entry_display_name, format_display_name(character_names, slots, mod_name, category))
+        self.mod.mod_name = new_mod_name
+        self.mod.character = new_char_names
+        self.mod.category = category
+        self.mod.authors = new_authors
+        self.mod.version = new_version
 
-    def set_folder_name(self, character_names, slots, mod_name, category):
-        set_text(self.entry_folder_name, format_folder_name(character_names, slots, mod_name, category))
- 
+        self.set_display_name(new_char_names, new_slots, new_mod_name, category)
+        self.set_folder_name(new_char_names, new_slots, new_mod_name, category)
+
+    def on_change_folder_name(self, event):
+        """
+        called when folder name has been modified manually
+        """
+        new_name = get_text(self.entry_folder_name)
+        self.mod.folder_name = new_name
+
+    def on_change_display_name(self, event):
+        """
+        called when display name has been modified manually
+        """
+        new_name = get_text(self.entry_display_name)
+        self.mod.display_name = new_name
+
+    def set_display_name(self, character_names:str, slots:str, mod_name:str, category:str)->None:
+        """
+        Updates display_name entry field based on 4 other entry fields
+        """
+        new_display_name = format_display_name(
+            character_names,
+            slots,
+            mod_name,
+            category
+        )
+
+        set_text(self.entry_display_name, new_display_name)
+        self.mod.display_name = new_display_name
+
+    def set_folder_name(self, character_names:str, slots:str, mod_name:str, category:str)->None:
+        """
+        Updates folder_name entry field based on 4 other entry fields
+        """
+        new_folder_name = format_folder_name(
+            remove_spacing(character_names),
+            remove_spacing(slots),
+            remove_spacing(mod_name),
+            remove_spacing(category)
+        )
+        set_text(self.entry_folder_name, new_folder_name)
+        self.mod.folder_name = new_folder_name
+
     def set_img_cbox(self, values=[], selected_option=""):
         self.cbox_img.config(values=values)
         self.cbox_img.set(selected_option)
@@ -215,7 +278,7 @@ class Editor:
         if len(mods) <= 0:
             return
         self.mod = mods[0]
-        self.org_mod = mods[0]
+        self.org_mod = copy.copy(self.mod)
 
         self.combobox_cat.set(self.mod.category)
 
@@ -257,14 +320,15 @@ class Editor:
                 [working_dir],
                 self.on_scanned
             )
-        
+
+        set_text(self.entry_work_dir, self.directory)
         set_text(self.label_output, "Changed working directory")
 
     def change_working_directory(self):
         working_dir = open_file_dialog(self.config.default_dir)
         if not working_dir:
             return
-        
+
         set_text(self.entry_work_dir, working_dir)
         self.update_preview()
 
@@ -274,54 +338,71 @@ class Editor:
             self.update_preview()
 
     def apply_changes(self):
-        dump_toml(
+        """
+        Applies changes to info.toml
+        A new file will be generated if it does not exist
+        """
+        data = dict(self.mod)
+        result = dump_toml(
             self.mod.path,
-            self.mod.__dict__
+            data
         )
+        print(result)
         
-        if get_text(self.entry_work_dir):
-            old_dir = self.mod.path
-            self.move_file()
-            new_dir = os.path.join(get_parent_dir(old_dir), get_text(self.entry_folder_name)) 
-            result, msg = rename_folder(old_dir, new_dir)
-            if result:
-                set_text(self.entry_work_dir, new_dir)
-                self.mod.path = new_dir
-                self.find_image()
-                self.callback(old_dir, new_dir)
+        # if get_text(self.entry_work_dir):
+        #     old_dir = self.mod.path
+        #     self.move_file()
+        #     new_dir = os.path.join(get_parent_dir(old_dir), get_text(self.entry_folder_name)) 
+        #     result, msg = rename_folder(old_dir, new_dir)
+        #     if result:
+        #         set_text(self.entry_work_dir, new_dir)
+        #         self.mod.path = new_dir
+        #         self.find_image()
+        #         self.callback(old_dir, new_dir)
 
-                messagebox.showinfo("Info", msg)
-                if self.config.close_on_apply:
-                    self.on_close()
-            else:
-                messagebox.showwarning("Error", msg)
-        else:
-            set_text(self.label_output, "Working directory is empty!")
+        #         messagebox.showinfo("Info", msg)
+        #         if self.config.close_on_apply:
+        #             self.on_close()
+        #     else:
+        #         messagebox.showwarning("Error", msg)
+        # else:
+        #     set_text(self.label_output, "Working directory is empty!")
 
     def update_image(self):
-        image_path =  filedialog.askopenfilename(filetypes=[("Image files", "*.png;*.jpg;*.jpeg;*.gif;*.webp")])
+        """
+        Open file selection dialog for new thumbnail image
+        """
+        image_file_types = ""
+        for extension in IMAGE_TYPES:
+            image_file_types += f"*{extension};"
+        image_path =  filedialog.askopenfilename(filetypes=[("Image files", image_file_types)])
         if not image_path or not os.path.exists(image_path):
             return
         self.set_image(image_path)
 
-    def on_update_image(self, event):
+    def on_update_image(self, event)->None:
+        """
+        Called when image directory is changed
+        """
         image_dir = self.entry_img_dir.get()
         if self.mod.thumbnail == image_dir:
             return
+
         self.mod.thumbnail = image_dir
-        image_extensions = [".webp", ".png", ".jpg", ".jpeg", ".gif"]
+
         if image_dir and os.path.exists(image_dir):
-            for extension in image_extensions:
+            for extension in IMAGE_TYPES:
                 if image_dir.endswith(extension):
                     self.set_image(image_dir)
                     break
-        
+
     def set_image(self, directory):
         if not directory or not os.path.exists(directory):
             return
         
         self.entry_img_dir.delete(0, tk.END)
         self.entry_img_dir.insert(tk.END, directory)
+        self.mod.thumbnail = directory
         ImageHandler(directory, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
         
     def move_file(self):
@@ -382,15 +463,21 @@ class Editor:
         self.config.set_close_on_apply(self.close_on_apply.get())
 
     def open_config(self):
+        """
+        Opens config popup
+        """
         self.config.open_config(self.new_window) 
 
     def open_comparison(self):
+        """
+        Opens before/after comparison popup
+        """
         self.comparison.open(self.new_window, src=self.org_mod, dst=self.mod)
-    
+
     def open(self, root, working_dir = ""):
         if self.new_window is not None:
             self.new_window.destroy()
-        
+
         self.new_window = tk.Toplevel(root)
         self.new_window.title("Edit")
         self.new_window.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -398,6 +485,9 @@ class Editor:
         self.show(self.new_window, working_dir)
 
     def show(self, root, working_dir = ""):
+        """
+        Shows editor window and binds widget commands
+        """
         self.new_window = root
         for i in range(3):
             self.new_window.columnconfigure(i, weight=1)
@@ -406,15 +496,11 @@ class Editor:
         self.new_window.rowconfigure(12, weight=1)
         self.new_window.minsize(640, 340)
         self.new_window.geometry("920x560")
-        self.new_window.configure(padx=10, pady=10) 
-
-        self.icon_browse = ImageTk.PhotoImage(file=os.path.join(ICON_PATH, 'browse.png'))
-        self.icon_config = ImageTk.PhotoImage(file=os.path.join(ICON_PATH, 'config.png'))
-        self.icon_download = ImageTk.PhotoImage(file=os.path.join(ICON_PATH, 'download.png'))
+        self.new_window.configure(padx=10, pady=10)
 
         # column 0
-        self.label_work_dir = tk.Label(self.new_window, text="Directory")
-        self.label_work_dir.grid(row=0, column=0, sticky=tk.W, pady = (0, PAD_V))
+        dir_label = tk.Label(self.new_window, text="Directory")
+        dir_label.grid(row=0, column=0, sticky=tk.W, pady = (0, PAD_V))
 
         self.btn_config = tk.Button(self.new_window, image=self.icon_config, width=15,height=15,relief=tk.FLAT ,cursor='hand2',command=self.open_config )
         self.btn_config.grid(row=0, column=2, sticky=tk.E, pady = (0, PAD_V))
@@ -452,29 +538,31 @@ class Editor:
         self.entry_mod_name.grid(row=6, column=0, sticky=tk.EW, padx = (0, PAD_H), pady = (0, PAD_V))
         self.entry_mod_name.bind("<KeyRelease>", self.on_entry_change)
 
-        self.label_authors = tk.Label(self.new_window, text="Authors")
-        self.label_authors.grid(row=7, column=0, sticky=tk.W)
+        author_label = tk.Label(self.new_window, text="Authors")
+        author_label.grid(row=7, column=0, sticky=tk.W)
 
         self.entry_authors = tk.Entry(self.new_window, width=10)
         self.entry_authors.grid(row=8, column=0, sticky=tk.EW, padx = (0, PAD_H), pady = (0, PAD_V))
+        self.entry_authors.bind("<KeyRelease>", self.on_entry_change)
 
         self.frame = tk.Frame(self.new_window)
         self.frame.grid(row=9, column=0, rowspan=2, sticky=tk.EW, padx = (0, PAD_H), pady = (0, PAD_V))
         self.frame.columnconfigure(1, weight=1)
 
-        self.label_ver = tk.Label(self.frame, text="Version")
-        self.label_ver.grid(row=0, column=0, sticky=tk.W)
+        version_label = tk.Label(self.frame, text="Version")
+        version_label.grid(row=0, column=0, sticky=tk.W)
 
         self.entry_ver = tk.Entry(self.frame, width=10)
         self.entry_ver .grid(row=1, column=0, sticky=tk.W, padx=(0,PAD_H))
         self.entry_ver.insert(0, "1.0.0")
+        self.entry_ver.bind("<KeyRelease>", self.on_entry_change)
 
         self.label_cat = tk.Label(self.frame, text="Category")
         self.label_cat.grid(row=0, column=1, sticky=tk.W)
 
         self.combobox_cat = ttk.Combobox(self.frame, values=CATEGORIES, width=10)
         self.combobox_cat.grid(row=1, column=1, sticky=tk.EW)
-        self.combobox_cat.bind("<<ComboboxSelected>>", self.on_combobox_select)
+        self.combobox_cat.bind("<<ComboboxSelected>>", self.on_entry_change)
         self.combobox_cat.set(CATEGORIES[-1])
 
         self.label_img_dir = tk.Label(self.new_window, text="Image", anchor='w')
@@ -522,39 +610,42 @@ class Editor:
         self.entry_slots.grid(row=8, column=1, sticky=tk.EW, padx = (0, PAD_H), pady = (0, PAD_V))
         self.entry_slots.bind("<KeyRelease>", self.on_entry_change)
 
-        self.l_wifi_safe = tk.Label(self.new_window, text="Wifi-Safe")
-        self.l_wifi_safe.grid(row=9, column=1, sticky=tk.W)
-    
+        wifi_safe_label = tk.Label(self.new_window, text="Wifi-Safe")
+        wifi_safe_label.grid(row=9, column=1, sticky=tk.W)
+
         self.cbox_wifi_safe = ttk.Combobox(self.new_window, width=10, values=["Uncertain", "Safe", "Not Safe"])
         self.cbox_wifi_safe.grid(row=10, column=1, sticky=tk.EW, padx = (0, PAD_H), pady = (0, PAD_V))
         self.cbox_wifi_safe.set("Uncertain")
         # self.cbox_wifi_safe.bind("<<ComboboxSelected>>", self.on_img_url_selected)
 
-        self.label_list = tk.Label(self.new_window, text="Includes")
-        self.label_list.grid(row=11, column=1, sticky=tk.W)
+        includes_label = tk.Label(self.new_window, text="Includes")
+        includes_label.grid(row=11, column=1, sticky=tk.W)
 
         self.treeview = Treeview(self.new_window, False)
         self.treeview.construct(["Elements"])
         self.treeview.widget.grid(row=12, column=1, sticky=tk.NSEW, padx = (0, PAD_H), pady = (0, PAD_V))
-        
+
         # column 2
-        self.label_folder_name = tk.Label(self.new_window, text="Folder Name")
-        self.label_folder_name .grid(row=5, column=2, sticky=tk.W)
+        folder_name_label = tk.Label(self.new_window, text="Folder Name")
+        folder_name_label .grid(row=5, column=2, sticky=tk.W)
 
         self.entry_folder_name = tk.Entry(self.new_window)
         self.entry_folder_name.grid(row=6, column=2, sticky=tk.EW, pady = (0, PAD_V))
+        self.entry_folder_name.bind("<KeyRelease>", self.on_change_folder_name)
 
-        self.label_display_name = tk.Label(self.new_window, text="Display Name")
-        self.label_display_name.grid(row=7, column=2, sticky=tk.W)
+        display_name_label = tk.Label(self.new_window, text="Display Name")
+        display_name_label.grid(row=7, column=2, sticky=tk.W)
 
         self.entry_display_name = tk.Entry(self.new_window, width=10)
         self.entry_display_name.grid(row=8, column=2, sticky=tk.EW, pady = (0, PAD_V))
+        self.entry_display_name.bind("<KeyRelease>", self.on_change_display_name)
 
-        self.label_desc = tk.Label(self.new_window, text="Description")
-        self.label_desc.grid(row=11, column=2, sticky=tk.W)
+        desc_label = tk.Label(self.new_window, text="Description")
+        desc_label.grid(row=11, column=2, sticky=tk.W)
 
         self.txt_desc = tk.Text(self.new_window, height=10, width=10, wrap="word")
         self.txt_desc.grid(row=12, column=2, sticky=tk.NSEW, pady = (0, PAD_V))
+        self.txt_desc.bind("<KeyRelease>", self.on_desc_change)
 
         self.frame_btn = tk.Frame(self.new_window)
         self.frame_btn.grid(row=13, column=0, columnspan=3, sticky=tk.NSEW)
@@ -571,7 +662,7 @@ class Editor:
 
         self.label_output = tk.Label(self.frame_btn)
         self.label_output.pack(side=tk.LEFT)
-        
+
         self.new_window.bind("<Configure>", self.on_window_resize)
 
         self.entry_work_dir.delete(0, tk.END)

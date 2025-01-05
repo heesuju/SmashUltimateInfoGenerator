@@ -16,8 +16,9 @@ from src.models.mod import Mod
 from src.ui.base import get_text, clear_text, validate_slot
 from src.utils.edit_distance import get_completion
 from src.utils.csv_helper import csv_to_dict
-from src.core.data import load_config
-from src.core.filter import get_similar_character
+from src.core.filter import (
+    get_similar_character
+)
 from data import PATH_CHAR_NAMES
 from assets import ICON_PATH
 from src.utils.string_helper import remove_redundant_spacing
@@ -235,83 +236,6 @@ class SearchFilter:
     def clear(self):
         self.reset()
         self.search_fn()
-
-    def filter_mods(self, mods:list[Mod], enabled_list:list = []):
-        filter_params = self.get_filter_params()
-        outputs = []
-        data = csv_to_dict(PATH_CHAR_NAMES)
-        
-        for mod in mods:
-            if filter_params.get("enabled_only", False):
-                if mod.hash not in enabled_list: 
-                    continue
-
-            if filter_params.get("mod_name") not in mod.mod_name.lower(): 
-                continue
-
-            if filter_params.get("authors") not in mod.authors.lower(): 
-                continue
-
-            if filter_params.get("characters") != "all":
-                found_match = False
-                for ch in mod.character_names:
-                    if ch.lower() == filter_params.get("characters"):
-                        found_match = True
-                        break
-
-                if  found_match == False: 
-                    continue
-
-            if filter_params.get("series") != "all":
-                should_include = False
-                for char_name in mod.character_keys:
-                    if filter_params.get("series") == self.get_series(char_name, data):
-                        should_include = True
-                
-                if should_include == False:
-                    continue
-            
-            if filter_params.get("category") != "all":
-                if filter_params.get("category") != mod.category.lower():
-                    continue
-            
-            if filter_params.get("info_toml") != "all":
-                if filter_params.get("info_toml") == "included" and mod.contains_info == False:
-                    continue
-
-                elif filter_params.get("info_toml") == "not included" and mod.contains_info == True:
-                    continue
-
-            if filter_params.get("wifi_safe") != "all":
-                if filter_params.get("wifi_safe") != mod.wifi_safe.lower():
-                    continue
-
-            if filter_params.get("slot_from") or filter_params.get("slot_to"):
-                contains_slot = False
-                min_slot = int(filter_params.get("slot_from") if filter_params.get("slot_from") else 0)
-                max_slot = int(filter_params.get("slot_to") if filter_params.get("slot_to") else 255)
-                
-                if max_slot >= min_slot:
-                    for slot in mod.character_slots:
-                        if slot >= min_slot and slot <= max_slot:
-                            contains_slot = True
-                            break
-                
-                if contains_slot == False:
-                    continue
-                
-            outputs.append(mod)
-
-        sort_prioirty = load_config().get("sort_priority", None)
-        if sort_prioirty is not None:
-            return sort_by_columns(outputs, sort_prioirty)
-        else:
-            return outputs
-
-    def get_series(self, character_name:str, data):
-        for d in data:
-            if d.get("Key") ==  character_name:
-                return d.get("Series").lower()
             
     def show_sort(self):
         if self.sort_view is None:

@@ -5,7 +5,7 @@ menu.py: The main view that contains list view showing all of the existing mods 
 import os
 import tkinter as tk
 from tkinter import ttk, messagebox
-
+from idlelib.tooltip import Hovertip
 from src.core.mod_loader import ModLoader
 from src.core.data import load_config, get_workspace
 from src.core.formatting import (
@@ -13,16 +13,13 @@ from src.core.formatting import (
     format_character_names,
     format_slots
 )
-
+from src.core.filter import filter_mods
 from src.models.mod import Mod
-
 from src.constants.ui_params import PAD_H, PAD_V, COLUMNS
 from src.constants.defs import GIT_REPO_URL
-
 from src.ui.components.progress_bar import ProgressBar
 from src.ui.components.image_treeview import ImageTreeview
 from src.ui.components.paging import Paging
-
 from src.ui.base import (
     get_text,
     set_text,
@@ -30,13 +27,6 @@ from src.ui.base import (
     open_file_dialog,
     get_icon
 )
-
-from .editor import Editor
-# from .config import Config
-from .search_filter import SearchFilter
-from .preview import Preview
-from .preset import Preset
-
 from src.utils.file import (
     is_valid_dir,
     copy_directory_contents,
@@ -45,9 +35,12 @@ from src.utils.file import (
 )
 from src.utils.web import open_page
 from src.utils.hash import get_hash
-
 from src.core.hide_folder import filter_hidden
-from idlelib.tooltip import Hovertip
+from .editor import Editor
+from .config import Config
+from .search_filter import SearchFilter
+from .preview import Preview
+from .preset import Preset
 
 class Menu:    
     def __init__(self, root, webdriver_manager) -> None:
@@ -56,16 +49,16 @@ class Menu:
 
         self.mods = []
         self.filtered_mods = []
-        # self.config = Config()
+        self.config = Config()
 
         self.case_sensitive = is_case_sensitive()
         self.show()
         self.scan()
-    
+
     def reset(self):
         self.treeview.clear()
         self.preview.clear()
-            
+
     def open_folder(self):
         selected_item = self.treeview.get_selected()
         if selected_item:
@@ -74,26 +67,26 @@ class Menu:
             os.startfile(values[-1])
         else:
             print("no item selected!")
-    
+
     def toggle_mod(self):
         selected_item = self.treeview.get_selected()
         if selected_item:
             item = self.treeview.get_item(selected_item)
             path = item["values"][5].split("/")[-1].split("\\")[-1]
-            hash = get_hash(path)
+            hash_value = get_hash(path)
             workspace = self.get_valid_workspace()
             workspace_data = self.preset.workspace_list.get(workspace)
             if workspace_data:
                 enabled_mods = workspace_data["mod_list"]
             
-                if hash in enabled_mods: # Disable
+                if hash_value in enabled_mods: # Disable
                     self.treeview.set_row_checked(selected_item, False)
                     self.preview.set_toggle_label(False)
-                    self.preset.workspace_list[workspace]["mod_list"].remove(hash)
+                    self.preset.workspace_list[workspace]["mod_list"].remove(hash_value)
                 else: # Enable
                     self.treeview.set_row_checked(selected_item, True)
                     self.preview.set_toggle_label(True)
-                    self.preset.workspace_list[workspace]["mod_list"].append(hash)
+                    self.preset.workspace_list[workspace]["mod_list"].append(hash_value)
 
                 self.preset.update_workspace_count()
             else:
@@ -110,18 +103,23 @@ class Menu:
         self.scan()
 
     def populate(self, mods:list[Mod]):
+        """
+        Adds items to the list of mods
+        """
         start, end = self.paging.update(len(mods)) 
         filtered_len = len(mods)
         total = len(self.mods)
         current_count = end - start
-        set_text(self.label_count, f"Showing {current_count} of {filtered_len}" if filtered_len > current_count else f"Showing {filtered_len}")
+        if filtered_len > current_count:
+            set_text(self.label_count, f"Showing {current_count} of {filtered_len}")
+        else:
+            set_text(self.label_count, f"Showing {filtered_len}")
+
         set_text(self.label_total, f"Total: {total}")
 
         workspace = self.get_valid_workspace()
 
-        images = []
-        values = []
-        checked = []
+        images, values, checked = [], [], []
 
         for n in range(start,end):
             characters = format_character_names(mods[n].character_names)
@@ -155,9 +153,9 @@ class Menu:
         include_hidden = self.filter_view.get_filter_params().get("include_hidden", False)
         if not include_hidden:
             self.filtered_mods = filter_hidden(self.mods)
-            self.filtered_mods = self.filter_view.filter_mods(self.filtered_mods, enabled_mods)
+            self.filtered_mods = filter_mods(self.filtered_mods, self.filter_view.get_filter_params(), enabled_mods)
         else:
-            self.filtered_mods = self.filter_view.filter_mods(self.mods, enabled_mods)
+            self.filtered_mods = filter_mods(self.mods, self.filter_view.get_filter_params(), enabled_mods)
         self.populate(self.filtered_mods)
 
     def on_finish_edit(self, old_dir:str, new_dir:str):
@@ -242,9 +240,8 @@ class Menu:
             print("nothing selected in treeview!")
 
     def open_config(self):
-        pass
-        # self.config.load()
-        # self.config.open_config(self.root)
+        self.config.load()
+        self.config.open_config(self.root)
 
     def on_enable_mod(self, event):
         self.toggle_mod()
@@ -263,7 +260,7 @@ class Menu:
                 on_progress=self.on_scan_progress, 
                 on_finish=self.on_scanned
             )
-    
+
     def on_browse(self):
         config_data = load_config()
         if config_data is not None and config_data["default_directory"]:
@@ -279,7 +276,7 @@ class Menu:
 
     def change_directory(self, new_dir:str):
         if new_dir and is_valid_dir(new_dir):
-            # self.config.set_default_dir(new_dir)
+            self.config.set_default_dir(new_dir)
             set_text(self.entry_dir, new_dir)
             self.preset.load_workspace()
             self.refresh()
@@ -369,9 +366,12 @@ class Menu:
             print(f"An unexpected error occurred: {e}")
 
     def show(self):
+        """
+        Shows the UI
+        """
         self.f_dir = tk.Frame(self.root)
         self.f_dir.pack(padx=PAD_H, pady=PAD_V, fill="x")
-        
+
         self.l_dir = tk.Label(self.f_dir, text="Mod Directory")
         self.l_dir.pack(side=tk.LEFT)
 
@@ -380,9 +380,15 @@ class Menu:
         self.entry_dir.bind('<Return>', self.on_directory_changed)
 
         self.icon_browse = get_icon('browse')
-        self.btn_dir = tk.Button(self.f_dir, image=self.icon_browse, relief=tk.FLAT, cursor='hand2', command=self.on_browse)
+        self.btn_dir = tk.Button(
+            self.f_dir,
+            image=self.icon_browse,
+            relief=tk.FLAT,
+            cursor='hand2',
+            command=self.on_browse
+        )
         self.btn_dir.pack(side=tk.LEFT, padx = (0, PAD_H))
-        
+
         separator = ttk.Separator(self.root, orient='horizontal')
         separator.pack(fill=tk.X, padx=(0,0))
 
@@ -392,14 +398,14 @@ class Menu:
         self.frame_list = tk.Frame(self.frame_content)
         self.frame_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.filter_view = SearchFilter(self.frame_list, self.search, self.refresh)
-        
+
         separator = ttk.Separator(self.frame_content, orient='vertical')
         separator.pack(side=tk.LEFT, fill=tk.Y, padx=(0,0))
 
         self.workspace_frame = ttk.Frame(self.frame_content)
-        
+
         self.preset = Preset(
-            root=self.workspace_frame, 
+            root=self.workspace_frame,
             callback=self.search
         )
 
@@ -453,7 +459,15 @@ class Menu:
         self.progressbar = ProgressBar(self.root, self.f_footer)
 
         self.icon_save = get_icon('save')
-        self.btn_save = tk.Button(self.f_footer, image=self.icon_save, text=" Save", compound=tk.LEFT, cursor='hand2', command=self.save_preset, width=100)
+        self.btn_save = tk.Button(
+            self.f_footer,
+            image=self.icon_save,
+            text=" Save",
+            compound=tk.LEFT,
+            cursor='hand2',
+            command=self.save_preset,
+            width=100
+        )
         self.btn_save.pack(side=tk.RIGHT)
 
         self.icon_preview = get_icon('details')
@@ -463,10 +477,10 @@ class Menu:
         self.icon_git = get_icon('github_off')
 
         self.btn_show_preset = tk.Button(
-            self.nav_frame,  
-            image=self.icon_preset_off, 
-            cursor='hand2', 
-            command=self.toggle_preset, 
+            self.nav_frame,
+            image=self.icon_preset_off,
+            cursor='hand2',
+            command=self.toggle_preset,
             borderwidth=0,
             relief=tk.FLAT,
             width=50,
@@ -476,10 +490,10 @@ class Menu:
         Hovertip(self.btn_show_preset,'Show Workspace')
 
         self.btn_show_preview = tk.Button(
-            self.nav_frame,  
-            image=self.icon_preview_off,  
-            cursor='hand2', 
-            command=self.toggle_preview, 
+            self.nav_frame,
+            image=self.icon_preview_off,
+            cursor='hand2',
+            command=self.toggle_preview,
             borderwidth=0,
             relief=tk.FLAT,
             width=50,
@@ -489,9 +503,9 @@ class Menu:
         Hovertip(self.btn_show_preview,'Show Preview')
 
         self.btn_github = tk.Button(
-            self.nav_frame,  
-            image=self.icon_git,  
-            cursor='hand2', 
+            self.nav_frame,
+            image=self.icon_git,
+            cursor='hand2',
             borderwidth=0,
             relief=tk.FLAT,
             width=50,
@@ -501,5 +515,12 @@ class Menu:
         self.btn_github.pack(side=tk.BOTTOM)
         Hovertip(self.btn_github,'Go to github page')
 
-        self.preview = Preview(self.info_frame, self.open_editor, self.open_folder, self.toggle_mod, self.apply_filters)
+        self.preview = Preview(
+            self.info_frame,
+            self.open_editor,
+            self.open_folder,
+            self.toggle_mod,
+            self.apply_filters
+        )
+
         self.root.bind("<Configure>", self.on_window_resize)

@@ -3,8 +3,8 @@ toml.py: Contains various methods for reading and writing TOML file format
 """
 
 import os
-import tomli as t
-import tomli_w as tw
+import tomli
+import tomli_w
 from .common import is_valid_file
 
 INFO_TOML = "info.toml"
@@ -21,7 +21,7 @@ def load_toml(directory:str) -> dict:
         return None
     try:
         with open(file_path, "rb") as toml_file:
-            return t.load(toml_file)
+            return tomli.load(toml_file)
     except FileNotFoundError:
         print("File not found. Please check the directory and file name.")
     except PermissionError:
@@ -29,7 +29,7 @@ def load_toml(directory:str) -> dict:
     except OSError as e:
         print(f"File access error: {e}")
 
-def dump_toml(directory:str, data:dict)->bool:
+def dump_toml(directory:str, doc)->bool:
     """
     Writes a dict to a toml file
     Returns whether the process was successful or not
@@ -39,10 +39,11 @@ def dump_toml(directory:str, data:dict)->bool:
     """
     result = False
     output_path = os.path.join(directory, INFO_TOML)
-    try:
-        with open(output_path, "wb") as toml_file:
-            tw.dump(data, toml_file)
 
+    try:
+        with open(output_path, "wb") as f:
+            tomli_w.dump(doc, f)
+        print("successful")
         result = True
     except FileNotFoundError:
         print("File not found. Please check the directory and file name.")

@@ -49,6 +49,13 @@ def remove_texts(text:str, text_to_remove:list):
         text = re.sub(pattern, '', text, flags=re.IGNORECASE).strip()
     return text
 
+def remove_spacing(text:str)->str:
+    """
+    Removes all spacing from string
+    """
+    text = text.replace(" ", "")
+    return text
+
 def remove_special_chars(text:str)->str:
     """
     Removes certain special characters from string

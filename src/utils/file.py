@@ -1,7 +1,9 @@
+"""
+file.py: contains various methods for handling file related tasks
+"""
+
 import os
 import json
-import csv
-from pathlib import Path
 import shutil
 import random
 import string
@@ -10,25 +12,35 @@ import re
 from .common import *
 
 def generate_unique_name(base_name: str) -> str:
+    """
+    Generates a unique random string for temporary files
+    """
     random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
     return f"{base_name}_{random_suffix}"
 
-def is_folder_locked(folder_path):
+def is_folder_locked(folder_path)->bool:
+    """
+    Checks whether the folder is locked or not due to existing processes
+    """
     try:
         os.rename(folder_path, folder_path)
         return False
     except OSError:
-        return True 
-    
+        return True
+
 def rename_folder(old_dir:str, new_dir:str):
+    """
+    renames a folder
+    """
     result = False
     msg = ""
     old_dir = sanitize_path(old_dir)
     new_dir = sanitize_path(new_dir)
-    
+
     if is_valid_dir(old_dir):
         if is_folder_locked(old_dir):
-            msg = "Folder is currently locked.\nPlease close any open File Explorer windows and try again."
+            msg = """Folder is currently locked.
+            Please close file processes and try again."""
         else:
             try:
                 if old_dir != new_dir:
@@ -41,18 +53,22 @@ def rename_folder(old_dir:str, new_dir:str):
                 else:
                     msg = f"Applied changes to {get_base_name(old_dir)}"
                 result = True
-            except PermissionError as e:
-                msg = f"Failed to rename folder due to file access privilege"
-            except FileExistsError as e:
-                msg = "Another folder with the same name already exists.\nPlease change the folder name and try again."
-            except Exception as e:
+            except PermissionError:
+                msg = "Failed to rename folder due to file access privilege"
+            except FileExistsError:
+                msg = """Another folder with the same name already exists.
+                Please change the folder name and try again."""
+            except Exception:
                 msg = "Unknown error occurred"
     else:
-        msg = f"Invalid directory"
-    
+        msg = "Invalid directory"
+
     return result, msg
 
-def is_case_sensitive():
+def is_case_sensitive()->bool:
+    """
+    Returns whether os is case sensitive or not
+    """
     tmphandle, tmppath = tempfile.mkstemp()
     if os.path.exists(tmppath.upper()):
         return False
@@ -60,6 +76,9 @@ def is_case_sensitive():
         return True
 
 def read_json(json_path:str):
+    """
+    reads json as dict
+    """
     result = None
     try:
         with open(json_path, mode='r', encoding='utf-8') as f:
@@ -70,10 +89,13 @@ def read_json(json_path:str):
         print(f"Error: The file '{json_path}' is not a valid JSON.")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-    finally:
-        return result
+
+    return result
 
 def copy_directory_contents(source_dir:str, new_dir_parent:str, new_dir_name:str):
+    """
+    copies all contents to another directory
+    """
     new_dir_path = os.path.join(new_dir_parent, new_dir_name)
     os.makedirs(new_dir_path, exist_ok=True)
 
@@ -92,6 +114,9 @@ def copy_directory_contents(source_dir:str, new_dir_parent:str, new_dir_name:str
             copy_directory_contents(source_item, new_dir_path, item)
 
 def get_children(directory:str):
+    """
+    Returns child folders in the specified directory
+    """
     child_folders = []
     if is_valid_dir(directory):
         all_items = os.listdir(directory)
@@ -99,28 +124,42 @@ def get_children(directory:str):
         child_folders = [item for item in all_items if os.path.isdir(os.path.join(directory, item))]
     return child_folders
 
-def search_dir_by_keyword(directory, keyword):
+def search_dir_by_keyword(directory, keyword)->bool:
+    """
+    Scans subdirectories and returns whether children contain the specified keyword
+    """
     for root, dirs, files in os.walk(directory):
         if keyword in dirs:
             return True
     return False
 
-def get_direct_child_by_extension(directory, extension):
-    list = []
+def get_direct_child_by_extension(directory, extension)->list:
+    """
+    Finds children with specified extension type
+    Subdirectories are not scanned
+    """
+    children = []
     for filename in os.listdir(directory):
         if filename.endswith(extension) and os.path.isfile(os.path.join(directory, filename)):
-            list.append(filename)
-    return list
+            children.append(filename)
+    return children
 
-def get_children_by_extension(directory, extension):
-    list = []
+def get_children_by_extension(directory, extension)->list:
+    """
+    Finds children with specified extension type
+    All subdirectories are scanned
+    """
+    children = []
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(extension):
-                list.append(file)
-    return list
+                children.append(file)
+    return children
 
-def search_files_for_pattern(file, pattern):
+def search_files_for_pattern(file:str, pattern)->bool:
+    """
+    Returns whether the file name contains the specified pattern
+    """
     if re.search(pattern, file):
         return True
     return False

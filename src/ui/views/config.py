@@ -6,8 +6,6 @@ import json
 import tkinter as tk
 from src.constants.ui_params import PAD_H, PAD_V
 from src.core.data import get_cache_directory
-from pathlib import Path
-from os import listdir
 from src.core.data import load_config
 from data.cache import PATH_CONFIG
 

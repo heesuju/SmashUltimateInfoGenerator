@@ -2,22 +2,31 @@
 preview.py: A panel that can be toggled from the main menu to show a preview of the mod
 """
 
+import os
 from tkinter import ttk
-from PIL import ImageTk
 import tkinter as tk
 from src.constants.ui_params import PAD_H, PAD_V
-from assets import ICON_PATH
-from src.ui.base import get_text, set_text, set_enabled, clear_text
+from src.ui.base import set_text, set_enabled, clear_text, get_icon
 from src.utils.file import get_base_name, is_valid_dir, is_valid_file, get_parent_dir
 from src.utils.image_handler import ImageHandler
 from src.core.hide_folder import hide_folder, is_hidden
 from src.models.mod import Mod
-import os
 
 class Preview:
-    def __init__(self, root, edit_callback=None, open_callback=None, toggle_callback=None, hide_callback=None) -> None:
+    """
+    UI class for previewing mod information
+    """
+    def __init__(
+            self,
+            root,
+            edit_callback=None,
+            open_callback=None,
+            toggle_callback=None,
+            hide_callback=None
+        ) -> None:
+
         self.root = root
-        self.edit_callback = edit_callback 
+        self.edit_callback = edit_callback
         self.open_callback = open_callback
         self.toggle_callback = toggle_callback
         self.hide_callback = hide_callback
@@ -25,6 +34,13 @@ class Preview:
         self.is_desc_shown = True
         self.is_incl_shown = False
         self.mod = None
+        self.icon_on = get_icon("on")
+        self.icon_off = get_icon("off")
+        self.icon_edit = get_icon("edit")
+        self.icon_open = get_icon("open")
+        self.icon_visible = get_icon("visible")
+        self.icon_invisible = get_icon("invisible")
+        self.icon_hide = get_icon("open")
         self.show()
 
     def show(self):
@@ -33,18 +49,16 @@ class Preview:
 
         separator = ttk.Separator(self.root, orient='vertical')
         separator.grid(row=0, column=4, rowspan=5, sticky=tk.NS)
-        
+
         self.label_title = tk.Label(self.top_frame, width=10, justify="left", anchor='w')
         self.label_title.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        
+
         separator = ttk.Separator(self.top_frame, orient='vertical')
         separator.pack(side=tk.LEFT, fill=tk.Y, padx=PAD_H)
 
-        self.icon_on = ImageTk.PhotoImage(file=os.path.join(ICON_PATH, 'on.png'))
-        self.icon_off = ImageTk.PhotoImage(file=os.path.join(ICON_PATH, 'off.png'))
         self.btn_toggle = tk.Button(self.top_frame, image=self.icon_off, text="Disabled ", cursor='hand2', compound="right", relief=tk.FLAT, borderwidth=0, command=self.toggle_callback, width=84, anchor='e', font=("None", 10, "bold"))
         self.btn_toggle.pack(side=tk.RIGHT, fill=tk.X)
-    
+
         self.label_img = tk.Label(self.root, bg="black")
         self.label_img.grid(row=1, padx=PAD_H, pady=(PAD_V, 0), sticky=tk.NSEW)
 
@@ -86,24 +100,19 @@ class Preview:
 
         frame_actions.rowconfigure(index=0, weight=1)
 
-        self.icon_edit = ImageTk.PhotoImage(file=os.path.join(ICON_PATH, 'edit.png'))
+        
         self.btn_edit = tk.Button(frame_actions, image=self.icon_edit, text=" Edit", cursor='hand2', relief=tk.FLAT, compound="left", command=self.edit_callback, width=10)
         self.btn_edit.grid(row=0, column=0, sticky=tk.EW, padx=(0, PAD_H/2))
 
         separator = ttk.Separator(frame_actions, orient='vertical')
         separator.grid(row=0, column=1, padx=PAD_H/2, sticky=tk.NS)
 
-        self.icon_open = ImageTk.PhotoImage(file=os.path.join(ICON_PATH, 'open.png'))
         self.btn_open = tk.Button(frame_actions, image=self.icon_open, text=" Open", cursor='hand2', relief=tk.FLAT, compound="left", command=self.open_callback, width=10)
         self.btn_open.grid(row=0, column=2, sticky=tk.EW, padx=PAD_H/2)
 
         separator = ttk.Separator(frame_actions, orient='vertical')
         separator.grid(row=0, column=3, padx=PAD_H/2, sticky=tk.NS)
-
-        self.icon_visible = ImageTk.PhotoImage(file=os.path.join(ICON_PATH, 'visible.png'))
-        self.icon_invisible = ImageTk.PhotoImage(file=os.path.join(ICON_PATH, 'invisible.png'))
-
-        self.icon_hide = ImageTk.PhotoImage(file=os.path.join(ICON_PATH, 'open.png'))
+        
         self.btn_hide = tk.Button(frame_actions, image=self.icon_invisible, text=" Hide", cursor='hand2', relief=tk.FLAT, compound="left", command=self.on_hide_folder, width=10)
         self.btn_hide.grid(row=0, column=4, sticky=tk.EW, padx=PAD_H/2)
 
@@ -111,7 +120,7 @@ class Preview:
         self.mod = mod
         path = self.mod.path
         self.set_toggle_label(is_enabled)
-        
+
         title = ""
 
         if mod is not None: 
@@ -193,6 +202,9 @@ class Preview:
             ImageHandler(directory, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
 
     def toggle(self):
+        """
+        Toggles on/off preview panel
+        """
         if self.is_shown:
             self.root.pack_forget()
         else:
@@ -210,6 +222,9 @@ class Preview:
         return cleaned_text
 
     def on_show_desc(self):
+        """
+        Toggles on description
+        """
         self.btn_desc.config(background="SystemButtonFace", font=("Helvetica", 10, "bold"), foreground="black")
         self.btn_incl.config(background="#dcdcdc", font=("Helvetica", 10), foreground="snow4")
         self.desc_separator.grid_forget()
@@ -219,6 +234,9 @@ class Preview:
         self.set_description()
 
     def on_show_incl(self):
+        """
+        Toggles on included elements
+        """
         self.btn_desc.config(background="#dcdcdc", font=("Helvetica", 10), foreground="snow4")
         self.btn_incl.config(background="SystemButtonFace", font=("Helvetica", 10, "bold"), foreground="black")
         self.desc_separator.grid(row=1, column=0, sticky=tk.EW)
@@ -228,21 +246,24 @@ class Preview:
         self.set_description()
 
     def set_description(self):
+        """
+        Handles description label
+        """
         description = ""
         includes = []
 
         if self.mod is not None:
             description = self.mod.description
             includes = self.mod.includes
-        
+
         if not description:
-            description = "No info.toml found\nClick 'Edit' to make one."
-                    
+            description = "Description is empty\nClick 'Edit' to add one."
+
         set_enabled(self.label_desc)
 
         if self.is_desc_shown:
             set_text(self.label_desc, self.clean_description(description))
-        else:    
+        else:
             set_text(self.label_desc, self.format_includes(includes))
 
         set_enabled(self.label_desc, False)

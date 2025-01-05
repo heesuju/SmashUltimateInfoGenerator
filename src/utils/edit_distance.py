@@ -1,7 +1,16 @@
+"""
+edit_distance.py: contains methods to calculate edit distance
+edit distance(aka levenshtein distance) is used to quantify the similarity between two texts
+"""
+
 def get_edit_distance(text1:str, text2:str)->float:
+    """
+    returns the edit distance between two strings
+    The distance is normalized between 0.0 to 1.0 based on the length of the string
+    """
     if len(text1) > len(text2):
         text1, text2 = text2, text1
-    
+
     distances = range(len(text1) + 1)
     for idx2, char2 in enumerate(text2):
         distances_ = [idx2 + 1]
@@ -19,12 +28,16 @@ def get_edit_distance(text1:str, text2:str)->float:
     return normalize(text1, text2, distances[-1])
 
 def get_completion(text:str, values:list)->None:
+    """
+    Calculates the edit distance for each of the values
+    Returns the most similar match
+    """
     def get_cleaned(text:str)->str:
         text = text.lower()
         text = text.replace(" ", "")
         text = text.replace(".", "")
         return text
-    
+
     if not text:
         return ""
     elif text not in values:
