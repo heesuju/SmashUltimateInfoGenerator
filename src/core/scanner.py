@@ -13,7 +13,12 @@ from src.utils.string_helper import str_to_int
 from src.models.mod import Mod
 from src.constants.elements import *
 from src.constants.categories import *
-from .formatting import get_mod_name, format_character_names
+from .formatting import (
+    format_slots,
+    get_mod_name,
+    format_character_names,
+    group_char_name
+)
 from data import PATH_CHAR_NAMES
 
 def scan_character(root_dir:str, subfolders:list[str], mod:Mod, is_fighter:bool=True)->Mod:
@@ -233,6 +238,9 @@ def scan_mod(mod:Mod)->Mod:
     mod = scan_thumbnail(mod)
     mod.category = get_category(mod)
     mod.character = format_character_names(mod.character_names)
+    mod.characters_grouped = group_char_name(mod.character_names, mod.character_groups)
+    mod.character_slots_grouped = format_slots(mod.character_slots)
+
     if not mod.mod_name:
         mod.mod_name = get_mod_name(
             mod.display_name,

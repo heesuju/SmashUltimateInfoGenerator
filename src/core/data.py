@@ -8,26 +8,27 @@ from data.cache import PATH_CONFIG
 from pathlib import Path
 from os import listdir
 from src.utils.file import is_valid_path, is_valid_file
+from src.models.settings import Settings
 
-def load_config():
+def load_config()->Settings:
     if(is_valid_file(PATH_CONFIG)):
         try:
             json_file = open(PATH_CONFIG, "r")
             data = json.loads(json_file.read())
+            settings = Settings(**data)
             json_file.close()
             print("Loaded config")
-            return data
+            return settings
         except Exception as e:
             print(f"error: {e}")
-            return None
-    else:
-        print("No saved config")
-        return None
+        
+    print("No saved config")
+    return Settings()
     
 def get_cache_directory(default_dir:str = ""):
     if not default_dir:
         config = load_config()
-        default_dir = config["default_directory"]
+        default_dir = config.default_directory
 
     if is_valid_path(default_dir):
         preset_path = default_dir
@@ -45,20 +46,17 @@ def get_cache_directory(default_dir:str = ""):
     return ""
 
 def get_workspace()->str:
-    return load_config().get("workspace", "Default")
+    config = load_config()
+    return config.workspace
 
 def get_folder_name_format()->str:
-    return load_config().get("folder_name_format")
+    return load_config().folder_name_format
 
 def get_display_name_format()->str:
-    return load_config().get("display_name_format")
+    return load_config().display_name_format
 
 def get_start_w_editor()->bool:
-    config = load_config()
-    if config:
-        return config.get("start_w_editor", False)
-            
-    return False
+    return load_config().start_with_editor
 
 def remove_cache():
     project_dir = os.path.abspath(os.path.dirname(sys.argv[0]))

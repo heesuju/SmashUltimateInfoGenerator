@@ -69,11 +69,10 @@ def format_slots(slots:list[int]):
     
     slot_prefix = "C"
     loaded_config = load_config()
-    if loaded_config is not None:
-        is_cap = loaded_config.get("is_slot_capped")
-        if is_cap == False:
-            slot_prefix = "c"
-            
+    is_cap = loaded_config.is_slot_capped
+    if is_cap == False:
+        slot_prefix = "c"
+        
     return slot_prefix + out_str
 
 def remove_characters(text:str, characters:list[str]):

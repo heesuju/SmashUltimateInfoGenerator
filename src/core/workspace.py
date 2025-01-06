@@ -13,7 +13,7 @@ def load_preset_mods(preset_file:str):
     preset_mods = []
     if preset_file: 
         config = load_config()
-        cache_dir = config["cache_dir"]
+        cache_dir = config.cache_dir
         preset_dir = os.path.join(cache_dir, preset_file)
         if is_valid_file(preset_dir):
             preset_mods = read_json(preset_dir)

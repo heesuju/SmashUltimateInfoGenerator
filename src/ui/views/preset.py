@@ -95,9 +95,9 @@ class Preset:
 
     def restore_workspace(self, item):
         config = load_config()
-        config["cache_dir"]
+        
         name = self.treeview.get_row_text(item)
-        path = os.path.join(config["cache_dir"], self.workspace_list[name]["filename"])
+        path = os.path.join(config.cache_dir, self.workspace_list[name]["filename"])
         self.workspace_list[name]["mod_list"] = load_preset_mods(path)
         self.update_workspace_count()
 
@@ -217,8 +217,8 @@ class Preset:
 
     def get_cache_dir(self):
         config_data = load_config()
-        if config_data is not None and config_data["cache_dir"]:
-            working_dir = open_file_dialog(config_data["cache_dir"])
+        if config_data is not None and config_data.cache_dir:
+            working_dir = open_file_dialog(config_data.cache_dir)
         else:
             working_dir = open_file_dialog()
         
@@ -232,15 +232,15 @@ class Preset:
     def load_workspace(self):
         config = load_config()
         
-        set_text(self.entry_dir, config["cache_dir"])
-        if config["cache_dir"]:
+        set_text(self.entry_dir, config.cache_dir)
+        if config.cache_dir:
             self.reset_workspace()
-            self.populate(config["cache_dir"])
+            self.populate(config.cache_dir)
 
-            if config["workspace"]:
-                self.cbox_workspace.set(config["workspace"])
+            if config.workspace:
+                self.cbox_workspace.set(config.workspace)
             else:
-                self.cbox_workspace.set(config["Default"])
+                self.cbox_workspace.set("Default")
         else:
             self.reset_workspace()
         
@@ -283,7 +283,7 @@ class Preset:
 
     def save_preset(self, filename:str, enabled_mods:list)->bool: # Saves to workspace preset
         config = load_config()
-        cache_dir = config["cache_dir"]
+        cache_dir = config.cache_dir
         result = False
         try:
             if is_valid_dir(cache_dir):
@@ -297,7 +297,7 @@ class Preset:
 
     def save_workspaces(self): # Saves to workspace_list and workspace in config directory
         config = load_config()
-        cache_dir = config["cache_dir"]
+        cache_dir = config.cache_dir
         result = False
         workspaces = {}
         for key, value in self.workspace_list.items():
@@ -307,7 +307,7 @@ class Preset:
                 output.write(json.dumps(workspaces))
             
             with open(os.path.join(cache_dir, "workspace"), mode='w') as output:
-                output.write(config["workspace"] if config["workspace"] else "Default")
+                output.write(config.workspace if config.workspace else "Default")
 
             result = True
         except Exception as e:

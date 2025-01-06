@@ -8,7 +8,7 @@ from src.utils.csv_helper import csv_to_dict
 from src.utils.edit_distance import get_completion
 from src.core.data import load_config
 
-def sort_by_columns(data:list[Mod], sort_config:list):
+def sort_by_columns(data:list[Mod], sort_config:list[dict]):
     """
     Sorts a list of objects by specified columns and orders.
     
@@ -19,9 +19,9 @@ def sort_by_columns(data:list[Mod], sort_config:list):
     Returns:
         list: Sorted list of objects.
     """
-
-    columns = [s["column"] for s in sort_config]
-    orders = [s["order"] for s in sort_config]
+    
+    columns = [sort.get("column") for sort in sort_config]
+    orders = [sort.get("order") for sort in sort_config]
 
     data_sorted = sorted(
         data,
@@ -162,8 +162,8 @@ def filter_mods(mods:list[Mod], filter_params:dict, enabled_list:list = []):
 
         outputs.append(mod)
 
-    sort_prioirty = load_config().get("sort_priority", None)
-    if sort_prioirty is not None:
-        return sort_by_columns(outputs, sort_prioirty)
+    sort_priority = load_config().sort_priority
+    if sort_priority is not None:
+        return sort_by_columns(outputs, sort_priority)
     else:
         return outputs

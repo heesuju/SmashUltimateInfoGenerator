@@ -7,106 +7,59 @@ import tkinter as tk
 from src.constants.ui_params import PAD_H, PAD_V
 from src.core.data import get_cache_directory
 from src.core.data import load_config
+from src.models.settings import Settings
 from data.cache import PATH_CONFIG
 
 class Config:
     def __init__(self, callback = None):
         self.new_window = None
         self.callback = callback
-        self.reset()
+        self.settings = None
         self.load()
 
     def reset(self):
-        self.default_dir = ""
-        self.is_slot_capped = True
-        self.start_with_editor = False
-        self.display_name_format = "{characters} {slots} {mod}"
-        self.folder_name_format = "{category}_{characters}[{slots}]_{mod}"
-        self.additional_elements = []
-        self.sort_priority = []
-        self.cache_dir = ""
-        self.workspace = "Default"
-        self.close_on_apply = True
+        self.settings = Settings()
+
+    def load(self):
+        self.settings = load_config()
             
     def save_config(self):
-        config_dict = {
-            "default_directory":self.default_dir,
-            "display_name_format":self.display_name_format,
-            "folder_name_format":self.folder_name_format,
-            "additional_elements":self.additional_elements,
-            "is_slot_capped":self.is_slot_capped,
-            "start_with_editor":self.start_with_editor,
-            "sort_priority": self.sort_priority,
-            "cache_dir": self.cache_dir,
-            "workspace": self.workspace,
-            "close_on_apply": self.close_on_apply}
-        
         with open(PATH_CONFIG, 'w') as f:
-            json.dump(config_dict, f, indent=4)
+            json.dump(self.settings.__dict__, f, indent=4)
         
         if self.callback is not None:
             self.callback(self.default_dir)
+        
         print("Saved config")
 
-    def load(self):
-        data = load_config()
-        if data is not None:
-            self.default_dir = data["default_directory"]
-            if data["display_name_format"]:
-                self.display_name_format = data["display_name_format"]
-            if data["folder_name_format"]:
-                self.folder_name_format = data["folder_name_format"]
-            if len(data["additional_elements"]) > 0:
-                self.additional_elements = data["additional_elements"]
-            if data.get("is_slot_capped") is not None:
-                self.is_slot_capped = data["is_slot_capped"]
-            if data.get("start_with_editor") is not None:
-                self.start_with_editor = data["start_with_editor"]
-            if data.get("sort_priority") is not None:
-                self.sort_priority = data["sort_priority"]
-            if data.get("cache_dir") is not None:
-                self.cache_dir = data["cache_dir"]
-            if data.get("workspace") is not None:
-                self.workspace = data["workspace"]
-            if data.get("close_on_apply") is not None:
-                self.close_on_apply = data["close_on_apply"]
-
-            print("Loaded config")
-        else:
-            print("No saved config")
-            self.set_sort_priority()
-
     def set_close_on_apply(self, close_on_apply:bool):
-        self.close_on_apply = close_on_apply
+        self.settings.close_on_apply = close_on_apply
         self.save_config()
 
-    def set_sort_priority(self, priorities = [{"column":"category", "order":"Ascending"}, 
-                                 {"column":"character_name", "order":"Ascending"}, 
-                                 {"column":"slots", "order":"Ascending"}, 
-                                 {"column":"mod_name", "order":"Ascending"}]):
-        self.sort_priority = priorities
+    def set_sort_priority(self, priorities:list[dict]):
+        self.settings.sort_priority = priorities
         self.save_config()
 
     def set_default_dir(self, default_dir):
-        self.default_dir = default_dir
-        self.cache_dir = get_cache_directory(self.default_dir)
+        self.settings.default_directory = default_dir
+        self.settings.cache_dir = get_cache_directory(default_dir)
         self.save_config()
 
     def set_cache_dir(self, cache_dir:str):
-        self.cache_dir = cache_dir
+        self.settings.cache_dir = cache_dir
         self.save_config()
 
     def set_config(self, default_dir, display_name_format, folder_name_format, additional_elements, is_slot_capped=True, start_with_editor=False):
-        self.default_dir = default_dir
-        self.display_name_format = display_name_format
-        self.folder_name_format = folder_name_format
+        self.settings.default_directory = default_dir
+        self.settings.display_name_format = display_name_format
+        self.settings.folder_name_format = folder_name_format
         self.set_additional_elements(additional_elements)
-        self.is_slot_capped = is_slot_capped
-        self.start_with_editor = start_with_editor
+        self.settings.is_slot_capped = is_slot_capped
+        self.settings.start_with_editor = start_with_editor
         self.save_config()
 
     def set_additional_elements(self, in_str):
-        self.additional_elements = []
+        self.settings.additional_elements = []
         additional_elements = in_str.split(",")
         for element in additional_elements:
             trimmed_arr = element.split(" ")
@@ -117,11 +70,11 @@ class Config:
                 else: 
                     trimmed_str += item
             if trimmed_str:
-                self.additional_elements.append(trimmed_str)
+                self.settings.additional_elements.append(trimmed_str)
 
     def get_additional_elements_as_str(self):
         out_str = ""
-        for element in self.additional_elements:
+        for element in self.settings.additional_elements:
             if out_str:
                 out_str += ", " + element
             else:

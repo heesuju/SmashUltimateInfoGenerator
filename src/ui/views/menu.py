@@ -253,10 +253,10 @@ class Menu:
     def scan(self):
         self.progress_cnt = 0
         config_data = load_config()
-        if config_data is not None and config_data["default_directory"]:
-            set_text(self.entry_dir, config_data["default_directory"])
+        if config_data is not None and config_data.default_directory:
+            set_text(self.entry_dir, config_data.default_directory)
             ModLoader(
-                config_data["default_directory"], 
+                config_data.default_directory, 
                 on_start=self.on_scan_start, 
                 on_progress=self.on_scan_progress, 
                 on_finish=self.on_scanned
@@ -264,8 +264,8 @@ class Menu:
 
     def on_browse(self):
         config_data = load_config()
-        if config_data is not None and config_data["default_directory"]:
-            working_dir = open_file_dialog(config_data["default_directory"])
+        if config_data is not None and config_data.default_directory:
+            working_dir = open_file_dialog(config_data.default_directory)
         else:
             working_dir = open_file_dialog()
         
@@ -329,8 +329,7 @@ class Menu:
     def on_drag_drop(self, dir):
         dir = dir.strip('{}')
         config = load_config()
-        default_dir = config.get("default_directory")
-        if is_valid_dir(default_dir) and is_valid_dir(dir):
+        if is_valid_dir(config.default_directory) and is_valid_dir(dir):
             ModLoader([dir], self.on_drop_scanned)
 
     def on_drop_scanned(self, mods:list[Mod]):
@@ -339,8 +338,7 @@ class Menu:
         
         scanned_mod = mods[0]
         dir = scanned_mod.path
-        config = load_config()
-        default_dir = config.get("default_directory")
+        default_dir = load_config().default_directory
 
         folder_name = format_folder_name(
             scanned_mod.get("characters"),

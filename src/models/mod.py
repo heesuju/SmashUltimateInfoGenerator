@@ -30,6 +30,8 @@ class Mod:
         self.includes = []
         self.thumbnail = ""
         self.hash = ""
+        self.characters_grouped = ""
+        self.character_slots_grouped = ""
         self.contains_info = False
         self.contains_skin = False
         self.contains_motion = False

@@ -73,7 +73,7 @@ class Sorting:
     
     def load(self):
         self.config = Config()
-        sort_priority = self.config.sort_priority
+        sort_priority = self.config.settings.sort_priority
         if sort_priority is not None:
             if len(sort_priority) >= 1:
                 self.ddl_sort1.set(SORTING_CATEGORIES[sort_priority[0]["column"]])
@@ -185,16 +185,3 @@ class Sorting:
             self.ddl_order4.config(state="disabled")
         else:
             self.ddl_order4.config(state="normal")
-
-def sort_by_columns(data:list[Mod], sort_config:list):
-    # columns = [s["column"] for s in sort_config]
-    # orders = [s["order"] for s in sort_config]
-    # data_sorted = sorted(data, key=lambda x: tuple((x[col], -1 if order == 'Descending' else 1) for col, order in zip(columns, orders)))
-
-    # for i in reversed(range(len(columns))):
-    #     reverse = (orders[i] == 'Descending')
-    #     data_sorted.sort(key=lambda x: x[columns[i]], reverse=reverse)
-
-    # return data_sorted
-    
-    return data
