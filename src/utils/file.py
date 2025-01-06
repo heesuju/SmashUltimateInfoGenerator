@@ -171,3 +171,14 @@ def search_files_for_pattern(file:str, pattern)->bool:
     if re.search(pattern, file):
         return True
     return False
+
+def copy_file(src:str, dst:str)->bool:
+    """
+    copies file to new directory
+    """
+    if os.path.exists(src):
+        if is_same_dir(src, dst) == False:
+            shutil.copy(src, dst)
+            return True
+    
+    return False

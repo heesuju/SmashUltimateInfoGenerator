@@ -2,13 +2,11 @@
 editor.py: The editor view from which info.toml parameters can be modified manually
 """
 
-import shutil
 import os
 import sys
 import copy
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from PIL import ImageTk
 from src.constants.elements import ELEMENTS
 from src.constants.ui_params import PAD_H, PAD_V
 from src.constants.defs import IMAGE_TYPES
@@ -37,10 +35,11 @@ from src.utils.image_handler import ImageHandler
 from src.utils.file import (
     get_parent_dir,
     get_direct_child_by_extension,
-    rename_folder
+    rename_folder,
+    copy_file
 )
 from src.utils.toml import dump_toml
-from src.utils.common import get_project_dir
+from src.utils.common import get_project_dir, is_valid_file
 from src.ui.base import (
     get_text,
     set_text,
@@ -344,22 +343,30 @@ class Editor:
         Applies changes to info.toml
         A new file will be generated if it does not exist
         """
+        def copy_img(src_file:str, dst_dir):
+            """
+            Copies image to the new directory and renames to preview.webp
+            """
+            if is_valid_file(src_file):
+                dst_file = os.path.join(dst_dir, "preview.webp")
+                if copy_file(src_file, dst_file):
+                    set_text(self.entry_img_dir, dst_file)
+                
         self.mod.includes = self.get_includes()
         data = dict(self.mod)
-        result = dump_toml(
+        dump_toml(
             self.mod.path,
             data
-        )
-        print(result)
-        
-        old_dir = self.mod.path
-        if old_dir:
-            self.move_file()
-            new_dir = os.path.join(get_parent_dir(old_dir), self.mod.folder_name) 
+        )                
+
+        if self.mod.path:
+            copy_img(self.mod.thumbnail, self.mod.path)
+            old_dir = self.mod.path
+            new_dir = os.path.join(get_parent_dir(self.mod.path), self.mod.folder_name) 
             result, msg = rename_folder(old_dir, new_dir)
             if result:
                 self.mod.path = new_dir
-                set_text(self.entry_work_dir, new_dir)
+                set_text(self.entry_work_dir, self.mod.path)
                 self.find_image()
                 self.callback(old_dir, new_dir)
 
@@ -407,24 +414,6 @@ class Editor:
         self.entry_img_dir.insert(tk.END, directory)
         self.mod.thumbnail = directory
         ImageHandler(directory, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
-        
-    def move_file(self):
-        source_file = get_text(self.entry_img_dir) 
-        dst_dir = get_text(self.mod.path)
-        
-        if not source_file or not os.path.exists(source_file):
-            print("image dir is empty or invalid")
-            return
-        
-        new_path = os.path.join(dst_dir, "info.toml")
-        set_text(self.entry_img_dir, new_path)
-        
-        if os.path.exists(new_path):
-            if os.path.samefile(source_file, new_path):
-                print("paths are same")
-                return
-            
-        shutil.copy(source_file, new_path)
 
     def find_image(self):
         img_list = get_direct_child_by_extension(self.mod.path, ".webp")

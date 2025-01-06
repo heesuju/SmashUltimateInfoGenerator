@@ -1,6 +1,7 @@
 """
 comparison.py: View for comparing changes to the info.toml file
 """
+from PIL import Image, ImageTk
 
 import tkinter as tk
 from tkinter import ttk
@@ -149,6 +150,9 @@ class Comparison:
         """
         Shows comparison view
         """
+        blank_image = Image.new('RGB', (IMG_SIZE_X, IMG_SIZE_Y), color='black')
+        blank_image_tk = ImageTk.PhotoImage(blank_image)
+
         self.src = src
         self.dst = dst
         if self.new_window is not None:
@@ -173,7 +177,7 @@ class Comparison:
 
         prev_title = tk.Label(self.new_window, text="Previous", font='Helvetica 10 bold')
         prev_title.grid(row=0, column=0, sticky=tk.W)
-        self.prev_img_label = tk.Label(self.new_window, bg="black")
+        self.prev_img_label = tk.Label(self.new_window, bg="black", width=IMG_SIZE_X, height=IMG_SIZE_Y)
         self.prev_img_label.grid(row=1, column=0, sticky=tk.NSEW)
         prev_frame = tk.Frame(self.new_window)
         prev_frame.grid(row=2, column=0, sticky=tk.NSEW)
@@ -184,7 +188,7 @@ class Comparison:
 
         current_title = tk.Label(self.new_window, text="Current", font='Helvetica 10 bold')
         current_title.grid(row=0, column=2, sticky=tk.W)
-        self.current_img_label = tk.Label(self.new_window, bg="black")
+        self.current_img_label = tk.Label(self.new_window, bg="black", width=IMG_SIZE_X, height=IMG_SIZE_Y)
         self.current_img_label.grid(row=1, column=2, sticky=tk.NSEW)
         current_frame = tk.Frame(self.new_window)
         current_frame.grid(row=2, column=2, sticky=tk.NSEW)
@@ -192,15 +196,21 @@ class Comparison:
         self.init_column(prev_frame, self.src)
         self.init_column(current_frame, self.dst, True)
 
-        directories = [self.src.thumbnail, self.dst.thumbnail] if self.thumbnail_changed else [self.src.thumbnail]
 
-        ImageHandler(
-            directories,
-            IMG_SIZE_X,
-            IMG_SIZE_Y,
-            self.on_img_load,
-            True
-        )
+        self.prev_img_label.config(image=blank_image_tk, width=IMG_SIZE_X, height=IMG_SIZE_Y)
+        self.prev_img_label.image = blank_image_tk
+        self.current_img_label.config(image=blank_image_tk, width=IMG_SIZE_X, height=IMG_SIZE_Y)
+        self.current_img_label.image = blank_image_tk
+        directories = [self.src.thumbnail, self.dst.thumbnail] if self.thumbnail_changed else [self.src.thumbnail]
+        
+        if True in [True for d in directories if d]:
+            ImageHandler(
+                directories,
+                IMG_SIZE_X,
+                IMG_SIZE_Y,
+                self.on_img_load,
+                True
+            )
 
     def on_img_load(self, thumbnails):
         self.prev_img_label.config(image=thumbnails[0], width=IMG_SIZE_X, height=IMG_SIZE_Y)

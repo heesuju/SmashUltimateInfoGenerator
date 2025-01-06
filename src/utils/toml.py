@@ -43,7 +43,7 @@ def dump_toml(directory:str, doc)->bool:
     try:
         with open(output_path, "wb") as f:
             tomli_w.dump(doc, f)
-        print("successful")
+        print(f"Data dumped to {output_path}")
         result = True
     except FileNotFoundError:
         print("File not found. Please check the directory and file name.")
