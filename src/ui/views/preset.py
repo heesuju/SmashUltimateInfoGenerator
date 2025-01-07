@@ -23,7 +23,7 @@ from src.core.workspace import (
     load_preset_mods
 )
 
-COLUMNS = ["Workspace Name", "Total Enabled"]
+COLUMNS = ["Workspace", "Enabled"]
 
 class Preset:
     def __init__(self, root, callback=None) -> None:
@@ -202,7 +202,7 @@ class Preset:
         if self.is_shown:
             self.root.pack_forget()
         else:
-            self.root.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            self.root.pack(side=tk.LEFT, fill=tk.BOTH, expand=False)
 
         self.is_shown = False if self.is_shown else True
     

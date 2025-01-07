@@ -12,13 +12,16 @@ from src.utils.image_handler import ImageHandler
 from src.core.hide_folder import hide_folder, is_hidden
 from src.models.mod import Mod
 
+IMG_SIZE_X = 334
+IMG_SIZE_Y = 190
+
 class Preview:
     """
     UI class for previewing mod information
     """
     def __init__(
             self,
-            root,
+            root:tk.Frame,
             edit_callback=None,
             open_callback=None,
             toggle_callback=None,
@@ -59,7 +62,7 @@ class Preview:
         self.btn_toggle = tk.Button(self.top_frame, image=self.icon_off, text="Disabled ", cursor='hand2', compound="right", relief=tk.FLAT, borderwidth=0, command=self.toggle_callback, width=84, anchor='e', font=("None", 10, "bold"))
         self.btn_toggle.pack(side=tk.RIGHT, fill=tk.X)
 
-        self.label_img = tk.Label(self.root, bg="black")
+        self.label_img = tk.Label(self.root, bg="black", width=IMG_SIZE_X, height=IMG_SIZE_Y)
         self.label_img.grid(row=1, padx=PAD_H, pady=(PAD_V, 0), sticky=tk.NSEW)
 
         info_frame = tk.Frame(self.root)
@@ -157,7 +160,7 @@ class Preview:
         set_enabled(self.btn_hide)
 
     def on_img_resized(self, image):
-        self.label_img.config(image=image, width=10, height=10)
+        self.label_img.config(image=image, width=IMG_SIZE_X, height=IMG_SIZE_Y)
         self.label_img.image = image  # Keep a reference to prevent garbage collection
 
     def clear(self):
@@ -199,7 +202,7 @@ class Preview:
     def set_image(self, directory):
         root_dir = get_parent_dir(directory)
         if is_valid_dir(root_dir) and is_valid_file(directory):
-            ImageHandler(directory, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
+            ImageHandler(directory, width=IMG_SIZE_X, height=IMG_SIZE_Y, on_finish=self.on_img_resized)
 
     def toggle(self):
         """
@@ -208,8 +211,8 @@ class Preview:
         if self.is_shown:
             self.root.pack_forget()
         else:
-            self.root.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
+            self.root.pack(side=tk.RIGHT, fill=tk.BOTH, expand=False)
+            
         self.is_shown = False if self.is_shown else True
 
     def format_includes(self, includes:list):

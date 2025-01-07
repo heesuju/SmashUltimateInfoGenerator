@@ -284,13 +284,6 @@ class Menu:
         else:
             print("invalid directory!")
 
-    def on_window_resize(self, event):
-        selected_item = self.treeview.get_selected()        
-        if selected_item and self.preview.is_shown:
-            item = self.treeview.get_row_values(selected_item)
-            path = item["values"][-1]
-            self.preview.set_image(os.path.join(path, "preview.webp"))
-
     def save_preset(self):
         self.preset.save_presets()
         self.preset.save_workspaces()
@@ -402,16 +395,9 @@ class Menu:
         separator.pack(side=tk.LEFT, fill=tk.Y, padx=(0,0))
 
         self.workspace_frame = ttk.Frame(self.frame_content)
-
-        self.preset = Preset(
-            root=self.workspace_frame,
-            callback=self.search
-        )
+        self.preset = Preset(self.workspace_frame, self.search)
 
         self.info_frame = ttk.Frame(self.frame_content)
-        self.info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.info_frame.columnconfigure(0, weight=1)
-        self.info_frame.rowconfigure(index=1, weight=1)
         self.info_frame.rowconfigure(index=3, weight=1)
         self.info_frame.pack_forget()
 
@@ -521,5 +507,3 @@ class Menu:
             self.toggle_mod,
             self.apply_filters
         )
-
-        self.root.bind("<Configure>", self.on_window_resize)

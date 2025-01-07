@@ -23,7 +23,7 @@ class Treeview:
         self.widget.column("#0", minwidth=58, width=58, stretch=tk.NO)
         
         for idx, column in enumerate(cols, 1):
-            self.widget.column(f"#{idx}", minwidth=140, width=160, stretch=tk.YES)
+            self.widget.column(f"#{idx}", minwidth=50, width=50, stretch=tk.YES)
             self.widget.heading(f"#{idx}", text=column)
         
         self.widget["displaycolumns"]=display_columns
