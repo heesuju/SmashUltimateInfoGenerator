@@ -7,6 +7,7 @@ from data import PATH_CHAR_NAMES
 from src.utils.csv_helper import csv_to_dict
 from src.utils.edit_distance import get_completion
 from src.core.data import load_config
+from src.models.filter_params import FilterParams
 
 def sort_by_columns(data:list[Mod], sort_config:list[dict]):
     """
@@ -86,7 +87,7 @@ def get_similar_character(text:str, values:list)->None:
                 break
     return result
 
-def get_series(character_key:str):
+def get_series(character_key:str)->str:
     """
     Get series by the character key
     """
@@ -95,61 +96,61 @@ def get_series(character_key:str):
         if d.get("Key") ==  character_key:
             return d.get("Series").lower()
 
-def filter_mods(mods:list[Mod], filter_params:dict, enabled_list:list = []):
+def filter_mods(mods:list[Mod], filter_params:FilterParams, enabled_list:list = []):
     """
     Filters and sorts the list of mods to show
     """
     outputs = []
 
     for mod in mods:
-        if filter_params.get("enabled_only", False):
+        if filter_params.enabled_only:
             if mod.hash not in enabled_list: 
                 continue
 
-        if filter_params.get("mod_name") not in mod.mod_name.lower(): 
+        if filter_params.mod_name.lower() not in mod.mod_name.lower(): 
             continue
 
-        if filter_params.get("authors") not in mod.authors.lower(): 
+        if filter_params.authors.lower() not in mod.authors.lower(): 
             continue
 
-        if filter_params.get("characters") != "all":
+        if filter_params.character.lower() != "all":
             found_match = False
             for ch in mod.character_names:
-                if ch.lower() == filter_params.get("characters"):
+                if ch.lower() == filter_params.character.lower():
                     found_match = True
                     break
 
             if  found_match == False: 
                 continue
 
-        if filter_params.get("series") != "all":
+        if filter_params.series.lower() != "all":
             should_include = False
             for char_name in mod.character_keys:
-                if filter_params.get("series") == get_series(char_name):
+                if filter_params.series.lower() == get_series(char_name).lower():
                     should_include = True
 
             if should_include == False:
                 continue
 
-        if filter_params.get("category") != "all":
-            if filter_params.get("category") != mod.category.lower():
+        if filter_params.category.lower() != "all":
+            if filter_params.category.lower() != mod.category.lower():
                 continue
 
-        if filter_params.get("info_toml") != "all":
-            if filter_params.get("info_toml") == "included" and mod.contains_info == False:
+        if filter_params.info_toml.lower() != "all":
+            if filter_params.info_toml.lower() == "included" and mod.contains_info == False:
                 continue
 
-            elif filter_params.get("info_toml") == "not included" and mod.contains_info == True:
+            elif filter_params.info_toml.lower() == "not included" and mod.contains_info == True:
                 continue
 
-        if filter_params.get("wifi_safe") != "all":
-            if filter_params.get("wifi_safe") != mod.wifi_safe.lower():
+        if filter_params.wifi_safe.lower() != "all":
+            if filter_params.wifi_safe.lower() != mod.wifi_safe.lower():
                 continue
 
-        if filter_params.get("slot_from") or filter_params.get("slot_to"):
+        if filter_params.slot_from.lower() or filter_params.slot_to.lower():
             contains_slot = False
-            min_slot = int(filter_params.get("slot_from") if filter_params.get("slot_from") else 0)
-            max_slot = int(filter_params.get("slot_to") if filter_params.get("slot_to") else 255)
+            min_slot = int(filter_params.slot_from.lower() if filter_params.slot_from.lower() else 0)
+            max_slot = int(filter_params.slot_to.lower() if filter_params.slot_to.lower() else 255)
 
             if max_slot >= min_slot:
                 for slot in mod.character_slots:
@@ -158,6 +159,10 @@ def filter_mods(mods:list[Mod], filter_params:dict, enabled_list:list = []):
                         break
 
             if contains_slot == False:
+                continue
+        
+        if filter_params.included.lower() != "all":
+            if filter_params.included not in mod.includes: 
                 continue
 
         outputs.append(mod)

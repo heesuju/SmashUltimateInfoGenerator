@@ -8,6 +8,7 @@ from tkinter import ttk
 from tkinter import filedialog
 from src.utils.file import is_valid_dir
 from src.utils.string_helper import is_digit
+from src.constants.ui_params import PAD_H, PAD_V
 from assets import ICON_PATH
 from PIL import ImageTk
 
@@ -77,3 +78,20 @@ class WrappingLabel(tk.Label):
     def __init__(self, master=None, **kwargs):
         tk.Label.__init__(self, master, **kwargs)
         self.bind('<Configure>', lambda e: self.config(wraplength=self.winfo_width()))
+
+def add_filter_entry(frame:tk.Frame, row:int, col:int, name:str, string_var:tk.StringVar, on_submit:callable = None, add_padding:bool=True):
+    label = ttk.Label(frame, text=name, width=10)
+    label.grid(row=row, column=col, sticky=tk.EW, padx=(0,PAD_H))
+    entry = tk.Entry(frame, textvariable=string_var, width=10)
+    entry.grid(row=row, column=col+1, sticky=tk.EW, padx=(0,PAD_H if add_padding else 0), pady=PAD_V/2)
+    entry.bind("<Return>", on_submit)
+    return entry
+    
+def add_filter_dropdown(frame:tk.Frame, row:int, col:int, name:str, data:list[str], string_var:tk.StringVar, on_submit:callable = None, add_padding:bool=True):
+    label = ttk.Label(frame, text=name, width=10)
+    label.grid(row=row, column=col, sticky=tk.EW, padx=(0,PAD_H))
+    combobox = ttk.Combobox(frame, values=data, width=10, textvariable=string_var)
+    combobox.grid(row=row, column=col+1, sticky=tk.EW, padx=(0,PAD_H if add_padding else 0), pady=PAD_V/2)
+    combobox.bind("<Return>", on_submit)
+    combobox.set(data[0])
+    return combobox

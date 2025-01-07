@@ -151,12 +151,11 @@ class Menu:
         workspace_data = self.preset.workspace_list.get(workspace)
         enabled_mods = workspace_data.get("mod_list")if workspace_data else []
         self.reset()
-        include_hidden = self.filter_view.get_filter_params().get("include_hidden", False)
-        if not include_hidden:
+        if not self.filter_view.params.include_hidden:
             self.filtered_mods = filter_hidden(self.mods)
-            self.filtered_mods = filter_mods(self.filtered_mods, self.filter_view.get_filter_params(), enabled_mods)
+            self.filtered_mods = filter_mods(self.filtered_mods, self.filter_view.params, enabled_mods)
         else:
-            self.filtered_mods = filter_mods(self.mods, self.filter_view.get_filter_params(), enabled_mods)
+            self.filtered_mods = filter_mods(self.mods, self.filter_view.params, enabled_mods)
         self.populate(self.filtered_mods)
 
     def on_finish_edit(self, old_dir:str, new_dir:str):
