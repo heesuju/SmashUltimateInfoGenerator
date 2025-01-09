@@ -19,7 +19,7 @@ from src.core.formatting import (
     format_folder_name,
     format_display_name,
     clean_mod_name,
-    clean_vesion
+    clean_version
 )
 from src.models.mod import Mod
 from src.utils.web import (
@@ -164,20 +164,23 @@ class Editor:
 
         self.label_output.config(text="Downloaded image")
         
-    def on_bs4_result(self, mod_title:str, authors:str):
+    def on_bs4_result(self, mod_title:str, authors:str, is_moveset:bool):
         if mod_title:
             self.mod_name_var.set(clean_mod_name(mod_title))
             
         if authors:
             self.authors_var.set(authors)
 
+        if is_moveset:
+            self.mod.contains_moveset = True
+
     def on_selenium_result(self, version, img_urls, img_descriptions, wifi_safe:str):
         self.img_urls = img_urls
         self.img_descriptions = img_descriptions
         set_text(self.label_output, "Fetched elements")
         
-        self.version_var.set(clean_vesion(version))
-        self.wifi_var.set(clean_vesion(wifi_safe))
+        self.version_var.set(clean_version(version))
+        self.wifi_var.set(wifi_safe)
 
         if len(self.img_urls) > 0:
             self.label_output.config(text="Downloading thumbnails...")

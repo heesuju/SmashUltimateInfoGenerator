@@ -10,16 +10,20 @@ class Extractor(Thread):
         self.callback = callback
         self.mod_title = ""
         self.authors = ""
+        self.moveset = False
 
     def run(self):
         try:
             soup = self.get_html(self.url)
             self.mod_title = self.get_mod_title(soup)
             self.authors = self.get_authors(soup)
+            categories = self.get_categories(soup)
+            if "Movesets" in categories:
+                self.moveset = True
         except:
             self.mod_title = ""
             self.authors = ""
-        self.callback(self.mod_title, self.authors)
+        self.callback(self.mod_title, self.authors, self.moveset)
             
     def get_html(self, url:str):
         try:
@@ -56,3 +60,11 @@ class Extractor(Thread):
             else:
                 print("Authors not found in the text.")   
         return result.replace(" and", ",")
+    
+    def get_categories(self, soup):
+        categories = []
+        breadcrumb = soup.find('nav', id='Breadcrumb')
+        if breadcrumb:
+            a_tags = breadcrumb.find_all('a') 
+            for a in a_tags:
+                categories.append(a.get_text())

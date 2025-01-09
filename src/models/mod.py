@@ -50,6 +50,7 @@ class Mod:
         self.contains_one_slot_name = False
         self.contains_ui = False
         self.contains_thumbnail = False
+        self.contains_moveset = False
         self.is_selected = False
         self.update(**kwargs)
 

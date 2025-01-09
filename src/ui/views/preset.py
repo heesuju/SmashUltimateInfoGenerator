@@ -3,10 +3,11 @@ preset.py: A panel that can be toggled from the main menu to show the list of pr
 """
 
 import os, json
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from PIL import ImageTk
 import tkinter as tk
 from src.constants.ui_params import PAD_H, PAD_V
+from src.constants.strings import WARNING_DEFAULT_WORKSPACE_DELETE, WARNING, TITLE_WORKSPACE_DELETE, ASK_WORKSPACE_DELETE
 from assets import ICON_PATH
 from src.ui.base import (
     get_text, 
@@ -23,6 +24,7 @@ from src.core.workspace import (
     load_preset_mods
 )
 
+DEFAULT_WORKSPACE = "Default"
 COLUMNS = ["Workspace", "Enabled"]
 
 class Preset:
@@ -39,7 +41,7 @@ class Preset:
 
     def on_workspace_selected(self, event):
         config = Config()
-        config.workspace = self.cbox_workspace.get()
+        config.settings.workspace = self.cbox_workspace.get()
         config.save_config()
         self.callback()
 
@@ -64,14 +66,19 @@ class Preset:
         selected_workspace = self.cbox_workspace.get()
         self.cbox_workspace.config(values=workspaces)
         if selected_workspace not in workspaces:
-            self.cbox_workspace.set("Default")
+            self.cbox_workspace.set(DEFAULT_WORKSPACE)
             config = Config()
-            config.workspace = "Default"
+            config.workspace = DEFAULT_WORKSPACE
             config.save_config()
             self.callback()
 
     def add_workspace(self, name:str, count:int, checked:bool = False):
         self.treeview.add_item([name, count], checked)
+
+    def on_remove_workspaces(self)->None:
+        result = messagebox.askokcancel(TITLE_WORKSPACE_DELETE, ASK_WORKSPACE_DELETE)
+        if result:
+            self.remove_workspaces()
 
     def remove_workspaces(self):
         checked_items = self.treeview.get_checked_items()
@@ -81,10 +88,12 @@ class Preset:
 
     def remove_workspace(self, item):
         name = self.treeview.get_row_text(item)
-        if name != "Default":
+        if name != DEFAULT_WORKSPACE:
             self.treeview.remove_item(item)
             self.workspace_list.pop(name, None)
             self.update_workspace_dropdown()
+        else:
+            messagebox.showwarning(WARNING, WARNING_DEFAULT_WORKSPACE_DELETE)
 
     def restore_workspaces(self):
         checked_items = self.treeview.get_checked_items()
@@ -181,7 +190,7 @@ class Preset:
         self.footer.pack(pady=(PAD_V, PAD_V/2), fill="x")
 
         self.icon_export = ImageTk.PhotoImage(file=os.path.join(ICON_PATH, 'close.png'))
-        self.btn_remove = tk.Button(self.footer, image=self.icon_export, relief=tk.FLAT, compound="left", text=" Remove", cursor='hand2', command=self.remove_workspaces)
+        self.btn_remove = tk.Button(self.footer, image=self.icon_export, relief=tk.FLAT, compound="left", text=" Remove", cursor='hand2', command=self.on_remove_workspaces)
         self.btn_remove.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES)
 
         separator = ttk.Separator(self.footer, orient='vertical')
@@ -240,7 +249,7 @@ class Preset:
             if config.workspace:
                 self.cbox_workspace.set(config.workspace)
             else:
-                self.cbox_workspace.set("Default")
+                self.cbox_workspace.set(DEFAULT_WORKSPACE)
         else:
             self.reset_workspace()
         
@@ -257,7 +266,7 @@ class Preset:
     def reset_workspace(self):
         self.cbox_workspace.config(values=[])
         self.cbox_workspace.select_clear()
-        self.cbox_workspace.set("Default")
+        self.cbox_workspace.set(DEFAULT_WORKSPACE)
         self.treeview.clear()
     
     def format_workspace_filename(self, name):
@@ -307,7 +316,7 @@ class Preset:
                 output.write(json.dumps(workspaces))
             
             with open(os.path.join(cache_dir, "workspace"), mode='w') as output:
-                output.write(config.workspace if config.workspace else "Default")
+                output.write(config.workspace if config.workspace else DEFAULT_WORKSPACE)
 
             result = True
         except Exception as e:

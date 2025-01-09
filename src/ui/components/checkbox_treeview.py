@@ -1,12 +1,15 @@
 import tkinter as tk
 from tkinter import ttk
 
+CHECKED = "✅"
+UNCHECKED = "⬜"
+
 class Treeview:
     def __init__(self, root, show_header:bool=True) -> None:
         self.root = root
         self.show_header = show_header
         self.widget = None
-        self.x = 0
+        self.is_left_click = False
     
     def construct(self, cols:list = []):
         show = ("headings", "tree") if self.show_header else ("tree")
@@ -14,10 +17,10 @@ class Treeview:
         self.widget.tag_configure('active', background='lightblue')
         self.widget.bind('<Button-1>', self.on_item_clicked)
         self.widget.bind("<<TreeviewSelect>>", self.on_row_select)
-        self.widget.bind("<space>", self.on_row_select_key)
-        self.widget.bind("<Return>", self.on_row_select_key)
-        self.widget.bind('<Up>', self.on_key_press)
-        self.widget.bind('<Down>', self.on_key_press)
+        self.widget.bind("<space>", self.toggle)
+        self.widget.bind("<Return>", self.toggle)
+        self.widget.bind('<Up>', self.on_key_pressed)
+        self.widget.bind('<Down>', self.on_key_pressed)
 
         display_columns = cols
         self.widget.column("#0", minwidth=58, width=58, stretch=tk.NO)
@@ -32,84 +35,92 @@ class Treeview:
         self.scrollbar.pack(side="right", fill="y")
         return self.widget
     
-    def add_item(self, values:list = [], is_checked:bool = False):
-        tags = "checked" if is_checked else "unchecked"
-        check_mark = "✅" if is_checked else "⬜"
-        self.widget.insert("", tk.END, text=check_mark, values=tuple(values), tags=[tags])
+    def add_item(self, values:list = [], is_checked:bool = False)->None:
+        if self.widget is not None:
+            tags = "checked" if is_checked else "unchecked"
+            check_mark = CHECKED if is_checked else UNCHECKED
+            self.widget.insert("", tk.END, text=check_mark, values=tuple(values), tags=[tags])
 
-    def remove_item(self, item):
-        self.widget.delete(item)
+    def remove_item(self, id:str)->None:
+        if self.get_item(id) is not None:
+            self.widget.delete(id)
 
-    def get_items(self):
-        return self.widget.get_children()
+    def get_items(self)->list[str]:
+        if self.widget is not None:
+            return self.widget.get_children()
+        return []
 
-    def select_all(self, is_selected:bool=True):
-        for item in self.get_items():
-            self.set_row_checked(item, is_selected)
-
-    def clear(self):
-        self.widget.selection_clear()
+    def select_all(self, is_selected:bool=True)->None:
+        [self.set_row_checked(item, is_selected) for item in self.get_items()]
         
-        for item in self.get_items():
-            self.remove_item(item)
+    def clear(self):
+        if self.widget is not None:
+            self.widget.selection_clear()
+            [self.remove_item(item) for item in self.get_items()]
 
     def get_checked_items(self):
         checked = []
-        for item in self.widget.get_children():
-            data = self.widget.item(item)
-            if "checked" in data.get("tags"):
-                checked.append(item)
+        if self.widget is not None:
+            for id in self.get_items():
+                item = self.get_item(id)
+                if "checked" in item.get("tags", []):
+                    checked.append(id)
         return checked
     
-    def set_row_checked(self, item, is_checked:bool=True):
-        if is_checked:
-            self.widget.item(item, tags=["checked"], text="✅")
-        else:
-            self.widget.item(item, tags=["unchecked"], text="⬜")
+    def set_row_checked(self, id:str, is_checked:bool=True)->None:
+        if self.get_item(id) is not None:
+            if is_checked:
+                self.widget.item(id, tags=["checked"], text=CHECKED)
+            else:
+                self.widget.item(id, tags=["unchecked"], text=UNCHECKED)
 
-    def get_row_text(self, item):
-        values = self.widget.item(item)["values"]
-        if len(values) > 0:
-            return values[0]
+    def get_row_text(self, id:str, column:int=0)->str:
+        values = self.get_values(id)
+        if values is not None and len(values) > column:
+            return values[column]
         
-    def set_row(self, item, values):
-        self.widget.item(item, values=tuple(values))
+    def set_row(self, id:str, values:list)->None:
+        if self.get_item(id) is not None:
+            self.widget.item(id, values=tuple(values))
 
-    def get_checked_state(self, item):
-        data = self.widget.item(item)
-        return "checked" in data.get("tags")
+    def get_checked_state(self, id:str)->bool:
+        item = self.get_item(id)
+        if item is not None:
+            tags = item.get("tags", [])
+            return "checked" in tags
+        return False
     
-    def on_row_select(self, event):
-        selected_item = self.widget.focus()
-        if not selected_item or self.x == 0:
+    def toggle(self, event:tk.Event = None)->None:
+        item_id = self.get_selected_id()
+        if not item_id:
             return
-        self.x = 0
-        is_checked = self.get_checked_state(selected_item)
-        self.set_row_checked(selected_item, False if is_checked else True)
-
-    def on_row_select_key(self, event):
-        selected_item = self.widget.focus()
-        if not selected_item:
-            return
-        self.x = 0
-        is_checked = self.get_checked_state(selected_item)
-        self.set_row_checked(selected_item, False if is_checked else True)
-
-    def on_key_press(self, event):
-        self.x = 0
-
-    def on_item_clicked(self, event):
-        self.x = 1
-
-    def get_selected(self):
-        selected_item = self.widget.focus()
-        return selected_item
+        
+        self.is_left_click = False
+        is_checked = self.get_checked_state(item_id)
+        self.set_row_checked(item_id, False if is_checked else True)
     
-    def get_row_values(self, item):
-        return self.widget.item(item)
+    def on_row_select(self, event)->None:
+        if self.is_left_click:
+            self.toggle()
+
+    def on_key_pressed(self, event)->None:
+        self.is_left_click = False
+
+    def on_item_clicked(self, event)->None:
+        self.is_left_click = True
+
+    def get_selected_id(self)->str:
+        if self.widget is not None:
+            return self.widget.focus()
+        return ""
     
-    def get_item(self, id:str):
-        return self.widget.item(id)
+    def get_item(self, id:str)->dict:
+        if self.widget is not None:
+            return self.widget.item(id)
+        return None
     
     def get_values(self, id:str)->list:
-        return self.widget.item(id).get("values", None)
+        item = self.get_item(id)
+        if item is not None:
+            return item.get("values", None)
+        return None

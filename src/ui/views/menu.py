@@ -17,6 +17,7 @@ from src.core.filter import filter_mods
 from src.models.mod import Mod
 from src.constants.ui_params import PAD_H, PAD_V, COLUMNS
 from src.constants.defs import GIT_REPO_URL
+from src.constants.strings import INFO_DRAG_DROP_COPY_COMPLETE, INFO, TITLE_PRESET_SAVE, ASK_PRESET_SAVE
 from src.ui.components.progress_bar import ProgressBar
 from src.ui.components.image_treeview import ImageTreeview
 from src.ui.components.paging import Paging
@@ -61,16 +62,16 @@ class Menu:
         self.preview.clear()
 
     def open_folder(self):
-        selected_item = self.treeview.get_selected()
+        selected_item = self.treeview.get_selected_id()
         if selected_item:
-            item = self.treeview.get_row_values(selected_item)
-            values = item.get("values")
-            os.startfile(values[-1])
+            values = self.treeview.get_values(selected_item)
+            if values is not None:
+                os.startfile(values[-1])
         else:
             print("no item selected!")
 
     def toggle_mod(self):
-        selected_item = self.treeview.get_selected()
+        selected_item = self.treeview.get_selected_id()
         if selected_item:
             item = self.treeview.get_item(selected_item)
             path = item["values"][5].split("/")[-1].split("\\")[-1]
@@ -205,7 +206,7 @@ class Menu:
             self.preset.toggle()
 
     def on_item_selected(self, event):
-        selected_item = self.treeview.get_selected()
+        selected_item = self.treeview.get_selected_id()
         if not selected_item:
             return
         
@@ -213,21 +214,24 @@ class Menu:
             self.toggle_mod()
             self.treeview.pos_x = 0
 
-        item = self.treeview.get_row_values(selected_item)
-        path = item['values'][-1]
+        item = self.treeview.get_item(selected_item)
+        values = item.get("values", None)
         selected_mod = None
-        for mod in self.mods:
-            if mod.path == path:
-                selected_mod = mod
-                break
-        
+
+        if values is not None:
+            path = values[-1]    
+            for mod in self.filtered_mods:
+                if mod.path == path:
+                    selected_mod = mod
+                    break
+            
         self.preview.update(item["tags"][0] == "enabled", selected_mod)
             
     def on_double_clicked(self, event):
         self.open_editor()
 
     def open_editor(self):
-        selected_item = self.treeview.get_selected()
+        selected_item = self.treeview.get_selected_id()
         if selected_item:
             values = self.treeview.get_values(selected_item)
             Editor(
@@ -282,6 +286,17 @@ class Menu:
             self.refresh()
         else:
             print("invalid directory!")
+
+    def on_save_preset(self)->None:
+        if self.config is not None:
+            name = self.config.settings.workspace
+            list_enabled = self.preset.workspace_list.get(name, None)
+            if list_enabled is not None:
+                count = len(list_enabled["mod_list"])
+                result = messagebox.askokcancel(TITLE_PRESET_SAVE, ASK_PRESET_SAVE.format(count, name))
+                
+                if result:
+                    self.save_preset()
 
     def save_preset(self):
         self.preset.save_presets()
@@ -349,7 +364,7 @@ class Menu:
         try:
             copy_directory_contents(dir, default_dir, new_name)
             print("successfully added dir:", dir)
-            messagebox.showinfo("Info", "Successfully copied contents into mod directory!")
+            messagebox.showinfo(INFO, INFO_DRAG_DROP_COPY_COMPLETE)
             self.on_finish_edit("", new_dir)
         except PermissionError:
             print(f"PermissionError: You do not have the required permissions to copy to '{new_dir}'.")
@@ -449,7 +464,7 @@ class Menu:
             text=" Save",
             compound=tk.LEFT,
             cursor='hand2',
-            command=self.save_preset,
+            command=self.on_save_preset,
             width=100
         )
         self.btn_save.pack(side=tk.RIGHT)

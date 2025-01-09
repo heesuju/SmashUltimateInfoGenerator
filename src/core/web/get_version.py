@@ -2,7 +2,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from src.core.formatting import clean_vesion
+from src.core.formatting import clean_version
 
 TIMEOUT_DELAY = 1
 DEFAULT_VERSION = "1.0.0"
@@ -17,7 +17,7 @@ def get_version(driver)->str:
 
         updates_module = driver.find_element(By.ID, "UpdatesModule")
         version_element = updates_module.find_element(By.TAG_NAME, "small")
-        version = clean_vesion(version_element.text)
+        version = clean_version(version_element.text)
         print("Version found:", version)
 
     except TimeoutException:

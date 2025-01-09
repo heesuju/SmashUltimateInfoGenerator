@@ -232,7 +232,7 @@ def clean_folder_name(folder_name:str)->str:
     folder_name = trim_consecutive(folder_name, [",", ".", "_", "-", "~"])
     return folder_name
 
-def clean_vesion(version:str)->str:
+def clean_version(version:str)->str:
     """
     Returns formatted version(e.g. v1.0 -> 1.0.0)
     """
@@ -240,9 +240,14 @@ def clean_vesion(version:str)->str:
     if len(parts) <= 0:
         return "1.0.0"
 
-    numeric_parts = [str(int(''.join(filter(str.isdigit, part)))) for part in parts if part]
+    numeric_parts = []
+    for part in parts :
+        if part:
+            numbers = filter(str.isdigit, part)
+            numeric_parts.append(''.join(numbers))
 
-    while len(numeric_parts) < 3:
+    diff = 3 - len(numeric_parts)
+    for n in range(diff):
         numeric_parts.append('0')
 
     formatted_version = '.'.join(numeric_parts)
