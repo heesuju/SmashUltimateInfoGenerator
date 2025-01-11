@@ -10,6 +10,7 @@ from src.constants.categories import CATEGORIES
 from src.constants.colors import LIGHT_GREEN, WHITE
 from src.models.mod import Mod
 from src.utils.file import get_base_name
+from src.core.formatting import format_character_names
 from src.ui.base import set_text
 from src.utils.image_handler import ImageHandler
 
@@ -77,7 +78,9 @@ class Comparison:
         row +=1
         character_entry = tk.Entry(frame, width=10)
         character_entry.grid(row=row, column=0, sticky=tk.EW, pady = (0, PAD_V))
-        set_text(character_entry, mod.character)
+        keys, names, groups, series, slots = mod.get_character_data()
+        characters = format_character_names(names)
+        set_text(character_entry, characters)
 
         row +=1
         authors = tk.Label(frame, text="Authors")
@@ -135,14 +138,16 @@ class Comparison:
         self.folder_name_changed = self.src.folder_name != self.dst.folder_name
         self.mod_name_changed = self.src.mod_name != self.dst.mod_name
         self.display_name_changed = self.src.display_name != self.dst.display_name
-        self.slot_changed = self.src.character_slots != self.dst.character_slots
+        src_keys, src_names, src_groups, src_series, src_slots = self.src.get_character_data()
+        dst_keys, dst_names, dst_groups, dst_series, dst_slots = self.dst.get_character_data()
+        self.slot_changed = src_slots != dst_slots
         self.category_changed = self.src.category != self.dst.category
         self.version_changed = self.src.version != self.dst.version
         self.description_changed = self.src.description != self.dst.description
         self.author_changed = self.src.authors != self.dst.authors
         self.url_changed = self.src.url != self.dst.url
         self.wifi_safe_changed = self.src.wifi_safe != self.dst.wifi_safe
-        self.character_changed = self.src.character != self.dst.character
+        self.character_changed = format_character_names(src_names) != format_character_names(dst_names)
         self.includes_changed = self.src.includes != self.dst.includes
         self.thumbnail_changed = self.src.thumbnail != self.dst.thumbnail
 

@@ -59,10 +59,7 @@ class ModLoader(Thread):
             mod.update(**data)
             mod.contains_info = True
 
-        tmp_includes = copy.copy(mod.includes)
         mod = scan_mod(mod)
-        if len(tmp_includes) > 0:
-            mod.includes = tmp_includes
 
         return mod
 

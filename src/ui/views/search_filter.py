@@ -7,12 +7,12 @@ from tkinter import ttk
 from PIL import ImageTk
 import tkinter as tk
 from idlelib.tooltip import Hovertip
-
+from src.constants.defs import SLOT_RULE
 from src.constants.ui_params import PAD_H, PAD_V
 from src.constants.categories import CATEGORIES
 from src.constants.elements import ELEMENTS
 from src.models.filter_params import FilterParams, DEFAULT_VALUE
-from src.ui.base import get_text, validate_slot, add_filter_dropdown, add_filter_entry
+from src.ui.base import get_text, validate_slot, add_filter_dropdown, add_filter_entry, add_hint_text
 from src.utils.edit_distance import get_completion
 from src.utils.csv_helper import csv_to_dict
 from src.core.filter import get_similar_character
@@ -40,6 +40,7 @@ class SearchFilter:
         self.slot_to_var = tk.StringVar()
         self.enabled_only_var = tk.IntVar()
         self.include_hidden_var = tk.IntVar()
+        self.slot_rule_var = tk.StringVar()
 
         self.set_binding()
         self.show()
@@ -60,6 +61,7 @@ class SearchFilter:
         self.slot_to_var.set(params.slot_to)
         self.enabled_only_var.set(params.enabled_only)
         self.include_hidden_var.set(params.include_hidden)
+        self.slot_rule_var.set(params.slot_rule)
 
     def set_binding(self):
         """
@@ -77,6 +79,7 @@ class SearchFilter:
         self.slot_to_var.trace_add("write", lambda *args: setattr(self.params, 'slot_to', self.slot_to_var.get()))
         self.enabled_only_var.trace_add("write", lambda *args: setattr(self.params, 'enabled_only', self.enabled_only_var.get()))
         self.include_hidden_var.trace_add("write", lambda *args: setattr(self.params, 'include_hidden', self.include_hidden_var.get()))
+        self.slot_rule_var.trace_add("write", lambda *args: setattr(self.params, 'slot_rule', self.slot_rule_var.get()))
 
     def show(self):
         self.frame = tk.Frame(self.root)
@@ -94,9 +97,15 @@ class SearchFilter:
         self.frame_slots.grid(row=0, column=5, sticky=tk.EW, pady=PAD_V/2)
         vcmd = (self.root.register(validate_slot)) 
 
+        self.cbox_slots = ttk.Combobox(self.frame_slots, values=SLOT_RULE, width=8, textvariable=self.slot_rule_var)
+        self.cbox_slots.pack(side=tk.LEFT, fill=tk.X, expand=False, padx=(0,PAD_H))
+        self.cbox_slots.bind("<Return>", self.on_submit)
+        self.slot_rule_var.set(SLOT_RULE[0])
+
         self.entry_slots_from = tk.Entry(self.frame_slots, width=5, validate='all', validatecommand=(vcmd, '%P'), textvariable=self.slot_from_var)
         self.entry_slots_from.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.entry_slots_from.bind("<Return>", self.on_submit)
+        add_hint_text(self.entry_slots_from, "0")
 
         label_slot_n = ttk.Label(self.frame_slots, text="~")
         label_slot_n.pack(side=tk.LEFT, padx=PAD_H)
@@ -105,6 +114,7 @@ class SearchFilter:
         self.entry_slots_to = tk.Entry(self.frame_slots, width=5, validate='all', validatecommand=(vcmd, '%P'), textvariable=self.slot_to_var)
         self.entry_slots_to.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.entry_slots_to.bind("<Return>", self.on_submit)
+        add_hint_text(self.entry_slots_to, "255")
 
         self.cbox_category = add_filter_dropdown(self.frame, 1, 4, "Category", [DEFAULT_VALUE] + CATEGORIES, self.category_var, self.on_submit, False)
         self.cbox_series = add_filter_dropdown(self.frame, 1, 0, "Series", self.params.series_list, self.series_var, self.on_submit)
@@ -199,6 +209,9 @@ class SearchFilter:
 
         new_wifi = get_completion(get_text(self.cbox_wifi), self.params.wifi_safe_list)
         self.wifi_safe_var.set(new_wifi if new_wifi else DEFAULT_VALUE)
+
+        new_slot_rule = get_completion(self.slot_rule_var.get(), SLOT_RULE)
+        self.slot_rule_var.set(new_slot_rule if new_slot_rule else SLOT_RULE[0])
 
         self.on_search()
 

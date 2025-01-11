@@ -4,6 +4,7 @@ filter.py: contains methods for filter/sorting
 
 from src.models.mod import Mod
 from data import PATH_CHAR_NAMES
+from src.constants.defs import SLOT_RULE
 from src.utils.csv_helper import csv_to_dict
 from src.utils.edit_distance import get_completion
 from src.core.data import load_config
@@ -20,6 +21,15 @@ def sort_by_columns(data:list[Mod], sort_config:list[dict]):
     Returns:
         list: Sorted list of objects.
     """
+
+    def get_nested_attr(obj, attr):
+        """Helper function to get nested attributes."""
+        for part in attr.split('.'):
+            if isinstance(obj, list):
+                obj = [getattr(item, part) for item in obj]
+            else:
+                obj = getattr(obj, part)
+        return obj
     
     columns = [sort.get("column") for sort in sort_config]
     orders = [sort.get("order") for sort in sort_config]
@@ -27,7 +37,7 @@ def sort_by_columns(data:list[Mod], sort_config:list[dict]):
     data_sorted = sorted(
         data,
         key=lambda x: tuple(
-            (getattr(x, col), -1 if order == 'Descending' else 1)
+            (get_nested_attr(x, col), -1 if order == 'Descending' else 1)
             for col, order in zip(columns, orders)
         )
     )
@@ -35,7 +45,7 @@ def sort_by_columns(data:list[Mod], sort_config:list[dict]):
     for i in reversed(range(len(columns))):
         reverse = orders[i] == 'Descending'
         data_sorted.sort(
-            key=lambda x: getattr(x, columns[i]),
+            key=lambda x: get_nested_attr(x, columns[i]),
             reverse=reverse
         )
 
@@ -87,15 +97,6 @@ def get_similar_character(text:str, values:list)->None:
                 break
     return result
 
-def get_series(character_key:str)->str:
-    """
-    Get series by the character key
-    """
-    data = csv_to_dict(PATH_CHAR_NAMES)
-    for d in data:
-        if d.get("Key") ==  character_key:
-            return d.get("Series").lower()
-
 def filter_mods(mods:list[Mod], filter_params:FilterParams, enabled_list:list = []):
     """
     Filters and sorts the list of mods to show
@@ -112,10 +113,12 @@ def filter_mods(mods:list[Mod], filter_params:FilterParams, enabled_list:list = 
 
         if filter_params.authors.lower() not in mod.authors.lower(): 
             continue
+        
+        keys, names, groups, series, slots = mod.get_character_data()
 
         if filter_params.character.lower() != "all":
             found_match = False
-            for ch in mod.character_names:
+            for ch in names:
                 if ch.lower() == filter_params.character.lower():
                     found_match = True
                     break
@@ -125,8 +128,8 @@ def filter_mods(mods:list[Mod], filter_params:FilterParams, enabled_list:list = 
 
         if filter_params.series.lower() != "all":
             should_include = False
-            for char_name in mod.character_keys:
-                if filter_params.series.lower() == get_series(char_name).lower():
+            for serie in series:
+                if filter_params.series.lower() == serie.lower():
                     should_include = True
 
             if should_include == False:
@@ -151,12 +154,18 @@ def filter_mods(mods:list[Mod], filter_params:FilterParams, enabled_list:list = 
             contains_slot = False
             min_slot = int(filter_params.slot_from.lower() if filter_params.slot_from.lower() else 0)
             max_slot = int(filter_params.slot_to.lower() if filter_params.slot_to.lower() else 255)
-
+            
             if max_slot >= min_slot:
-                for slot in mod.character_slots:
-                    if slot >= min_slot and slot <= max_slot:
-                        contains_slot = True
-                        break
+                if filter_params.slot_rule == SLOT_RULE[0]:
+                    for slot in slots:
+                        if slot >= min_slot and slot <= max_slot:
+                            contains_slot = True
+                            break
+                else:
+                    contains_slot = True
+                    for slot in slots:
+                        if slot < min_slot or slot > max_slot:
+                            contains_slot = False
 
             if contains_slot == False:
                 continue

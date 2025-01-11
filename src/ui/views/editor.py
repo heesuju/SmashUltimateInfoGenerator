@@ -19,7 +19,9 @@ from src.core.formatting import (
     format_folder_name,
     format_display_name,
     clean_mod_name,
-    clean_version
+    clean_version,
+    group_char_name,
+    format_slots
 )
 from src.models.mod import Mod
 from src.utils.web import (
@@ -102,8 +104,9 @@ class Editor:
         self.mod_name_var.set(mod.mod_name)
         self.authors_var.set(mod.authors)
         self.version_var.set(mod.version)
-        self.char_var.set(mod.characters_grouped)
-        self.slot_var.set(mod.character_slots_grouped)
+        keys, names, groups, series, slots = mod.get_character_data()
+        self.char_var.set(group_char_name(names, groups))
+        self.slot_var.set(format_slots(slots))
         self.folder_var.set(mod.folder_name)
         self.display_var.set(mod.display_name)
         self.category_var.set(mod.category)
@@ -336,11 +339,11 @@ class Editor:
                     set_text(self.entry_img_dir, dst_file)
                 
         self.mod.includes = self.get_includes()
-        data = dict(self.mod)
+        data = self.mod.to_dict()
         dump_toml(
             self.mod.path,
             data
-        )                
+        )
 
         if self.mod.path:
             copy_img(self.mod.thumbnail, self.mod.path)

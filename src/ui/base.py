@@ -95,3 +95,19 @@ def add_filter_dropdown(frame:tk.Frame, row:int, col:int, name:str, data:list[st
     combobox.bind("<Return>", on_submit)
     combobox.set(data[0])
     return combobox
+
+def add_hint_text(entry:tk.Entry, hint_text:str):
+    def on_focus_in(event):
+        if entry.get() == hint_text:
+            entry.delete(0, tk.END)
+            entry.config(fg='black')
+    
+    def on_focus_out(event):
+        if entry.get() == '':
+            entry.insert(0, hint_text)
+            entry.config(fg='grey')
+    
+    entry.insert(0, hint_text)
+    entry.config(fg='grey')
+    entry.bind("<FocusIn>", on_focus_in)
+    entry.bind("<FocusOut>", on_focus_out)

@@ -1,4 +1,4 @@
-from src.constants.defs import INFO_VALUES, WIFI_TYPES
+from src.constants.defs import INFO_VALUES, WIFI_TYPES, SLOT_RULE
 from src.constants.elements import ELEMENTS
 from src.constants.categories import CATEGORIES
 from data import PATH_CHAR_NAMES
@@ -17,6 +17,7 @@ class FilterParams():
         self.info_toml = DEFAULT_VALUE
         self.wifi_safe = DEFAULT_VALUE
         self.included = DEFAULT_VALUE
+        self.slot_rule = SLOT_RULE[0]
         self.slot_from = ""
         self.slot_to = ""
         self.enabled_only = False

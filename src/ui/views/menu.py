@@ -124,8 +124,9 @@ class Menu:
         images, values, checked = [], [], []
 
         for n in range(start,end):
-            characters = format_character_names(mods[n].character_names)
-            slots = format_slots(mods[n].character_slots)
+            keys, names, groups, series, slots = mods[n].get_character_data()
+            characters = format_character_names(names)
+            slots = format_slots(slots)
             enabled_mods = self.preset.workspace_list[workspace]["mod_list"] if self.preset.workspace_list.get(workspace) else []
             checked.append(mods[n].hash in enabled_mods)
             images.append(mods[n].thumbnail)
