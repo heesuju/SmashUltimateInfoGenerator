@@ -32,6 +32,7 @@ class Preset:
         self.root = root
         self.callback = callback
         self.workspace_list = {}
+        self.workspace = DEFAULT_WORKSPACE
         self.open()
         self.load_workspace()
         self.is_shown = False
@@ -40,9 +41,7 @@ class Preset:
         self.treeview.select_all(self.select_all.get())
 
     def on_workspace_selected(self, event):
-        config = Config()
-        config.settings.workspace = self.cbox_workspace.get()
-        config.save_config()
+        self.workspace = self.cbox_workspace.get()
         self.callback()
 
     def on_add_new_submitted(self, event):
@@ -67,9 +66,7 @@ class Preset:
         self.cbox_workspace.config(values=workspaces)
         if selected_workspace not in workspaces:
             self.cbox_workspace.set(DEFAULT_WORKSPACE)
-            config = Config()
-            config.workspace = DEFAULT_WORKSPACE
-            config.save_config()
+            self.workspace = DEFAULT_WORKSPACE
             self.callback()
 
     def add_workspace(self, name:str, count:int, checked:bool = False):
@@ -233,7 +230,7 @@ class Preset:
         
         if is_valid_dir(working_dir):
             config = Config()
-            config.cache_dir = working_dir
+            config.settings.cache_dir = working_dir
             config.save_config()
             self.load_workspace()
             self.callback()

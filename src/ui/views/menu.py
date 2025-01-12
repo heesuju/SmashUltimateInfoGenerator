@@ -290,6 +290,7 @@ class Menu:
 
     def on_save_preset(self)->None:
         if self.config is not None:
+            self.config.settings.workspace = self.preset.workspace
             name = self.config.settings.workspace
             list_enabled = self.preset.workspace_list.get(name, None)
             if list_enabled is not None:
@@ -297,6 +298,7 @@ class Menu:
                 result = messagebox.askokcancel(TITLE_PRESET_SAVE, ASK_PRESET_SAVE.format(count, name))
                 
                 if result:
+                    self.config.save_config()
                     self.save_preset()
 
     def save_preset(self):
@@ -327,7 +329,7 @@ class Menu:
         open_page(GIT_REPO_URL)
 
     def get_valid_workspace(self):
-        name = get_workspace()
+        name = self.preset.workspace
         workspace = self.preset.workspace_list.get(name, None)
         if workspace is None:
             return "Default"
