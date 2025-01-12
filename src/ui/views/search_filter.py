@@ -12,7 +12,7 @@ from src.constants.ui_params import PAD_H, PAD_V
 from src.constants.categories import CATEGORIES
 from src.constants.elements import ELEMENTS
 from src.models.filter_params import FilterParams, DEFAULT_VALUE
-from src.ui.base import get_text, validate_slot, add_filter_dropdown, add_filter_entry, add_hint_text
+from src.ui.base import get_text, validate_slot, add_filter_dropdown, add_filter_entry
 from src.utils.edit_distance import get_completion
 from src.utils.csv_helper import csv_to_dict
 from src.core.filter import get_similar_character
@@ -105,7 +105,7 @@ class SearchFilter:
         self.entry_slots_from = tk.Entry(self.frame_slots, width=3, validate='all', validatecommand=(vcmd, '%P'), textvariable=self.slot_from_var)
         self.entry_slots_from.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.entry_slots_from.bind("<Return>", self.on_submit)
-        add_hint_text(self.entry_slots_from, "0")
+        self.slot_from_var.set(self.params.slot_from)
 
         label_slot_n = ttk.Label(self.frame_slots, text="~", takefocus=False)
         label_slot_n.pack(side=tk.LEFT, padx=PAD_H/2)
@@ -114,7 +114,7 @@ class SearchFilter:
         self.entry_slots_to = tk.Entry(self.frame_slots, width=3, validate='all', validatecommand=(vcmd, '%P'), textvariable=self.slot_to_var)
         self.entry_slots_to.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.entry_slots_to.bind("<Return>", self.on_submit)
-        add_hint_text(self.entry_slots_to, "255")
+        self.slot_to_var.set(self.params.slot_to)
 
         self.cbox_series = add_filter_dropdown(self.frame, 1, 0, "Series", self.params.series_list, self.series_var, self.on_submit)
         self.cbox_series.bind("<<ComboboxSelected>>", self.on_series_changed)

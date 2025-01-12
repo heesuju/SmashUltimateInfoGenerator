@@ -8,6 +8,7 @@ from src.constants.defs import SLOT_RULE
 from src.utils.csv_helper import csv_to_dict
 from src.utils.edit_distance import get_completion
 from src.core.data import load_config
+from src.utils.string_helper import str_to_int
 from src.models.filter_params import FilterParams
 
 def sort_by_columns(data:list[Mod], sort_config:list[dict]):
@@ -149,11 +150,11 @@ def filter_mods(mods:list[Mod], filter_params:FilterParams, enabled_list:list = 
         if filter_params.wifi_safe.lower() != "all":
             if filter_params.wifi_safe.lower() != mod.wifi_safe.lower():
                 continue
-
+        
         if filter_params.slot_from.lower() or filter_params.slot_to.lower():
             contains_slot = False
-            min_slot = int(filter_params.slot_from.lower() if filter_params.slot_from.lower() else 0)
-            max_slot = int(filter_params.slot_to.lower() if filter_params.slot_to.lower() else 255)
+            min_slot = str_to_int(filter_params.slot_from)
+            max_slot = str_to_int(filter_params.slot_to)
             
             if max_slot >= min_slot:
                 if filter_params.slot_rule == SLOT_RULE[0]:
@@ -163,9 +164,12 @@ def filter_mods(mods:list[Mod], filter_params:FilterParams, enabled_list:list = 
                             break
                 else:
                     contains_slot = True
-                    for slot in slots:
-                        if slot < min_slot or slot > max_slot:
-                            contains_slot = False
+                    if len(slots) > 0:
+                        for slot in slots:
+                            if slot < min_slot or slot > max_slot:
+                                contains_slot = False
+                    else:
+                        contains_slot = False
 
             if contains_slot == False:
                 continue

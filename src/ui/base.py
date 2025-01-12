@@ -69,7 +69,7 @@ def get_icon(name:str, extension:str="png"):
     path = os.path.join(ICON_PATH, f'{name}.{extension}')
     return ImageTk.PhotoImage(file=path)
 
-def style_label_as_entry(label, color):
+def style_label_as_entry(label:tk.Label, color:str):
     label.config(relief=tk.SUNKEN, borderwidth=1)  # Add a border
     label.config(bg=color)  # Set background color to white
     label.config(font=("Helvetica", 9))  # Set font style and size
@@ -95,19 +95,3 @@ def add_filter_dropdown(frame:tk.Frame, row:int, col:int, name:str, data:list[st
     combobox.bind("<Return>", on_submit)
     combobox.set(data[0])
     return combobox
-
-def add_hint_text(entry:tk.Entry, hint_text:str):
-    def on_focus_in(event):
-        if entry.get() == hint_text:
-            entry.delete(0, tk.END)
-            entry.config(fg='black')
-    
-    def on_focus_out(event):
-        if entry.get() == '':
-            entry.insert(0, hint_text)
-            entry.config(fg='grey')
-    
-    entry.insert(0, hint_text)
-    entry.config(fg='grey')
-    entry.bind("<FocusIn>", on_focus_in)
-    entry.bind("<FocusOut>", on_focus_out)
