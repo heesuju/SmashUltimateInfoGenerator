@@ -48,6 +48,7 @@ from src.ui.base import (
     get_icon
 )
 from src.ui.components.checkbox_treeview import Treeview
+from data import PATH_CACHE
 from .comparison import Comparison
 from .config import Config
 
@@ -148,7 +149,7 @@ class Editor:
 
     def download_img(self):
         download_data = []
-        download_dir = os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "cache/thumbnails")
+        download_dir = os.path.join(PATH_CACHE, "thumbnails")
         os.makedirs(download_dir, exist_ok=True)
         remove_cache()
 
@@ -229,7 +230,7 @@ class Editor:
         if selected_idx < len(self.img_urls):
             self.mod.thumbnail = self.img_urls[selected_idx]
             name = trim_url(self.mod.thumbnail)
-            download_dir = os.path.join(get_project_dir(), "cache/thumbnails")
+            download_dir = os.path.join(PATH_CACHE, "thumbnails")
             self.set_image(os.path.join(download_dir, name))
     
     def on_img_replace_changed(self):
