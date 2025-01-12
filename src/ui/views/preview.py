@@ -22,10 +22,10 @@ class Preview:
     def __init__(
             self,
             root:tk.Frame,
-            edit_callback=None,
-            open_callback=None,
-            toggle_callback=None,
-            hide_callback=None
+            edit_callback:callable=None,
+            open_callback:callable=None,
+            toggle_callback:callable=None,
+            hide_callback:callable=None
         ) -> None:
 
         self.root = root

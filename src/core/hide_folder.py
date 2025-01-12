@@ -17,10 +17,13 @@ def save_hidden(hidden_items:list):
 
 def hide_folder(directory:str):
     name = get_base_name(directory)
-    if is_hidden(name):
-        return
     data = get_hidden()
-    data.append(name)
+
+    if is_hidden(name):
+        data.remove(name)
+    else:
+        data.append(name)
+        
     save_hidden(data)
 
 def is_hidden(folder_name:str, case_sensitive:bool=False)->bool:

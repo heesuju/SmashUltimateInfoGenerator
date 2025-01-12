@@ -97,7 +97,7 @@ class SearchFilter:
         self.frame_slots.grid(row=0, column=5, sticky=tk.EW, pady=PAD_V/2)
         vcmd = (self.root.register(validate_slot)) 
 
-        self.cbox_slots = ttk.Combobox(self.frame_slots, values=SLOT_RULE, width=6, textvariable=self.slot_rule_var)
+        self.cbox_slots = ttk.Combobox(self.frame_slots, values=SLOT_RULE, width=8, textvariable=self.slot_rule_var)
         self.cbox_slots.pack(side=tk.LEFT, fill=tk.X, expand=False, padx=(0,PAD_H))
         self.cbox_slots.bind("<Return>", self.on_submit)
         self.slot_rule_var.set(SLOT_RULE[0])

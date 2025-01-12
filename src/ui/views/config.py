@@ -28,7 +28,7 @@ class Config:
             json.dump(self.settings.__dict__, f, indent=4)
         
         if self.callback is not None:
-            self.callback(self.default_dir)
+            self.callback(self.settings.default_directory)
         
         print("Saved config")
 
@@ -88,12 +88,12 @@ class Config:
     def on_restore_config(self):
         self.reset()
         self.entry_display_name_format.delete(0, tk.END)
-        self.entry_display_name_format.insert(0, self.display_name_format)
+        self.entry_display_name_format.insert(0, self.settings.display_name_format)
         self.entry_folder_name_format.delete(0, tk.END)
-        self.entry_folder_name_format.insert(0, self.folder_name_format)
+        self.entry_folder_name_format.insert(0, self.settings.folder_name_format)
         self.entry_additional_elements.delete(0, tk.END)
-        self.slot_cap.set(1 if self.is_slot_capped else 0)
-        self.start_w_editor.set(1 if self.start_with_editor else 0)
+        self.slot_cap.set(1 if self.settings.is_slot_capped else 0)
+        self.start_w_editor.set(1 if self.settings.start_with_editor else 0)
 
     def open_config(self, root):
         if self.new_window is not None:
@@ -136,11 +136,11 @@ class Config:
         self.entry_additional_elements = tk.Entry(self.new_window, width=10)
         self.entry_additional_elements.grid(row=9, column=0, sticky=tk.EW, pady = (0, PAD_V))
 
-        self.slot_cap = tk.IntVar(value = (1 if self.is_slot_capped else 0))
+        self.slot_cap = tk.IntVar(value = (1 if self.settings.is_slot_capped else 0))
         self.cbox_capitalize_slots = tk.Checkbutton(self.new_window, text="Capitalize slot prefix(e.g. C02 or c02)", variable=self.slot_cap)
         self.cbox_capitalize_slots.grid(row=10, column=0, sticky=tk.W)
         
-        self.start_w_editor = tk.IntVar(value = (1 if self.start_with_editor else 0))
+        self.start_w_editor = tk.IntVar(value = (1 if self.settings.start_with_editor else 0))
         self.cbox_start_w_editor = tk.Checkbutton(self.new_window, text="Show editor on start", variable=self.start_w_editor)
         self.cbox_start_w_editor.grid(row=11, column=0, sticky=tk.W)
 
@@ -154,10 +154,10 @@ class Config:
         self.btn_save.pack()
         
         self.e_mod_dir.delete(0, tk.END)
-        self.e_mod_dir.insert(0, self.default_dir)
+        self.e_mod_dir.insert(0, self.settings.default_directory)
         self.entry_display_name_format.delete(0, tk.END)
-        self.entry_display_name_format.insert(0, self.display_name_format)
+        self.entry_display_name_format.insert(0, self.settings.display_name_format)
         self.entry_folder_name_format.delete(0, tk.END)
-        self.entry_folder_name_format.insert(0, self.folder_name_format)
+        self.entry_folder_name_format.insert(0, self.settings.folder_name_format)
         self.entry_additional_elements.delete(0, tk.END)
         self.entry_additional_elements.insert(0, self.get_additional_elements_as_str())
