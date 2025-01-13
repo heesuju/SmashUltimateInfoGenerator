@@ -137,7 +137,7 @@ class Editor:
         self.folder_var.trace_add("write", lambda *args: setattr(self.mod, 'folder_name', self.folder_var.get()))
         self.display_var.trace_add("write", lambda *args: setattr(self.mod, 'display_name', self.display_var.get()))
         self.wifi_var.trace_add("write", lambda *args: setattr(self.mod, 'wifi_safe', self.wifi_var.get()))
-        self.desc_var.trace_add("write", lambda *args: self.on_desc_changed())
+        self.desc_var.trace_add("write", lambda *args: setattr(self.mod, 'description', clean_description(self.desc_var.get())))
 
     def on_close(self):
         """
@@ -214,6 +214,8 @@ class Editor:
 
         if not clean_description(self.desc_var.get()):
             self.desc_var.set(description)
+            self.desc_text.delete("1.0", "end")
+            self.desc_text.insert("1.0", self.desc_var.get())
 
         set_enabled(self.btn_fetch_data)
 
@@ -260,15 +262,6 @@ class Editor:
         if args and isinstance(args[0], tk.Event):
             if get_text(self.desc_text) != self.desc_var.get().rstrip('\n'): # Check if text has changed
                 self.desc_var.set(get_text(self.desc_text))
-        else:
-            if self.desc_text is not None:
-                pos = self.desc_text.index(tk.INSERT)
-                self.desc_text.delete("1.0", "end")
-                self.desc_text.insert("1.0", self.desc_var.get().rstrip('\n'))
-                self.desc_text.mark_set(tk.INSERT, pos)
-                self.desc_text.see(tk.INSERT)
-                
-        setattr(self.mod, 'description', self.desc_var.get())
 
     def on_name_changed(self)->None:
         """
