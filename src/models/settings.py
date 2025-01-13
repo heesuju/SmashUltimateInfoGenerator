@@ -11,8 +11,8 @@ class Settings():
         self.additional_elements = []
         self.sort_priority = [
             {"column": "category", "order": "Ascending"},
-            {"column": "character_name", "order": "Ascending"},
-            {"column": "slots", "order": "Ascending"},
+            {"column": "characters.custom", "order": "Ascending"},
+            {"column": "characters.slots", "order": "Ascending"},
             {"column": "mod_name", "order": "Ascending"}
         ]
         self.cache_dir = ""
