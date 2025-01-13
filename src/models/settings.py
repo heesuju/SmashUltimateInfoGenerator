@@ -10,10 +10,10 @@ class Settings():
         self.folder_name_format = "{category}_{characters}[{slots}]_{mod}"
         self.additional_elements = []
         self.sort_priority = [
-            {"category", "Ascending"},
-            {"character_name", "Ascending"},
-            {"slots", "Ascending"},
-            {"mod_name", "Ascending"}
+            {"column": "category", "order": "Ascending"},
+            {"column": "character_name", "order": "Ascending"},
+            {"column": "slots", "order": "Ascending"},
+            {"column": "mod_name", "order": "Ascending"}
         ]
         self.cache_dir = ""
         self.workspace = "Default"
