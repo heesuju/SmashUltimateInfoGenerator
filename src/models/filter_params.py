@@ -2,6 +2,7 @@ from src.constants.defs import INFO_VALUES, WIFI_TYPES, SLOT_RULE
 from src.constants.elements import ELEMENTS
 from src.constants.categories import CATEGORIES
 from data import PATH_CHAR_NAMES
+from src.core.data import load_config
 from src.utils.csv_helper import csv_to_dict
 from src.utils.string_helper import remove_redundant_spacing
 
@@ -9,6 +10,7 @@ DEFAULT_VALUE = "All"
 
 class FilterParams():
     def __init__(self):
+        settings = load_config()
         self.mod_name = ""
         self.authors = ""
         self.character = DEFAULT_VALUE
@@ -27,5 +29,5 @@ class FilterParams():
         self.series_list = [remove_redundant_spacing(i) for i in self.series_list]
         self.info_toml_list = [DEFAULT_VALUE] + INFO_VALUES
         self.wifi_safe_list = [DEFAULT_VALUE] + WIFI_TYPES
-        self.included_list = [DEFAULT_VALUE] + ELEMENTS
+        self.included_list = [DEFAULT_VALUE] + ELEMENTS + settings.additional_elements
         self.category_list = [DEFAULT_VALUE] + CATEGORIES
