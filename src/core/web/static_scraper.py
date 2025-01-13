@@ -68,3 +68,4 @@ class Extractor(Thread):
             a_tags = breadcrumb.find_all('a') 
             for a in a_tags:
                 categories.append(a.get_text())
+        return categories

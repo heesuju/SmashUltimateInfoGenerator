@@ -11,6 +11,7 @@ from src.constants.elements import ELEMENTS
 from src.constants.ui_params import PAD_H, PAD_V
 from src.constants.defs import IMAGE_TYPES, WIFI_TYPES
 from src.constants.categories import CATEGORIES
+from src.constants.elements import *
 from src.core.data import remove_cache
 from src.core.mod_loader import ModLoader
 from src.core.web.static_scraper import Extractor
@@ -176,7 +177,12 @@ class Editor:
             self.authors_var.set(authors)
 
         if is_moveset:
-            self.mod.contains_moveset = True
+            self.mod.add_to_included(MOVESET)
+        
+            for item in self.treeview.get_items():
+                text = self.treeview.get_row_text(item)
+                if text == MOVESET:
+                    self.treeview.set_row_checked(item, True)
 
     def on_selenium_result(self, version, img_urls, img_descriptions, wifi_safe:str):
         self.img_urls = img_urls

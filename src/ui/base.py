@@ -80,9 +80,9 @@ class WrappingLabel(tk.Label):
         self.bind('<Configure>', lambda e: self.config(wraplength=self.winfo_width()))
 
 def add_filter_entry(frame:tk.Frame, row:int, col:int, name:str, string_var:tk.StringVar, on_submit:callable = None, add_padding:bool=True):
-    label = ttk.Label(frame, text=name, width=10)
+    label = ttk.Label(frame, text=name, width=8)
     label.grid(row=row, column=col, sticky=tk.EW, padx=(0,PAD_H))
-    entry = tk.Entry(frame, textvariable=string_var, width=10)
+    entry = tk.Entry(frame, textvariable=string_var, width=16)
     entry.grid(row=row, column=col+1, sticky=tk.EW, padx=(0,PAD_H if add_padding else 0), pady=PAD_V/2)
     entry.bind("<Return>", on_submit)
     return entry

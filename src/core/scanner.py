@@ -221,9 +221,18 @@ def scan_mod(mod:Mod)->Mod:
             return CATEGORY_UI
         else:
             return CATEGORY_MISC
+        
+    def check_includes(includes:list[str])->list[str]:
+        output_arr = includes
+        if SKIN in output_arr and RECOLOR in output_arr:
+            output_arr.remove(SKIN)
+        if ALL_SLOT_EFFECT in output_arr and ONE_SLOT_EFFECT in output_arr:
+            output_arr.remove(ONE_SLOT_EFFECT)
+        if ALL_SLOT_NAME in output_arr and ONE_SLOT_NAME in output_arr:
+            output_arr.remove(ONE_SLOT_NAME)
+        return output_arr
 
     mod.characters = []
-    mod.includes = []
     mod = scan_character(mod)
     mod = scan_fighter(mod)
     mod = scan_effect(mod)
@@ -235,6 +244,7 @@ def scan_mod(mod:Mod)->Mod:
     mod = scan_ui(mod)
     mod = scan_thumbnail(mod)
     mod.category = get_category(mod)
+    mod.includes = check_includes(mod.includes)
 
     keys, names, groups, series, slots = mod.get_character_data()
 
