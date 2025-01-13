@@ -89,6 +89,7 @@ class Editor:
         self.category_var = tk.StringVar()
         self.wifi_var = tk.StringVar()
         self.desc_var = tk.StringVar()
+        self.image_dir_var = tk.StringVar()
 
         self.set_binding()
 
@@ -115,6 +116,7 @@ class Editor:
         self.category_var.set(mod.category)
         self.wifi_var.set(mod.wifi_safe)
         self.desc_var.set(mod.description)
+        self.image_dir_var.set(mod.thumbnail)
 
     def set_binding(self):
         """
@@ -302,7 +304,10 @@ class Editor:
         self.mod = mods[0]
         self.org_mod = copy.copy(self.mod)
         self.set_values(self.mod)
-        self.open(self.root)
+        
+        if self.new_window is None:
+            self.open(self.root)
+        
         set_text(self.desc_text, self.mod.description)
         includes = self.mod.includes
         self.update_includes(includes)
@@ -330,10 +335,12 @@ class Editor:
             return
 
         self.dir_var.set(working_dir)
-        self.update_preview()
+        self.on_directory_changed()
 
-    def on_update_directory(self, event):
+    def on_directory_changed(self, event:tk.Event=None):
         if self.dir_var.get() and os.path.exists(self.dir_var.get()):
+            self.mod = None
+            self.image_dir_var.set("")
             self.update_preview()
 
     def apply_changes(self):
@@ -348,7 +355,7 @@ class Editor:
             if is_valid_file(src_file):
                 dst_file = os.path.join(dst_dir, "preview.webp")
                 if copy_file(src_file, dst_file):
-                    set_text(self.entry_img_dir, dst_file)
+                    self.image_dir_var.set(dst_file)
                 
         self.mod.includes = self.get_includes()
         data = self.mod.to_dict()
@@ -391,7 +398,7 @@ class Editor:
         """
         Called when image directory is changed
         """
-        image_dir = self.entry_img_dir.get()
+        image_dir = self.image_dir_var.get()
         if self.mod.thumbnail == image_dir:
             return
 
@@ -407,8 +414,7 @@ class Editor:
         if not directory or not os.path.exists(directory):
             return
         
-        self.entry_img_dir.delete(0, tk.END)
-        self.entry_img_dir.insert(tk.END, directory)
+        self.image_dir_var.set(directory)
         self.mod.thumbnail = directory
         ImageHandler(directory, self.label_img.winfo_width(), self.label_img.winfo_height(), self.on_img_resized)
 
@@ -430,7 +436,7 @@ class Editor:
                 self.replace_img_state.set(False)
                 return
         
-        self.entry_img_dir.delete(0, tk.END)
+        self.image_dir_var.set("")
         self.label_img.config(image=None)
         self.label_img.image = None
 
@@ -448,7 +454,7 @@ class Editor:
         return outputs
 
     def on_window_resize(self, event):
-        self.set_image(self.entry_img_dir.get())
+        self.set_image(self.image_dir_var.get())
 
     def on_change_close_on_apply(self):
         self.config.set_close_on_apply(self.close_on_apply.get())
@@ -503,7 +509,7 @@ class Editor:
 
         self.entry_work_dir = tk.Entry(self.frame_work_dir, width=10, textvariable=self.dir_var)
         self.entry_work_dir.pack(fill=tk.X, expand=True)
-        self.entry_work_dir.bind("<Return>", self.on_update_directory)
+        self.entry_work_dir.bind("<Return>", self.on_directory_changed)
 
         # URL entry field
         url_label = tk.Label(self.new_window, text="Url")
@@ -555,7 +561,7 @@ class Editor:
         self.frame_img_dir.pack(side=tk.TOP, fill=tk.X, expand=False, pady = (0, PAD_V))
         self.btn_select_img = tk.Button(self.frame_img_dir, image=self.icon_browse, relief=tk.FLAT, cursor='hand2', command=self.update_image, anchor='n')
         self.btn_select_img.pack(side=tk.LEFT, padx = (0, PAD_H))
-        self.entry_img_dir = tk.Entry(self.frame_img_dir, width=10)
+        self.entry_img_dir = tk.Entry(self.frame_img_dir, width=10, textvariable=self.image_dir_var)
         self.entry_img_dir.pack(fill=tk.X, expand=True)
         self.entry_img_dir.bind("<KeyRelease>", self.on_update_image)
         fr_img_download = tk.Frame(self.frame_img)
