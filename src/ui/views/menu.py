@@ -11,13 +11,14 @@ from src.core.data import load_config, get_workspace
 from src.core.formatting import (
     format_folder_name,
     format_character_names,
-    format_slots
+    format_slots,
+    group_char_name
 )
 from src.core.filter import filter_mods
 from src.models.mod import Mod
 from src.constants.ui_params import PAD_H, PAD_V, COLUMNS
 from src.constants.defs import GIT_REPO_URL
-from src.constants.strings import INFO_DRAG_DROP_COPY_COMPLETE, INFO, TITLE_PRESET_SAVE, ASK_PRESET_SAVE
+from src.constants.strings import INFO_DRAG_DROP_COPY_COMPLETE, INFO, TITLE_PRESET_SAVE, ASK_PRESET_SAVE, ASK_DUPLICATE_ENTRY, TITLE_DUPLICATE_ENTRY
 from src.ui.components.progress_bar import ProgressBar
 from src.ui.components.image_treeview import ImageTreeview
 from src.ui.components.paging import Paging
@@ -37,6 +38,7 @@ from src.utils.file import (
 )
 from src.utils.web import open_page
 from src.utils.hash import get_hash
+from src.utils.string_helper import remove_spacing
 from src.core.hide_folder import filter_hidden
 from .editor import Editor
 from .config import Config
@@ -350,20 +352,26 @@ class Menu:
         dir = scanned_mod.path
         default_dir = load_config().default_directory
 
+        keys, names, groups, series, slots = scanned_mod.get_character_data()
+
         folder_name = format_folder_name(
-            scanned_mod.get("characters"),
-            scanned_mod.get("slots"),
-            scanned_mod.mod_name,
-            scanned_mod.category
+            remove_spacing(group_char_name(names, groups)),
+            remove_spacing(format_slots(slots)),
+            remove_spacing(scanned_mod.mod_name),
+            remove_spacing(scanned_mod.category)
         )
         
         new_dir = os.path.join(default_dir, folder_name)
         num = 0
         new_name = folder_name
-        while os.path.exists(new_dir): 
-            num+=1
-            new_name = f"{folder_name}{num}"
-            new_dir = os.path.join(default_dir, new_name)
+
+        if os.path.exists(new_dir): 
+            result = messagebox.askokcancel(TITLE_DUPLICATE_ENTRY, ASK_DUPLICATE_ENTRY.format(new_name))
+            if result:
+                while os.path.exists(new_dir): 
+                    num+=1
+                    new_name = f"{folder_name}{num}"
+                    new_dir = os.path.join(default_dir, new_name)
         try:
             copy_directory_contents(dir, default_dir, new_name)
             print("successfully added dir:", dir)

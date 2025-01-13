@@ -60,13 +60,27 @@ def scan_character(mod:Mod)->Mod:
             model_dir = os.path.join(path, "model")
             if is_valid_dir(model_dir):
                 models = get_children(model_dir)
-
+                found_model = False
                 for model in models:
                     slot_strings = get_children(os.path.join(model_dir, model))
+                    # Scan inside c0X files
+                    if found_model == False and len(slot_strings) > 0:
+                        model_files = get_direct_child_by_extension(os.path.join(model_dir, model, slot_strings[0]))
+                        found_model = False
+                        for model_file in model_files:
+                            tmp_arr = model_file.split(".")
+                            if "model" in tmp_arr:
+                                found_model = True
+                                break
+
+                    # Get a list of model slots
                     slots = get_slots_as_number(slot_strings)
                     for slot in slots:
                         if slot not in character.slots:
                             character.slots.append(slot)   
+                if found_model == False:
+                    mod.add_to_included(RECOLOR)
+
         if name in eff_fighters:
             path = os.path.join(effect_dir, name)
             all_slots = get_direct_child_by_extension(path, ".eff")
@@ -88,7 +102,8 @@ def scan_fighter(mod:Mod)->Mod:
         return mod
 
     if search_dir_by_keyword(root_dir, "model"):
-        mod.add_to_included(SKIN)
+        if RECOLOR not in mod.includes:
+            mod.add_to_included(SKIN)
 
     if search_dir_by_keyword(root_dir, "motion"):
         mod.add_to_included(MOTION)
@@ -194,7 +209,7 @@ def scan_mod(mod:Mod)->Mod:
     Scans mod directory and auto-fills information
     """
     def get_category(mod:Mod)->str:
-        if SKIN in mod.includes or MOTION in mod.includes:
+        if SKIN in mod.includes or MOTION in mod.includes or RECOLOR in mod.includes:
             return CATEGORY_FIGHTER
         elif STAGE in mod.includes:
             return CATEGORY_STAGE
@@ -208,9 +223,10 @@ def scan_mod(mod:Mod)->Mod:
             return CATEGORY_MISC
 
     mod.characters = []
+    mod.includes = []
+    mod = scan_character(mod)
     mod = scan_fighter(mod)
     mod = scan_effect(mod)
-    mod = scan_character(mod)
     mod = scan_stage(mod)
     mod = scan_item(mod)
     mod = scan_sound(mod)

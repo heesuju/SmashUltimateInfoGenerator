@@ -141,15 +141,19 @@ def search_dir_by_keyword(directory, keyword)->bool:
             return True
     return False
 
-def get_direct_child_by_extension(directory, extension)->list:
+def get_direct_child_by_extension(directory, extension:str = "")->list:
     """
     Finds children with specified extension type
     Subdirectories are not scanned
     """
     children = []
     for filename in os.listdir(directory):
-        if filename.endswith(extension) and os.path.isfile(os.path.join(directory, filename)):
-            children.append(filename)
+        if extension:
+            if filename.endswith(extension) and os.path.isfile(os.path.join(directory, filename)):
+                children.append(filename)
+        else:
+            if os.path.isfile(os.path.join(directory, filename)):
+                children.append(filename)
     return children
 
 def get_children_by_extension(directory, extension)->list:

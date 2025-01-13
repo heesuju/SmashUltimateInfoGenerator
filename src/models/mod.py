@@ -15,7 +15,7 @@ class Mod:
         self.description:str = ""
         self.authors:str = ""
         self.category:str = ""
-        self.version:str = ""
+        self.version:str = "1.0.0"
         self.mod_name:str = ""
         self.url:str = ""
         self.wifi_safe:str = ""
