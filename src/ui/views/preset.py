@@ -33,6 +33,7 @@ class Preset:
         self.callback = callback
         self.workspace_list = {}
         self.workspace = DEFAULT_WORKSPACE
+        self.cache_dir:str = ""
         self.open()
         self.load_workspace()
         self.is_shown = False
@@ -101,7 +102,6 @@ class Preset:
 
     def restore_workspace(self, item):
         config = load_config()
-        
         name = self.treeview.get_row_text(item)
         path = os.path.join(config.cache_dir, self.workspace_list[name]["filename"])
         self.workspace_list[name]["mod_list"] = load_preset_mods(path)
@@ -232,12 +232,15 @@ class Preset:
             config = Config()
             config.settings.cache_dir = working_dir
             config.save_config()
+            self.cache_dir = working_dir
             self.load_workspace()
             self.callback()
 
     def load_workspace(self):
         config = load_config()
-        
+        self.workspace = config.workspace
+        self.cache_dir = config.cache_dir
+
         set_text(self.entry_dir, config.cache_dir)
         if config.cache_dir:
             self.reset_workspace()

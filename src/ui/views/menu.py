@@ -18,7 +18,7 @@ from src.core.filter import filter_mods
 from src.models.mod import Mod
 from src.constants.ui_params import PAD_H, PAD_V, COLUMNS
 from src.constants.defs import GIT_REPO_URL
-from src.constants.strings import INFO_DRAG_DROP_COPY_COMPLETE, INFO, TITLE_PRESET_SAVE, ASK_PRESET_SAVE, ASK_DUPLICATE_ENTRY, TITLE_DUPLICATE_ENTRY
+from src.constants.strings import INFO_DRAG_DROP_COPY_COMPLETE, INFO, TITLE_PRESET_SAVE, ASK_PRESET_SAVE, ASK_DUPLICATE_ENTRY, TITLE_DUPLICATE_ENTRY, WARNING_NO_WORKSPACE, WARNING
 from src.ui.components.progress_bar import ProgressBar
 from src.ui.components.image_treeview import ImageTreeview
 from src.ui.components.paging import Paging
@@ -94,7 +94,9 @@ class Menu:
 
                 self.preset.update_workspace_count()
             else:
-                print("no workspace found")
+                if self.preset.is_shown == False:
+                    self.toggle_preset()
+                messagebox.showwarning(WARNING, WARNING_NO_WORKSPACE)
         else:
             print("no item selected!")
 
@@ -298,6 +300,7 @@ class Menu:
 
     def on_save_preset(self)->None:
         if self.config is not None:
+            self.config.settings.cache_dir = self.preset.cache_dir
             self.config.settings.workspace = self.preset.workspace
             name = self.config.settings.workspace
             list_enabled = self.preset.workspace_list.get(name, None)
