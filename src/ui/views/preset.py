@@ -216,7 +216,7 @@ class Preset:
         new_dir = get_text(self.entry_dir)
         if is_valid_dir(new_dir):
             config = Config()
-            config.cache_dir = new_dir
+            config.settings.cache_dir = new_dir
             config.save_config()
             self.load_workspace()
             self.callback()

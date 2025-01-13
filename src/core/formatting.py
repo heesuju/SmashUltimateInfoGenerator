@@ -252,3 +252,7 @@ def clean_version(version:str)->str:
 
     formatted_version = '.'.join(numeric_parts)
     return formatted_version
+
+def clean_description(description:str)->str:
+    description = description.strip()
+    return description

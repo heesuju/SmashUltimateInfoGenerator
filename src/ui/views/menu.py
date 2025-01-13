@@ -204,11 +204,11 @@ class Menu:
     def on_escape(self, event):
         self.preview.clear()
         if self.preview.is_shown:
-            self.preview.toggle()
+            self.toggle_preview()
         elif self.preset.is_shown:
-            self.preset.toggle()
+            self.toggle_preset()
 
-    def on_item_selected(self, event):
+    def on_item_selected(self, event:tk.Event = None):
         selected_item = self.treeview.get_selected_id()
         if not selected_item:
             return
@@ -216,6 +216,12 @@ class Menu:
         if self.treeview.pos_x >= 20 and self.treeview.pos_x <= 145:
             self.toggle_mod()
             self.treeview.pos_x = 0
+
+        self.update_preview(selected_item)
+            
+    def update_preview(self, selected_item:str):
+        if not selected_item:
+            return
 
         item = self.treeview.get_item(selected_item)
         values = item.get("values", None)
@@ -229,7 +235,7 @@ class Menu:
                     break
             
         self.preview.update(item["tags"][0] == "enabled", selected_mod)
-            
+    
     def on_double_clicked(self, event):
         self.open_editor()
 
@@ -322,6 +328,8 @@ class Menu:
             if self.preset.is_shown:
                 self.toggle_preset()
             self.btn_show_preview.config(bg="white", image=self.icon_preview)
+            if self.preview.mod is None:
+                self.update_preview(self.treeview.get_selected_id())
         else:
             self.btn_show_preview.config(bg="SystemButtonFace", image=self.icon_preview_off)
 

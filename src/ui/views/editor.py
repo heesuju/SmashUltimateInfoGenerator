@@ -21,6 +21,7 @@ from src.core.formatting import (
     format_display_name,
     clean_mod_name,
     clean_version,
+    clean_description,
     group_char_name,
     format_slots
 )
@@ -184,7 +185,7 @@ class Editor:
                 if text == MOVESET:
                     self.treeview.set_row_checked(item, True)
 
-    def on_selenium_result(self, version, img_urls, img_descriptions, wifi_safe:str):
+    def on_selenium_result(self, version, img_urls, img_descriptions, wifi_safe:str, description:str):
         self.img_urls = img_urls
         self.img_descriptions = img_descriptions
         set_text(self.label_output, "Fetched elements")
@@ -208,6 +209,10 @@ class Editor:
             self.set_img_cbox()
             set_enabled(self.ckbox_replace_img, False)
             set_enabled(self.cbox_img, False)
+
+        if not clean_description(self.desc_var.get()):
+            self.desc_var.set(description)
+
         set_enabled(self.btn_fetch_data)
 
     def get_data_from_url(self):
