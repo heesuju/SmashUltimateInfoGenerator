@@ -53,6 +53,8 @@ def scan_character(mod:Mod)->Mod:
     
     for name in names:
         dict = get_character(name, character_dict)
+        if dict is None:
+            break
         character = Character(**dict)
 
         if name in skin_fighters:
