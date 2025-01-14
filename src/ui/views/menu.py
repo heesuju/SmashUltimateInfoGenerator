@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from idlelib.tooltip import Hovertip
 from src.core.mod_loader import ModLoader
+from src.core.mod_installer import ModInstaller
 from src.core.data import load_config, get_workspace
 from src.core.formatting import (
     format_folder_name,
@@ -18,7 +19,19 @@ from src.core.filter import filter_mods
 from src.models.mod import Mod
 from src.constants.ui_params import PAD_H, PAD_V, COLUMNS
 from src.constants.defs import GIT_REPO_URL
-from src.constants.strings import INFO_DRAG_DROP_COPY_COMPLETE, INFO, TITLE_PRESET_SAVE, ASK_PRESET_SAVE, ASK_DUPLICATE_ENTRY, TITLE_DUPLICATE_ENTRY, WARNING_NO_WORKSPACE, WARNING
+from src.constants.strings import (
+    INFO_DRAG_DROP_COPY_COMPLETE, 
+    INFO, 
+    TITLE_PRESET_SAVE, 
+    ASK_PRESET_SAVE, 
+    ASK_DUPLICATE_ENTRY, 
+    TITLE_DUPLICATE_ENTRY, 
+    WARNING_NO_WORKSPACE, 
+    WARNING, 
+    WARNING_MOD_DIR, 
+    WARNING_FILE_DIR,
+    DRAG_DROP_COPY_FAILED
+)
 from src.ui.components.progress_bar import ProgressBar
 from src.ui.components.image_treeview import ImageTreeview
 from src.ui.components.paging import Paging
@@ -31,10 +44,12 @@ from src.ui.base import (
 )
 from src.utils.file import (
     is_valid_dir,
+    is_valid_path,
     copy_directory_contents,
     is_case_sensitive,
     get_base_name,
-    is_same_dir
+    is_same_dir,
+    sanitize_path
 )
 from src.utils.web import open_page
 from src.utils.hash import get_hash
@@ -349,49 +364,29 @@ class Menu:
         else:
             return name
         
-    def on_drag_drop(self, dir):
-        dir = dir.strip('{}')
-        config = load_config()
-        if is_valid_dir(config.default_directory) and is_valid_dir(dir):
-            ModLoader([dir], self.on_drop_scanned)
+    def on_drag_drop(self, dir:str)->None:
+        """On drag n dropped file or folder"""
+        dir = sanitize_path(dir.strip('{}'))
+        settings = load_config()
+        default_dir = settings.default_directory
+        
+        if not default_dir or is_valid_dir(default_dir) == False:
+            messagebox.showerror(WARNING, WARNING_MOD_DIR)
+            return
 
-    def on_drop_scanned(self, mods:list[Mod]):
-        if len(mods) <= 0: 
+        if not dir or is_valid_path(dir) == False:
+            messagebox.showerror(WARNING, WARNING_FILE_DIR)
+            return
+
+        ModInstaller(dir, default_dir, self.on_drop_scanned)
+
+    def on_drop_scanned(self, added_dirs:list[str])->None:
+        if len(added_dirs) <= 0: 
+            messagebox.showinfo(WARNING, DRAG_DROP_COPY_FAILED)
             return
         
-        scanned_mod = mods[0]
-        dir = scanned_mod.path
-        default_dir = load_config().default_directory
-
-        keys, names, groups, series, slots = scanned_mod.get_character_data()
-
-        folder_name = format_folder_name(
-            remove_spacing(group_char_name(names, groups)),
-            remove_spacing(format_slots(slots)),
-            remove_spacing(scanned_mod.mod_name),
-            remove_spacing(scanned_mod.category)
-        )
-        
-        new_dir = os.path.join(default_dir, folder_name)
-        num = 0
-        new_name = folder_name
-
-        if os.path.exists(new_dir): 
-            result = messagebox.askokcancel(TITLE_DUPLICATE_ENTRY, ASK_DUPLICATE_ENTRY.format(new_name))
-            if result:
-                while os.path.exists(new_dir): 
-                    num+=1
-                    new_name = f"{folder_name}{num}"
-                    new_dir = os.path.join(default_dir, new_name)
-        try:
-            copy_directory_contents(dir, default_dir, new_name)
-            print("successfully added dir:", dir)
-            messagebox.showinfo(INFO, INFO_DRAG_DROP_COPY_COMPLETE)
-            self.on_finish_edit("", new_dir)
-        except PermissionError:
-            print(f"PermissionError: You do not have the required permissions to copy to '{new_dir}'.")
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+        ModLoader(added_dirs, self.on_finish_update)
+        messagebox.showinfo(INFO, INFO_DRAG_DROP_COPY_COMPLETE)
 
     def show(self):
         """
