@@ -9,6 +9,7 @@ from src.constants.ui_params import PAD_H, PAD_V
 from src.ui.base import set_text, set_enabled, clear_text, get_icon
 from src.utils.file import get_base_name, is_valid_dir, is_valid_file, get_parent_dir
 from src.utils.image_handler import ImageHandler
+from src.constants.colors import DEFAULT, WHITE
 from src.core.hide_folder import hide_folder, is_hidden
 from src.models.mod import Mod
 
@@ -79,7 +80,7 @@ class Preview:
         self.frame_details.rowconfigure(index=2, weight=1)
         self.frame_details.columnconfigure(index=0, weight=1, uniform="equal")
         self.frame_details.columnconfigure(index=2, weight=1, uniform="equal")
-        self.btn_desc = tk.Button(self.frame_details, text="Description", relief=tk.FLAT, background="SystemButtonFace", font=("Helvetica", 10, "bold"), command=self.on_show_desc, cursor="hand2")
+        self.btn_desc = tk.Button(self.frame_details, text="Description", relief=tk.FLAT, background=DEFAULT, font=("Helvetica", 10, "bold"), command=self.on_show_desc, cursor="hand2")
         self.btn_desc.grid(row=0, column=0, sticky=tk.EW)
         separator = ttk.Separator(self.frame_details, orient='vertical')
         separator.grid(row=0, column=1, sticky=tk.NS)
@@ -228,7 +229,7 @@ class Preview:
         """
         Toggles on description
         """
-        self.btn_desc.config(background="SystemButtonFace", font=("Helvetica", 10, "bold"), foreground="black")
+        self.btn_desc.config(background=DEFAULT, font=("Helvetica", 10, "bold"), foreground="black")
         self.btn_incl.config(background="#dcdcdc", font=("Helvetica", 10), foreground="snow4")
         self.desc_separator.grid_forget()
         self.incl_separator.grid(row=1, column=2, sticky=tk.EW)
@@ -241,7 +242,7 @@ class Preview:
         Toggles on included elements
         """
         self.btn_desc.config(background="#dcdcdc", font=("Helvetica", 10), foreground="snow4")
-        self.btn_incl.config(background="SystemButtonFace", font=("Helvetica", 10, "bold"), foreground="black")
+        self.btn_incl.config(background=DEFAULT, font=("Helvetica", 10, "bold"), foreground="black")
         self.desc_separator.grid(row=1, column=0, sticky=tk.EW)
         self.incl_separator.grid_forget()
         self.is_desc_shown = False

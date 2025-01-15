@@ -19,6 +19,7 @@ from src.core.filter import filter_mods
 from src.models.mod import Mod
 from src.constants.ui_params import PAD_H, PAD_V, COLUMNS
 from src.constants.defs import GIT_REPO_URL
+from src.constants.colors import DEFAULT, WHITE
 from src.constants.strings import (
     INFO_DRAG_DROP_COPY_COMPLETE, 
     INFO, 
@@ -335,9 +336,9 @@ class Menu:
         if not self.preset.is_shown:
             if self.preview.is_shown:
                 self.toggle_preview()
-            self.btn_show_preset.config(bg="white", image=self.icon_preset)
+            self.btn_show_preset.config(bg=WHITE, image=self.icon_preset)
         else:
-            self.btn_show_preset.config(bg="SystemButtonFace", image=self.icon_preset_off)
+            self.btn_show_preset.config(bg=DEFAULT, image=self.icon_preset_off)
 
         self.preset.toggle()
 
@@ -345,11 +346,11 @@ class Menu:
         if not self.preview.is_shown:
             if self.preset.is_shown:
                 self.toggle_preset()
-            self.btn_show_preview.config(bg="white", image=self.icon_preview)
+            self.btn_show_preview.config(bg=WHITE, image=self.icon_preview)
             if self.preview.mod is None:
                 self.update_preview(self.treeview.get_selected_id())
         else:
-            self.btn_show_preview.config(bg="SystemButtonFace", image=self.icon_preview_off)
+            self.btn_show_preview.config(bg=DEFAULT, image=self.icon_preview_off)
 
         self.preview.toggle()
 
