@@ -252,7 +252,7 @@ class Menu:
                     selected_mod = mod
                     break
             
-        self.preview.update(item["tags"][0] == "enabled", selected_mod)
+        self.preview.update(item["tags"][0] == "checked", selected_mod)
     
     def on_double_clicked(self, event):
         self.open_editor()
