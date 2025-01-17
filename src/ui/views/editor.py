@@ -173,6 +173,9 @@ class Editor:
         self.label_output.config(text="Downloaded image")
         
     def on_bs4_result(self, mod_title:str, authors:str, is_moveset:bool):
+        if self.new_window.winfo_exists() == False:
+            return
+        
         if mod_title:
             self.mod_name_var.set(clean_mod_name(mod_title))
             
@@ -188,6 +191,9 @@ class Editor:
                     self.treeview.set_row_checked(item, True)
 
     def on_selenium_result(self, version, img_urls, img_descriptions, wifi_safe:str, description:str):
+        if self.new_window.winfo_exists() == False:
+            return
+        
         self.img_urls = img_urls
         self.img_descriptions = img_descriptions
         set_text(self.label_output, "Fetched elements")
@@ -291,6 +297,9 @@ class Editor:
         """
         callback function when the specific mod directory has been scanned
         """
+        if self.new_window.winfo_exists() == False:
+            return
+        
         if len(mods) <= 0:
             return
 

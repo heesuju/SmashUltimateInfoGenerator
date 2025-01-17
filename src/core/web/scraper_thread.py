@@ -3,7 +3,7 @@ from .webdriver_manager import WebDriverManager
 from datetime import datetime
 from .get_thumbnails import get_thumbnails
 from .get_version import get_version
-from .get_wifi_safe import get_wifi_safe
+from .get_wifi_safe import get_wifi_safe, get_wifi_safe_tag
 from .get_nsfw import get_nsfw
 from .get_description import get_description
 
@@ -19,6 +19,7 @@ class ScraperThread(threading.Thread):
         self.start()
 
     def run(self):
+        version, img_urls, img_descs, wifi_safe, description = "", [], [], "", ""
         start_time = datetime.now()
         result = self.webdriver_manager.fetch_page(self.url)
         if result:
@@ -30,6 +31,7 @@ class ScraperThread(threading.Thread):
             end_time = datetime.now()
             duration = end_time - start_time
             print("Scrape successful.", "took", duration.seconds, "seconds.")
-            self.callback(version, img_urls, img_descs, wifi_safe, description)
         else:
             print(f"Scrape failed: {self.url}")
+
+        self.callback(version, img_urls, img_descs, wifi_safe, description)

@@ -2,11 +2,14 @@ import atexit
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.common.exceptions import WebDriverException
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.firefox.options import Options as FireFoxOptions
 import threading
-import shutil
+
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.2420.81"
 
 class WebDriverSingleton:
     _instance = None
@@ -18,21 +21,23 @@ class WebDriverSingleton:
             with WebDriverSingleton._lock:
                 if WebDriverSingleton._instance is None:
                     # Initialize WebDriver
-                    chrome_path = shutil.which("google-chrome") or shutil.which("chrome")
-                    if chrome_path:
-                        chrome_options = Options()
+                    try:
+                        chrome_options = ChromeOptions()
                         chrome_options.add_argument("--headless=new")
                         chrome_options.add_argument("--window-position=-2400,-2400") # Workaround for headless mode bug
-                        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.2420.81"
-                        chrome_options.add_argument(f"user-agent={user_agent}")
-
+                        chrome_options.add_argument(f"user-agent={USER_AGENT}")
                         WebDriverSingleton._instance = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
-                    
-                    firefox_path = shutil.which("firefox")
-                    if firefox_path:
-                        service = FirefoxService(firefox_path + ".geckodriver")
-                        WebDriverSingleton._instance = webdriver.Firefox(service=service)
-                    
+                    except WebDriverException:
+                        print("Chrome WebDriver not found, trying Firefox WebDriver.")
+                        try:
+                            firefox_options = FireFoxOptions()
+                            firefox_options.add_argument("--headless")
+                            firefox_options.add_argument(f"user-agent={USER_AGENT}")
+                            WebDriverSingleton._instance = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=firefox_options)
+                        except WebDriverException:
+                            print("No suitable WebDriver found.")
+                            WebDriverSingleton._instance = None
+                        
                     atexit.register(WebDriverSingleton._cleanup) # Cleanup on exit
         return WebDriverSingleton._instance
     
