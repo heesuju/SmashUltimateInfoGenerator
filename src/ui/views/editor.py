@@ -179,7 +179,7 @@ class Editor(Popup):
 
         self.label_output.config(text="Downloaded image")
         
-    def on_bs4_result(self, mod_title:str, authors:str, is_moveset:bool):
+    def on_bs4_result(self, mod_title:str, authors:str, is_moveset:bool, is_final_smash:bool):
         if self.new_window.winfo_exists() == False:
             return
         
@@ -191,10 +191,14 @@ class Editor(Popup):
 
         if is_moveset:
             self.mod.add_to_included(MOVESET)
-        
+
+        if is_final_smash:
+            self.mod.add_to_included(FINAL_SMASH)
+
+        if is_moveset or is_final_smash:
             for item in self.treeview.get_items():
                 text = self.treeview.get_row_text(item)
-                if text == MOVESET:
+                if text == MOVESET or text == FINAL_SMASH:
                     self.treeview.set_row_checked(item, True)
 
     def on_selenium_result(self, version, img_urls, img_descriptions, wifi_safe:str, description:str):

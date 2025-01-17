@@ -11,6 +11,7 @@ class Extractor(Thread):
         self.mod_title = ""
         self.authors = ""
         self.moveset = False
+        self.final_smash = False
 
     def run(self):
         try:
@@ -20,10 +21,12 @@ class Extractor(Thread):
             categories = self.get_categories(soup)
             if "Movesets" in categories:
                 self.moveset = True
+            elif "Final Smash" in categories:
+                self.final_smash = True
         except:
             self.mod_title = ""
             self.authors = ""
-        self.callback(self.mod_title, self.authors, self.moveset)
+        self.callback(self.mod_title, self.authors, self.moveset, self.final_smash)
             
     def get_html(self, url:str):
         try:
