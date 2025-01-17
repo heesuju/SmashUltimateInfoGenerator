@@ -297,9 +297,10 @@ class Editor:
         """
         callback function when the specific mod directory has been scanned
         """
-        if self.new_window.winfo_exists() == False:
-            return
-        
+        if self.new_window is not None:
+            if self.new_window.winfo_exists() == False:
+                return
+            
         if len(mods) <= 0:
             return
 

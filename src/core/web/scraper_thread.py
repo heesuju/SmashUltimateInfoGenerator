@@ -25,7 +25,12 @@ class ScraperThread(threading.Thread):
         if result:
             img_urls, img_descs = get_thumbnails(self.webdriver_manager.driver)
             version = get_version(self.webdriver_manager.driver)
-            wifi_safe = get_wifi_safe(self.webdriver_manager.driver)
+            is_safe = get_wifi_safe_tag(self.webdriver_manager.driver)
+            wifi_safe = "Uncertain"
+            if is_safe:
+                wifi_safe = "Safe"
+            else:
+                wifi_safe = get_wifi_safe(self.webdriver_manager.driver)
             description = get_description(self.webdriver_manager.driver)
             # is_nsfw = get_nsfw(self.webdriver_manager.driver)
             end_time = datetime.now()

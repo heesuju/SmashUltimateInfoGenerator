@@ -36,7 +36,6 @@ def get_wifi_safe(driver) -> str:
         wrapper = WebDriverWait(driver, TIMEOUT_DELAY).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
-        
         body_element = driver.find_element(By.TAG_NAME, "body")
         text = body_element.text  # Extract the full text content of the body
         
@@ -51,6 +50,25 @@ def get_wifi_safe(driver) -> str:
     except TimeoutException:
         print("Failed to find body")
         return "Uncertain"
+    
+def get_wifi_safe_tag(driver) -> bool:
+    try:
+        # Wait for the body tag to be present
+        wrapper = WebDriverWait(driver, TIMEOUT_DELAY).until(
+            EC.presence_of_element_located((By.ID, "TagsModule"))
+        )
+        
+        tag_module = driver.find_element(By.ID, "TagsModule")
+        items = tag_module.find_elements(By.TAG_NAME, "a")
+        for item in items:
+            href = item.get_attribute("href")
+            if "wifi%20safe+safe+yes" in href or "Wifi%20Safe" in href:
+                return True
+
+    except TimeoutException:
+        print("Failed to find body")
+    
+    return False
     
 # Rule-based classification
 def classify_mod_safety(text)->str:
