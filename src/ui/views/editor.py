@@ -7,6 +7,7 @@ import sys
 import copy
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
+from PIL import ImageTk
 from src.constants.elements import ELEMENTS
 from src.constants.ui_params import PAD_H, PAD_V
 from src.constants.defs import IMAGE_TYPES, WIFI_TYPES
@@ -50,46 +51,46 @@ from src.ui.base import (
     get_icon
 )
 from src.ui.components.checkbox_treeview import Treeview
+from src.ui.components.popup import Popup
 from data import PATH_CACHE
 from .comparison import Comparison
 from .config import Config
-
-class Editor:
+        
+class Editor(Popup):
     """
     Tkinter UI class for modifying info.toml
     """
     def __init__(self, root, webdriver_manager, directory:str="", callback=None) -> None:
-        self.root = root
+        super().__init__(root, "Edit", 920, 560)
         self.webdriver_manager = webdriver_manager
-        self.mod = None
-        self.org_mod = None
-        self.new_window = None
-        self.config = Config()
-        self.comparison = Comparison()
-        self.img_urls = []
-        self.img_descriptions = []
-        self.is_running = True
-        self.callback = callback
-        self.directory = directory
-        self.icon_browse = get_icon('browse')
-        self.icon_config = get_icon('config')
-        self.icon_download = get_icon('download')
+        self.mod:Mod = None
+        self.org_mod:Mod = None
+        self.new_window:tk.Toplevel = None
+        self.config:Config = Config()
+        self.comparison:Comparison = Comparison()
+        self.img_urls:list[str] = []
+        self.img_descriptions:list[str] = []
+        self.is_running:bool = True
+        self.callback:callable = callback
+        self.directory:str = directory
+        self.icon_browse:ImageTk.PhotoImage = get_icon('browse')
+        self.icon_config:ImageTk.PhotoImage = get_icon('config')
+        self.icon_download:ImageTk.PhotoImage = get_icon('download')
 
         self.desc_text = None
-
-        self.dir_var = tk.StringVar()
-        self.url_var = tk.StringVar()
-        self.mod_name_var = tk.StringVar()
-        self.authors_var = tk.StringVar()
-        self.version_var = tk.StringVar()
-        self.char_var = tk.StringVar()
-        self.slot_var = tk.StringVar()
-        self.folder_var = tk.StringVar()
-        self.display_var = tk.StringVar()
-        self.category_var = tk.StringVar()
-        self.wifi_var = tk.StringVar()
-        self.desc_var = tk.StringVar()
-        self.image_dir_var = tk.StringVar()
+        self.dir_var:tk.StringVar = tk.StringVar()
+        self.url_var:tk.StringVar = tk.StringVar()
+        self.mod_name_var:tk.StringVar = tk.StringVar()
+        self.authors_var:tk.StringVar = tk.StringVar()
+        self.version_var:tk.StringVar = tk.StringVar()
+        self.char_var:tk.StringVar = tk.StringVar()
+        self.slot_var:tk.StringVar = tk.StringVar()
+        self.folder_var:tk.StringVar = tk.StringVar()
+        self.display_var:tk.StringVar = tk.StringVar()
+        self.category_var:tk.StringVar = tk.StringVar()
+        self.wifi_var:tk.StringVar = tk.StringVar()
+        self.desc_var:tk.StringVar = tk.StringVar()
+        self.image_dir_var:tk.StringVar = tk.StringVar()
 
         self.set_binding()
 
@@ -309,7 +310,7 @@ class Editor:
         self.set_values(self.mod)
         
         if self.new_window is None:
-            self.open(self.root)
+            self.show(self.root)
         
         set_text(self.desc_text, self.mod.description)
         includes = self.mod.includes
@@ -474,29 +475,17 @@ class Editor:
         """
         self.comparison.open(self.new_window, src=self.org_mod, dst=self.mod)
 
-    def open(self, root):
-        if self.new_window is not None:
-            self.new_window.destroy()
-
-        self.new_window = tk.Toplevel(root)
-        self.new_window.title("Edit")
-        self.new_window.protocol("WM_DELETE_WINDOW", self.on_close)
-        self.is_running = True
-        self.show(self.new_window)
-
     def show(self, root):
         """
         Shows editor window and binds widget commands
         """
-        self.new_window = root
+        super().show(root)
+
         for i in range(3):
             self.new_window.columnconfigure(i, weight=1)
             self.new_window.columnconfigure(i, minsize=200)
 
         self.new_window.rowconfigure(12, weight=1)
-        self.new_window.minsize(640, 340)
-        self.new_window.geometry("920x560")
-        self.new_window.configure(padx=10, pady=10)
 
         dir_label = tk.Label(self.new_window, text="Directory")
         dir_label.grid(row=0, column=0, sticky=tk.W, pady = (0, PAD_V))

@@ -11,7 +11,7 @@ build_exe_options = {
 # change base to console to show console logs
 setup(
     name="Info Toml Generator",
-    version="1.8.2",
+    version="1.8.3",
     description="Info.toml Generator for ARCropolis",
     options={"build_exe": build_exe_options},
     executables=[Executable("main.py", base="Win32GUI")],
