@@ -7,12 +7,19 @@ import tkinter as tk
 from src.constants.ui_params import PAD_H, PAD_V
 from src.core.data import get_cache_directory
 from src.core.data import load_config
+from src.ui.components.popup import Popup
 from src.models.settings import Settings
 from data.cache import PATH_CONFIG
 
-class Config:
+class Config(Popup):
     def __init__(self, callback = None):
-        self.new_window = None
+        super().__init__(
+            None, 
+            title="Config", 
+            width=400, 
+            height=400,
+            confirm_close=False
+        )
         self.callback = callback
         self.settings = None
         self.load()
@@ -96,12 +103,7 @@ class Config:
         self.start_w_editor.set(1 if self.settings.start_with_editor else 0)
 
     def open_config(self, root):
-        if self.new_window is not None:
-            self.new_window.destroy()
-    
-        self.new_window = tk.Toplevel(root)
-        self.new_window.title("Config")
-        self.new_window.geometry("400x400")
+        super().show(root)
         self.new_window.columnconfigure(0, weight=1)
         self.new_window.rowconfigure(12, weight=1)
         self.new_window.configure(padx=10, pady=10)

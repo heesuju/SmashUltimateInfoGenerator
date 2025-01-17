@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 from src.constants.ui_params import PAD_H, PAD_V
-from src.ui.base import get_text, set_text
-from src.models.mod import Mod
+from src.ui.base import get_text
+from src.ui.components.popup import Popup
 from .config import Config
 
 SORTING_CATEGORIES = {
@@ -13,18 +13,19 @@ SORTING_CATEGORIES = {
     "characters.slots":"Slot"
 }
 
-class Sorting:
+class Sorting(Popup):
     def __init__(self, callback = None):
-        self.new_window = None
+        super().__init__(
+            None, 
+            title="Sorting", 
+            width=400, 
+            height=300,
+            confirm_close=False
+        )
         self.callback = callback
 
-    def open(self, root):
-        if self.new_window is not None:
-            self.new_window.destroy()
-    
-        self.new_window = tk.Toplevel(root)
-        self.new_window.title("Sorting")
-        self.new_window.geometry("400x300")
+    def show(self, root):
+        super().show(root)
         self.new_window.columnconfigure(1, weight=1)
         self.new_window.columnconfigure(2, weight=1)
         self.new_window.rowconfigure(6, weight=1)

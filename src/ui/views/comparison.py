@@ -11,15 +11,22 @@ from src.constants.colors import LIGHT_GREEN, WHITE
 from src.models.mod import Mod
 from src.utils.file import get_base_name
 from src.core.formatting import format_character_names
+from src.ui.components.popup import Popup
 from src.ui.base import set_text
 from src.utils.image_handler import ImageHandler
 
 IMG_SIZE_X = 300
 IMG_SIZE_Y = 160
 
-class Comparison:
-    def __init__(self):
-        self.new_window = None
+class Comparison(Popup):
+    def __init__(self, root=None):
+        super().__init__(
+            root, 
+            title="Comparison", 
+            width=640, 
+            height=600,
+            confirm_close=False
+        )
         self.src = None
         self.dst = None
         self.reset()
@@ -42,7 +49,7 @@ class Comparison:
         self.includes_changed = False
         self.thumbnail_changed = False
 
-    def init_column(self, frame, mod:Mod, is_current:bool=False):
+    def init_column(self, frame:tk.Frame, mod:Mod, is_current:bool=False):
         """
         Initializes column (previous/new)
         """
@@ -138,8 +145,8 @@ class Comparison:
         self.folder_name_changed = self.src.folder_name != self.dst.folder_name
         self.mod_name_changed = self.src.mod_name != self.dst.mod_name
         self.display_name_changed = self.src.display_name != self.dst.display_name
-        src_keys, src_names, src_groups, src_series, src_slots = self.src.get_character_data()
-        dst_keys, dst_names, dst_groups, dst_series, dst_slots = self.dst.get_character_data()
+        sk, src_names, sg, ss, src_slots = self.src.get_character_data()
+        dk, dst_names, dg, ds, dst_slots = self.dst.get_character_data()
         self.slot_changed = src_slots != dst_slots
         self.category_changed = self.src.category != self.dst.category
         self.version_changed = self.src.version != self.dst.version
@@ -151,20 +158,17 @@ class Comparison:
         self.includes_changed = self.src.includes != self.dst.includes
         self.thumbnail_changed = self.src.thumbnail != self.dst.thumbnail
 
-    def open(self, root, src:Mod, dst:Mod):
+    def show(self, root, src:Mod, dst:Mod):
         """
         Shows comparison view
         """
+        super().show(root)
+
         blank_image = Image.new('RGB', (IMG_SIZE_X, IMG_SIZE_Y), color='black')
         blank_image_tk = ImageTk.PhotoImage(blank_image)
 
         self.src = src
         self.dst = dst
-        if self.new_window is not None:
-            self.new_window.destroy()
-
-        self.new_window = tk.Toplevel(root)
-        self.new_window.title("Comparison")
 
         self.new_window.columnconfigure(0, weight=1)
         self.new_window.columnconfigure(0, minsize=200)
@@ -173,10 +177,6 @@ class Comparison:
 
         self.new_window.rowconfigure(2, weight=1)
         self.new_window.minsize(640, 500)
-
-        # Set the size of the window
-        self.new_window.geometry("640x600")
-        self.new_window.configure(padx=10, pady=10)
 
         self.find_differences()
 
@@ -200,7 +200,6 @@ class Comparison:
         current_frame.columnconfigure(0, weight=1)
         self.init_column(prev_frame, self.src)
         self.init_column(current_frame, self.dst, True)
-
 
         self.prev_img_label.config(image=blank_image_tk, width=IMG_SIZE_X, height=IMG_SIZE_Y)
         self.prev_img_label.image = blank_image_tk

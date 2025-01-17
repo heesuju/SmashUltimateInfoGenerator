@@ -244,7 +244,7 @@ class SearchFilter:
     def show_sort(self):
         if self.sort_view is None:
             self.sort_view = Sorting(self.on_sorting_changed)
-        self.sort_view.open(self.root)
+        self.sort_view.show(self.root)
 
     def on_sorting_changed(self):
         self.on_search()

@@ -61,7 +61,13 @@ class Editor(Popup):
     Tkinter UI class for modifying info.toml
     """
     def __init__(self, root, webdriver_manager, directory:str="", callback=None) -> None:
-        super().__init__(root, "Edit", 920, 560)
+        super().__init__(
+            root, 
+            title="Edit", 
+            width=920, 
+            height=560,
+            confirm_close=True
+        )
         self.webdriver_manager = webdriver_manager
         self.mod:Mod = None
         self.org_mod:Mod = None
@@ -473,7 +479,7 @@ class Editor(Popup):
         """
         Opens before/after comparison popup
         """
-        self.comparison.open(self.new_window, src=self.org_mod, dst=self.mod)
+        self.comparison.show(self.new_window, src=self.org_mod, dst=self.mod)
 
     def show(self, root):
         """

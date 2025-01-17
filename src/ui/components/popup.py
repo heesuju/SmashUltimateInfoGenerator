@@ -12,7 +12,7 @@ from src.constants.strings import (
 )
 
 class Popup:
-    def __init__(self, root, title:str, width:int=1, height:int=1) -> None:
+    def __init__(self, root=None, title:str="", width:int=1, height:int=1, confirm_close:bool=True) -> None:
         self.root = root
         self.title = title
         if width <= 1:
@@ -25,12 +25,17 @@ class Popup:
         else:
             self.height = height
 
+        self.confirm_close = confirm_close
         self.new_window = None
         self.is_running = True
 
     def on_escape(self, event:tk.Event):
-        result = messagebox.askokcancel(ASK_CLOSE_WINDOW_TITLE, ASK_CLOSE_WINDOW_MSG)
-        if result:
+        result = False
+        
+        if self.confirm_close:
+            result = messagebox.askokcancel(ASK_CLOSE_WINDOW_TITLE, ASK_CLOSE_WINDOW_MSG)
+        
+        if result or self.confirm_close == False:
             self.is_running = False
             self.new_window.unbind('<Escape>')
             self.new_window.destroy()
@@ -46,3 +51,4 @@ class Popup:
         self.new_window.minsize(self.width, self.height)
         self.new_window.geometry(f"{self.width}x{self.height}")
         self.new_window.configure(padx=PAD_H, pady=PAD_V)
+        self.new_window.focus_set()
