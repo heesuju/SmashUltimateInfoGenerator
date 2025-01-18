@@ -1,3 +1,4 @@
+from typing import Union
 import tkinter as tk
 from tkinter import ttk
 
@@ -17,8 +18,8 @@ class Treeview:
         self.widget.tag_configure('active', background='lightblue')
         self.widget.bind('<Button-1>', self.on_item_clicked)
         self.widget.bind("<<TreeviewSelect>>", self.on_row_select)
-        self.widget.bind("<space>", self.toggle)
-        self.widget.bind("<Return>", self.toggle)
+        self.widget.bind("<space>", self.toggle_multiple)
+        self.widget.bind("<Return>", self.toggle_multiple)
         self.widget.bind('<Up>', self.on_key_pressed)
         self.widget.bind('<Down>', self.on_key_pressed)
 
@@ -67,7 +68,7 @@ class Treeview:
                     checked.append(id)
         return checked
     
-    def set_row_checked(self, id:str, is_checked:bool=True)->None:
+    def set_row_checked(self, id:Union[str, int], is_checked:bool=True)->None:
         if self.get_item(id) is not None:
             if is_checked:
                 self.widget.item(id, tags=["checked"], text=CHECKED)
@@ -98,9 +99,20 @@ class Treeview:
         self.is_left_click = False
         is_checked = self.get_checked_state(item_id)
         self.set_row_checked(item_id, False if is_checked else True)
+
+    def toggle_multiple(self, event:tk.Event = None)->None:
+        selected_idx = self.widget.selection()
+        self.is_left_click = False
+        if len(selected_idx) > 0:
+            checked_states = [self.get_checked_state(idx) for idx in selected_idx]
+            if False in checked_states:
+                [self.set_row_checked(idx, True) for idx in selected_idx]
+            else:
+                [self.set_row_checked(idx, False) for idx in selected_idx]
     
     def on_row_select(self, event)->None:
-        if self.is_left_click:
+        selected_idx = self.widget.selection()
+        if self.is_left_click and len(selected_idx) <= 1:
             self.toggle()
 
     def on_key_pressed(self, event)->None:
@@ -124,3 +136,8 @@ class Treeview:
         if item is not None:
             return item.get("values", None)
         return None
+
+    def get_selected_index(self)->int:
+        selected_iid = self.widget.selection()[0]
+        current_idx = self.widget.index(selected_iid)
+        return current_idx

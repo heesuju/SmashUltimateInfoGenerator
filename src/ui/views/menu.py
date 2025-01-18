@@ -58,6 +58,7 @@ from .config import Config
 from .search_filter import SearchFilter
 from .preview import Preview
 from .preset import Preset
+from .batch_result import BatchResult
 
 class Menu:    
     def __init__(self, root, webdriver_manager) -> None:
@@ -326,7 +327,7 @@ class Menu:
                     self.save_preset()
 
     def on_generate_toml(self)->None:
-        generate_batch(self.mods)
+        BatchResult(self.root, self.mods)
 
     def save_preset(self):
         self.preset.save_presets()

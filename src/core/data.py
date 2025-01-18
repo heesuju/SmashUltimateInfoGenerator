@@ -5,10 +5,12 @@ import sys
 import shutil
 
 from data.cache import PATH_CONFIG
+from data import PATH_CHAR_NAMES
 from pathlib import Path
 from os import listdir
 from src.utils.file import is_valid_path, is_valid_file
 from src.utils.toml import dump_toml
+from src.utils.csv_helper import csv_to_dict
 from src.models.settings import Settings
 from src.models.mod import Mod
 from src.utils.file import (
@@ -82,6 +84,11 @@ def remove_cache():
                     shutil.rmtree(file_path)  # Remove directory
             except Exception as e:
                 print(f'Failed to delete {file_path}. Reason: {e}')
+
+def get_characters()->list[str]:
+    names = csv_to_dict(PATH_CHAR_NAMES, "Key")
+    names = sorted(names)
+    return names
 
 def generate_toml(mod:Mod):
     result = False
