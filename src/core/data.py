@@ -8,7 +8,17 @@ from data.cache import PATH_CONFIG
 from pathlib import Path
 from os import listdir
 from src.utils.file import is_valid_path, is_valid_file
+from src.utils.toml import dump_toml
 from src.models.settings import Settings
+from src.models.mod import Mod
+from src.utils.file import (
+    get_parent_dir,
+    get_direct_child_by_extension,
+    rename_folder,
+    copy_file
+)
+from threading import Thread, Event
+import concurrent.futures
 
 def load_config()->Settings:
     if(is_valid_file(PATH_CONFIG)):
@@ -72,3 +82,32 @@ def remove_cache():
                     shutil.rmtree(file_path)  # Remove directory
             except Exception as e:
                 print(f'Failed to delete {file_path}. Reason: {e}')
+
+def generate_toml(mod:Mod):
+    result = False
+    data = mod.to_dict()
+    
+    dump_toml(
+        mod.path,
+        data
+    )
+
+    if mod.path:
+        old_dir = mod.path
+        new_dir = os.path.join(get_parent_dir(mod.path), mod.folder_name) 
+        result, msg = rename_folder(old_dir, new_dir)
+    
+    return result
+
+def generate_batch(mods:list[Mod]):
+    complete = 0
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = [executor.submit(generate_toml, mod) for mod in mods]
+        
+        for future in concurrent.futures.as_completed(futures):
+            if future.result() == False:
+                print("generation failed")
+            else:
+                complete+=1
+
+    print(f"{complete} items updated.")

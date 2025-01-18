@@ -8,12 +8,10 @@ from tkinter import ttk, messagebox
 from idlelib.tooltip import Hovertip
 from src.core.mod_loader import ModLoader
 from src.core.mod_installer import ModInstaller
-from src.core.data import load_config, get_workspace
+from src.core.data import load_config, generate_batch
 from src.core.formatting import (
-    format_folder_name,
     format_character_names,
-    format_slots,
-    group_char_name
+    format_slots
 )
 from src.core.filter import filter_mods
 from src.models.mod import Mod
@@ -46,7 +44,6 @@ from src.ui.base import (
 from src.utils.file import (
     is_valid_dir,
     is_valid_path,
-    copy_directory_contents,
     is_case_sensitive,
     get_base_name,
     is_same_dir,
@@ -328,6 +325,9 @@ class Menu:
                     self.config.save_config()
                     self.save_preset()
 
+    def on_generate_toml(self)->None:
+        generate_batch(self.mods)
+
     def save_preset(self):
         self.preset.save_presets()
         self.preset.save_workspaces()
@@ -486,6 +486,18 @@ class Menu:
             width=100
         )
         self.btn_save.pack(side=tk.RIGHT)
+
+        self.icon_generate = get_icon('save')
+        self.btn_generate = tk.Button(
+            self.f_footer,
+            image=self.icon_generate,
+            text=" Batch Gen",
+            compound=tk.LEFT,
+            cursor='hand2',
+            command=self.on_generate_toml,
+            width=100
+        )
+        self.btn_generate.pack(side=tk.RIGHT, padx=(0, PAD_H))
 
         self.icon_preview = get_icon('details')
         self.icon_preview_off = get_icon('details_inactive')

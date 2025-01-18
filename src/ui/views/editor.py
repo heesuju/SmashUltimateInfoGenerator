@@ -83,6 +83,7 @@ class Editor(Popup):
         self.icon_config:ImageTk.PhotoImage = get_icon('config')
         self.icon_download:ImageTk.PhotoImage = get_icon('download')
 
+        self.label_output = None
         self.desc_text = None
         self.dir_var:tk.StringVar = tk.StringVar()
         self.url_var:tk.StringVar = tk.StringVar()
@@ -152,6 +153,9 @@ class Editor(Popup):
         self.new_window.destroy()
 
     def on_img_resized(self, image):
+        if self.new_window.winfo_exists() == False:
+            return
+        
         if self.is_running:
             self.label_img.config(image=image, width=10, height=10)
             self.label_img.image = image  # Keep a reference to prevent garbage collection
@@ -329,7 +333,6 @@ class Editor(Popup):
         """
         Auto-fills empty fields
         """
-
         self.config.load()
         self.close_on_apply.set(self.config.settings.close_on_apply)
 
@@ -339,7 +342,8 @@ class Editor(Popup):
                 self.on_scanned
             )
 
-        set_text(self.label_output, "Changed working directory")
+        if self.label_output is not None:
+            set_text(self.label_output, "Changed working directory")
 
     def change_working_directory(self):
         working_dir = open_file_dialog(self.config.settings.default_directory)
