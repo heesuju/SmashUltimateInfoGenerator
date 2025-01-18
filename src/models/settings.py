@@ -3,21 +3,21 @@ class Settings():
         """
         Default values for settings
         """
-        self.default_directory = ""
-        self.is_slot_capped = True
-        self.start_with_editor = False
-        self.display_name_format = "{characters} {slots} {mod}"
-        self.folder_name_format = "{category}_{characters}[{slots}]_{mod}"
-        self.additional_elements = []
-        self.sort_priority = [
+        self.default_directory:str = ""
+        self.is_slot_capped:bool = True
+        self.start_with_editor:bool = False
+        self.display_name_format:str = "{characters} {slots} {mod}"
+        self.folder_name_format:str = "{category}_{characters}[{slots}]_{mod}"
+        self.additional_elements:list[str] = []
+        self.sort_priority:list[dict] = [
             {"column": "category", "order": "Ascending"},
             {"column": "characters.custom", "order": "Ascending"},
             {"column": "characters.slots", "order": "Ascending"},
             {"column": "mod_name", "order": "Ascending"}
         ]
-        self.cache_dir = ""
-        self.workspace = "Default"
-        self.close_on_apply = True
+        self.cache_dir:str = ""
+        self.workspace:str = "Default"
+        self.close_on_apply:bool = True
         self.update(**kwargs)
 
     def update(self, **kwargs):

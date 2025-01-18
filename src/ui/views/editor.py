@@ -97,14 +97,12 @@ class Editor(Popup):
         self.wifi_var:tk.StringVar = tk.StringVar()
         self.desc_var:tk.StringVar = tk.StringVar()
         self.image_dir_var:tk.StringVar = tk.StringVar()
+        self.close_on_apply = tk.IntVar()
 
         self.set_binding()
 
         if self.mod is None:
-            ModLoader(
-                [self.directory],
-                self.on_scanned
-            )
+            self.update_preview(self.directory)
 
     def set_values(self, mod:Mod):
         """
@@ -327,7 +325,7 @@ class Editor(Popup):
         self.update_includes(includes)
         self.find_image()
 
-    def update_preview(self):
+    def update_preview(self, directory:str=""):
         """
         Auto-fills empty fields
         """
@@ -337,7 +335,7 @@ class Editor(Popup):
 
         if self.mod is None:
             ModLoader(
-                [self.dir_var.get()],
+                [directory if directory else self.dir_var.get()],
                 self.on_scanned
             )
 
@@ -472,6 +470,9 @@ class Editor(Popup):
 
     def on_change_close_on_apply(self):
         self.config.set_close_on_apply(self.close_on_apply.get())
+        self.config.load()
+        self.config.set_close_on_apply(self.close_on_apply.get())
+        self.config.save_config()
 
     def open_config(self):
         """
@@ -629,7 +630,6 @@ class Editor(Popup):
         self.btn_compare = tk.Button(self.frame_btn, text="Compare", command=self.open_comparison)
         self.btn_compare.pack(side=tk.RIGHT, fill="y", padx=(0, PAD_H))
 
-        self.close_on_apply = tk.IntVar()
         self.ckbtn_close = tk.Checkbutton(self.frame_btn, text="Close window when applied", variable=self.close_on_apply, command=self.on_change_close_on_apply, cursor='hand2')
         self.ckbtn_close.pack(side=tk.RIGHT)
 
