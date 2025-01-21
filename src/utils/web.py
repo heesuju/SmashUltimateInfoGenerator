@@ -34,13 +34,13 @@ def is_valid_url(url)->bool:
         print("Invalid url")
         return False
 
-from duckduckgo_search import DDGS
+# from duckduckgo_search import DDGS
 
-# Function to search DuckDuckGo
-def search_duckduckgo(query:str, max_results=10):
-    with DDGS() as ddgs:  # No proxy used
-        results = ddgs.text(query, max_results=max_results)
-        return results
+# # Function to search DuckDuckGo
+# def search_duckduckgo(query:str, max_results=10):
+#     with DDGS() as ddgs:  # No proxy used
+#         results = ddgs.text(query, max_results=max_results)
+#         return results
     
 import requests
 
