@@ -488,17 +488,17 @@ class Menu:
         )
         self.btn_save.pack(side=tk.RIGHT)
 
-        self.icon_generate = get_icon('save')
-        self.btn_generate = tk.Button(
-            self.f_footer,
-            image=self.icon_generate,
-            text=" Batch Gen",
-            compound=tk.LEFT,
-            cursor='hand2',
-            command=self.on_generate_toml,
-            width=100
-        )
-        self.btn_generate.pack(side=tk.RIGHT, padx=(0, PAD_H))
+        # self.icon_generate = get_icon('save')
+        # self.btn_generate = tk.Button(
+        #     self.f_footer,
+        #     image=self.icon_generate,
+        #     text=" Batch Gen",
+        #     compound=tk.LEFT,
+        #     cursor='hand2',
+        #     command=self.on_generate_toml,
+        #     width=100
+        # )
+        # self.btn_generate.pack(side=tk.RIGHT, padx=(0, PAD_H))
 
         self.icon_preview = get_icon('details')
         self.icon_preview_off = get_icon('details_inactive')

@@ -611,7 +611,6 @@ class Editor(Popup):
         wifi_safe_label.grid(row=9, column=1, sticky=tk.W)
         self.cbox_wifi_safe = ttk.Combobox(self.new_window, width=10, values=WIFI_TYPES, textvariable=self.wifi_var)
         self.cbox_wifi_safe.grid(row=10, column=1, sticky=tk.EW, padx = (0, PAD_H), pady = (0, PAD_V))
-        self.cbox_wifi_safe.set("Uncertain")
 
         includes_label = tk.Label(self.new_window, text="Includes")
         includes_label.grid(row=11, column=1, sticky=tk.W)
