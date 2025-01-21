@@ -1,10 +1,6 @@
 import threading
 from .webdriver_manager import WebDriverManager
 from datetime import datetime
-from .get_thumbnails import get_thumbnails
-from .get_version import get_version
-from .get_wifi_safe import get_wifi_safe, get_wifi_safe_tag
-from .get_nsfw import get_nsfw
 from .get_description import get_description
 
 TIMEOUT_DELAY = 1
@@ -19,24 +15,16 @@ class ScraperThread(threading.Thread):
         self.start()
 
     def run(self):
-        version, img_urls, img_descs, wifi_safe, description = "", [], [], "", ""
+        wifi_safe, description = "", ""
         start_time = datetime.now()
         result = self.webdriver_manager.fetch_page(self.url)
         if result:
-            img_urls, img_descs = get_thumbnails(self.webdriver_manager.driver)
-            version = get_version(self.webdriver_manager.driver)
-            is_safe = get_wifi_safe_tag(self.webdriver_manager.driver)
             wifi_safe = "Uncertain"
-            if is_safe:
-                wifi_safe = "Safe"
-            else:
-                wifi_safe = get_wifi_safe(self.webdriver_manager.driver)
-            description = get_description(self.webdriver_manager.driver)
-            # is_nsfw = get_nsfw(self.webdriver_manager.driver)
+            description, wifi_safe = get_description(self.webdriver_manager.driver)
             end_time = datetime.now()
             duration = end_time - start_time
             print("Scrape successful.", "took", duration.seconds, "seconds.")
         else:
             print(f"Scrape failed: {self.url}")
 
-        self.callback(version, img_urls, img_descs, wifi_safe, description)
+        self.callback(wifi_safe, description)

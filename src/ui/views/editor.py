@@ -15,7 +15,7 @@ from src.constants.categories import CATEGORIES
 from src.constants.elements import *
 from src.core.data import remove_cache
 from src.core.mod_loader import ModLoader
-from src.core.web.static_scraper import Extractor
+from src.core.web.gamebanana import Gamebanana
 from src.core.web.scraper_thread import ScraperThread
 from src.core.formatting import (
     format_folder_name,
@@ -179,59 +179,72 @@ class Editor(Popup):
         for thread in threads:
             thread.join()
 
-        self.label_output.config(text="Downloaded image")
+        if self.new_window.winfo_exists():
+            self.label_output.config(text="Downloaded image")
         
-    def on_bs4_result(self, mod_title:str, authors:str, is_moveset:bool, is_final_smash:bool):
+    def on_bs4_result(self, result:dict):
         if self.new_window.winfo_exists() == False:
             return
-        
-        if mod_title:
-            self.mod_name_var.set(clean_mod_name(mod_title))
-            
-        if authors:
-            self.authors_var.set(authors)
 
-        if is_moveset:
-            self.mod.add_to_included(MOVESET)
+        id = self.entry_url.get().split("/")[-1]
+        data = result.get(id, None)
+        if data is not None:
+            if data.get("mod_name"):
+                self.mod_name_var.set(clean_mod_name(data.get("mod_name")))
+                
+            if data.get("authors"):
+                self.authors_var.set(data.get("authors"))
 
-        if is_final_smash:
-            self.mod.add_to_included(FINAL_SMASH)
+            if data.get("version"):
+                self.version_var.set(clean_version(data.get("version")))
 
-        if is_moveset or is_final_smash:
-            for item in self.treeview.get_items():
-                text = self.treeview.get_row_text(item)
-                if text == MOVESET or text == FINAL_SMASH:
-                    self.treeview.set_row_checked(item, True)
+            if data.get("is_moveset"):
+                self.mod.add_to_included(MOVESET)
 
-    def on_selenium_result(self, version, img_urls, img_descriptions, wifi_safe:str, description:str):
-        if self.new_window.winfo_exists() == False:
-            return
-        
-        self.img_urls = img_urls
-        self.img_descriptions = img_descriptions
-        set_text(self.label_output, "Fetched elements")
-        
-        self.version_var.set(clean_version(version))
-        self.wifi_var.set(wifi_safe)
+            if data.get("is_final_smash"):
+                self.mod.add_to_included(FINAL_SMASH)
+                
+            if data.get("is_wifi_safe", False):
+                self.wifi_var.set("Safe")
 
-        if len(self.img_urls) > 0:
-            self.label_output.config(text="Downloading thumbnails...")
-            self.download_img()
-            if self.replace_img_state.get():
-                self.mod.thumbnail = self.img_urls[0]
-                download_dir = os.path.join(get_project_dir(), "cache/thumbnails")
-                self.set_image(os.path.join(download_dir, trim_url(self.img_urls[0])))
-            else:
-                self.set_img_cbox(self.img_descriptions, self.img_descriptions[0])
-                set_enabled(self.ckbox_replace_img)
-                set_enabled(self.cbox_img)
+            if data.get("is_moveset") or data.get("is_final_smash"):
+                for item in self.treeview.get_items():
+                    text = self.treeview.get_row_text(item)
+                    if text == MOVESET and data.get("is_moveset"):
+                        self.treeview.set_row_checked(item, True)
+                    elif text == FINAL_SMASH and data.get("is_final_smash"):
+                        self.treeview.set_row_checked(item, True)
+
+            self.img_urls = data.get("preview_links")
+            self.img_descriptions = data.get("preview_files")
+
+            if len(self.img_urls) > 0:
+                self.label_output.config(text="Downloading thumbnails...")
+                self.download_img()
+                if self.replace_img_state.get():
+                    self.mod.thumbnail = self.img_urls[0]
+                    download_dir = os.path.join(get_project_dir(), "cache/thumbnails")
+                    self.set_image(os.path.join(download_dir, trim_url(self.img_urls[0])))
+                else:
+                    self.set_img_cbox(self.img_descriptions, self.img_descriptions[0])
+                    set_enabled(self.ckbox_replace_img)
+                    set_enabled(self.cbox_img)
         else:
             self.mod.thumbnail = ""
             self.set_img_cbox()
             set_enabled(self.ckbox_replace_img, False)
             set_enabled(self.cbox_img, False)
 
-        if not clean_description(self.desc_var.get()):
+    def on_selenium_result(self, wifi_safe:str, description:str):
+        if self.new_window.winfo_exists() == False:
+            return
+        
+        set_text(self.label_output, "Fetched elements")
+        
+        if wifi_safe:
+            self.wifi_var.set(wifi_safe)
+
+        if not clean_description(self.desc_var.get()) and description:
             self.desc_var.set(description)
             self.desc_text.delete("1.0", "end")
             self.desc_text.insert("1.0", self.desc_var.get())
@@ -247,8 +260,9 @@ class Editor(Popup):
         set_enabled(self.ckbox_replace_img, False)
         self.cbox_img.config(state="disabled")
         self.replace_img_state.set(False)
-        bs4_thread = Extractor(self.entry_url.get(), self.on_bs4_result)
-        bs4_thread.start()
+        id = self.entry_url.get().split("/")[-1]
+        Gamebanana(id, self.on_bs4_result)
+
         ScraperThread(self.entry_url.get(), self.webdriver_manager, self.on_selenium_result)
 
     def open_url(self):

@@ -136,8 +136,13 @@ class BatchResult(Popup):
         self.footer.pack(pady=(PAD_V, PAD_V/2), fill="x")
 
         self.icon_export = ImageTk.PhotoImage(file=os.path.join(ICON_PATH, 'close.png'))
-        self.btn_remove = tk.Button(self.footer, image=self.icon_export, relief=tk.FLAT, compound="left", text="Apply", cursor='hand2', command=self.on_apply)
-        self.btn_remove.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES)
+        
+
+        self.find_url_btn = tk.Button(self.footer, image=self.icon_export, relief=tk.FLAT, compound="left", text="Find URL", cursor='hand2', command=self.on_apply)
+        self.find_url_btn.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES)
+
+        self.generate_btn = tk.Button(self.footer, image=self.icon_export, relief=tk.FLAT, compound="left", text="Generate", cursor='hand2', command=self.on_apply)
+        self.generate_btn.pack(side=tk.LEFT, fill=tk.X, expand=tk.YES)
         
         self.update()
 

@@ -1,14 +1,39 @@
+import re
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from src.core.formatting import clean_description
 
+POSITIVE_PATTERNS = [
+    r"wi[-\s]?fi[-\s]?safe", 
+    r"safe\sfor\swifi", 
+    r"compatible\swith\sonline\splay",
+    r"tested\sfor\smultiplayer",
+    r"works\swell\sover\sWiFi"
+]
+
+NEGATIVE_PATTERNS = [
+    r"not\s+wi[-\s]?fi[-\s]?safe", 
+    r"may\scause\sdesyncs", 
+    r"not\srecommended\sfor\smultiplayer", 
+    r"can\sget\syou\sbanned", 
+    r"incompatible\swith\sonline",
+    r"do\snot\suse\sonline",
+    r"unsafe\sfor\sonline\splay"
+]
+
+NEGATION_PATTERNS = [
+    r"(not|do\snot)\s+\w+\s+wi[-\s]?fi[-\s]?safe",
+    r"(not|do\snot)\s+recommend\sonline\suse",
+    r"(not|do\snot)\s+work\sover\sWiFi"
+]
+
 TIMEOUT_DELAY = 1
 DEFAULT_VERSION = "1.0.0"
 
-def get_description(driver)->str:
-    description = ""
+def get_description(driver)->tuple[str, str]:
+    description, wifi_safe = "",""
     
     try:
         wrapper = WebDriverWait(driver, TIMEOUT_DELAY).until(
@@ -19,10 +44,59 @@ def get_description(driver)->str:
         articles = profile_module.find_element(By.TAG_NAME, "article")
         description = articles.text
         description = clean_description(description)
+
+        parts = [x for x in description.split("\n") if x.strip()]
+        clean_text = "\n".join(parts)
+        
+        # Use your classification function to determine wifi safety
+        wifi_safe = classify_mod_safety(clean_text)
         print(description)
+        print("Wifi-safe:", wifi_safe)
 
     except TimeoutException:
         print("Description not found")
         
     finally:
-        return description
+        return description, wifi_safe
+    
+
+# Rule-based classification
+def classify_mod_safety(text)->str:
+    score = 0
+    
+    if find_positive_patterns(text):
+        score += 1
+    
+    if find_negative_patterns(text):
+        score -= 1
+    
+    if find_negations(text):
+        score -= 1
+
+    if score > 0:
+        return "Safe"
+    elif score < 0:
+        return "Not Safe"
+    else:
+        return "Uncertain"
+
+# Function to check for positive patterns
+def find_positive_patterns(text):
+    for pattern in POSITIVE_PATTERNS:
+        if re.search(pattern, text, re.IGNORECASE):
+            return True
+    return False
+
+# Function to check for negative patterns
+def find_negative_patterns(text):
+    for pattern in NEGATIVE_PATTERNS:
+        if re.search(pattern, text, re.IGNORECASE):
+            return True
+    return False
+
+# Function to check for negations near "wifi-safe"
+def find_negations(text):
+    for pattern in NEGATION_PATTERNS:
+        if re.search(pattern, text, re.IGNORECASE):
+            return True
+    return False
