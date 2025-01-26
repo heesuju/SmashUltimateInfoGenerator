@@ -16,6 +16,7 @@ from src.constants.elements import *
 from src.core.data import remove_cache
 from src.core.mod_loader import ModLoader
 from src.core.web.gamebanana import Gamebanana
+from src.core.web.get_url import URLFinder
 from src.core.web.scraper_thread import ScraperThread
 from src.core.formatting import (
     format_folder_name,
@@ -253,6 +254,7 @@ class Editor(Popup):
 
     def get_data_from_url(self):
         if not self.entry_url.get() or not is_valid_url(self.entry_url.get()):
+            URLFinder(self.webdriver_manager, self.on_url_found, self.mod_name_var.get())
             return
         
         self.btn_fetch_data.config(state="disabled")
@@ -264,6 +266,9 @@ class Editor(Popup):
         Gamebanana(id, self.on_bs4_result)
 
         ScraperThread(self.entry_url.get(), self.webdriver_manager, self.on_selenium_result)
+
+    def on_url_found(self, urls:list[str]):
+        print(urls)
 
     def open_url(self):
         """

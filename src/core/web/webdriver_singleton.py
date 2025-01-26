@@ -24,9 +24,13 @@ class WebDriverSingleton:
                     try:
                         chrome_options = ChromeOptions()
                         chrome_options.add_argument("--headless=new")
+                        chrome_options.add_argument("--disable-blink-features=AutomationControlled") 
+                        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"]) 
+                        chrome_options.add_experimental_option("useAutomationExtension", False) 
                         chrome_options.add_argument("--window-position=-2400,-2400") # Workaround for headless mode bug
                         chrome_options.add_argument(f"user-agent={USER_AGENT}")
                         WebDriverSingleton._instance = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
+                        WebDriverSingleton._instance.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})") 
                     except WebDriverException:
                         print("Chrome WebDriver not found, trying Firefox WebDriver.")
                         try:
