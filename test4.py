@@ -154,9 +154,9 @@ class ModManagerUI(QWidget):
     def populate_tree(self):
         # Sample Data with (Thumbnail Paths, Name, Author, Status, Category)
         sample_items = [
-            (["assets/img/cartridge", "assets/img/preview.webp", "assets/img/github.png"], ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "Enabled", "C01 Effects"),
-            (["assets/img/cartridge","assets/img/preview.webp", "assets/img/github.png"], ["assets/icons/characters/aegis.png", "assets/icons/characters/element.png", "assets/icons/characters/jack.png"],"Master Shield", "DarkHero", "Disabled", "C02 Defense"),
-            (["assets/img/cartridge","assets/img/preview.webp", "assets/img/browse.png"], ["assets/icons/characters/wolf.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"],"Phantom Armor", "GhostKnight", "Enabled", "C03 Stealth"),
+            (["assets/icons/cartridge_off", "assets/img/preview.webp", "assets/img/github.png"], ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "Enabled", "C01 Effects"),
+            (["assets/icons/cartridge_on","assets/img/preview.webp", "assets/img/github.png"], ["assets/icons/characters/aegis.png", "assets/icons/characters/element.png", "assets/icons/characters/jack.png"],"Master Shield", "DarkHero", "Disabled", "C02 Defense"),
+            (["assets/icons/cartridge_off","assets/img/preview.webp", "assets/img/browse.png"], ["assets/icons/characters/wolf.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"],"Phantom Armor", "GhostKnight", "Enabled", "C03 Stealth"),
         ]
 
         for icon_paths, char_icon_paths, name, author, status, category in sample_items:
