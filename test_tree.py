@@ -1,13 +1,25 @@
+import sys
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTreeWidget,
-    QTreeWidgetItem, QCheckBox
+    QTreeWidgetItem, QCheckBox, QHeaderView
 )
-from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPainterPath, QImage
+from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPainterPath, QImage, QBrush, QPen, QColor
+from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt, QRect, QSize
-import sys
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap, QPainter, QBrush, QPen, QColor
-from PyQt6.QtCore import Qt, QRect
+import qdarktheme
+
+def create_icon_with_text(pixmap: QPixmap, text):
+    """ Draws text inside an image and returns it as a QIcon. """
+    painter = QPainter(pixmap)
+    painter.setFont(QFont("Arial", 20, QFont.Weight.ExtraBold))
+    painter.setPen(Qt.GlobalColor.white)  # Text color
+
+    # Center the text within the icon
+    rect = pixmap.rect().adjusted(0, -64, 0, -64)  # Move text up by 10px
+    painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
+
+    painter.end()
+    return QIcon(pixmap)
 
 def combine_images(base_pixmap: QPixmap, alpha_pixmap: QPixmap) -> QPixmap:
     # Convert both QPixmaps to QImages
@@ -16,7 +28,7 @@ def combine_images(base_pixmap: QPixmap, alpha_pixmap: QPixmap) -> QPixmap:
 
     # Scale the alpha image to fit the width of the base image while maintaining its aspect ratio
     alpha_image = alpha_image.scaled(
-        base_image.width(),
+        base_image.width() - 2,
         base_image.height(),
         aspectRatioMode=Qt.AspectRatioMode.KeepAspectRatio,
         transformMode=Qt.TransformationMode.SmoothTransformation,
@@ -74,7 +86,7 @@ def combine_images(base_pixmap: QPixmap, alpha_pixmap: QPixmap) -> QPixmap:
 class CustomTreeWidget(QTreeWidget):
     def __init__(self):
         super().__init__()
-        self.icon_size = 24  # Size of each icon
+        self.icon_size = 20  # Size of each icon
 
     def paintEvent(self, event):
         super().paintEvent(event)
@@ -85,24 +97,14 @@ class CustomTreeWidget(QTreeWidget):
             rect = self.visualItemRect(item)
             
             # Specify the column where you want multiple icons
-            icons = item.data(4, Qt.ItemDataRole.UserRole)
-            if icons:
-                x_offset = self.columnViewportPosition(4) + 5  # Adjust position in column
-                y_center = rect.center().y() - self.icon_size // 2
-                for icon in icons:
-                    icon_rect = QRect(x_offset, y_center, self.icon_size, self.icon_size)
-                    icon.paint(painter, icon_rect, Qt.AlignmentFlag.AlignCenter)
-                    x_offset += self.icon_size + 5  # Add spacing between icons
-
             icons = item.data(0, Qt.ItemDataRole.UserRole)
             if icons:
-                icon_size = 64
-                x_offset = self.columnViewportPosition(0) + 39  # Adjust position in column
-                y_center = rect.center().y() - icon_size // 2
-                base = icons[0]
-                icon = icons[0]
-                icon_rect = QRect(x_offset, y_center, icon_size, icon_size)
-                icon.paint(painter, icon_rect, Qt.AlignmentFlag.AlignCenter)
+                x_offset = self.columnViewportPosition(0) + 5  # Adjust position in column
+                y_center = rect.center().y() - self.icon_size // 2
+                for icon in icons:
+                    icon_rect = QRect(x_offset + 104, y_center + 26, self.icon_size, self.icon_size)
+                    icon.paint(painter, icon_rect, Qt.AlignmentFlag.AlignCenter)
+                    x_offset += self.icon_size + 5  # Add spacing between icons
 
 
 class ModManagerUI(QWidget):
@@ -126,11 +128,12 @@ class ModManagerUI(QWidget):
 
         # Custom Tree Widget with Multiple Columns
         self.tree_widget = CustomTreeWidget()
-        self.tree_widget.setIconSize(QSize(64, 64)) 
-        self.tree_widget.setColumnCount(5)
+        self.tree_widget.setIconSize(QSize(72, 72)) 
+        self.tree_widget.setColumnCount(2)
         self.tree_widget.setColumnWidth(0, 200)
         
-        self.tree_widget.setHeaderLabels(["Mod Name", "Author", "Status", "Category", ""])
+        self.tree_widget.header().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.tree_widget.setHeaderLabels(["Mod Info", "Toggle"])
         
         layout.addWidget(self.tree_widget)
 
@@ -154,13 +157,13 @@ class ModManagerUI(QWidget):
     def populate_tree(self):
         # Sample Data with (Thumbnail Paths, Name, Author, Status, Category)
         sample_items = [
-            (["assets/icons/cartridge_off", "assets/img/preview.webp", "assets/img/github.png"], ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "Enabled", "C01 Effects"),
-            (["assets/icons/cartridge_on","assets/img/preview.webp", "assets/img/github.png"], ["assets/icons/characters/aegis.png", "assets/icons/characters/element.png", "assets/icons/characters/jack.png"],"Master Shield", "DarkHero", "Disabled", "C02 Defense"),
-            (["assets/icons/cartridge_off","assets/img/preview.webp", "assets/img/browse.png"], ["assets/icons/characters/wolf.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"],"Phantom Armor", "GhostKnight", "Enabled", "C03 Stealth"),
+            (["assets/icons/cartridge_off", "assets/img/preview.webp", "assets/img/github.png"], ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01", "This mod is something... blah blah\ndshfkjdskfhjsa\ndfshskdjf\ndfkjhsk"),
+            (["assets/icons/cartridge_on","assets/img/preview.webp", "assets/img/github.png"], ["assets/icons/characters/aegis.png", "assets/icons/characters/element.png", "assets/icons/characters/jack.png"],"Master Shield", "DarkHero", "C02", "C03 Stealth\ndshfkjdskfhjsa\ndfshskdjf\ndfkjhsk"),
+            (["assets/icons/cartridge_off","assets/img/preview.webp", "assets/img/browse.png"], ["assets/icons/characters/wolf.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"],"Phantom Armor", "GhostKnight", "C03", "C03 Stealth\ndshfkjdskfhjsa\ndfshskdjf\ndfkjhsk"),
         ]
 
-        for icon_paths, char_icon_paths, name, author, status, category in sample_items:
-            item = QTreeWidgetItem([name, author, status, category, ""])
+        for icon_paths, char_icon_paths, name, author, slots, category in sample_items:
+            item = QTreeWidgetItem([name + "\n" + author + "\n" + slots + "\n", category])
 
             # Add Checkbox
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
@@ -173,14 +176,15 @@ class ModManagerUI(QWidget):
 
             # Combine images
             combined_pixmap = combine_images(base_pixmap, alpha_pixmap)
+            icon = create_icon_with_text(combined_pixmap, "FIGHTER")  # Overlay text "TXT" on image
 
 
             # icon = QIcon(QPixmap(icon_paths[0]))
-            item.setIcon(0, QIcon(combined_pixmap))
+            item.setIcon(0, icon)
 
             # Add Multiple Icons to 4th Column
             icons = [QIcon(QPixmap(path)) for path in char_icon_paths]
-            item.setData(4, Qt.ItemDataRole.UserRole, icons)
+            item.setData(0, Qt.ItemDataRole.UserRole, icons)
             # item.setData(0, Qt.ItemDataRole.UserRole, icons)
 
             self.tree_widget.addTopLevelItem(item)
@@ -188,6 +192,8 @@ class ModManagerUI(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    qdarktheme.setup_theme("dark")
+    # qdarktheme.setup_theme("light")
     window = ModManagerUI()
     window.show()
     sys.exit(app.exec())

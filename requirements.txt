@@ -11,3 +11,4 @@ pyunpack==0.3
 patool
 tkinterdnd2
 pyqt6
+pyqtdarktheme

@@ -19,6 +19,14 @@
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Python: test_list.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_list.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }
