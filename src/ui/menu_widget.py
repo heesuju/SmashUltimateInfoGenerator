@@ -19,27 +19,33 @@ class MenuWidget(QWidget):
         self.setLayout(layout)
         self.setFixedWidth(WIDTH)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
-        
+
+        self.frame = QFrame()
+        self.frame.setFrameShape(QFrame.Shape.NoFrame)
+        self.frame.setAutoFillBackground(True)
+        frame_layout = VBox()
+        self.frame.setLayout(frame_layout)
+        layout.addWidget(self.frame)
+        palette = self.frame.palette()
+        palette.setColor(QPalette.ColorRole.Highlight, QColor(100, 255, 255))  # White background
+        self.frame.setPalette(palette)
+
         preview_button = MenuButton("assets/icons/menu/details.png", WIDTH, WIDTH, self)
-        layout.addWidget(preview_button)
+        frame_layout.addWidget(preview_button)
 
         workspace_button = MenuButton("assets/icons/menu/workspace.png", WIDTH, WIDTH, self)
-        layout.addWidget(workspace_button)
+        frame_layout.addWidget(workspace_button)
 
         
-        layout.addStretch(1)
+        frame_layout.addStretch(1)
 
         config_button = MenuButton("assets/icons/menu/config.png", WIDTH, WIDTH, self)
-        layout.addWidget(config_button)
+        frame_layout.addWidget(config_button)
 
 
-        save_button = MenuButton("assets/icons/menu/save.png", WIDTH, WIDTH, self)
-        layout.addWidget(save_button)
+        self.frame.setStyleSheet("""QFrame {
+                                 background-color: rgba(100, 255, 200, 200);
+                                 border-radius: 0px;
+                                 }""")
 
-        # Set the background color using QPalette
-        
-        self.setStyleSheet("""
-            QWidget#MenuWidget {
-                background-color: red;
-            }
-        """)
+

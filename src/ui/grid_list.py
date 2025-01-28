@@ -13,6 +13,7 @@ from src.ui.list_item import GridListItem
 from PyQt6.QtWidgets import QListWidget, QListView, QStyledItemDelegate, QStyleOptionViewItem, QGraphicsDropShadowEffect, QSizePolicy, QStyle
 
 
+
 class GridList(QListWidget):
     def __init__(self):
         super().__init__()

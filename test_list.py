@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
 )
 import qdarktheme
 from src.ui.list_item import GridListItem
-from src.ui.grid_list import GridList
+from src.ui.mod_list_widget import ModListWidget
 from src.ui.preview import Preview
 from PyQt6.QtWidgets import (
     QGraphicsDropShadowEffect,
@@ -25,41 +25,29 @@ class MultiSelectList(QWidget):
         # self.setStyleSheet("padding: 0px;};")
         layout = HBox()
         vlayout = VBox()
+        hlayout = HBox()
 
-        self.list_widget = GridList()
+        self.list_widget = ModListWidget()
         self.preview = Preview()
         self.search = SearchWidget()
         self.menu = MenuWidget()
         # Add some items
-        items = [
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/aegis.png", "assets/icons/characters/element.png", "assets/icons/characters/jack.png"],"Master Shield", "DarkHero", "C02"),
-            ("assets/img/preview.webp", ["assets/icons/characters/wolf.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"],"Phantom Armor", "GhostKnight", "C03"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evssssssssssssssssil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-        ]
-
-        for icon_path, character_icons, name, author, slot in items:
-            self.list_widget.add_item(icon_path, character_icons, name, author)
+        
         
         
         vlayout.addWidget(self.search)
-        vlayout.addWidget(self.list_widget)
+        hlayout.addWidget(self.list_widget)
+        hlayout.addWidget(self.preview)
+        
+        vlayout.addLayout(hlayout)
         
         layout.addWidget(self.menu)
         layout.addLayout(vlayout)
-        layout.addWidget(self.preview)
-        
         self.setLayout(layout)     
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    # qdarktheme.setup_theme("dark")
+    qdarktheme.setup_theme("dark")
     window = MultiSelectList()
     window.show()
     sys.exit(app.exec())

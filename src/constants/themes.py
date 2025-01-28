@@ -1,0 +1,2 @@
+DARK = "dark"
+LIGHT = "light"

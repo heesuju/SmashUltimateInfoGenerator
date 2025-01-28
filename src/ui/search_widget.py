@@ -16,15 +16,20 @@ class SearchWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        layout = HBox()
+        layout = VBox()
         
         self.setLayout(layout)
-
+        # self.setFixedHeight(100)
         self.frame = QFrame()
-        self.frame.setFrameShape(QFrame.Shape.Box)
+        
+        self.frame.setFrameShape(QFrame.Shape.NoFrame)
         self.frame.setAutoFillBackground(True)
         frame_layout = QHBoxLayout()
         self.frame.setLayout(frame_layout)
+        # self.frame.setStyleSheet("""QFrame {
+        #                          border-radius: 0px;
+        #                          border:none;
+        #                          }""")
 
         
         palette = self.frame.palette()
@@ -47,7 +52,15 @@ class SearchWidget(QWidget):
         search_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
 
         frame_layout.addWidget(search_button)
+
+        # shadow = QGraphicsDropShadowEffect()
+        # shadow.setBlurRadius(10)
+        # shadow.setOffset(0, 2)
+        # shadow.setColor(QColor(0, 0, 0, 160))  # Semi-transparent black
+        # self.frame.setGraphicsEffect(shadow)
+        
         layout.addWidget(self.frame)
+        
 
     def mousePressEvent(self, event):
         # self.frame.setStyleSheet(self.selected_style)

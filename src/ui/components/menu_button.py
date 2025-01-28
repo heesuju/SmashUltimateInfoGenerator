@@ -22,16 +22,17 @@ class MenuButton(QPushButton):
         self.setFixedSize(width, height)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.setIconSize(QSize(32, 32))
-        self.setStyleSheet("""
-            QPushButton {
-                border: none;
-                background-color: white;
-                border-radius: 0px;
-            }
-            QPushButton:hover {
-                background-color: lightgray;
-            }
-            QPushButton:pressed {
-                background-color: gray;
-            }
-        """)
+        self.setFlat(True)
+        # setStyleSheet("""
+        #     QPushButton {
+        #         border: none;
+        #         background-color: white;
+        #         border-radius: 0px;
+        #     }
+        #     QPushButton:hover {
+        #         background-color: lightgray;
+        #     }
+        #     QPushButton:pressed {
+        #         background-color: gray;
+        #     }
+        # """)

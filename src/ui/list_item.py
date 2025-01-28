@@ -13,6 +13,8 @@ from src.ui.components.layout import HBox, VBox, set_margin
 from overlay_test import Overlay
 
 ICON_ELLIPSIS = "assets/icons/ui/ellipsis.png"
+ICON_FAVORITE = "assets/icons/menu/favorite.png"
+ICON_HIDE = "assets/icons/menu/visible.png"
 ICON_OFF = "assets/icons/cartridge_off"
 ICON_ON = "assets/icons/cartridge_off"
 
@@ -32,7 +34,7 @@ class GridListItemWidget(QWidget):
         self.setLayout(layout)
 
         self.frame = QFrame()
-        self.frame.setFrameShape(QFrame.Shape.Box)
+        self.frame.setFrameShape(QFrame.Shape.NoFrame)
         self.frame.setAutoFillBackground(True)
         frame_layout = HBox()
         self.frame.setLayout(frame_layout)
@@ -41,13 +43,6 @@ class GridListItemWidget(QWidget):
         palette = self.frame.palette()
         palette.setColor(QPalette.ColorRole.Window, QColor(255, 255, 255))  # White background
         self.frame.setPalette(palette)
-
-        default_color = palette.color(QPalette.ColorRole.Window)
-        selected_color = QColor(200, 200, 255)  # Light blue background
-
-        print(default_color.name())
-        self.default_style = f"background-color: {default_color.name()};"
-        self.selected_style = f"background-color: {selected_color.name()};"
         
         overlay = Overlay("assets/img/preview.webp", self)
 
@@ -57,13 +52,17 @@ class GridListItemWidget(QWidget):
         
         info_layout = QVBoxLayout()
 
-        action_layout = QVBoxLayout()
+        right_layout = QVBoxLayout()
+        right_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+
+        action_layout = HBox()
         # action_layout.addStretch(1)
         action_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
         
         frame_layout.addLayout(info_layout)
         frame_layout.addStretch(1)
-        frame_layout.addLayout(action_layout)
+        frame_layout.addLayout(right_layout)
+        right_layout.addLayout(action_layout)
         frame_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         info_layout.addStretch(1)
@@ -93,32 +92,46 @@ class GridListItemWidget(QWidget):
         info_layout.addLayout(icon_layout)
         
         info_layout.addStretch(1)
+        
         for char_img in characters:
             img_label = QLabel()
             char_icon = QPixmap(char_img).scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             img_label.setPixmap(char_icon)
             icon_layout.addWidget(img_label)
 
+        fav_button = QPushButton()
+        fav_button.setIcon(QIcon(QPixmap(ICON_FAVORITE)))
+        fav_button.setFlat(True)
+        fav_button.setObjectName("obj1")
+        fav_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        fav_button.setFixedSize(QSize(24, 24))
+        action_layout.addWidget(fav_button)
         
+        hide_button = QPushButton()
+        hide_button.setIcon(QIcon(QPixmap(ICON_HIDE)))
+        hide_button.setFlat(True)
+        hide_button.setObjectName("obj2")
+        hide_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        hide_button.setFixedSize(QSize(24, 24))
+        action_layout.addWidget(hide_button)
+
         menu_button = QPushButton()
         menu_button.setIcon(QIcon(QPixmap(ICON_ELLIPSIS)))
-        menu_button.setStyleSheet("QPushButton"
-                            "{"
-                            "border : none;"
-                            "}"
-                            )
-                            
+        menu_button.setFlat(True)
         menu_button.setObjectName("obj")
         menu_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-
+        menu_button.setFixedSize(QSize(24, 24))
         action_layout.addWidget(menu_button)
-        action_layout.addStretch(3) 
+
+        
+        
+        right_layout.addStretch(1)
 
         version_text = QLabel("1.0.0")
         version_text.setAlignment(Qt.AlignmentFlag.AlignRight)  # Align text to the left
-        action_layout.addWidget(version_text)
+        right_layout.addWidget(version_text)
 
-        # action_layout.addStretch(1)
+        
 
         # line_push_button.clicked.connect(self.clicked)
         
