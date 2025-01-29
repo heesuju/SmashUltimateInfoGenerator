@@ -1,48 +1,53 @@
-"""
-main.py: Entrypoint for the application
-
-Usage:
-    To run the application, execute this module directly:
-        python main.py
-"""
-
-from tkinterdnd2 import TkinterDnD
-from src.ui.views.menu import Menu
-from src.ui.views.editor import Editor
-from src.core.data import get_start_w_editor
-from src.core.web.webdriver_manager import WebDriverManager
-from src.constants.ui_params import (
-    WIN_SIZE_X_DEFAULT,
-    WIN_SIZE_Y_DEFAULT,
-    WIN_SIZE_X_MIN,
-    WIN_SIZE_Y_MIN,
-    TITLE
+import sys
+from PyQt6.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout
 )
+import qdarktheme
+from src.ui.list_item import GridListItem
+from src.ui.mod_list_widget import ModListWidget
+from src.ui.preview import Preview
+from PyQt6.QtWidgets import (
+    QGraphicsDropShadowEffect,
+    QWidget,
+)
+from PyQt6.QtGui import QPixmap, QColor
+from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
+from src.ui.search_widget import SearchWidget
+from src.ui.menu_widget import MenuWidget
+from src.ui.components.layout import HBox, VBox
 
-def main()->None:
-    """
-    Main entry point for the application.
+class MultiSelectList(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Multi-Selectable List")
+        self.setGeometry(100, 100, 1200, 600)
+        
+        # self.setStyleSheet("padding: 0px;};")
+        layout = HBox()
+        vlayout = VBox()
+        hlayout = HBox()
 
-    This function is responsible for initializing the application
-    and invoking the necessary components to execute the desired functionality.
-
-    Returns:
-        None
-    """
-
-    root = TkinterDnD.Tk()
-    root.minsize(WIN_SIZE_X_MIN, WIN_SIZE_Y_MIN)
-    root.geometry(f"{WIN_SIZE_X_DEFAULT}x{WIN_SIZE_Y_DEFAULT}")
-    root.title(TITLE)
-
-    webdriver_manager = WebDriverManager()
-
-    if get_start_w_editor():
-        Editor(root, webdriver_manager)
-    else:
-        Menu(root, webdriver_manager)
-
-    root.mainloop()
+        self.list_widget = ModListWidget()
+        self.preview = Preview()
+        self.search = SearchWidget()
+        self.menu = MenuWidget()
+        # Add some items
+        
+        
+        
+        vlayout.addWidget(self.search)
+        hlayout.addWidget(self.list_widget)
+        hlayout.addWidget(self.preview)
+        
+        vlayout.addLayout(hlayout)
+        
+        layout.addWidget(self.menu)
+        layout.addLayout(vlayout)
+        self.setLayout(layout)     
 
 if __name__ == "__main__":
-    main()
+    app = QApplication(sys.argv)
+    qdarktheme.setup_theme("dark")
+    window = MultiSelectList()
+    window.show()
+    sys.exit(app.exec())

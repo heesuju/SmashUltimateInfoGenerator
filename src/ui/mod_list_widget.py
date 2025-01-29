@@ -1,7 +1,10 @@
 from PyQt6.QtWidgets import (
     QWidget, QSizePolicy, QLabel, QFrame, QPushButton, QComboBox
 )
-from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont
+from PyQt6.QtGui import (
+    QPixmap, QColor, QPalette, QIcon, QFont
+)
+
 from src.ui.components.layout import HBox, VBox
 from src.ui.grid_list import GridList
 from src.ui.treelist import TreeList
@@ -39,7 +42,7 @@ class ModListWidget(QWidget):
         header_layout = HBox(spacing=10)
         self.frame_layout.addLayout(header_layout)
 
-        self.body_layout = VBox()
+        self.body_layout = VBox(margin=(0, 10))
         self.frame_layout.addLayout(self.body_layout)
 
         footer_layout = HBox(spacing=10)
@@ -74,10 +77,6 @@ class ModListWidget(QWidget):
         grid_btn.clicked.connect(self.on_grid_selected)
         header_layout.addWidget(grid_btn)        
 
-        # Set the background color using QPalette
-        palette = self.palette()
-        palette.setColor(QPalette.ColorRole.Window, QColor('red'))
-        self.setPalette(palette)
         self.body_layout.addWidget(self.tree_list)
 
         count_label = QLabel("")
