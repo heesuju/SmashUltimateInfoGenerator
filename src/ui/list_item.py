@@ -44,7 +44,7 @@ class GridListItemWidget(QWidget):
         palette.setColor(QPalette.ColorRole.Window, QColor(255, 255, 255))  # White background
         self.frame.setPalette(palette)
         
-        overlay = Overlay("assets/img/preview.webp", self)
+        overlay = Overlay(self.image_path, self)
 
         frame_layout.addWidget(overlay)
         

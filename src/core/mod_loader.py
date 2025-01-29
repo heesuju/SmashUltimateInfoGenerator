@@ -5,8 +5,8 @@ included elements
 
 import os
 import copy
-from threading import Thread
-import concurrent.futures
+from PyQt6.QtCore import QThread, pyqtSignal
+from concurrent.futures import ThreadPoolExecutor
 from typing import Union
 from src.utils.file import is_valid_dir, get_base_name
 from src.utils.toml import load_toml
@@ -14,26 +14,15 @@ from src.utils.hash import get_hash
 from src.models.mod import Mod
 from .scanner import scan_mod
 
-class ModLoader(Thread):
+class ModLoader():
     """
     Mod Loader Class loads mod(s) in multi-thread
     Mod directories will be scanned for info.tomls and other info
     such as skins, which slots they use, and other elements.
     """
-    def __init__(
-        self,
-        directory:Union[str, list],
-        on_finish:callable,
-        on_start:callable = None,
-        on_progress:callable = None
-    ):
+    def __init__(self, directory):
         super().__init__()
         self.directory = directory
-        self.on_start = on_start
-        self.on_progress = on_progress
-        self.on_finish = on_finish
-        self.daemon = True
-        self.start()
 
     def find_mod(self, name:str, path:str)->Mod:
         """
@@ -72,31 +61,15 @@ class ModLoader(Thread):
         Returns None since scanned mods will be sent through a callback function
         """
         mods = []
+        
+        for folder_name in os.listdir(directory):
+            dir = os.path.join(directory, folder_name)
+            mod = self.find_mod(get_base_name(dir), dir)
+            if mod is not None:
+                mods.append(mod)
 
-        if self.on_start is not None:
-            self.on_start(len(os.listdir(directory)))
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = []
-            if isinstance(directory, str):
-                for folder_name in os.listdir(directory):
-                    futures.append(executor.submit(
-                            self.find_mod,
-                            folder_name,
-                            os.path.join(directory, folder_name)
-                        )
-                    )
-            elif isinstance(directory, list):
-                futures = [executor.submit(self.find_mod, get_base_name(d), d) for d in directory]
-            if self.on_progress is not None:
-                for future in futures:
-                    future.add_done_callback(self.on_progress)
-            for future in concurrent.futures.as_completed(futures):
-                mod = future.result()
-                if mod is not None:
-                    mods.append(mod)
-
-        self.on_finish(mods)
+        # self.finished.emit(mods)  # Notify when done
+        return mods
 
     def run(self):
         """
@@ -104,7 +77,4 @@ class ModLoader(Thread):
         """
         if isinstance(self.directory, str):
             if is_valid_dir(self.directory):
-                self.find_mods(self.directory)
-        elif isinstance(self.directory, list):
-            if False not in [is_valid_dir(d) for d in self.directory]:
-                self.find_mods(self.directory)
+                return self.find_mods(self.directory)

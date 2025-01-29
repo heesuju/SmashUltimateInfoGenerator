@@ -1,8 +1,9 @@
+import os
 from PyQt6.QtWidgets import (
     QWidget, QSizePolicy, QLabel, QFrame, QPushButton, QComboBox
 )
 from PyQt6.QtGui import (
-    QPixmap, QColor, QPalette, QIcon, QFont
+    QPixmap, QIcon, QFont
 )
 
 from src.ui.components.layout import HBox, VBox
@@ -14,6 +15,7 @@ from src.models.mod import Mod
 WIDTH = 300
 LIST_ICON = "assets/icons/menu/list.png"
 GRID_ICON = "assets/icons/menu/grid.png"
+ICON_PATH = "assets/icons"
 
 class ModListWidget(QWidget):
     def __init__(self, parent=None):
@@ -92,8 +94,6 @@ class ModListWidget(QWidget):
         save_button = QPushButton("Save (3 Enabled)")
         footer_layout.addWidget(save_button)
 
-        self.set_data(None)
-
     def on_grid_selected(self, event):
         self.tree_list.setParent(None)
         self.body_layout.addWidget(self.grid_list)
@@ -103,19 +103,12 @@ class ModListWidget(QWidget):
         self.body_layout.addWidget(self.tree_list)
         
     def set_data(self, mods:list[Mod]):
-        items = [
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/aegis.png", "assets/icons/characters/element.png", "assets/icons/characters/jack.png"],"Master Shield", "DarkHero", "C02"),
-            ("assets/img/preview.webp", ["assets/icons/characters/wolf.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"],"Phantom Armor", "GhostKnight", "C03"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evssssssssssssssssil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-            ("assets/img/preview.webp", ["assets/icons/characters/sonic.png", "assets/icons/characters/simon.png", "assets/icons/characters/jack.png"], "Blade of Evil's Bane", "Shun_One", "C01"),
-        ]
-
-        for icon_path, character_icons, name, author, slot in items:
-            self.tree_list.add_item(icon_path, character_icons, name, author)
-            self.grid_list.add_item(icon_path, character_icons, name, author)
+        for mod in mods:
+            char_keys = [character.key for character in mod.characters]
+            if "elight" in char_keys and "eflame" in char_keys:
+                char_keys.remove("elight")
+                char_keys.remove("eflame")
+                char_keys.append("aegis")
+            keys = [os.path.join(ICON_PATH, "characters", character + ".png") for character in char_keys]
+            self.tree_list.add_item(mod.thumbnail, keys, mod.mod_name, mod.authors)
+            self.grid_list.add_item(mod.thumbnail, keys, mod.mod_name, mod.authors)
