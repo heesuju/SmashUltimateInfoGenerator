@@ -37,8 +37,8 @@ class GridList(QListWidget):
         self.setFlow(QListView.Flow.LeftToRight)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setWrapping(True)
-        self.setSelectionMode(QListWidget.SelectionMode.MultiSelection)  # Allows multiple selection
-        
+        self.setSelectionMode(QListWidget.SelectionMode.SingleSelection)  # Allows multiple selection
+        # self.setSelectionMode(QListWidget.SelectionMode.MultiSelection)  # Allows multiple selection        
         # self.setAutoFillBackground(True)
 
     def add_item(self, icon_path, character_icons, name, author):

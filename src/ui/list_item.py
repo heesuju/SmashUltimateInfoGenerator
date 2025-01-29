@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 from src.ui.components.image_overlay import ImageOverlayWidget
-from src.ui.components.layout import HBox, VBox, set_margin
+from src.ui.components.layout import HBox, VBox
 from overlay_test import Overlay
 
 ICON_ELLIPSIS = "assets/icons/ui/ellipsis.png"
@@ -36,7 +36,7 @@ class GridListItemWidget(QWidget):
         self.frame = QFrame()
         self.frame.setFrameShape(QFrame.Shape.NoFrame)
         self.frame.setAutoFillBackground(True)
-        frame_layout = HBox()
+        frame_layout = HBox(margin=4, spacing=4)
         self.frame.setLayout(frame_layout)
 
         
@@ -47,8 +47,6 @@ class GridListItemWidget(QWidget):
         overlay = Overlay("assets/img/preview.webp", self)
 
         frame_layout.addWidget(overlay)
-        set_margin(frame_layout, 4)
-        frame_layout.setSpacing(4)
         
         info_layout = QVBoxLayout()
 

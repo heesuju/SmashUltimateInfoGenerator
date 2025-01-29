@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
-from src.ui.components.layout import HBox, VBox, set_margin
+from src.ui.components.layout import HBox, VBox
 
 WIDTH = 300
 FONT = "Arial"
@@ -26,9 +26,7 @@ class Preview(QWidget):
         self.frame.setStyleSheet("""QFrame {
                                  border-radius: 0px;
                                  }""")
-        frame_layout = VBox()
-        frame_layout.setSpacing(10)
-        set_margin(frame_layout, 10)
+        frame_layout = VBox(margin=10, spacing=10)
         self.frame.setLayout(frame_layout)
 
         details_label = QLabel("Details")
