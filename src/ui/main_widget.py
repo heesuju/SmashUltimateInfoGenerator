@@ -1,12 +1,19 @@
 from PyQt6.QtWidgets import QWidget
 from src.ui.mod_list_widget import ModListWidget
+
+from src.ui.filter import Filter
 from src.ui.preview import Preview
-from src.ui.search_widget import SearchWidget
-from src.ui.menu_widget import MenuWidget
+from src.ui.edit import Edit
+from src.ui.config import Config
+
+
+from src.ui.components.navigation import Navigation
 from src.ui.components.layout import HBox, VBox
 from src.core.data import load_config
 from src.core.mod_loader import ModLoader
 from src.models.mod import Mod
+from src.ui.schema import NavigationMenu
+from src.constants.icons import MenuIcons
 
 class MainWidget(QWidget):
     def __init__(self):
@@ -19,19 +26,46 @@ class MainWidget(QWidget):
         hlayout = HBox()
 
         self.list_widget = ModListWidget()
+
+        self.filter = Filter()
         self.preview = Preview()
-        self.search = SearchWidget()
-        self.menu = MenuWidget()
+        self.edit = Edit()
+        
+        self.config = Config()
+
+        self.filter.hide()
+        self.preview.hide()
+        self.edit.hide()
+        self.config.hide()
+
+        
+        self.menu = Navigation(
+            [
+                [
+                    NavigationMenu(MenuIcons.FILTER.value, self.filter),
+                    NavigationMenu(MenuIcons.PREVIEW.value, self.preview),
+                    NavigationMenu(MenuIcons.EDIT.value, self.edit),
+                ],
+                [
+                    NavigationMenu(MenuIcons.CONFIG.value, self.config)
+                ]
+            ]
+        )
         # Add some items
         
-        vlayout.addWidget(self.search)
+        
         hlayout.addWidget(self.list_widget)
+        
+        hlayout.addWidget(self.filter)
         hlayout.addWidget(self.preview)
+        hlayout.addWidget(self.edit)
+        hlayout.addWidget(self.config)
         
         vlayout.addLayout(hlayout)
         
-        layout.addWidget(self.menu)
+        
         layout.addLayout(vlayout)
+        layout.addWidget(self.menu)
         self.setLayout(layout)     
 
         self.scan()

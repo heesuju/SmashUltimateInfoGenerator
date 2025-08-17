@@ -20,6 +20,7 @@ class GridList(QListWidget):
         self.setStyleSheet("QListWidget"
                                   "{"
                                   "border : none;"
+                                  "background: transparent;  /* optional if you want no background as well */"
                                   "}"
                                   
                                   )
@@ -28,7 +29,7 @@ class GridList(QListWidget):
         # offset=QPointF(3, 3), blurRadius=25, color=QColor("#111")
         # )
         # self.setGraphicsEffect(effect)
-
+        
         self.icon_size = 20  # Size of each icon
         self.setIconSize(QSize(72, 72)) 
         self.setResizeMode(QListView.ResizeMode.Adjust)

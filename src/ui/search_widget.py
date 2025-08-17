@@ -8,7 +8,9 @@ from PyQt6.QtWidgets import (
     QGraphicsDropShadowEffect,
     QWidget,
 )
+from src.constants.styles import MAIN_BUTTON, BORDERLESS_BUTTON
 from src.ui.components.layout import HBox, VBox
+from src.constants.icons import ButtonIcons
 
 ICON_ELLIPSIS = "assets/img/search.png"
 
@@ -26,38 +28,64 @@ class SearchWidget(QWidget):
         self.frame.setAutoFillBackground(True)
         frame_layout = QHBoxLayout()
         self.frame.setLayout(frame_layout)
-        # self.frame.setStyleSheet("""QFrame {
-        #                          border-radius: 0px;
-        #                          border:none;
-        #                          }""")
-
+        self.frame.setStyleSheet("""QFrame {
         
+        border-radius: 5px;
+    }""")
+
+        frame_layout.setSpacing(0)
+        frame_layout.setContentsMargins(10,10,10,10)
         palette = self.frame.palette()
         palette.setColor(QPalette.ColorRole.Window, QColor(255, 255, 255))  # White background
         self.frame.setPalette(palette)
 
         self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText("Search...")
+        self.search_bar.setPlaceholderText("Search mod name...")
+        self.search_bar.setStyleSheet("""
+    QLineEdit {
+        border: 0px;
+        border-top-left-radius: 5px;
+        border-bottom-left-radius: 5px;
+        border-top-right-radius: 0px;
+        border-bottom-right-radius: 0px;
+    }
+""")
         frame_layout.addWidget(self.search_bar)
 
+        path = ButtonIcons.CLEAR.value
+        clear = QPushButton()
+        clear.setIcon(QIcon(QPixmap(ButtonIcons.CLEAR.value)))
+        clear.setObjectName("obj1")
+        clear.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        frame_layout.addWidget(clear)
+        
+        # line = QFrame()
+        # line.setFrameShape(QFrame.Shape.VLine)
+        # line.setFrameShadow(QFrame.Shadow.Raised) # or QFrame.Raised, QFrame.Plain
+        # frame_layout.addWidget(line)
+        
+        refresh = QPushButton()
+        refresh.setIcon(QIcon(QPixmap(ButtonIcons.REFRESH.value)))
+        refresh.setObjectName("obj2")
+        refresh.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        frame_layout.addWidget(refresh)
+
         search_button = QPushButton()
-        search_button.setIcon(QIcon(QPixmap(ICON_ELLIPSIS)))
-        search_button.setStyleSheet("QPushButton"
-                            "{"
-                            "border : none;"
-                            "}"
-                            )
-                            
-        search_button.setObjectName("obj")
+        search_button.setIcon(QIcon(QPixmap(ButtonIcons.SEARCH.value)))
+        # search_button.setStyleSheet(MAIN_BUTTON)
+        search_button.setObjectName("obj3")
         search_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        
+        clear.setStyleSheet("QPushButton { border: none; border-radius: 0px; }")
+        refresh.setStyleSheet("QPushButton { border: none; border-radius: 0px; }")
+        search_button.setStyleSheet("QPushButton { border: none; border-radius: 0px; }")
+
+        
+
+        
 
         frame_layout.addWidget(search_button)
 
-        # shadow = QGraphicsDropShadowEffect()
-        # shadow.setBlurRadius(10)
-        # shadow.setOffset(0, 2)
-        # shadow.setColor(QColor(0, 0, 0, 160))  # Semi-transparent black
-        # self.frame.setGraphicsEffect(shadow)
         
         layout.addWidget(self.frame)
         

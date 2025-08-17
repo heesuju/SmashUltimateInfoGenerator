@@ -1,9 +1,24 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QSizePolicy, QLabel, QFrame, QHBoxLayout, QPushButton
+    QWidget, 
+    QHBoxLayout, 
+    QVBoxLayout, 
+    QPushButton, 
+    QLabel, 
+    QSizePolicy, 
+    QListWidget, 
+    QListWidgetItem, 
+    QFrame, 
+    QLineEdit,
+    QComboBox,
+    QCheckBox,
+    QGroupBox,
+    QSpinBox
 )
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
 from src.ui.components.layout import HBox, VBox
+from src.ui.components.checkbox_group import CheckboxGroup
+from src.constants.categories import CATEGORIES
 from src.constants.styles import MAIN_BUTTON
 
 WIDTH = 300
@@ -12,7 +27,7 @@ FONT_SIZE = 10
 
 BODY_FONT_SIZE = 8
 
-class Preview(QWidget):
+class Config(QWidget):
     def __init__(self):
         super().__init__()
         layout = VBox()
@@ -30,50 +45,27 @@ class Preview(QWidget):
         frame_layout = VBox(margin=10, spacing=10)
         self.frame.setLayout(frame_layout)
 
-        details_label = QLabel("Details")
+        details_label = QLabel("Config")
         title_font = QFont(FONT, FONT_SIZE)  # Set the font and font size
         title_font.setBold(True)
         details_label.setFont(title_font)
         frame_layout.addWidget(details_label)
 
-        thumbnail = QLabel()
-        preview_dir = "assets/img/preview.webp"
-        preview_img = QPixmap(preview_dir).scaled(320, WIDTH, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        self.directory = QLineEdit()
+        self.directory.setPlaceholderText("Enter the mod directory(e.g. sd:/ultimate/mods)")
+        frame_layout.addWidget(self.directory)
 
-        thumbnail.setPixmap(preview_img)
-        frame_layout.addWidget(thumbnail)
-
-        mod_name_label = QLabel("Valentine Sisters")
-        title_font = QFont(FONT, FONT_SIZE)  # Set the font and font size
-        title_font.setBold(True)
-        mod_name_label.setFont(title_font)
-        frame_layout.addWidget(mod_name_label)
-
-        author_label = QLabel("Hanxulz")
-        body_font = QFont(FONT, BODY_FONT_SIZE)  # Set the font and font size
-        author_label.setFont(body_font)
-        frame_layout.addWidget(author_label)
-        frame_layout.addStretch(1)
-
-        version_label = QLabel("1.2.4")
-        body_font = QFont(FONT, BODY_FONT_SIZE)  # Set the font and font size
-        version_label.setFont(body_font)
-        frame_layout.addWidget(version_label)
-        
-
-        description_label = QLabel(
-            "This is a longer description of the mod.\n"
-            "It can span multiple lines and wrap automatically."
-        )
-        description_label.setWordWrap(True)
-        description_label.setFont(QFont(FONT, BODY_FONT_SIZE))
-        frame_layout.addWidget(description_label)
+        self.theme = QComboBox()
+        self.theme.addItems(["dark", "light"])
+        self.theme.setEditable(False)  # ComboBox itself is not editable
+        self.theme.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # Prevent adding new items
+        frame_layout.addWidget(self.theme)
 
         frame_layout.addStretch(1)
 
         button_layout = QHBoxLayout()
-        restore_button = QPushButton("Open")
-        
+        restore_button = QPushButton("Restore")
+        restore_button.clicked.connect(self.reset)
         save_button = QPushButton("Save")
         save_button.setStyleSheet(MAIN_BUTTON)
         button_layout.addWidget(restore_button)
@@ -86,5 +78,9 @@ class Preview(QWidget):
         self.setPalette(palette)
 
         layout.addWidget(self.frame)
-
-        
+    
+    def reset(self):
+        """
+        Resets all filter fields to their default state.
+        """
+        pass
