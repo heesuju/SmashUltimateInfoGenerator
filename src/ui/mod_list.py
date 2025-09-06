@@ -104,6 +104,7 @@ class ModList(QWidget):
         self.populate()
     
     def on_page_changed(self, page:int, size:int):
+        self.paging.update(len(self.mod_manager.mods))
         self.populate()
 
     def set_data(self, mods:list[Mod]):

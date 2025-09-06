@@ -181,7 +181,6 @@ class Paging(QWidget):
             self.entry_size.setText(str(self.page_size))
             self.change_page(1)
 
-
 def get_pages(current_page=1, total_pages=1, max_size=5):
     out_arr = []
     half = math.floor(max_size/2)
