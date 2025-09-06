@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
 from PyQt6.QtGui import QPixmap, QColor, QPalette
-from src.ui.list_item import GridListItem
+from src.ui.grid_item import GridListItem
 from PyQt6.QtWidgets import QListWidget, QListView, QStyledItemDelegate, QStyleOptionViewItem, QGraphicsDropShadowEffect, QSizePolicy, QStyle
 
 
@@ -41,8 +41,12 @@ class GridList(QListWidget):
         self.setSelectionMode(QListWidget.SelectionMode.SingleSelection)  # Allows multiple selection
         # self.setSelectionMode(QListWidget.SelectionMode.MultiSelection)  # Allows multiple selection        
         # self.setAutoFillBackground(True)
+        self.itemClicked.connect(self.on_item_clicked)
 
     def add_item(self, icon_path, character_icons, name, author):
         item = GridListItem(icon_path, name, author, character_icons)
         self.addItem(item)
         self.setItemWidget(item, item.widget)
+
+    def on_item_clicked(self, item):
+        print(f"Item clicked: {item}")

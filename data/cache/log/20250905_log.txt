@@ -1,0 +1,56 @@
+[23:02:41] No config found
+           Making new config...
+[23:02:41] Saved config
+[23:07:47] Loaded config
+[23:07:47] No config found
+           Making new config...
+[23:07:47] Saved config
+[23:12:52] Loaded config
+[23:12:52] No config found
+           Making new config...
+[23:12:52] Saved config
+[23:13:55] Loaded config
+[23:13:58] No config found
+           Making new config...
+[23:13:58] Saved config
+[23:14:37] Loaded config
+[23:14:47] Loaded config
+[23:15:53] Loaded config
+[23:16:17] Loaded config
+[23:16:52] Loaded config
+[23:16:57] Failed to save config: Unable to serialize unknown type: <class 'builtin_function_or_method'>
+[23:17:57] Failed to load config: Expecting value: line 1 column 1 (char 0)
+[23:18:42] Failed to load config: Expecting value: line 1 column 1 (char 0)
+[23:18:42] No config found
+           Making new config...
+[23:18:42] Saved config
+[23:20:16] Loaded config
+[23:21:27] Loaded config
+[23:22:02] Loaded config
+[23:22:07] Saved config
+[23:22:12] Saved config
+[23:22:18] Loaded config
+[23:24:10] Loaded config
+[23:24:18] Saved config
+[23:24:29] Loaded config
+[23:27:16] Loaded config
+[23:27:33] Loaded config
+[23:31:16] Loaded config
+[23:32:25] Loaded config
+[23:41:26] Loaded config
+[23:43:18] Loaded config
+[23:43:26] Saved config
+[23:47:23] Loaded config
+[23:47:47] Loaded config
+[23:48:24] Loaded config
+[23:48:57] Saved config
+[23:49:01] Loaded config
+[23:53:02] Loaded config
+[23:56:13] Loaded config
+[23:56:41] Loaded config
+[23:56:50] Loaded config
+[23:57:02] Loaded config
+[23:57:08] Saved config
+[23:57:13] Loaded config
+[23:57:19] Saved config
+[23:57:23] Loaded config

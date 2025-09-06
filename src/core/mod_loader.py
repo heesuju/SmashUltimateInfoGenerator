@@ -5,76 +5,98 @@ included elements
 
 import os
 import copy
-from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtCore import QObject, pyqtSignal, QRunnable, QThreadPool
 from concurrent.futures import ThreadPoolExecutor
-from typing import Union
+from typing import Union, List
 from src.utils.file import is_valid_dir, get_base_name
 from src.utils.toml import load_toml
 from src.utils.hash import get_hash
 from src.models.mod import Mod
 from .scanner import scan_mod
+from src.utils.logger import output_log
 
-class ModLoader():
-    """
-    Mod Loader Class loads mod(s) in multi-thread
-    Mod directories will be scanned for info.tomls and other info
-    such as skins, which slots they use, and other elements.
-    """
-    def __init__(self, directory):
+# Worker Signals
+class ModWorkerSignals(QObject):
+    finished = pyqtSignal(object)  # Emit each mod when done
+    error = pyqtSignal(str)     # Emit error messages if needed
+
+# Worker Runnable
+class ModWorker(QRunnable):
+    def __init__(self, mod_name:str, mod_path:str):
         super().__init__()
-        self.directory = directory
-
-    def find_mod(self, name:str, path:str)->Mod:
-        """
-        Finds the mod in the designated path
-        Args:
-            name: the name of the mod
-            path: the directory where the mod is located in
-        Returns the scanned mod
-        """
-        if not is_valid_dir(path):
-            return None
-
-        mod = Mod()
-        mod.folder_name = name
-        mod.display_name = name
-        mod.category = "Misc"
-        mod.wifi_safe = "Uncertain"
-        mod.path = path
-        mod.hash = get_hash(name)
-
-        data = load_toml(path)
-        if data is not None:
-            mod.update(**data)
-            mod.contains_info = True
-
-        mod = scan_mod(mod)
-
-        return mod
-
-    def find_mods(self, directory:Union[str, list[str]])->None:
-        """
-        Scans multiple mod directories in multiple threads to save time
-        Args: 
-            directory (str or list): the directory(-ies) containing mods that needs to be scanned
-
-        Returns None since scanned mods will be sent through a callback function
-        """
-        mods = []
-        
-        for folder_name in os.listdir(directory):
-            dir = os.path.join(directory, folder_name)
-            mod = self.find_mod(get_base_name(dir), dir)
-            if mod is not None:
-                mods.append(mod)
-
-        # self.finished.emit(mods)  # Notify when done
-        return mods
+        self.mod_name = mod_name
+        self.mod_path = mod_path
+        self.signals = ModWorkerSignals()
 
     def run(self):
-        """
-        Runs the thread
-        """
+        try:
+            if not is_valid_dir(self.mod_path):
+                return
+            mod = Mod()
+            mod.folder_name = self.mod_name
+            mod.display_name = self.mod_name
+            mod.category = "Misc"
+            mod.wifi_safe = "Uncertain"
+            mod.path = self.mod_path
+            mod.hash = get_hash(self.mod_name)
+
+            data = load_toml(self.mod_path)
+            if data is not None:
+                mod.update(**data)
+                mod.contains_info = True
+
+            mod = scan_mod(mod)
+            self.signals.finished.emit(mod)
+        except Exception as e:
+            self.signals.error.emit(f"Error loading mod {self.mod_name}: {e}")
+
+
+# ModLoader with ThreadPool
+class ModLoader(QObject):
+    all_finished = pyqtSignal()
+
+    def __init__(self, directory: Union[str, List[str]]):
+        super().__init__()
+        self.directory = directory
         if isinstance(self.directory, str):
-            if is_valid_dir(self.directory):
-                return self.find_mods(self.directory)
+            self.directory = [self.directory]
+        self.thread_pool = QThreadPool()
+        self.pending = len(self.directory) 
+        self.total = len(self.directory)
+        self.success = 0
+
+    def _worker_done(self, *_):
+        self.pending -= 1
+        self.success += 1
+        if self.pending == 0:
+            output_log("Scan complete: {0} mods found".format(self.success))
+            self.all_finished.emit()
+
+    def _worker_failed(self, *_):
+        self.pending -= 1
+        if self.pending == 0:
+            output_log("Scan complete: {0} mods found".format(self.success))
+            self.all_finished.emit()
+
+    def load_mods(self, on_progress:callable, on_complete:callable=None):
+        """
+        Scans mods asynchronously and sends each scanned mod via callback
+        """
+        if on_complete:
+            self.all_finished.connect(on_complete)
+
+        if self.pending == 0:
+            self.all_finished.emit()
+            return
+
+        for mod_path in self.directory:
+            if not is_valid_dir(mod_path):
+                output_log(f"Invalid mod directory: {mod_path}")
+                on_progress(None)
+
+            mod_name = get_base_name(mod_path)
+            worker = ModWorker(mod_name, mod_path)
+            worker.signals.finished.connect(on_progress)  # send each mod to UI
+            worker.signals.finished.connect(lambda *_: self._worker_done())
+            worker.signals.error.connect(lambda *_: self._worker_failed())
+            self.thread_pool.start(worker)

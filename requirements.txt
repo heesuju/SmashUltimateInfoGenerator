@@ -12,3 +12,4 @@ patool
 tkinterdnd2
 pyqt6
 pyqtdarktheme
+pydantic

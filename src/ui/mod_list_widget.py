@@ -8,12 +8,13 @@ from PyQt6.QtGui import (
 
 from src.ui.components.layout import HBox, VBox
 from src.ui.grid_list import GridList
-from src.ui.treelist import TreeList
+from src.ui.tree_list import TreeList
 from src.constants.font import *
 from src.models.mod import Mod
 from src.ui.components.toggle_button import ToggleButton
 from src.ui.components.paging import Paging
-from src.ui.search_widget import SearchWidget
+from src.ui.search_bar import SearchBar
+from src.managers.mod_manager import ModManager
 
 WIDTH = 300
 LIST_ICON = "assets/icons/menu/list.png"
@@ -21,8 +22,9 @@ GRID_ICON = "assets/img/grid_16.png"
 ICON_PATH = "assets/icons"
 
 class ModListWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, mod_manager:ModManager=None):
         super().__init__(parent)
+        self.mod_manager = mod_manager
         layout = VBox()
         self.setLayout(layout)
         
@@ -44,7 +46,7 @@ class ModListWidget(QWidget):
         self.grid_list = GridList()
         self.tree_list = TreeList()
 
-        self.search = SearchWidget()
+        self.search = SearchBar()
         self.frame_layout.addWidget(self.search)
 
         # init child layouts

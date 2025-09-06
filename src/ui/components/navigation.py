@@ -6,10 +6,18 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QColor, QPalette
 from src.ui.components.layout import HBox, VBox
 from src.ui.components.menu_button import MenuButton
-from src.constants.icons import MenuIcons
-from src.ui.schema import NavigationMenu
+from src.constants.ui import MenuIcons
 
 WIDTH = 60
+from typing import List, Optional, Callable
+from PyQt6.QtWidgets import QWidget
+
+class NavigationMenu():
+    def __init__(self, icon:str, widget:QWidget, callback:Optional[Callable] = None):
+        self.icon = icon
+        self.widget = widget
+        self.callback = callback
+        
 
 class Navigation(QWidget):
     def __init__(self, menus:List[List[NavigationMenu]]):

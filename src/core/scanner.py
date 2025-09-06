@@ -13,8 +13,7 @@ from src.utils.csv_helper import csv_to_dict
 from src.utils.string_helper import str_to_int
 from src.models.mod import Mod
 from src.models.character import Character
-from src.constants.elements import *
-from src.constants.categories import *
+from src.constant import Category, Element
 from .formatting import (
     format_slots,
     get_mod_name,
@@ -81,7 +80,7 @@ def scan_character(mod:Mod)->Mod:
                         if slot not in character.slots:
                             character.slots.append(slot)   
                 if found_model == False:
-                    mod.add_to_included(RECOLOR)
+                    mod.add_to_included(Element.RECOLOR.value)
 
         if name in eff_fighters:
             path = os.path.join(effect_dir, name)
@@ -104,14 +103,14 @@ def scan_fighter(mod:Mod)->Mod:
         return mod
 
     if search_dir_by_keyword(root_dir, "model"):
-        if RECOLOR not in mod.includes:
-            mod.add_to_included(SKIN)
+        if Element.RECOLOR.value not in mod.includes:
+            mod.add_to_included(Element.SKIN.value)
 
     if search_dir_by_keyword(root_dir, "motion"):
-        mod.add_to_included(MOTION)
+        mod.add_to_included(Element.MOTION.value)
 
     if "kirby" in mod.display_name == False and search_dir_by_keyword(root_dir, "kirby"):
-        mod.add_to_included(KIRBY_HAT)       
+        mod.add_to_included(Element.KIRBY_HAT.value)       
 
     return mod
 
@@ -123,13 +122,13 @@ def scan_effect(mod:Mod)->Mod:
 
     for file in get_children_by_extension(root_dir, ".eff"):
         if search_files_for_pattern(file, r"c\d+"):
-            mod.add_to_included(ONE_SLOT_EFFECT)
+            mod.add_to_included(Element.ONE_EFFECT.value)
         else:
-            mod.add_to_included(ALL_SLOT_EFFECT)
+            mod.add_to_included(Element.ALL_EFFECT.value)
         break
     
-    if ALL_SLOT_EFFECT not in mod.includes and ONE_SLOT_EFFECT not in mod.includes:
-        mod.add_to_included(ALL_SLOT_EFFECT)    
+    if Element.ALL_EFFECT.value not in mod.includes and Element.ONE_EFFECT.value not in mod.includes:
+        mod.add_to_included(Element.ALL_EFFECT.value)    
 
     return mod
 
@@ -137,7 +136,7 @@ def scan_stage(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "stage")
 
     if is_valid_dir(root_dir):  
-        mod.add_to_included(STAGE)
+        mod.add_to_included(Element.STAGE.value)
     
     return mod
 
@@ -145,7 +144,7 @@ def scan_item(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "item")
 
     if is_valid_dir(root_dir):  
-        mod.add_to_included(ITEM)
+        mod.add_to_included(Element.ITEM.value)
 
     return mod
 
@@ -154,13 +153,13 @@ def scan_sound(mod:Mod)->Mod:
 
     if is_valid_dir(root_dir):  
         if search_dir_by_keyword(root_dir, "fighter_voice"):
-            mod.add_to_included(VOICE)
+            mod.add_to_included(Element.VOICE.value)
 
         if search_dir_by_keyword(root_dir, "fighter"):
-            mod.add_to_included(SOUND)
+            mod.add_to_included(Element.SOUND.value)
         
         if search_dir_by_keyword(root_dir, "narration"):
-            mod.add_to_included(NARRATOR)
+            mod.add_to_included(Element.NARRATOR.value)
 
     return mod
 
@@ -168,7 +167,7 @@ def scan_stream(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "stream")
 
     if is_valid_dir(root_dir):  
-        mod.add_to_included(VICTORY_THEME)
+        mod.add_to_included(Element.V_THEME.value)
 
     return mod
 
@@ -176,7 +175,7 @@ def scan_camera(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "camera")
 
     if is_valid_dir(root_dir):
-        mod.add_to_included(VICTORY_ANIMATION)
+        mod.add_to_included(Element.V_ANIMATION.value)
         
     return mod
 
@@ -190,12 +189,12 @@ def scan_ui(mod:Mod)->Mod:
             single_name = get_children_by_extension(message_dir, ".xmsbt")
 
             if len(custom_name) > 0:
-                mod.add_to_included(ALL_SLOT_NAME)
+                mod.add_to_included(Element.ALL_NAME.value)
             elif len(single_name) > 0:
-                mod.add_to_included(ONE_SLOT_NAME)
+                mod.add_to_included(Element.ONE_NAME.value)
             
         if search_dir_by_keyword(root_dir, "replace") or search_dir_by_keyword(root_dir, "replace_patch"):
-            mod.add_to_included(UI)
+            mod.add_to_included(Element.UI.value)
         
     return mod
 
@@ -211,27 +210,27 @@ def scan_mod(mod:Mod)->Mod:
     Scans mod directory and auto-fills information
     """
     def get_category(mod:Mod)->str:
-        if SKIN in mod.includes or MOTION in mod.includes or RECOLOR in mod.includes:
-            return CATEGORY_FIGHTER
-        elif STAGE in mod.includes:
-            return CATEGORY_STAGE
-        elif ONE_SLOT_EFFECT in mod.includes or ALL_SLOT_EFFECT in mod.includes:
-            return CATEGORY_EFFECTS
-        elif VOICE in mod.includes or SOUND in mod.includes or NARRATOR in mod.includes:
-            return CATEGORY_AUDIO
-        elif UI in mod.includes:
-            return CATEGORY_UI
+        if Element.SKIN.value in mod.includes or Element.MOTION.value in mod.includes or Element.RECOLOR.value in mod.includes:
+            return Category.FIGHTER.value
+        elif Element.STAGE.value in mod.includes:
+            return Category.STAGE.value
+        elif Element.ONE_EFFECT.value in mod.includes or Element.ALL_EFFECT.value in mod.includes:
+            return Category.EFFECTS.value
+        elif Element.VOICE.value in mod.includes or Element.SOUND.value in mod.includes or Element.NARRATOR.value in mod.includes:
+            return Category.AUDIO.value
+        elif Element.UI.value in mod.includes:
+            return Category.UI.value
         else:
-            return CATEGORY_MISC
+            return Category.MISC.value
         
     def check_includes(includes:list[str])->list[str]:
         output_arr = includes
-        if SKIN in output_arr and RECOLOR in output_arr:
-            output_arr.remove(SKIN)
-        if ALL_SLOT_EFFECT in output_arr and ONE_SLOT_EFFECT in output_arr:
-            output_arr.remove(ONE_SLOT_EFFECT)
-        if ALL_SLOT_NAME in output_arr and ONE_SLOT_NAME in output_arr:
-            output_arr.remove(ONE_SLOT_NAME)
+        if Element.SKIN.value in output_arr and Element.RECOLOR.value in output_arr:
+            output_arr.remove(Element.SKIN.value)
+        if Element.ALL_EFFECT.value in output_arr and Element.ONE_EFFECT.value in output_arr:
+            output_arr.remove(Element.ONE_EFFECT.value)
+        if Element.ALL_NAME.value in output_arr and Element.ONE_NAME.value in output_arr:
+            output_arr.remove(Element.ONE_NAME.value)
         return output_arr
 
     mod.characters = []

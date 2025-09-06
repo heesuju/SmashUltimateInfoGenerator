@@ -1,11 +1,15 @@
 import sys
 from PyQt6.QtWidgets import QApplication
 import qdarktheme
-from src.ui.main_widget import MainWidget
+
+from src.ui.main_menu import MainMenu
+from src.managers.config_manager import ConfigManager
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    qdarktheme.setup_theme("dark")
-    window = MainWidget()
+    config_manager = ConfigManager()
+
+    qdarktheme.setup_theme(str(config_manager.config.theme))
+    window = MainMenu(config_manager)
     window.show()
     sys.exit(app.exec())

@@ -1,2 +1,0 @@
-DARK = "dark"
-LIGHT = "light"
