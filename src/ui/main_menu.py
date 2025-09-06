@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QWidget
-from src.ui.mod_list_widget import ModListWidget
+
+from src.ui.mod_list import ModList
 from src.ui.filter_panel import Filter
 from src.ui.preview_panel import Preview
 from src.ui.edit_panel import EditPanel
@@ -7,7 +8,7 @@ from src.ui.config_panel import Config
 from src.ui.components.navigation import Navigation, NavigationMenu
 from src.ui.components.layout import HBox, VBox
 from src.models.mod import Mod
-from src.managers.asset_manager import NavigationMenuIcon
+from src.managers.data_manager import NavigationMenuIcon
 from src.managers.config_manager import ConfigManager
 from src.managers.mod_manager import ModManager
 
@@ -23,7 +24,7 @@ class MainMenu(QWidget):
         vlayout = VBox()
         hlayout = HBox()
 
-        self.list_widget = ModListWidget(mod_manager=self.mod_manager)
+        self.list_widget = ModList(mod_manager=self.mod_manager)
         self.filter = Filter()
         self.preview = Preview()
         self.edit = EditPanel()

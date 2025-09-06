@@ -20,8 +20,8 @@ from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
 from src.ui.components.layout import HBox, VBox
 from src.ui.components.checkbox_group import CheckboxGroup
 from src.constants.styles import MAIN_BUTTON
-from src.constants.ui import ButtonIcons
-from src.constant import Theme
+from src.managers.data_manager import ButtonIcons
+from src.constants.enums import Theme
 from src.managers.config_manager import ConfigManager
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.input_button_widget import InputButtonWidget, InputButton

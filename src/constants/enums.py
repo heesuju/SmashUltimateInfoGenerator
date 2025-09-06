@@ -1,10 +1,5 @@
 from enum import Enum
 
-TITLE_FONT = "Arial"
-TITLE_FONT_SIZE = 10
-BODY_FONT = "Arial"
-BODY_FONT_SIZE = 8
-
 class BaseEnum(Enum):
     def __str__(self):
         return str(self.value)
@@ -16,6 +11,10 @@ class BaseEnum(Enum):
 class Theme(BaseEnum):
     DARK = "dark"
     LIGHT = "light"
+
+class ModListMode(BaseEnum):
+    LIST = "list"
+    GRID = "grid"
 
 class Category(BaseEnum):
     FIGHTER = "Fighter"

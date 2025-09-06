@@ -1,6 +1,6 @@
 from enum import Enum
 import os
-from src.constants import Character
+from src.constants.enums import Character
 
 ICON_PATH = "assets/icons"
 
@@ -9,6 +9,7 @@ class NavigationMenuIcon(Enum):
     CONFIG = "assets/icons/menu/config_32.png"
     FILTER = "assets/icons/menu/filter_32.png"
     EDIT = "assets/icons/menu/edit_32.png"
+    NONE = ""
 
 class ButtonIcons(Enum):
     SEARCH = "assets/icons/buttons/search_16.png"
@@ -23,12 +24,15 @@ class ButtonIcons(Enum):
     DISABLE = "assets/icons/buttons/off.png"
     MENU = "assets/icons/buttons/ellipsis.png"
 
-class AssetManager:
+class DataManager:
     @staticmethod
-    def get_character_icon(character:Character) -> str:
+    def get_character_icon(character:str) -> str:
         return os.path.join(ICON_PATH, "characters", f"{str(character)}.png")
 
     @staticmethod
     def get_character_icons(character_names: list[Character]) -> list[str]:
-        return [AssetManager.get_character_icon(name) for name in character_names]
+        return [DataManager.get_character_icon(name) for name in character_names]
     
+    @staticmethod
+    def get_character_series(character:Character=None):
+        pass

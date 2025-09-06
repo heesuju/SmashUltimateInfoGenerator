@@ -3,9 +3,8 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QPixmap, QIntValidator, QFont, QCursor, QIcon
 from PyQt6.QtCore import Qt
-from src.constants.ui_params import PAD_H
+from src.constants.ui_params import SPACING
 from assets import ICON_PATH
-from src.ui.base import get_text, set_text, clear_text, validate_page
 from src.utils.common import clamp
 import math
 import os
@@ -54,7 +53,7 @@ class Paging(QWidget):
         self.btn_left.clicked.connect(self.prev_page)
 
         left_layout.addWidget(label_page)
-        left_layout.addSpacing(PAD_H)
+        left_layout.addSpacing(SPACING)
         left_layout.addWidget(self.entry_page)
         left_layout.addStretch(1)
         left_layout.addWidget(self.btn_left)
@@ -90,7 +89,7 @@ class Paging(QWidget):
 
         right_layout.addWidget(self.btn_right)
         right_layout.addStretch(1)
-        right_layout.addSpacing(PAD_H)
+        right_layout.addSpacing(SPACING)
         right_layout.addWidget(label_size)
         
         right_layout.addWidget(self.entry_size)
@@ -106,8 +105,8 @@ class Paging(QWidget):
         self.setGraphicsEffect(effect)
 
     def clear(self):
-        clear_text(self.entry_size)
-        clear_text(self.entry_page)
+        self.entry_size.setText("")
+        self.entry_page.setText("")
         for i in reversed(range(self.paging_layout.count())):
             widget = self.paging_layout.itemAt(i).widget()
             if widget:
@@ -142,8 +141,9 @@ class Paging(QWidget):
     def change_page(self, number):
         self.cur_page = number
         self.show_paging()
+        self.entry_page.setText(str(self.cur_page))
         if self.callback:
-            self.callback()
+            self.callback(self.cur_page, self.page_size)
 
     def next_page(self):
         self.cur_page = clamp(self.cur_page+1, 1, self.total_pages)
@@ -157,8 +157,8 @@ class Paging(QWidget):
         self.total_pages = math.ceil(num/self.page_size)
         self.show_paging()
         start, end = self.get_range(num)
-        set_text(self.entry_page, self.cur_page)
-        set_text(self.entry_size, self.page_size)
+        self.entry_page.setText(str(self.cur_page))
+        self.entry_size.setText(str(self.page_size))
         return start, end
 
     def get_range(self, num:int):
@@ -167,18 +167,18 @@ class Paging(QWidget):
         return start, end
 
     def on_page_submitted(self):
-        new_page = get_text(self.entry_page)
+        new_page = self.entry_page.text()
         if new_page:
             page_num = int(new_page)
             self.cur_page = clamp(page_num, 1, self.total_pages)
             self.change_page(self.cur_page)
 
     def on_size_submitted(self):
-        page_size = get_text(self.entry_size)
+        page_size = self.entry_size.text()
         if page_size:
             num = int(page_size)
             self.page_size = clamp(num, 1, 100)
-            set_text(self.entry_size, self.page_size)
+            self.entry_size.setText(str(self.page_size))
             self.change_page(1)
 
 

@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
 )
 
 from src.ui.components.layout import HBox, VBox
-from src.managers.asset_manager import ButtonIcons
+from src.managers.data_manager import ButtonIcons
 
 ICON_ELLIPSIS = "assets/img/search.png"
 

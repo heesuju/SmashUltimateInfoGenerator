@@ -1,6 +1,6 @@
 from typing import List
 from pydantic import BaseModel
-from src.constants.ui import Theme
+from src.constants.enums import Theme
 
 class NameRules(BaseModel):
     cap_slots:bool=True

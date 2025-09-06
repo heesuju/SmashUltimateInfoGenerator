@@ -18,7 +18,7 @@ from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
 from src.ui.components.layout import HBox, VBox
 from src.ui.components.checkbox_group import CheckboxGroup
-from src.constant import Category, Element
+from src.constants.enums import Category, Element
 from src.constants.styles import MAIN_BUTTON
 
 WIDTH = 300

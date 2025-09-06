@@ -13,7 +13,7 @@ from src.utils.csv_helper import csv_to_dict
 from src.utils.string_helper import str_to_int
 from src.models.mod import Mod
 from src.models.character import Character
-from src.constant import Category, Element
+from src.constants.enums import Category, Element
 from .formatting import (
     format_slots,
     get_mod_name,

@@ -7,7 +7,7 @@ from PyQt6.QtWidgets import (
     QLineEdit
 )
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon
-from src.constants.ui import ButtonIcons
+from src.managers.data_manager import ButtonIcons
 
 class InputButton(BaseModel):
     text:str=""

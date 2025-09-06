@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QColor, QPalette
 from src.ui.components.layout import HBox, VBox
 from src.ui.components.menu_button import MenuButton
-from src.constants.ui import MenuIcons
+from src.managers.data_manager import NavigationMenuIcon
 
 WIDTH = 60
 from typing import List, Optional, Callable
@@ -16,13 +16,12 @@ class NavigationMenu():
     def __init__(self, icon:str, widget:QWidget, callback:Optional[Callable] = None):
         self.icon = icon
         self.widget = widget
-        self.callback = callback
-        
+        self.callback = callback       
 
 class Navigation(QWidget):
     def __init__(self, menus:List[List[NavigationMenu]]):
         super().__init__()
-        self.selected_menu = MenuIcons.NONE
+        self.selected_menu = NavigationMenuIcon.NONE
         layout = VBox()
         self.menus:List[NavigationMenu] = []
         self.setLayout(layout)
@@ -41,8 +40,8 @@ class Navigation(QWidget):
 
         for n, group in enumerate(menus):
             for menu in group:
-                button = MenuButton(MenuIcons(menu.icon).value, WIDTH, WIDTH, self)
-                button.clicked.connect(partial(self.on_clicked, MenuIcons(menu.icon)))
+                button = MenuButton(NavigationMenuIcon(menu.icon).value, WIDTH, WIDTH, self)
+                button.clicked.connect(partial(self.on_clicked, NavigationMenuIcon(menu.icon)))
                 frame_layout.addWidget(button)
                 self.menus.append(menu)
 
@@ -54,11 +53,11 @@ class Navigation(QWidget):
                                  border-radius: 0px;
                                  }""")
         
-    def on_clicked(self, menu:MenuIcons):
+    def on_clicked(self, menu:NavigationMenuIcon):
         if self.selected_menu != menu:
             self.selected_menu = menu
         else:
-            self.selected_menu = MenuIcons.NONE
+            self.selected_menu = NavigationMenuIcon.NONE
 
         for item in self.menus:
             if item.icon == self.selected_menu.value:

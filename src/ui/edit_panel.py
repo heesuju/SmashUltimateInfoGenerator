@@ -21,7 +21,7 @@ from src.ui.components.layout import HBox, VBox
 from src.ui.components.checkbox_group import CheckboxGroup
 from src.constants.styles import MAIN_BUTTON
 from src.ui.components.side_panel import SidePanel
-from src.constants import Category, Element
+from src.constants.enums import Category, Element
 from src.ui.components.input_button_widget import InputButtonWidget, InputButton
 
 class EditPanel(SidePanel):

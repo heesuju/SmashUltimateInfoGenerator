@@ -50,3 +50,9 @@ class GridList(QListWidget):
 
     def on_item_clicked(self, item):
         print(f"Item clicked: {item}")
+
+    def clear_items(self):
+        """
+        Removes all items from the grid widget.
+        """
+        self.clear()

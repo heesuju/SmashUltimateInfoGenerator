@@ -20,7 +20,7 @@ from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPainterPath, QImage, QBrush, 
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt, QRect, QSize
 from src.ui.components.layout import HBox, VBox
-from src.managers.asset_manager import ButtonIcons
+from src.managers.data_manager import ButtonIcons
 
 class CustomTreeWidget(QTreeWidget):
     def __init__(self):
@@ -114,3 +114,9 @@ class TreeList(QWidget):
 
     def on_item_clicked(self, item, column):
         print(f"Item clicked: {item.text(0)} in column {column}")
+
+    def clear_items(self):
+        """
+        Removes all items from the tree widget.
+        """
+        self.tree_widget.clear()
