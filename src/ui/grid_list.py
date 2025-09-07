@@ -11,12 +11,14 @@ from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
 from PyQt6.QtGui import QPixmap, QColor, QPalette
 from src.ui.grid_item import GridListItem
 from PyQt6.QtWidgets import QListWidget, QListView, QStyledItemDelegate, QStyleOptionViewItem, QGraphicsDropShadowEffect, QSizePolicy, QStyle
-from src.models.mod import Mod
+from src.models.mod import Mod, ModItem
 from src.managers.data_manager import ButtonIcons, DataManager
+from src.managers.mod_manager import ModManager
 
 class GridList(QListWidget):
-    def __init__(self):
+    def __init__(self, mod_manager:ModManager):
         super().__init__()
+        self.mod_manager =mod_manager
         self.setStyleSheet("QListWidget"
                                   "{"
                                   "border : none;"
@@ -43,14 +45,8 @@ class GridList(QListWidget):
         # self.setAutoFillBackground(True)
         self.itemClicked.connect(self.on_item_clicked)
 
-    def add_item(self, mod:Mod):
-        item = GridListItem(
-            mod.thumbnail, 
-            mod.mod_name, 
-            mod.authors, 
-            DataManager.get_character_icons([character for character in mod.get_grouped_character_keys()]))
-        self.addItem(item)
-        self.setItemWidget(item, item.widget)
+    def add_item(self, mod:ModItem):
+        item = GridListItem(self,mod)
 
     def on_item_clicked(self, item):
         print(f"Item clicked: {item}")

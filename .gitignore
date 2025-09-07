@@ -5,3 +5,4 @@ thumbnails/
 .venv
 presets
 .env
+data/cache/log/*

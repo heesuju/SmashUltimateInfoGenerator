@@ -5,15 +5,17 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import (
     QPixmap, QIcon
 )
+from PyQt6.QtCore import QSize
 
 from src.ui.components.layout import HBox
 from src.constants.styles import BORDERLESS_BUTTON
 
 class ToggleButton(QFrame):
-    def __init__(self, a:str, b:str, callback_a:Callable=None, callback_b:Callable=None):
+    def __init__(self, a:str, b:str, callback_a:Callable=None, callback_b:Callable=None, size:int=0):
         super().__init__()
         
         self.setContentsMargins(0,0,0,0)
+        
         self.setFrameShape(QFrame.Shape.NoFrame)
         self.setAutoFillBackground(True)
 
@@ -32,6 +34,11 @@ class ToggleButton(QFrame):
 
         self.button_a = QPushButton()
         self.button_b = QPushButton()
+
+        if size > 0:
+            self.button_a.setFixedSize(QSize(size, size))
+            self.button_b.setFixedSize(QSize(size, size))
+
         icon_a = QIcon(QPixmap(a))
         icon_b = QIcon(QPixmap(b))
         self.button_a.setIcon(icon_a)
@@ -45,7 +52,10 @@ class ToggleButton(QFrame):
         self.button_b.show()
 
         frame_layout.addWidget(self.button_a)
-        frame_layout.addWidget(self.button_b)        
+        frame_layout.addWidget(self.button_b)     
+
+        
+        self.setFixedSize(self.sizeHint())   
 
     def on_a_clicked(self, event):
         self.button_a.hide()

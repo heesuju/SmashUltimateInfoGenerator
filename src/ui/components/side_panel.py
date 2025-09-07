@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
 from PyQt6.QtGui import QFont
-from src.ui.components.layout import VBox
+from src.ui.components.layout import VBox, HBox
 
 FONT = "Arial"
 FONT_SIZE = 10
@@ -24,11 +24,8 @@ class SidePanel(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         
         self.frame = QFrame()
-        self.frame.setFrameShape(QFrame.Shape.Box)
+        self.frame.setFrameShape(QFrame.Shape.NoFrame)
         self.frame.setAutoFillBackground(True)
-        self.frame.setStyleSheet("""QFrame {
-                                 border-radius: 0px;
-                                 }""")
         self.root = VBox(margin=10, spacing=10)
         self.frame.setLayout(self.root)
 
@@ -43,14 +40,19 @@ class SidePanel(QWidget):
         line.setFrameShadow(QFrame.Shadow.Sunken)  # optional, makes it look recessed
         self.root.addWidget(line)
         
+        self.header = HBox(margin=0, spacing=10)
+        self.root.addLayout(self.header)
+
         scroll = QScrollArea()
-        scroll.setStyleSheet("QScrollArea { border-radius: 0px; border: none; }")
+        scroll.setStyleSheet("QScrollArea { border: none; }")
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)  # Disable horizontal scroll
         self.root.addWidget(scroll, stretch=1)
 
         self.body_frame = QFrame()
-        self.body_frame.setStyleSheet("QFrame { border-radius: 0px; border: 0px; }")
+        self.body_frame.setStyleSheet("QFrame { border: 0px; }")
+        self.body_frame.setContentsMargins(0,0,0,0)
+        self.body_frame.setFrameShape(QFrame.Shape.NoFrame)
         self.body = VBox(margin=0, spacing=10)
         self.body_frame.setLayout(self.body)
         scroll.setWidget(self.body_frame)

@@ -23,11 +23,12 @@ from src.constants.styles import MAIN_BUTTON
 from src.ui.components.side_panel import SidePanel
 from src.constants.enums import Category, Element
 from src.ui.components.input_button_widget import InputButtonWidget, InputButton
+from src.managers.mod_manager import ModManager
 
 class EditPanel(SidePanel):
-    def __init__(self):
+    def __init__(self, mod_manager:ModManager):
         super().__init__("Edit")
-        
+        self.mod_manager = mod_manager
         thumbnail = QLabel()
         preview_dir = "assets/img/preview.webp"
         preview_img = QPixmap(preview_dir).scaled(314, 314, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)

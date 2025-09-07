@@ -14,6 +14,7 @@ from PyQt6.QtCore import QPropertyAnimation
 from src.ui.components.image_overlay import ImageOverlayWidget
 from src.ui.components.layout import HBox, VBox
 from src.ui.grid_item_button import Overlay
+from src.models.mod import Mod, ModItem
 
 ICON_ELLIPSIS = "assets/icons/ui/ellipsis.png"
 ICON_FAVORITE = "assets/icons/menu/favorite.png"
@@ -22,20 +23,19 @@ ICON_OFF = "assets/icons/cartridge_off"
 ICON_ON = "assets/icons/cartridge_off"
 
 class GridListItem(QListWidgetItem):
-    def __init__(self, image_path:str, name:str, author:str, characters:list[str], height:int=80):
+    def __init__(self, parent, mod:ModItem, height:int=80):
         super().__init__()
-        
-        self.widget = GridListItemWidget(image_path, name, author, characters, height)
+        self.parent = parent
+        self.mod=mod
+        self.widget = GridListItemWidget(self.mod, height)
         self.setSizeHint(QSize(350, 110))
-        # self.setData(Qt.ItemDataRole.UserRole, characters)
-
+        parent.addItem(self)
+        parent.setItemWidget(self, self.widget)
 
 class GridListItemWidget(QWidget):
-    def __init__(self, image_path:str, name:str, author:str, characters:list[str], height:int=80):
+    def __init__(self, mod:ModItem, height:int=80):
         super().__init__()
-        self._animation = None
-        self._animation_started = False
-        self.image_path = image_path
+        self.image_path = mod.thumbnail
         layout = QHBoxLayout()
         self.setLayout(layout)
 
@@ -70,17 +70,17 @@ class GridListItemWidget(QWidget):
         frame_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
         info_layout.addStretch(1)
-        line_text = QLabel(name)
+        line_text = QLabel(mod.name)
         
         line_text.setAlignment(Qt.AlignmentFlag.AlignLeft)  # Align text to the left
 
-        author_text = QLabel(author)
+        author_text = QLabel(mod.authors)
         
         author_text.setAlignment(Qt.AlignmentFlag.AlignLeft)  # Align text to the left
 
         info_layout.addWidget(line_text)
         info_layout.addWidget(author_text)
-        slot_text = QLabel("C01-04")
+        slot_text = QLabel(mod.slots)
         slot_text.setAlignment(Qt.AlignmentFlag.AlignLeft)  # Align text to the left
         info_layout.addWidget(slot_text)
 
@@ -97,7 +97,7 @@ class GridListItemWidget(QWidget):
         
         info_layout.addStretch(1)
         
-        for char_img in characters:
+        for char_img in mod.character_icons:
             img_label = QLabel()
             char_icon = QPixmap(char_img).scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             img_label.setPixmap(char_icon)
@@ -131,7 +131,7 @@ class GridListItemWidget(QWidget):
         
         right_layout.addStretch(1)
 
-        version_text = QLabel("1.0.0")
+        version_text = QLabel(mod.version)
         version_text.setAlignment(Qt.AlignmentFlag.AlignRight)  # Align text to the left
         right_layout.addWidget(version_text)
 
@@ -147,10 +147,6 @@ class GridListItemWidget(QWidget):
         # Apply shadow effect to the widget
         self.frame.setGraphicsEffect(shadow)
         layout.addWidget(self.frame)
-        
-        # self.setSizeHint(QSize(340, height))
-        # self.widget.setLayout(item_layout)
-        # self.setData(Qt.ItemDataRole.UserRole, characters)
 
     def mousePressEvent(self, event):
         # self.frame.setStyleSheet(self.selected_style)
@@ -169,19 +165,3 @@ class GridListItemWidget(QWidget):
         # self.frame.setStyleSheet(self.default_style)
         
         super().mouseReleaseEvent(event)
-
-        
-    def showEvent(self, event):
-        super().showEvent(event)
-        # if not self._animation_started:
-        #     self._animation_started = True
-        #     # Animate in when the widget is shown
-        #     effect = QGraphicsOpacityEffect(self)
-        #     self.setGraphicsEffect(effect)
-        #     effect.setOpacity(0.0)
-        #     animation = QPropertyAnimation(effect, b"opacity")
-        #     animation.setDuration(600)
-        #     animation.setStartValue(0.0)
-        #     animation.setEndValue(1.0)
-        #     animation.start()
-        #     self._animation = animation

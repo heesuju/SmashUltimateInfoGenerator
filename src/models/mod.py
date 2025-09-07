@@ -3,11 +3,23 @@ mod.py: model class for each mod
 """
 
 from pydantic import BaseModel
-
-from src.constants.enums import Fighter, Category, Wifi
+from typing import List
+from src.constants.enums import Fighter, Category, Wifi, Element
 from src.managers.data_manager import DataManager
 
 EXCLUDED_KEYS = {"folder_name", "path", "thumbnail", "hash", "contains_info", "is_selected"}
+
+class ModItem(BaseModel):
+    id:str = ""
+    thumbnail:str = ""
+    name:str = ""
+    category:str = ""
+    authors:str = ""
+    slots:str = ""
+    version:str = "1.0.0"
+    enabled:bool = False
+    selected:bool = False
+    character_icons:List[str] = []
 
 class Character(BaseModel):    
     fighter:Fighter = None
@@ -27,11 +39,11 @@ class Mod(BaseModel):
     thumbnail:str = ""
     hash:str = ""
     characters:list[Character] = []
-    includes:list[str] = []
+    includes:list[Element] = []
     contains_info:bool = False
     is_selected:bool = False
 
-    def add_to_included(self, element:str)->None:
+    def add_to_included(self, element:Element)->None:
         if element not in self.includes:
             self.includes.append(element)
 
@@ -49,6 +61,13 @@ class Mod(BaseModel):
     def get_character_keys(self) -> list[str]:
         return [str(character.fighter) for character in self.characters]
     
+    def get_character_slots(self)->list[int]:
+        slots = []
+        for character in self.characters:
+            slots.extend(character.slots)
+        slots = list(set(slots))
+        return slots
+
     def get_grouped_character_keys(self)->list[str]:
         keys = self.get_character_keys()
         

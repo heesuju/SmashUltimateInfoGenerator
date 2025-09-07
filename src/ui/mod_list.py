@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 import os
 from typing import List
 from PyQt6.QtCore import QTimer
@@ -7,11 +8,11 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import (
     QPixmap, QIcon, QFont
 )
-
+from src.core.formatting import format_slots
 from src.ui.components.layout import HBox, VBox
 from src.ui.grid_list import GridList
 from src.ui.tree_list import TreeList
-from src.models.mod import Mod
+from src.models.mod import Mod, ModItem
 from src.ui.components.toggle_button import ToggleButton
 from src.ui.components.paging import Paging
 from src.ui.search_bar import SearchBar
@@ -20,10 +21,11 @@ from src.managers.mod_manager import ModManager
 from src.constants.enums import Fighter, ListLayout
 from src.managers.data_manager import ButtonIcons, DataManager
 from src.managers.filter_manager import FilterManager, FilterParameters
+from src.managers.config_manager import ConfigManager
 from src.constants.ui_params import SPACING, GRID_PAGE_SIZE, LIST_PAGE_SIZE
 
 class ModList(QWidget):
-    def __init__(self, mod_manager:ModManager, filter_manager:FilterManager):
+    def __init__(self, mod_manager:ModManager, filter_manager:FilterManager, config_manager:ConfigManager):
         super().__init__()
         self.mod_manager = mod_manager
         
@@ -31,6 +33,8 @@ class ModList(QWidget):
         
         self.filter_manager = filter_manager
         self.filter_manager.add_callback(self.set_data)
+        self.config_manager = config_manager
+
         self.mode = ListLayout.LIST
         
         layout = VBox()
@@ -51,8 +55,8 @@ class ModList(QWidget):
         layout.addWidget(self.frame)
         
         # init mod list
-        self.grid_list = GridList()
-        self.tree_list = TreeList()
+        self.grid_list = GridList(self.mod_manager)
+        self.tree_list = TreeList(self.mod_manager)
 
         self.search = SearchBar(self.mod_manager, self.filter_manager)
         self.frame_layout.addWidget(self.search)
@@ -101,7 +105,7 @@ class ModList(QWidget):
         self.body_layout.addWidget(self.grid_list)
         self.paging.cur_page = 1
         self.paging.page_size = GRID_PAGE_SIZE
-        self.paging.update(len(self.mod_manager.mods))
+        self.paging.update(len(self.mod_manager.get_mods()))
         self.set_data()
         
     def on_list_selected(self):
@@ -120,7 +124,7 @@ class ModList(QWidget):
         self.set_data()
 
     def set_data(self):
-        mods = self.mod_manager.mods
+        mods = self.mod_manager.get_mods()
         if self.filter_manager:
             mods = self.filter_manager.apply_filters(mods)
         self.paging.update(len(mods))
@@ -143,15 +147,32 @@ class ModList(QWidget):
         self._populate_mods = paged_mods
         self._populate_active = True
 
+        def process(mod:Mod)->ModItem:
+            keys = mod.get_grouped_character_keys()
+            character_icons = DataManager.get_character_icons([character for character in keys])
+
+            return ModItem(
+                id=str(mod.hash),
+                name=mod.mod_name,
+                thumbnail=mod.thumbnail,
+                category=str(mod.category),
+                authors=mod.authors,
+                slots=format_slots(mod.get_character_slots(), self.config_manager.config.name_rules.cap_slots),
+                version=mod.version,
+                enabled=False,
+                selected=False,
+                character_icons=character_icons
+            )
+
         def add_next():
             if not self._populate_active or self._populate_index is None or self._populate_mods is None:
                 return  # Stop if cancelled or cleared
             if self._populate_index < len(self._populate_mods):
                 mod = self._populate_mods[self._populate_index]
                 if self.mode == ListLayout.LIST:
-                    self.tree_list.add_item(mod)
+                    self.tree_list.add_item(process(mod))
                 elif self.mode == ListLayout.GRID:
-                    self.grid_list.add_item(mod)
+                    self.grid_list.add_item(process(mod))
                 self._populate_index += 1
                 QTimer.singleShot(0, add_next)
             else:

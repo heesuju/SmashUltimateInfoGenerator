@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import QWidget
 
 from src.ui.mod_list import ModList
-from src.ui.filter_panel import Filter
-from src.ui.preview_panel import Preview
+from src.ui.filter_panel import FilterPanel
+from src.ui.preview_panel import PreviewPanel
 from src.ui.edit_panel import EditPanel
 from src.ui.config_panel import Config
 from src.ui.components.navigation import Navigation, NavigationMenu
@@ -20,16 +20,16 @@ class MainMenu(QWidget):
         self.mod_manager = ModManager(config_manager)
         self.filter_manager = FilterManager()
         self.setWindowTitle("SmashGen")
-        self.setGeometry(100, 100, 1200, 800)
+        self.setGeometry(100, 100, 1400, 800)
         
         layout = HBox()
         vlayout = VBox()
         hlayout = HBox()
 
-        self.list_widget = ModList(self.mod_manager, self.filter_manager)
-        self.filter = Filter(self.filter_manager)
-        self.preview = Preview()
-        self.edit = EditPanel()
+        self.list_widget = ModList(self.mod_manager, self.filter_manager, self.config_manager)
+        self.filter = FilterPanel(self.filter_manager)
+        self.preview = PreviewPanel(self.mod_manager)
+        self.edit = EditPanel(self.mod_manager)
         self.config = Config(config_manager)
 
         self.filter.hide()

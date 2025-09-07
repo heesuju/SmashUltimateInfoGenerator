@@ -19,8 +19,8 @@ from src.ui.components.layout import HBox, VBox
 from src.managers.data_manager import ButtonIcons
 
 from src.ui.tree_item import TreeItem
-from src.models.mod import Mod
-
+from src.models.mod import Mod, ModItem
+from src.managers.mod_manager import ModManager
 
 class CustomTreeWidget(QTreeWidget):
     def __init__(self):
@@ -53,8 +53,9 @@ class CustomDelegate(QStyledItemDelegate):
         return size
     
 class TreeList(QWidget):
-    def __init__(self):
+    def __init__(self, mod_manager:ModManager):
         super().__init__()
+        self.mod_manager=mod_manager
         self.animations = []
         self.setStyleSheet("QListWidget"
                                   "{"
@@ -100,7 +101,7 @@ class TreeList(QWidget):
         self.setLayout(layout)
         self.tree_widget.itemClicked.connect(self.on_item_clicked)
 
-    def add_item(self, mod:Mod):
+    def add_item(self, mod:ModItem):
         item = TreeItem(self.tree_widget, mod, None, None)
 
     def on_item_toggled(self, name, btn):
@@ -108,7 +109,8 @@ class TreeList(QWidget):
         btn.setIcon(QIcon(QPixmap(ButtonIcons.DISABLE.value)))
 
     def on_item_clicked(self, item, column):
-        print(f"Item clicked: {item.text(0)} in column {column}")
+        print(f"Item clicked: {item.mod.name} in column {column}")
+        self.mod_manager.set_selection(item.mod.id)
 
     def clear(self):
         """

@@ -21,11 +21,15 @@ class ButtonIcons(Enum):
     EDIT = "assets/icons/buttons/edit_16.png"
     GRID = "assets/icons/buttons/grid.png"
     LIST = "assets/icons/buttons/list.png"
-    FAVORITE = "assets/icons/buttons/favorite_16.png"
+    FAV_ON = "assets/icons/buttons/fav_on_16.png"
+    FAV_OFF = "assets/icons/buttons/fav_off_16.png"
+    VIS_ON = "assets/icons/buttons/vis_on_16.png"
+    VIS_OFF = "assets/icons/buttons/vis_off_16.png"
+    HIDE = "assets/icons/buttons/favorite_16.png"
     BROWSE = "assets/icons/buttons/browse_16.png"
     ENABLE = "assets/icons/buttons/on.png"
     DISABLE = "assets/icons/buttons/off.png"
-    MENU = "assets/icons/buttons/ellipsis.png"
+    MENU = "assets/icons/buttons/menu_16.png"
 
 class DataManager:
     @staticmethod

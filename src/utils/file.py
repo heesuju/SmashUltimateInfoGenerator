@@ -3,6 +3,9 @@ file.py: contains various methods for handling file related tasks
 """
 
 import os
+import platform
+import subprocess
+import os
 import json
 import shutil
 import random
@@ -186,3 +189,11 @@ def copy_file(src:str, dst:str)->bool:
             return True
     
     return False
+
+def open_folder(path: str):
+    if platform.system() == "Windows":
+        os.startfile(path)  # Only works on Windows
+    elif platform.system() == "Darwin":  # macOS
+        subprocess.Popen(["open", path])
+    else:  # Linux and other Unix-like
+        subprocess.Popen(["xdg-open", path])

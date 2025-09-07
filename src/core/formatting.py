@@ -38,7 +38,7 @@ def format_display_name(characters:str, slots:str, mod_name:str, category:str):
 def format_character_names(characters:list[str]):
     return ", ".join(sorted(characters))
 
-def format_slots(slots:list[int]):
+def format_slots(slots:list[int], is_cap:bool=True):
     if len(slots) <= 0:
         return ""
     
@@ -68,8 +68,7 @@ def format_slots(slots:list[int]):
             out_str += "," + item
     
     slot_prefix = "C"
-    loaded_config = load_config()
-    is_cap = loaded_config.is_slot_capped
+    
     if is_cap == False:
         slot_prefix = "c"
         

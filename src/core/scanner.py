@@ -71,7 +71,7 @@ def scan_character(mod:Mod)->Mod:
                         if slot not in character.slots:
                             character.slots.append(slot)   
                 if found_model == False:
-                    mod.add_to_included(Element.RECOLOR.value)
+                    mod.add_to_included(Element.RECOLOR)
 
         if name in eff_fighters:
             path = os.path.join(effect_dir, name)
@@ -94,14 +94,14 @@ def scan_fighter(mod:Mod)->Mod:
         return mod
 
     if search_dir_by_keyword(root_dir, "model"):
-        if Element.RECOLOR.value not in mod.includes:
-            mod.add_to_included(Element.SKIN.value)
+        if Element.RECOLOR not in mod.includes:
+            mod.add_to_included(Element.SKIN)
 
     if search_dir_by_keyword(root_dir, "motion"):
-        mod.add_to_included(Element.MOTION.value)
+        mod.add_to_included(Element.MOTION)
 
     if "kirby" in mod.display_name == False and search_dir_by_keyword(root_dir, "kirby"):
-        mod.add_to_included(Element.KIRBY_HAT.value)       
+        mod.add_to_included(Element.KIRBY_HAT)       
 
     return mod
 
@@ -113,13 +113,13 @@ def scan_effect(mod:Mod)->Mod:
 
     for file in get_children_by_extension(root_dir, ".eff"):
         if search_files_for_pattern(file, r"c\d+"):
-            mod.add_to_included(Element.ONE_EFFECT.value)
+            mod.add_to_included(Element.ONE_EFFECT)
         else:
-            mod.add_to_included(Element.ALL_EFFECT.value)
+            mod.add_to_included(Element.ALL_EFFECT)
         break
     
-    if Element.ALL_EFFECT.value not in mod.includes and Element.ONE_EFFECT.value not in mod.includes:
-        mod.add_to_included(Element.ALL_EFFECT.value)    
+    if Element.ALL_EFFECT not in mod.includes and Element.ONE_EFFECT not in mod.includes:
+        mod.add_to_included(Element.ALL_EFFECT)    
 
     return mod
 
@@ -127,7 +127,7 @@ def scan_stage(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "stage")
 
     if is_valid_dir(root_dir):  
-        mod.add_to_included(Element.STAGE.value)
+        mod.add_to_included(Element.STAGE)
     
     return mod
 
@@ -135,7 +135,7 @@ def scan_item(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "item")
 
     if is_valid_dir(root_dir):  
-        mod.add_to_included(Element.ITEM.value)
+        mod.add_to_included(Element.ITEM)
 
     return mod
 
@@ -144,13 +144,13 @@ def scan_sound(mod:Mod)->Mod:
 
     if is_valid_dir(root_dir):  
         if search_dir_by_keyword(root_dir, "fighter_voice"):
-            mod.add_to_included(Element.VOICE.value)
+            mod.add_to_included(Element.VOICE)
 
         if search_dir_by_keyword(root_dir, "fighter"):
-            mod.add_to_included(Element.SOUND.value)
+            mod.add_to_included(Element.SOUND)
         
         if search_dir_by_keyword(root_dir, "narration"):
-            mod.add_to_included(Element.NARRATOR.value)
+            mod.add_to_included(Element.NARRATOR)
 
     return mod
 
@@ -158,7 +158,7 @@ def scan_stream(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "stream")
 
     if is_valid_dir(root_dir):  
-        mod.add_to_included(Element.V_THEME.value)
+        mod.add_to_included(Element.V_THEME)
 
     return mod
 
@@ -166,7 +166,7 @@ def scan_camera(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "camera")
 
     if is_valid_dir(root_dir):
-        mod.add_to_included(Element.V_ANIMATION.value)
+        mod.add_to_included(Element.V_ANIMATION)
         
     return mod
 
@@ -180,12 +180,12 @@ def scan_ui(mod:Mod)->Mod:
             single_name = get_children_by_extension(message_dir, ".xmsbt")
 
             if len(custom_name) > 0:
-                mod.add_to_included(Element.ALL_NAME.value)
+                mod.add_to_included(Element.ALL_NAME)
             elif len(single_name) > 0:
-                mod.add_to_included(Element.ONE_NAME.value)
+                mod.add_to_included(Element.ONE_NAME)
             
         if search_dir_by_keyword(root_dir, "replace") or search_dir_by_keyword(root_dir, "replace_patch"):
-            mod.add_to_included(Element.UI.value)
+            mod.add_to_included(Element.UI)
         
     return mod
 
@@ -201,27 +201,27 @@ def scan_mod(mod:Mod)->Mod:
     Scans mod directory and auto-fills information
     """
     def get_category(mod:Mod)->str:
-        if Element.SKIN.value in mod.includes or Element.MOTION.value in mod.includes or Element.RECOLOR.value in mod.includes:
-            return Category.FIGHTER.value
-        elif Element.STAGE.value in mod.includes:
-            return Category.STAGE.value
-        elif Element.ONE_EFFECT.value in mod.includes or Element.ALL_EFFECT.value in mod.includes:
-            return Category.EFFECTS.value
-        elif Element.VOICE.value in mod.includes or Element.SOUND.value in mod.includes or Element.NARRATOR.value in mod.includes:
-            return Category.AUDIO.value
-        elif Element.UI.value in mod.includes:
-            return Category.UI.value
+        if Element.SKIN in mod.includes or Element.MOTION in mod.includes or Element.RECOLOR in mod.includes:
+            return Category.FIGHTER
+        elif Element.STAGE in mod.includes:
+            return Category.STAGE
+        elif Element.ONE_EFFECT in mod.includes or Element.ALL_EFFECT in mod.includes:
+            return Category.EFFECTS
+        elif Element.VOICE in mod.includes or Element.SOUND in mod.includes or Element.NARRATOR in mod.includes:
+            return Category.AUDIO
+        elif Element.UI in mod.includes:
+            return Category.UI
         else:
-            return Category.MISC.value
+            return Category.MISC
         
     def check_includes(includes:list[str])->list[str]:
         output_arr = includes
-        if Element.SKIN.value in output_arr and Element.RECOLOR.value in output_arr:
-            output_arr.remove(Element.SKIN.value)
-        if Element.ALL_EFFECT.value in output_arr and Element.ONE_EFFECT.value in output_arr:
-            output_arr.remove(Element.ONE_EFFECT.value)
-        if Element.ALL_NAME.value in output_arr and Element.ONE_NAME.value in output_arr:
-            output_arr.remove(Element.ONE_NAME.value)
+        if Element.SKIN in output_arr and Element.RECOLOR in output_arr:
+            output_arr.remove(Element.SKIN)
+        if Element.ALL_EFFECT in output_arr and Element.ONE_EFFECT in output_arr:
+            output_arr.remove(Element.ONE_EFFECT)
+        if Element.ALL_NAME in output_arr and Element.ONE_NAME in output_arr:
+            output_arr.remove(Element.ONE_NAME)
         return output_arr
 
     mod.characters = []
@@ -238,11 +238,8 @@ def scan_mod(mod:Mod)->Mod:
     mod.category = get_category(mod)
     mod.includes = check_includes(mod.includes)
 
-    keys = [str(character.fighter) for character in mod.characters]
-    slots = []
-    for character in mod.characters:
-        slots.extend(character.slots)
-    slots = list(set(slots))
+    keys = mod.get_character_keys
+    slots = mod.get_character_slots()
 
     if not mod.mod_name:
         mod.mod_name = get_mod_name(
