@@ -4,7 +4,7 @@ Module that contains various methods to format strings used in this application
 
 import re
 from src.core.data import load_config, get_folder_name_format, get_display_name_format
-from src.utils.csv_helper import csv_to_dict, csv_to_key_value
+from src.utils.csv_helper import csv_to_dict, get_columns_by_key
 from src.utils.string_helper import (
     remove_texts,
     remove_special_chars,
@@ -79,7 +79,7 @@ def remove_characters(text:str, characters:list[str]):
     text = text.replace("&", " ")
     arr_to_remove = []
     set_char = set()
-    char_dict = csv_to_key_value(PATH_CHAR_NAMES)
+    char_dict = get_columns_by_key(PATH_CHAR_NAMES)
     
     for key in characters:
         set_char.add(key)

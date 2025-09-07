@@ -1,8 +1,4 @@
-from PyQt6.QtWidgets import (
-    QListView, QSizePolicy, QListWidget
-)
 from functools import partial
-from PyQt6.QtGui import QIcon, QPixmap, QPainter
 from PyQt6.QtCore import Qt, QRect, QSize
 from PyQt6.QtWidgets import (
     QGraphicsDropShadowEffect,
@@ -10,24 +6,28 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
 from PyQt6.QtGui import QPixmap, QColor, QPalette
-from src.ui.grid_item import GridListItem
 from PyQt6.QtWidgets import QListWidget, QListView, QStyledItemDelegate, QStyleOptionViewItem, QGraphicsDropShadowEffect, QSizePolicy, QStyle
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTreeWidget,
     QTreeWidgetItem, QCheckBox, QHeaderView
 )
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPainterPath, QImage, QBrush, QPen, QColor
-from PyQt6.QtGui import QFont
-from PyQt6.QtCore import Qt, QRect, QSize
+from PyQt6.QtWidgets import QGraphicsOpacityEffect
+from PyQt6.QtCore import QPropertyAnimation
+
 from src.ui.components.layout import HBox, VBox
 from src.managers.data_manager import ButtonIcons
+
+from src.ui.tree_item import TreeItem
+from src.models.mod import Mod
+
 
 class CustomTreeWidget(QTreeWidget):
     def __init__(self):
         super().__init__()
         self.icon_size = 20  # Size of each icon
         self.setItemDelegate(CustomDelegate())
-        
+
     def paintEvent(self, event):
         super().paintEvent(event)
         painter = QPainter(self.viewport())
@@ -55,6 +55,7 @@ class CustomDelegate(QStyledItemDelegate):
 class TreeList(QWidget):
     def __init__(self):
         super().__init__()
+        self.animations = []
         self.setStyleSheet("QListWidget"
                                   "{"
                                   "border : none;"
@@ -68,45 +69,39 @@ class TreeList(QWidget):
         self.tree_widget = CustomTreeWidget()
         self.tree_widget.setIconSize(QSize(72, 72)) 
         self.tree_widget.setStyleSheet("""
-    QTreeWidget {
-        border: none;
-        background: transparent;  /* optional if you want no background as well */
-    }
-""")
-        self.tree_widget.setColumnCount(2)
-        self.tree_widget.setColumnWidth(0, 200)
+            QTreeWidget {
+                border: none;
+                background: transparent;  /* optional if you want no background as well */
+            }
+        """)
+        self.tree_widget.setColumnCount(8)
+        self.tree_widget.setColumnWidth(0, 50)
+        
         
         self.tree_widget.header().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.tree_widget.setHeaderLabels(["Mod Name", "Category", "Authors", "Slot", "Characters", "Enabled", ""])
+        self.tree_widget.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        self.tree_widget.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        self.tree_widget.header().resizeSection(1, 300)
+        self.tree_widget.setHeaderLabels(["", "Mod Name", "Category", "Authors", "Slot", "Characters", "Enabled", ""])
         
+        # Add checkbox to header
+        header = self.tree_widget.header()
+        self.header_checkbox = QCheckBox()
+        self.header_checkbox.setText("")
+        self.header_checkbox.setFixedSize(20, 20)
+        # Position the checkbox over the first column header
+        header_pos = header.sectionPosition(0)
+        self.header_checkbox.move(header_pos + 20, 2)
+        self.header_checkbox.setParent(header)
+        self.header_checkbox.show()
+
         layout.addWidget(self.tree_widget)
         self.setLayout(layout)
-
         self.tree_widget.itemClicked.connect(self.on_item_clicked)
 
-    def add_item(self, icon_path, character_icons, name, author):
-        item = QTreeWidgetItem([name, "FIGHTER", author, "C01-02", "", "", ""])
-
-        # Add Checkbox
-        item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-        item.setCheckState(0, Qt.CheckState.Unchecked)  # Unchecked by default
-        # Add Multiple Icons to 4th Column
-        icons = [QIcon(QPixmap(path)) for path in character_icons]
-        item.setData(4, Qt.ItemDataRole.UserRole, icons)
-        # item.setData(0, Qt.ItemDataRole.UserRole, icons)
-
-        self.tree_widget.addTopLevelItem(item)
-        # # Add button widget to the last column
-        btn = QPushButton()
-        btn.setIcon(QIcon(QPixmap(ButtonIcons.ENABLE.value)))
-        btn.setStyleSheet(("""QPushButton {
-            border-radius: 0px;
-            border: none;
-        }"""))
-        btn.setFixedHeight(20)  # keep it small to fit row
-        btn.clicked.connect(partial(self.on_item_toggled, name, btn))
-            
-        self.tree_widget.setItemWidget(item, 5, btn)  # <-- column index 5 (last column)
+    def add_item(self, mod:Mod):
+        item = TreeItem(self.tree_widget, mod, None, None)
+        item.animate_in() 
 
     def on_item_toggled(self, name, btn):
         print(f"Button clicked for {name}")
@@ -115,7 +110,7 @@ class TreeList(QWidget):
     def on_item_clicked(self, item, column):
         print(f"Item clicked: {item.text(0)} in column {column}")
 
-    def clear_items(self):
+    def clear(self):
         """
         Removes all items from the tree widget.
         """

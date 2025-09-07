@@ -17,7 +17,7 @@ from src.utils.logger import output_log
 
 # Worker Signals
 class ModWorkerSignals(QObject):
-    finished = pyqtSignal(object)  # Emit each mod when done
+    finished = pyqtSignal(Mod)  # Emit each mod when done
     error = pyqtSignal(str)     # Emit error messages if needed
 
 # Worker Runnable
@@ -72,8 +72,11 @@ class ModLoader(QObject):
             output_log("Scan complete: {0} mods found".format(self.success))
             self.all_finished.emit()
 
-    def _worker_failed(self, *_):
+    def _worker_failed(self, error_msg=None):
         self.pending -= 1
+        if error_msg:
+            output_log(f"Mod scan error: {error_msg}")
+            
         if self.pending == 0:
             output_log("Scan complete: {0} mods found".format(self.success))
             self.all_finished.emit()
@@ -98,5 +101,5 @@ class ModLoader(QObject):
             worker = ModWorker(mod_name, mod_path)
             worker.signals.finished.connect(on_progress)  # send each mod to UI
             worker.signals.finished.connect(lambda *_: self._worker_done())
-            worker.signals.error.connect(lambda *_: self._worker_failed())
+            worker.signals.error.connect(self._worker_failed)
             self.thread_pool.start(worker)

@@ -61,11 +61,3 @@ class MainMenu(QWidget):
         layout.addLayout(vlayout)
         layout.addWidget(self.menu)
         self.setLayout(layout)     
-
-        self.scan()
-
-    def scan(self):
-        self.mod_manager.scan_all(self.on_scanned)
-    
-    def on_scanned(self, mods:list[Mod]):
-        self.list_widget.set_data(mods)

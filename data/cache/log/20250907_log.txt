@@ -34,3 +34,195 @@
 [01:19:05] Scan complete: 51 mods found
 [01:20:05] Loaded config
 [01:20:06] Scan complete: 51 mods found
+[01:23:03] Loaded config
+[01:23:05] Scan complete: 51 mods found
+[01:23:50] Loaded config
+[01:23:51] Scan complete: 51 mods found
+[01:25:00] Loaded config
+[01:25:01] Scan complete: 51 mods found
+[01:27:00] Loaded config
+[01:27:01] Scan complete: 51 mods found
+[01:30:10] Loaded config
+[01:30:11] Scan complete: 51 mods found
+[01:38:10] Loaded config
+[01:38:11] Scan complete: 51 mods found
+[02:19:55] Loaded config
+[02:19:56] Scan complete: 51 mods found
+[13:41:11] Loaded config
+[13:41:12] Scan complete: 0 mods found
+[13:42:13] Loaded config
+[13:42:13] Scan complete: 0 mods found
+[13:42:29] Loaded config
+[13:44:16] Loaded config
+[13:44:17] Scan complete: 0 mods found
+[13:44:35] Loaded config
+[13:44:36] Scan complete: 0 mods found
+[13:45:08] Loaded config
+[13:45:40] Loaded config
+[13:45:49] Scan complete: 0 mods found
+[13:48:01] Loaded config
+[13:48:02] Scan complete: 0 mods found
+[13:49:16] Loaded config
+[13:49:16] Scan complete: 0 mods found
+[13:49:41] Loaded config
+[13:51:42] Loaded config
+[13:51:43] Scan complete: 0 mods found
+[13:52:35] Loaded config
+[13:52:36] Scan complete: 0 mods found
+[13:53:29] Loaded config
+[13:53:30] Scan complete: 0 mods found
+[13:58:10] Loaded config
+[13:58:10] Scan complete: 0 mods found
+[13:58:24] Selected folder: C:/Users/mycom/Desktop/mods_wip/build/mods
+[13:58:29] Loaded config
+[13:58:30] Scan complete: 0 mods found
+[13:59:16] Loaded config
+[13:59:17] Scan complete: 0 mods found
+[13:59:54] Loaded config
+[13:59:55] Scan complete: 0 mods found
+[14:02:24] Loaded config
+[14:02:24] Scan complete: 0 mods found
+[14:02:41] Loaded config
+[14:02:55] Loaded config
+[14:03:08] Loaded config
+[14:03:54] Loaded config
+[14:04:01] Loaded config
+[14:04:43] Loaded config
+[14:04:55] Loaded config
+[14:07:05] Loaded config
+[14:07:06] Mod scan error: Error loading mod Effects_Corrin[C01]_MythraCorrin2: [Errno 2] No such file or directory: 'C:\\DEV\\SmashUltimateInfoGenerator\\data\\character_names.csv'
+[14:07:27] Mod scan error: Error loading mod Fighter_Byleth[C05]_FECamillaaaa: [Errno 2] No such file or directory: 'C:\\DEV\\SmashUltimateInfoGenerator\\data\\character_names.csv'
+[14:07:30] Loaded config
+[14:08:53] Loaded config
+[14:09:04] Scan complete: 51 mods found
+[14:09:24] Loaded config
+[14:09:25] Scan complete: 51 mods found
+[14:09:44] Loaded config
+[14:09:45] Scan complete: 51 mods found
+[14:09:57] Loaded config
+[14:09:59] Scan complete: 51 mods found
+[14:10:38] Loaded config
+[14:10:39] Scan complete: 51 mods found
+[14:11:17] Loaded config
+[14:11:18] Scan complete: 51 mods found
+[14:18:31] Loaded config
+[14:18:33] Scan complete: 51 mods found
+[14:18:58] Loaded config
+[14:19:00] Scan complete: 51 mods found
+[14:25:01] Loaded config
+[14:25:02] Scan complete: 51 mods found
+[14:30:56] Loaded config
+[14:30:58] Scan complete: 51 mods found
+[14:31:08] Loaded config
+[14:31:10] Scan complete: 51 mods found
+[14:31:56] Loaded config
+[14:31:57] Scan complete: 51 mods found
+[14:32:16] Loaded config
+[14:32:17] Scan complete: 51 mods found
+[14:32:24] Loaded config
+[14:32:25] Scan complete: 51 mods found
+[14:33:24] Loaded config
+[14:33:25] Scan complete: 51 mods found
+[14:34:25] Loaded config
+[14:34:26] Scan complete: 51 mods found
+[14:34:43] Loaded config
+[14:34:45] Scan complete: 51 mods found
+[14:35:43] Loaded config
+[14:35:44] Scan complete: 51 mods found
+[14:35:51] Loaded config
+[14:35:52] Scan complete: 51 mods found
+[14:36:46] Loaded config
+[14:36:47] Scan complete: 51 mods found
+[14:38:42] Loaded config
+[14:38:43] Scan complete: 51 mods found
+[14:42:14] Loaded config
+[14:42:15] Scan complete: 51 mods found
+[14:42:22] Loaded config
+[14:42:23] Scan complete: 51 mods found
+[14:42:51] Loaded config
+[14:42:52] Scan complete: 51 mods found
+[14:43:26] Loaded config
+[14:43:27] Scan complete: 51 mods found
+[14:44:02] Loaded config
+[14:44:03] Scan complete: 51 mods found
+[14:48:32] Loaded config
+[14:48:33] Scan complete: 51 mods found
+[14:48:41] Loaded config
+[14:48:42] Scan complete: 51 mods found
+[14:49:19] Loaded config
+[14:49:20] Scan complete: 51 mods found
+[14:54:49] Loaded config
+[14:55:09] Loaded config
+[14:56:49] Loaded config
+[14:57:13] Loaded config
+[14:57:15] Scan complete: 51 mods found
+[14:57:29] Loaded config
+[14:57:30] Scan complete: 51 mods found
+[14:57:38] Loaded config
+[14:57:46] Loaded config
+[14:57:48] Scan complete: 51 mods found
+[14:58:10] Loaded config
+[14:58:11] Scan complete: 51 mods found
+[14:58:32] Loaded config
+[14:58:33] Scan complete: 51 mods found
+[15:00:54] Loaded config
+[15:00:55] Scan complete: 51 mods found
+[15:02:26] Loaded config
+[15:02:27] Scan complete: 51 mods found
+[15:03:49] Loaded config
+[15:03:50] Scan complete: 51 mods found
+[15:04:07] Loaded config
+[15:04:09] Scan complete: 51 mods found
+[15:05:33] Loaded config
+[15:05:34] Scan complete: 51 mods found
+[15:07:27] Loaded config
+[15:07:28] Scan complete: 51 mods found
+[15:11:15] Loaded config
+[15:11:15] Scan complete: 51 mods found
+[15:15:52] Loaded config
+[15:15:53] Scan complete: 51 mods found
+[15:16:52] Loaded config
+[15:16:53] Scan complete: 51 mods found
+[15:17:28] Loaded config
+[15:17:29] Scan complete: 51 mods found
+[15:17:49] Loaded config
+[15:17:50] Scan complete: 51 mods found
+[15:18:27] Loaded config
+[15:18:28] Scan complete: 51 mods found
+[15:18:37] Loaded config
+[15:18:38] Scan complete: 51 mods found
+[15:21:17] Loaded config
+[15:23:22] Loaded config
+[15:23:23] Scan complete: 51 mods found
+[15:23:52] Loaded config
+[15:23:53] Scan complete: 51 mods found
+[15:24:08] Loaded config
+[15:24:09] Scan complete: 51 mods found
+[15:24:17] Loaded config
+[15:24:18] Scan complete: 51 mods found
+[15:24:56] Loaded config
+[15:24:57] Scan complete: 51 mods found
+[15:25:13] Loaded config
+[15:25:14] Scan complete: 51 mods found
+[15:25:28] Loaded config
+[15:25:29] Scan complete: 51 mods found
+[15:26:19] Loaded config
+[15:26:20] Scan complete: 51 mods found
+[15:26:31] Loaded config
+[15:26:32] Scan complete: 51 mods found
+[15:26:51] Loaded config
+[15:26:52] Scan complete: 51 mods found
+[15:27:04] Loaded config
+[15:27:05] Scan complete: 51 mods found
+[15:27:13] Loaded config
+[15:27:14] Scan complete: 51 mods found
+[15:27:26] Loaded config
+[15:27:27] Scan complete: 51 mods found
+[15:29:29] Loaded config
+[15:29:30] Scan complete: 51 mods found
+[15:29:38] Loaded config
+[15:29:39] Scan complete: 51 mods found
+[15:29:47] Loaded config
+[15:29:48] Scan complete: 51 mods found
+[15:30:02] Loaded config
+[15:30:03] Scan complete: 51 mods found

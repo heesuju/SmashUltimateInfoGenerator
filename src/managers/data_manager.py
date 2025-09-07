@@ -1,8 +1,11 @@
+from typing import List
 from enum import Enum
 import os
-from src.constants.enums import Character
+from src.constants.enums import Fighter
+from src.utils.csv_helper import csv_to_dict, get_columns_by_key
 
 ICON_PATH = "assets/icons"
+CHARACTER_DATA_PATH = "data/character_data.csv"
 
 class NavigationMenuIcon(Enum):
     PREVIEW = "assets/icons/menu/details_32.png"
@@ -26,13 +29,43 @@ class ButtonIcons(Enum):
 
 class DataManager:
     @staticmethod
+    def get_character_keys()-> list[str]:
+        data = Fighter.list()
+        return data
+    
+    @staticmethod
+    def get_character_data(character:Fighter=None, column:str = ""):
+        if character is not None:
+            return get_columns_by_key(CHARACTER_DATA_PATH, str(character), column)
+        else:
+            return csv_to_dict(CHARACTER_DATA_PATH, column)
+
+    @staticmethod
+    def get_character_series(character:Fighter=None)-> list[str]:
+        return DataManager.get_character_data(character, "Series")    
+    
+    @staticmethod
+    def get_character_names(character:Fighter=None)-> list[str]:
+        return DataManager.get_character_data(character, "Custom")    
+    
+    @staticmethod
+    def get_character_groups(character:Fighter=None)-> list[str]:
+        return DataManager.get_character_data(character, "Group")    
+    
+    @staticmethod
+    def get_group_characters(group_name:str)-> list[str]:
+        output = []
+        data = DataManager.get_character_data()
+        for d in data:
+            if d.get("Group") == group_name:
+                output.append(d.get("Key"))
+        return output
+
+    @staticmethod
     def get_character_icon(character:str) -> str:
         return os.path.join(ICON_PATH, "characters", f"{str(character)}.png")
 
     @staticmethod
-    def get_character_icons(character_names: list[Character]) -> list[str]:
+    def get_character_icons(character_names: list[Fighter]) -> list[str]:
         return [DataManager.get_character_icon(name) for name in character_names]
-    
-    @staticmethod
-    def get_character_series(character:Character=None):
-        pass
+

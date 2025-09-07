@@ -20,7 +20,8 @@ from .formatting import (
     format_character_names,
     group_char_name
 )
-from data import PATH_CHAR_NAMES
+
+from src.managers.data_manager import DataManager
 
 def get_character(code:str, character_data:dict)->dict:
     for data in character_data:
@@ -39,7 +40,8 @@ def scan_character(mod:Mod)->Mod:
         numbers.sort()
         return numbers
 
-    character_dict = csv_to_dict(PATH_CHAR_NAMES)
+    character_dict = DataManager.get_character_data()
+    
     fighter_dir = os.path.join(mod.path, "fighter")
     effect_dir = os.path.join(mod.path, "effect", "fighter")
     skin_fighters = get_children(fighter_dir)

@@ -1,4 +1,5 @@
 import os
+from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (
     QWidget, QSizePolicy, QLabel, QFrame, QPushButton, QComboBox
 )
@@ -15,7 +16,7 @@ from src.ui.components.paging import Paging
 from src.ui.search_bar import SearchBar
 from src.managers.mod_manager import ModManager
 
-from src.constants.enums import Character, ModListMode
+from src.constants.enums import Fighter, ModListMode
 from src.managers.data_manager import ButtonIcons, DataManager
 from src.constants.ui_params import SPACING, GRID_PAGE_SIZE, LIST_PAGE_SIZE
 
@@ -85,6 +86,8 @@ class ModList(QWidget):
         footer_layout.addWidget(self.paging)
         self.paging.page_size = LIST_PAGE_SIZE
 
+        self.scan()
+
     def on_grid_selected(self):
         self.mode = ModListMode.GRID
         self.tree_list.setParent(None)
@@ -107,29 +110,71 @@ class ModList(QWidget):
         self.paging.update(len(self.mod_manager.mods))
         self.populate()
 
-    def set_data(self, mods:list[Mod]):
+    def set_data(self):
         self.paging.update(len(self.mod_manager.mods))
         self.populate()
 
+    def clear(self):
+        self._populate_active = False
+        self._populate_index = None
+        self._populate_mods = None
+        self.tree_list.clear()
+        self.grid_list.clear()
+
+    # def populate(self):
+    #     current_page = self.paging.cur_page
+    #     page_size = self.paging.page_size
+    
+    #     start = (current_page - 1) * page_size
+    #     end = start + page_size
+    #     mods = self.mod_manager.mods
+    #     paged_mods = mods[start:end]
+
+    #     self.clear()
+
+    #     for mod in paged_mods:
+    #         if self.mode == ModListMode.LIST:
+    #             self.tree_list.add_item(mod)
+    #         elif self.mode == ModListMode.GRID:
+    #             self.grid_list.add_item(mod)
+
     def populate(self):
+        self.clear()
         current_page = self.paging.cur_page
         page_size = self.paging.page_size
-    
-        start = (current_page - 1) * page_size
-        end = start + page_size
         mods = self.mod_manager.mods
-        paged_mods = mods[start:end]
-        self.tree_list.clear_items()
-        self.grid_list.clear_items()
+        paged_mods = mods[(current_page - 1) * page_size : current_page * page_size]
 
-        for mod in paged_mods:
-            char_keys = [character.key for character in mod.characters]
-            if "elight" in char_keys and "eflame" in char_keys:
-                char_keys.remove("elight")
-                char_keys.remove("eflame")
-                char_keys.append("aegis")
-            keys = DataManager.get_character_icons([str(character) for character in char_keys])
-            if self.mode == ModListMode.LIST:
-                self.tree_list.add_item(mod.thumbnail, keys, mod.mod_name, mod.authors)
-            elif self.mode == ModListMode.GRID:
-                self.grid_list.add_item(mod.thumbnail, keys, mod.mod_name, mod.authors)
+        self._populate_index = 0
+        self._populate_mods = paged_mods
+        self._populate_active = True
+
+        def add_next():
+            if not self._populate_active or self._populate_index is None or self._populate_mods is None:
+                return  # Stop if cancelled or cleared
+            if self._populate_index < len(self._populate_mods):
+                mod = self._populate_mods[self._populate_index]
+                if self.mode == ModListMode.LIST:
+                    self.tree_list.add_item(mod)
+                elif self.mode == ModListMode.GRID:
+                    self.grid_list.add_item(mod)
+                self._populate_index += 1
+                QTimer.singleShot(0, add_next)
+            else:
+                self._populate_mods = None
+                self._populate_index = None
+
+        add_next()
+
+    def scan(self):
+        self.mod_manager.scan_all(self.on_scanned, self.on_progress)
+
+    def on_scanned(self):
+        self.set_data()
+    
+    def on_progress(self, mod:Mod):
+        pass
+        # if self.mode == ModListMode.LIST:
+        #     self.tree_list.add_item(mod)
+        # elif self.mode == ModListMode.GRID:
+        #     self.grid_list.add_item(mod)

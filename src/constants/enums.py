@@ -45,7 +45,7 @@ class Element(BaseEnum):
     MOVESET = "Moveset"
     FINAL_SMASH = "Final Smash"
 
-class Character(BaseEnum):
+class Fighter(BaseEnum):
     MARIO="mario"
     DONKEY="donkey"
     LINK="link"

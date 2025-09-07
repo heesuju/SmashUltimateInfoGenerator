@@ -3,6 +3,8 @@ mod.py: model class for each mod
 """
 
 from .character import Character
+from src.constants.enums import Fighter
+from src.managers.data_manager import DataManager
 
 EXCLUDED_KEYS = {"folder_name", "path", "thumbnail", "hash", "contains_info", "is_selected"}
 
@@ -78,3 +80,28 @@ class Mod:
                 return obj
 
         return convert(self)
+
+    def get_character_keys(self) -> list[str]:
+        return [character.key for character in self.characters]
+    
+    def get_grouped_character_keys(self)->list[str]:
+        keys = self.get_character_keys()
+        
+        groups = set()
+        for key in keys:
+            groups.add(DataManager.get_character_groups(Fighter(key)))
+        if len(groups) >= 1:
+            for group in list(groups):
+                group_items = DataManager.get_group_characters(group)
+                included = True
+                for item in group_items:
+                    if item not in keys:
+                        included = False
+                        break
+                if included:
+                    for item in group_items:
+                        keys.remove(item)
+
+                    keys.append(group)
+                    
+        return keys
