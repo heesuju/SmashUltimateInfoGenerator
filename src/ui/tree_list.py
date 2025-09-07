@@ -77,11 +77,12 @@ class TreeList(QWidget):
         self.tree_widget.setColumnCount(8)
         self.tree_widget.setColumnWidth(0, 50)
         
-        
         self.tree_widget.header().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.tree_widget.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
         self.tree_widget.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        self.tree_widget.header().setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
         self.tree_widget.header().resizeSection(1, 300)
+        self.tree_widget.header().resizeSection(3, 200)
         self.tree_widget.setHeaderLabels(["", "Mod Name", "Category", "Authors", "Slot", "Characters", "Enabled", ""])
         
         # Add checkbox to header
@@ -101,7 +102,6 @@ class TreeList(QWidget):
 
     def add_item(self, mod:Mod):
         item = TreeItem(self.tree_widget, mod, None, None)
-        item.animate_in() 
 
     def on_item_toggled(self, name, btn):
         print(f"Button clicked for {name}")

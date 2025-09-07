@@ -12,9 +12,26 @@ class Theme(BaseEnum):
     DARK = "dark"
     LIGHT = "light"
 
-class ModListMode(BaseEnum):
+class ListLayout(BaseEnum):
     LIST = "list"
     GRID = "grid"
+
+class Wifi(BaseEnum):
+    SAFE = "Safe"
+    UNCERTAIN = "Uncertain"
+    UNSAFE = "Not Safe"
+
+class InfoToml(BaseEnum):
+    INCLUDED = "Included"
+    NOT_INCLUDED = "Not Included"
+
+class Visibility(BaseEnum):
+    VISIBLE = "Visible"
+    HIDDEN = "Hidden"
+
+class EnabledState(BaseEnum):
+    ENABLED = "Enabled"
+    DISABLED = "Disabled"
 
 class Category(BaseEnum):
     FIGHTER = "Fighter"
@@ -139,3 +156,45 @@ class Fighter(BaseEnum):
     MYTHRA="elight"
     KAZUYA="demon"
     SORA="trail"
+
+class Series(BaseEnum):
+    TEKKEN="Tekken"
+    DONKEYKONG="Donkey Kong"
+    ICECLIMBER="Ice Climber"
+    BANJOKAZOOIE="Banjo-Kazooie"
+    PACMAN="Pac-Man"
+    CASTLEVANIA="Castlevania"
+    MII="Mii"
+    BAYONETTA="Bayonetta"
+    GAMEWATCH="Game & Watch"
+    DRAGONQUEST="Dragon Quest"
+    PERSONA="Persona"
+    METALGEARSOLID="Metal Gear Solid"
+    SONIC="Sonic"
+    SPLATOON="Splatoon"
+    ANIMALCROSSING="Animal Crossing"
+    KIDICARUS="Kid Icarus"
+    EARTHBOUND="EarthBound"
+    PIKMIN="Pikmin"
+    SUPERMARIO="Super Mario"
+    KIRBY="Kirby"
+    WARIOWARE="WarioWare"
+    ARMS="Arms"
+    WIIFIT="Wii Fit"
+    FATALFURY="Fatal Fury"
+    SERIES="Series"
+    FINALFANTASY="Final Fantasy"
+    METROID="Metroid"
+    STREETFIGHTER="Street Fighter"
+    FIREEMBLEM="Fire Emblem"
+    ZELDA="Zelda"
+    MEGAMAN="Mega Man"
+    KINGDOMHEARTS="Kingdom Hearts"
+    PUNCHOUT="Punch-Out"
+    ROB="R.O.B"
+    MINECRAFT="Minecraft"
+    STARFOX="StarFox"
+    FZERO="F-Zero"
+    XENOBLADE="Xenoblade"
+    DUCKHUNT="Duck Hunt"
+    POKEMON="Pokemon"

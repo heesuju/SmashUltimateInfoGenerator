@@ -8,25 +8,23 @@ from src.utils.logger import output_log
 class ModManager():
     def __init__(self, config_manager:ConfigManager):
         self.config_manager = config_manager
-        self.progress_callback = None
         self.mods = []
+        self.callback = None
 
-    def scan(self, scan_target:Union[str, List[str]], callback:callable=None ):
+    def set_callback(self, callback:callable):
         self.callback = callback
+
+    def scan(self, scan_target:Union[str, List[str]]):
         loader = ModLoader(scan_target)
         loader.load_mods(self.on_progress, self.on_complete)
 
-    def scan_all(self, callback:callable=None, progress_callback:callable=None):
+    def scan_all(self):
         self.mods = []
-        self.callback = callback
-        self.progress_callback = progress_callback
         root_dir = self.config_manager.config.root_dir
         mod_folders = [os.path.join(root_dir, name) for name in os.listdir(root_dir)]
-        self.scan(mod_folders, callback)
+        self.scan(mod_folders)
 
     def on_progress(self, mod:Mod):
-        if self.progress_callback: 
-            self.progress_callback(mod)
         self.mods.append(mod)
 
     def on_complete(self):

@@ -11,12 +11,14 @@ from src.models.mod import Mod
 from src.managers.data_manager import NavigationMenuIcon
 from src.managers.config_manager import ConfigManager
 from src.managers.mod_manager import ModManager
+from src.managers.filter_manager import FilterManager
 
 class MainMenu(QWidget):
     def __init__(self, config_manager:ConfigManager):
         super().__init__()
         self.config_manager = config_manager
         self.mod_manager = ModManager(config_manager)
+        self.filter_manager = FilterManager()
         self.setWindowTitle("SmashGen")
         self.setGeometry(100, 100, 1200, 800)
         
@@ -24,8 +26,8 @@ class MainMenu(QWidget):
         vlayout = VBox()
         hlayout = HBox()
 
-        self.list_widget = ModList(mod_manager=self.mod_manager)
-        self.filter = Filter()
+        self.list_widget = ModList(self.mod_manager, self.filter_manager)
+        self.filter = Filter(self.filter_manager)
         self.preview = Preview()
         self.edit = EditPanel()
         self.config = Config(config_manager)

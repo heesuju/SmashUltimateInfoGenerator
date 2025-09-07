@@ -11,9 +11,8 @@ from src.utils.file import (
 )
 from src.utils.csv_helper import csv_to_dict
 from src.utils.string_helper import str_to_int
-from src.models.mod import Mod
-from src.models.character import Character
-from src.constants.enums import Category, Element
+from src.models.mod import Mod, Character
+from src.constants.enums import Category, Element, Fighter
 from .formatting import (
     format_slots,
     get_mod_name,
@@ -22,12 +21,6 @@ from .formatting import (
 )
 
 from src.managers.data_manager import DataManager
-
-def get_character(code:str, character_data:dict)->dict:
-    for data in character_data:
-        if code == data['Key']:
-            return data
-    return None
 
 def scan_character(mod:Mod)->Mod:
     def get_slots_as_number(slots:list[str])->list[int]:
@@ -39,8 +32,6 @@ def scan_character(mod:Mod)->Mod:
 
         numbers.sort()
         return numbers
-
-    character_dict = DataManager.get_character_data()
     
     fighter_dir = os.path.join(mod.path, "fighter")
     effect_dir = os.path.join(mod.path, "effect", "fighter")
@@ -53,10 +44,8 @@ def scan_character(mod:Mod)->Mod:
     names = list(set(skin_fighters + eff_fighters))
     
     for name in names:
-        dict = get_character(name, character_dict)
-        if dict is None:
-            break
-        character = Character(**dict)
+        fighter = Fighter(name)
+        character = Character(fighter=fighter, slots=[])
 
         if name in skin_fighters:
             path = os.path.join(fighter_dir, name)
@@ -249,7 +238,11 @@ def scan_mod(mod:Mod)->Mod:
     mod.category = get_category(mod)
     mod.includes = check_includes(mod.includes)
 
-    keys, names, groups, series, slots = mod.get_character_data()
+    keys = [str(character.fighter) for character in mod.characters]
+    slots = []
+    for character in mod.characters:
+        slots.extend(character.slots)
+    slots = list(set(slots))
 
     if not mod.mod_name:
         mod.mod_name = get_mod_name(

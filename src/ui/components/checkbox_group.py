@@ -44,6 +44,11 @@ class CheckboxGroup(QGroupBox):
         """
         return {checkbox.text(): checkbox.isChecked() for checkbox in self.checkboxes}
     
+    def get_value(self):
+        for checkbox in self.checkboxes:
+            if checkbox.isChecked():
+                return checkbox.text()
+    
     def reset(self):
         """
         Resets all checkboxes to their default state.

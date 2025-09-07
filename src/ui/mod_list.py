@@ -1,4 +1,5 @@
 import os
+from typing import List
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (
     QWidget, QSizePolicy, QLabel, QFrame, QPushButton, QComboBox
@@ -16,15 +17,21 @@ from src.ui.components.paging import Paging
 from src.ui.search_bar import SearchBar
 from src.managers.mod_manager import ModManager
 
-from src.constants.enums import Fighter, ModListMode
+from src.constants.enums import Fighter, ListLayout
 from src.managers.data_manager import ButtonIcons, DataManager
+from src.managers.filter_manager import FilterManager, FilterParameters
 from src.constants.ui_params import SPACING, GRID_PAGE_SIZE, LIST_PAGE_SIZE
 
 class ModList(QWidget):
-    def __init__(self, parent=None, mod_manager:ModManager=None):
-        super().__init__(parent)
+    def __init__(self, mod_manager:ModManager, filter_manager:FilterManager):
+        super().__init__()
         self.mod_manager = mod_manager
-        self.mode = ModListMode.LIST
+        
+        self.mod_manager.set_callback(self.on_filter_changed)
+        
+        self.filter_manager = filter_manager
+        self.filter_manager.add_callback(self.set_data)
+        self.mode = ListLayout.LIST
         
         layout = VBox()
         self.setLayout(layout)
@@ -47,7 +54,7 @@ class ModList(QWidget):
         self.grid_list = GridList()
         self.tree_list = TreeList()
 
-        self.search = SearchBar()
+        self.search = SearchBar(self.mod_manager, self.filter_manager)
         self.frame_layout.addWidget(self.search)
 
         # init child layouts
@@ -89,30 +96,35 @@ class ModList(QWidget):
         self.scan()
 
     def on_grid_selected(self):
-        self.mode = ModListMode.GRID
+        self.mode = ListLayout.GRID
         self.tree_list.setParent(None)
         self.body_layout.addWidget(self.grid_list)
         self.paging.cur_page = 1
         self.paging.page_size = GRID_PAGE_SIZE
         self.paging.update(len(self.mod_manager.mods))
-        self.populate()
+        self.set_data()
         
     def on_list_selected(self):
-        self.mode = ModListMode.LIST
+        self.mode = ListLayout.LIST
         self.grid_list.setParent(None)
         self.body_layout.addWidget(self.tree_list)
         self.paging.cur_page = 1
         self.paging.page_size = LIST_PAGE_SIZE
-        self.paging.update(len(self.mod_manager.mods))
-        self.populate()
+        self.set_data()
     
     def on_page_changed(self, page:int, size:int):
-        self.paging.update(len(self.mod_manager.mods))
-        self.populate()
+        self.set_data()
+
+    def on_filter_changed(self):
+        self.paging.cur_page = 1
+        self.set_data()
 
     def set_data(self):
-        self.paging.update(len(self.mod_manager.mods))
-        self.populate()
+        mods = self.mod_manager.mods
+        if self.filter_manager:
+            mods = self.filter_manager.apply_filters(mods)
+        self.paging.update(len(mods))
+        self.populate(mods)
 
     def clear(self):
         self._populate_active = False
@@ -121,28 +133,10 @@ class ModList(QWidget):
         self.tree_list.clear()
         self.grid_list.clear()
 
-    # def populate(self):
-    #     current_page = self.paging.cur_page
-    #     page_size = self.paging.page_size
-    
-    #     start = (current_page - 1) * page_size
-    #     end = start + page_size
-    #     mods = self.mod_manager.mods
-    #     paged_mods = mods[start:end]
-
-    #     self.clear()
-
-    #     for mod in paged_mods:
-    #         if self.mode == ModListMode.LIST:
-    #             self.tree_list.add_item(mod)
-    #         elif self.mode == ModListMode.GRID:
-    #             self.grid_list.add_item(mod)
-
-    def populate(self):
+    def populate(self, mods:List[Mod]):
         self.clear()
         current_page = self.paging.cur_page
         page_size = self.paging.page_size
-        mods = self.mod_manager.mods
         paged_mods = mods[(current_page - 1) * page_size : current_page * page_size]
 
         self._populate_index = 0
@@ -154,9 +148,9 @@ class ModList(QWidget):
                 return  # Stop if cancelled or cleared
             if self._populate_index < len(self._populate_mods):
                 mod = self._populate_mods[self._populate_index]
-                if self.mode == ModListMode.LIST:
+                if self.mode == ListLayout.LIST:
                     self.tree_list.add_item(mod)
-                elif self.mode == ModListMode.GRID:
+                elif self.mode == ListLayout.GRID:
                     self.grid_list.add_item(mod)
                 self._populate_index += 1
                 QTimer.singleShot(0, add_next)
@@ -167,7 +161,7 @@ class ModList(QWidget):
         add_next()
 
     def scan(self):
-        self.mod_manager.scan_all(self.on_scanned, self.on_progress)
+        self.mod_manager.scan_all()
 
     def on_scanned(self):
         self.set_data()

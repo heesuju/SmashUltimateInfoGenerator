@@ -8,6 +8,9 @@ from PyQt6.QtWidgets import (
     QGraphicsDropShadowEffect,
     QWidget,
 )
+from PyQt6.QtWidgets import QGraphicsOpacityEffect
+from PyQt6.QtCore import QPropertyAnimation
+
 from src.ui.components.image_overlay import ImageOverlayWidget
 from src.ui.components.layout import HBox, VBox
 from src.ui.grid_item_button import Overlay
@@ -21,14 +24,17 @@ ICON_ON = "assets/icons/cartridge_off"
 class GridListItem(QListWidgetItem):
     def __init__(self, image_path:str, name:str, author:str, characters:list[str], height:int=80):
         super().__init__()
-
+        
         self.widget = GridListItemWidget(image_path, name, author, characters, height)
         self.setSizeHint(QSize(350, 110))
         # self.setData(Qt.ItemDataRole.UserRole, characters)
 
+
 class GridListItemWidget(QWidget):
     def __init__(self, image_path:str, name:str, author:str, characters:list[str], height:int=80):
         super().__init__()
+        self._animation = None
+        self._animation_started = False
         self.image_path = image_path
         layout = QHBoxLayout()
         self.setLayout(layout)
@@ -163,3 +169,19 @@ class GridListItemWidget(QWidget):
         # self.frame.setStyleSheet(self.default_style)
         
         super().mouseReleaseEvent(event)
+
+        
+    def showEvent(self, event):
+        super().showEvent(event)
+        # if not self._animation_started:
+        #     self._animation_started = True
+        #     # Animate in when the widget is shown
+        #     effect = QGraphicsOpacityEffect(self)
+        #     self.setGraphicsEffect(effect)
+        #     effect.setOpacity(0.0)
+        #     animation = QPropertyAnimation(effect, b"opacity")
+        #     animation.setDuration(600)
+        #     animation.setStartValue(0.0)
+        #     animation.setEndValue(1.0)
+        #     animation.start()
+        #     self._animation = animation

@@ -49,6 +49,13 @@ class DataManager:
         return DataManager.get_character_data(character, "Custom")    
     
     @staticmethod
+    def get_character_by_custom(character:str)-> Fighter:
+        data = DataManager.get_character_data()    
+        for d in data:
+            if d.get("Custom") == character:
+                return Fighter(d.get("Key"))
+    
+    @staticmethod
     def get_character_groups(character:Fighter=None)-> list[str]:
         return DataManager.get_character_data(character, "Group")    
     

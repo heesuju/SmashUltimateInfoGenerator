@@ -20,7 +20,7 @@ class InputButton(BaseModel):
     }
 
 class InputButtonWidget(QWidget):
-    def __init__(self, placeholder_text:str, buttons:Union[List[InputButton], InputButton]):
+    def __init__(self, placeholder_text:str, buttons:Union[List[InputButton], InputButton], on_submit:callable=None):
         super().__init__()
         
         hbox = QHBoxLayout()
@@ -38,6 +38,9 @@ class InputButtonWidget(QWidget):
             }
         """)
         self.input_box.setPlaceholderText(placeholder_text)
+        if on_submit is not None:
+            self.input_box.returnPressed.connect(on_submit)
+
         hbox.addWidget(self.input_box)
         
         if not isinstance(buttons, list):
@@ -46,7 +49,7 @@ class InputButtonWidget(QWidget):
         for n, data in enumerate(buttons):
             button = QPushButton(data.text)
             if data.img is not None:
-                button.setIcon(QIcon(QPixmap(str(data.img))))
+                button.setIcon(QIcon(QPixmap(str(data.img.value))))
             if data.callback is not None:
                 button.clicked.connect(data.callback)
 

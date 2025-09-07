@@ -10,13 +10,19 @@ from PyQt6.QtWidgets import (
 )
 
 from src.ui.components.layout import HBox, VBox
+from src.ui.components.input_button_widget import InputButtonWidget, InputButton
+
 from src.managers.data_manager import ButtonIcons
+from src.managers.mod_manager import ModManager
+from src.managers.filter_manager import FilterManager, FilterParameters
 
 ICON_ELLIPSIS = "assets/img/search.png"
 
 class SearchBar(QWidget):
-    def __init__(self):
+    def __init__(self, mod_manager:ModManager, filter_manager:FilterManager):
         super().__init__()
+        self.mod_manager = mod_manager
+        self.filter_manager = filter_manager
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         layout = VBox()
         
@@ -39,56 +45,18 @@ class SearchBar(QWidget):
         palette.setColor(QPalette.ColorRole.Window, QColor(255, 255, 255))  # White background
         self.frame.setPalette(palette)
 
-        self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText("Search mod name...")
-        self.search_bar.setStyleSheet("""
-    QLineEdit {
-        border: 0px;
-        border-top-left-radius: 5px;
-        border-bottom-left-radius: 5px;
-        border-top-right-radius: 0px;
-        border-bottom-right-radius: 0px;
-    }
-""")
-        frame_layout.addWidget(self.search_bar)
-
-        clear = QPushButton()
-        clear.setIcon(QIcon(QPixmap(ButtonIcons.CLEAR.value)))
-        clear.setObjectName("obj1")
-        clear.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        frame_layout.addWidget(clear)
+        self.search_bar = InputButtonWidget(
+            "Search mod name...", [
+                InputButton(text="",img=ButtonIcons.REFRESH, callback=self.on_refresh_clicked), 
+                InputButton(text="",img=ButtonIcons.CLEAR, callback=self.on_clear_clicked), 
+                InputButton(text="",img=ButtonIcons.SEARCH, callback=self.on_search_clicked)
+            ],
+            self.on_search_clicked
+        )
         
-        # line = QFrame()
-        # line.setFrameShape(QFrame.Shape.VLine)
-        # line.setFrameShadow(QFrame.Shadow.Raised) # or QFrame.Raised, QFrame.Plain
-        # frame_layout.addWidget(line)
-        
-        refresh = QPushButton()
-        refresh.setIcon(QIcon(QPixmap(ButtonIcons.REFRESH.value)))
-        refresh.setObjectName("obj2")
-        refresh.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        frame_layout.addWidget(refresh)
-
-        search_button = QPushButton()
-        search_button.setIcon(QIcon(QPixmap(ButtonIcons.SEARCH.value)))
-        # search_button.setStyleSheet(MAIN_BUTTON)
-        search_button.setObjectName("obj3")
-        search_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        
-        clear.setStyleSheet("QPushButton { border: none; border-radius: 0px; }")
-        refresh.setStyleSheet("QPushButton { border: none; border-radius: 0px; }")
-        search_button.setStyleSheet("QPushButton { border: none; border-radius: 0px; }")
-
-        
-
-        
-
-        frame_layout.addWidget(search_button)
-
-        
+        frame_layout.addWidget(self.search_bar)        
         layout.addWidget(self.frame)
         
-
     def mousePressEvent(self, event):
         # self.frame.setStyleSheet(self.selected_style)
 
@@ -106,3 +74,18 @@ class SearchBar(QWidget):
         # self.frame.setStyleSheet(self.default_style)
         
         super().mouseReleaseEvent(event)
+
+    def on_search_clicked(self):
+        text = self.search_bar.get_text()
+        self.filter_manager.params.mod_name = text
+        self.filter_manager.on_change()
+
+    def on_clear_clicked(self):
+        self.search_bar.set_text("")
+        self.filter_manager.params.mod_name = ""
+        self.filter_manager.on_change()
+
+    def on_refresh_clicked(self):
+        self.search_bar.set_text("")
+        self.filter_manager.params.mod_name = ""
+        self.mod_manager.scan_all()
