@@ -27,11 +27,11 @@ class PreviewPanel(SidePanel):
         self.header.addWidget(self.mod_name)
 
         self.header.addStretch()
-        fav_button = ToggleButton(ButtonIcons.FAV_ON.value, ButtonIcons.FAV_OFF.value, self.on_fav_on, self.on_fav_off, 24)
-        self.header.addWidget(fav_button)
+        self.fav_button = ToggleButton(ButtonIcons.FAV_ON.value, ButtonIcons.FAV_OFF.value, self.on_fav_on, self.on_fav_off, 24)
+        self.header.addWidget(self.fav_button)
         
-        hide_button = ToggleButton(ButtonIcons.VIS_OFF.value, ButtonIcons.VIS_ON.value, self.on_vis_off, self.on_vis_on, 24)
-        self.header.addWidget(hide_button)
+        self.hide_button = ToggleButton(ButtonIcons.HIDE_ON.value, ButtonIcons.HIDE_OFF.value, self.on_vis_off, self.on_vis_on, 24)
+        self.header.addWidget(self.hide_button)
 
         menu_button = QPushButton()
         menu_button.setIcon(QIcon(QPixmap(ButtonIcons.MENU.value)))
@@ -108,6 +108,8 @@ class PreviewPanel(SidePanel):
 
     def set_data(self, id:str):
         mod = self.mod_manager.get_mod(id)
+        self.fav_button.set_state(mod.hash in self.mod_manager.favorite_ids)
+        self.hide_button.set_state(mod.hash in self.mod_manager.hidden_ids)
         self.mod_name.setText(mod.mod_name)
         self.thumbnail.set_thumbnail(mod.thumbnail)
         self.author.setText(mod.authors)
@@ -125,15 +127,32 @@ class PreviewPanel(SidePanel):
         open_folder(mod.path)
         
     def on_fav_on(self):
-        pass
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        self.mod_manager.add_favorite(mod.hash)
 
     def on_fav_off(self):
-        pass
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        self.mod_manager.remove_favorite(mod.hash)
 
     def on_vis_on(self):
-        pass
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        self.mod_manager.remove_hidden(mod.hash)
 
     def on_vis_off(self):
-        pass
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        self.mod_manager.add_hidden(mod.hash)
+        print()
 
-    
+    def on_enabled(self):
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        self.mod_manager.add_enabled(mod.hash)
+
+    def on_disabled(self):
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        self.mod_manager.remove_enabled(mod.hash)

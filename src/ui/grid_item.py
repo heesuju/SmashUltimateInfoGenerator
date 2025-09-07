@@ -15,6 +15,8 @@ from src.ui.components.image_overlay import ImageOverlayWidget
 from src.ui.components.layout import HBox, VBox
 from src.ui.grid_item_button import Overlay
 from src.models.mod import Mod, ModItem
+from src.managers.data_manager import DataManager, ButtonIcons
+from src.ui.components.toggle_button import ToggleButton
 
 ICON_ELLIPSIS = "assets/icons/ui/ellipsis.png"
 ICON_FAVORITE = "assets/icons/menu/favorite.png"
@@ -103,24 +105,15 @@ class GridListItemWidget(QWidget):
             img_label.setPixmap(char_icon)
             icon_layout.addWidget(img_label)
 
-        fav_button = QPushButton()
-        fav_button.setIcon(QIcon(QPixmap(ICON_FAVORITE)))
-        fav_button.setFlat(True)
-        fav_button.setObjectName("obj1")
-        fav_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        fav_button.setFixedSize(QSize(24, 24))
-        action_layout.addWidget(fav_button)
+        self.fav_button = ToggleButton(ButtonIcons.FAV_ON.value, ButtonIcons.FAV_OFF.value, self.on_fav_on, self.on_fav_off, 24)
+        action_layout.addWidget(self.fav_button)
         
-        hide_button = QPushButton()
-        hide_button.setIcon(QIcon(QPixmap(ICON_HIDE)))
-        hide_button.setFlat(True)
-        hide_button.setObjectName("obj2")
-        hide_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        hide_button.setFixedSize(QSize(24, 24))
-        action_layout.addWidget(hide_button)
+        self.hide_button = ToggleButton(ButtonIcons.HIDE_ON.value, ButtonIcons.HIDE_OFF.value, self.on_vis_off, self.on_vis_on, 24)
+        action_layout.addWidget(self.hide_button)
+
 
         menu_button = QPushButton()
-        menu_button.setIcon(QIcon(QPixmap(ICON_ELLIPSIS)))
+        menu_button.setIcon(QIcon(QPixmap(ButtonIcons.MENU.value)))
         menu_button.setFlat(True)
         menu_button.setObjectName("obj")
         menu_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -165,3 +158,15 @@ class GridListItemWidget(QWidget):
         # self.frame.setStyleSheet(self.default_style)
         
         super().mouseReleaseEvent(event)
+
+    def on_fav_on(self):
+        pass
+    
+    def on_fav_off(self):
+        pass
+
+    def on_vis_on(self):
+        pass
+    
+    def on_vis_off(self):
+        pass

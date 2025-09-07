@@ -40,7 +40,7 @@ class SidePanel(QWidget):
         line.setFrameShadow(QFrame.Shadow.Sunken)  # optional, makes it look recessed
         self.root.addWidget(line)
         
-        self.header = HBox(margin=0, spacing=10)
+        self.header = HBox(margin=0, spacing=2)
         self.root.addLayout(self.header)
 
         scroll = QScrollArea()

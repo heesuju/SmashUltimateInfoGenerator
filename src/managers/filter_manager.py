@@ -59,7 +59,7 @@ class FilterManager():
             # if self.params.series and self.params.series.lower() not in mod.series.lower():
             #     continue
             if self.params.character:
-                if self.params.character and not any(char in [Fighter(c.key) for c in mod.characters] for char in self.params.character):
+                if self.params.character and not any(char in [Fighter(c.fighter) for c in mod.characters] for char in self.params.character):
                     continue
 
             filtered.append(mod)

@@ -49,7 +49,8 @@ class GridList(QListWidget):
         item = GridListItem(self,mod)
 
     def on_item_clicked(self, item):
-        print(f"Item clicked: {item}")
+        print(f"Item clicked: {item.mod.name}")
+        self.mod_manager.set_selection(item.mod.id)
 
     def clear_items(self):
         """
