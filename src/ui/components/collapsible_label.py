@@ -1,9 +1,10 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QTextEdit
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
+from PyQt6 import QtGui
 
 class CollapsibleLabel(QWidget):
-    def __init__(self, title: str, text: str, parent=None):
+    def __init__(self, title: str, text: str, parent=None, editable:bool=False):
         super().__init__(parent)
         self.title = title
         self.is_collapsed = False
@@ -36,19 +37,34 @@ class CollapsibleLabel(QWidget):
         self.layout.addWidget(self.header_btn)
 
         # content
-        self.content = QLabel(text)
-        self.content.setWordWrap(True)
-        self.content.setStyleSheet("""
-            QLabel {
-                background-color: #2c2c2c;
-                color: white;
-                border-top-left-radius: 0px;
-                border-bottom-left-radius: 5px;
-                border-top-right-radius: 0px;
-                border-bottom-right-radius: 5px;
-                padding: 6px;
-            }
-        """)
+        if editable:
+            self.content = QTextEdit(text)
+            self.content.setWordWrapMode(QtGui.QTextOption.WrapMode.WordWrap)  # enable word wrap
+            self.content.setStyleSheet("""
+                QTextEdit {
+                    background-color: #2c2c2c;
+                    color: white;
+                    border-top-left-radius: 0px;
+                    border-bottom-left-radius: 5px;
+                    border-top-right-radius: 0px;
+                    border-bottom-right-radius: 5px;
+                    padding: 6px;
+                }
+            """)
+        else:
+            self.content = QLabel(text)
+            self.content.setWordWrap(True)
+            self.content.setStyleSheet("""
+                QLabel {
+                    background-color: #2c2c2c;
+                    color: white;
+                    border-top-left-radius: 0px;
+                    border-bottom-left-radius: 5px;
+                    border-top-right-radius: 0px;
+                    border-bottom-right-radius: 5px;
+                    padding: 6px;
+                }
+            """)
         self.layout.addWidget(self.content)
 
     def toggle(self, event=None):

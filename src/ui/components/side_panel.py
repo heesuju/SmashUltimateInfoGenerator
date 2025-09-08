@@ -26,7 +26,7 @@ class SidePanel(QWidget):
         self.frame = QFrame()
         self.frame.setFrameShape(QFrame.Shape.NoFrame)
         self.frame.setAutoFillBackground(True)
-        self.root = VBox(margin=10, spacing=10)
+        self.root = VBox(margin=0, spacing=10)
         self.frame.setLayout(self.root)
 
         title_label = QLabel(title)
@@ -53,7 +53,7 @@ class SidePanel(QWidget):
         self.body_frame.setStyleSheet("QFrame { border: 0px; }")
         self.body_frame.setContentsMargins(0,0,0,0)
         self.body_frame.setFrameShape(QFrame.Shape.NoFrame)
-        self.body = VBox(margin=0, spacing=10)
+        self.body = VBox(margin=10, spacing=10)
         self.body_frame.setLayout(self.body)
         scroll.setWidget(self.body_frame)
 

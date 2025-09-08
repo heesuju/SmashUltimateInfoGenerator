@@ -24,6 +24,7 @@ from src.managers.filter_manager import FilterManager, FilterParameters
 from src.managers.data_manager import DataManager
 from src.constants.enums import *
 from src.ui.components.side_panel import SidePanel
+from src.ui.components.multi_combobox import CheckableComboBox
 
 WIDTH = 300
 FONT = "Arial"
@@ -40,11 +41,7 @@ class FilterPanel(SidePanel):
         self.author.setPlaceholderText("Author Name")
         self.body.addWidget(self.author)
 
-        self.category = QComboBox()
-        self.category.addItem("All Categories")
-        self.category.addItems(Category.list())
-        self.category.setEditable(True)  # ComboBox itself is not editable
-        self.category.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # Prevent adding new items
+        self.category = CheckableComboBox(Category.list(), True)
         self.body.addWidget(self.category)
 
         self.series = QComboBox()
@@ -54,18 +51,10 @@ class FilterPanel(SidePanel):
         self.series.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # Prevent adding new items
         self.body.addWidget(self.series)
 
-        self.character = QComboBox()
-        self.character.addItem("All Characters")
-        self.character.addItems(DataManager.get_character_names())
-        self.character.setEditable(True)  # ComboBox itself is not editable
-        self.character.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # Prevent adding new items
+        self.character = CheckableComboBox(DataManager.get_character_names(), True)
         self.body.addWidget(self.character)
 
-        self.elements = QComboBox()
-        self.elements.addItem("All Elements")
-        self.elements.addItems(Element.list())
-        self.elements.setEditable(True)  # ComboBox itself is not editable
-        self.elements.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # Prevent adding new items
+        self.elements = CheckableComboBox(Element.list(), True)
         self.body.addWidget(self.elements)
         
         slots = QGroupBox("Slots")
@@ -82,16 +71,17 @@ class FilterPanel(SidePanel):
         range_layout.addWidget(self.max_value)
         self.body.addWidget(slots)
 
-        self.wifi = CheckboxGroup("Wifi-safe", Wifi.list(), [True, True, True])  
+        self.wifi = CheckableComboBox(Wifi.list(), True)
         self.body.addWidget(self.wifi)
 
-        self.info = CheckboxGroup("Info.toml", InfoToml.list(), [True, True])  
+        self.info = CheckableComboBox(InfoToml.list(), True)  
         self.body.addWidget(self.info)
         
-        self.visibility = CheckboxGroup("Visibility", Visibility.list(), [True, False])  
+
+        self.visibility = CheckableComboBox(Visibility.list(), True)  
         self.body.addWidget(self.visibility)
 
-        self.enabled = CheckboxGroup("State", EnabledState.list(), [True, True])  
+        self.enabled = CheckableComboBox(EnabledState.list(), True)  
         self.body.addWidget(self.enabled)
 
         self.body.addStretch(1)
