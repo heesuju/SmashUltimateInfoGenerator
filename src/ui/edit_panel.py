@@ -1,21 +1,6 @@
-from PyQt6.QtWidgets import (
-    QWidget, 
-    QHBoxLayout, 
-    QVBoxLayout, 
-    QPushButton, 
-    QLabel, 
-    QSizePolicy, 
-    QListWidget, 
-    QListWidgetItem, 
-    QFrame, 
-    QLineEdit,
-    QComboBox,
-    QCheckBox,
-    QGroupBox,
-    QSpinBox,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QScrollArea
+import re
+from PyQt6.QtWidgets import ( QWidget, QHBoxLayout, QVBoxLayout,  QPushButton,  QLabel, QTreeWidgetItem,QScrollArea,
+    QSizePolicy, QListWidget, QListWidgetItem, QFrame, QLineEdit,QComboBox,QCheckBox,QGroupBox,QSpinBox,QTreeWidget,
 )
 from PyQt6 import QtGui, QtCore
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont
@@ -25,18 +10,27 @@ from src.ui.components.checkbox_group import CheckboxGroup
 from src.constants.styles import MAIN_BUTTON
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.checkbox_tree import CheckBoxTree
-from src.constants.enums import Category, Element, Fighter
+from src.constants.enums import Category, Element, Fighter, Wifi
 from src.ui.components.input_button_widget import InputButtonWidget, InputButton
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.collapsible_text_edit import ShrinkingTextEdit
+from src.ui.components.top_label_wrapper import TopLabelWrapper
+from src.ui.components.line_edit import LineEdit
+from src.ui.components.combo_box import ComboBox
 from src.managers.mod_manager import ModManager
+from src.constants.strings import (
+    PLACEHOLDER_EDIT_DISPLAY_NAME,
+    PLACEHOLDER_EDIT_FOLDER_NAME,
+    PLACEHOLDER_EDIT_MOD_NAME,
+    PLACEHOLDER_EDIT_VERSION,
+    PLACEHOLDER_EDIT_AUTHORS
+)
+from src.ui.components.validators import limit_version
 
 class EditPanel(SidePanel):
     def __init__(self, mod_manager:ModManager):
         super().__init__("Edit")
         self.mod_manager = mod_manager
-        
-        
 
         self.url = InputButtonWidget(
             "Gamebanana URL", 
@@ -53,63 +47,40 @@ class EditPanel(SidePanel):
 
         thumbnail.setPixmap(preview_img)
         self.body.addWidget(thumbnail)
-
-        # self.fetch_data = QPushButton("GET")
-        # self.fetch_data.setStyleSheet(MAIN_BUTTON)
-        # self.url_group.addWidget(self.fetch_data)
         
-        self.display = QLineEdit()
-        self.display.setPlaceholderText("Display Name")
-        self.body.addWidget(self.display)
+        self.mod_name = LineEdit(PLACEHOLDER_EDIT_MOD_NAME)
+        self.body.addWidget(TopLabelWrapper(self.mod_name, "Mod Name"))
 
-        self.folder = QLineEdit()
-        self.folder.setPlaceholderText("Folder Name")
-        self.body.addWidget(self.folder)
+        self.character = CheckableComboBox(Fighter.list())
+        self.body.addWidget(TopLabelWrapper(self.character, "Character"))
+
+        self.slots = CheckableComboBox(range(255))
+        self.body.addWidget(TopLabelWrapper(self.slots, "Slots"))
+
+        self.category = ComboBox("Category", Category.list())
+        self.body.addWidget(TopLabelWrapper(self.category, "Category"))
+
+        self.author = LineEdit(PLACEHOLDER_EDIT_AUTHORS)
+        self.body.addWidget(TopLabelWrapper(self.author, "Authors"))
+
+        self.version = LineEdit(PLACEHOLDER_EDIT_VERSION, limit_version)
+        self.body.addWidget(TopLabelWrapper(self.version, "Version"))
         
-        self.mod_name = QLineEdit()
-        self.mod_name.setPlaceholderText("Mod Name")
-        self.body.addWidget(self.mod_name)
-        
-        self.author = QLineEdit()
-        self.author.setPlaceholderText("Author Name")
-        self.body.addWidget(self.author)
+        self.description = ShrinkingTextEdit("Enter description")
+        self.body.addWidget(TopLabelWrapper(self.description, "Description"), alignment=QtCore.Qt.AlignmentFlag.AlignTop)
+        self.description.setFixedHeight(self.description.line_height)
 
-        self.version = QLineEdit()
-        self.version.setPlaceholderText("Version")
-        self.body.addWidget(self.version)
+        self.elements = CheckableComboBox(Element.list())
+        self.body.addWidget(TopLabelWrapper(self.elements, "Elements"))
 
-        self.category = QComboBox()
-        self.category.addItem("Category")
-        self.category.addItems(Category.list())
-        self.category.setEditable(True)  # ComboBox itself is not editable
-        self.category.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # Prevent adding new items
-        self.body.addWidget(self.category)
-        
-        self.slots = CheckableComboBox()
-        for c in range(255):
-            self.slots.add_item(str(c))
-        self.slots.setCurrentText("Slots")
-        self.body.addWidget(self.slots)
+        self.wifi = ComboBox("Wifi Safe", Wifi.list())
+        self.body.addWidget(TopLabelWrapper(self.wifi, "Wifi Safe"))
 
-        self.wifi = CheckboxGroup("Wifi-safe", ["Safe", "Unknown", "Unsafe"], [True, True, True])  
-        self.body.addWidget(self.wifi)
+        self.display = LineEdit(PLACEHOLDER_EDIT_DISPLAY_NAME)
+        self.body.addWidget(TopLabelWrapper(self.display, "Display Name"))
 
-        self.combo = CheckableComboBox()
-        for c in Fighter.list():
-            self.combo.add_item(c)
-        self.combo.setCurrentText("Characters")
-        self.body.addWidget(self.combo)
-        
-
-        self.tree_widget = CheckableComboBox()
-        for i in Element.list():
-            self.tree_widget.add_item(i)
-        self.tree_widget.setCurrentText("Elements")
-        self.body.addWidget(self.tree_widget)
-        
-        self.description = ShrinkingTextEdit("Description")
-        self.body.addWidget(self.description, alignment=QtCore.Qt.AlignmentFlag.AlignTop)
-        # self.body.addWidget(self.description)
+        self.folder = LineEdit(PLACEHOLDER_EDIT_FOLDER_NAME)
+        self.body.addWidget(TopLabelWrapper(self.folder, "Folder Name"))        
         
         self.body.addStretch()
 
@@ -119,9 +90,6 @@ class EditPanel(SidePanel):
         apply_button.setStyleSheet(MAIN_BUTTON)
         self.footer.addWidget(clear_button)
         self.footer.addWidget(apply_button)
-
-        
-        
     
     def reset(self):
         """

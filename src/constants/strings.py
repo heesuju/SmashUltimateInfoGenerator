@@ -14,3 +14,9 @@ WARNING_MOD_DIR = "Invalid directory.\nSet the directory to the folder that cont
 WARNING_FILE_DIR = "Invalid file directory."
 ASK_CLOSE_WINDOW_MSG = "Close the current window?"
 ASK_CLOSE_WINDOW_TITLE = "Close Window"
+
+PLACEHOLDER_EDIT_DISPLAY_NAME="The name displayed in ARCropolis"
+PLACEHOLDER_EDIT_FOLDER_NAME="The name of the mod folder"
+PLACEHOLDER_EDIT_MOD_NAME="The name of the mod"
+PLACEHOLDER_EDIT_VERSION="The mod version (only numbers allowed)"
+PLACEHOLDER_EDIT_AUTHORS="The names of the mod creator(s)"

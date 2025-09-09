@@ -3,13 +3,14 @@ from PyQt6.QtWidgets import QGroupBox, QHBoxLayout, QCheckBox
 from PyQt6.QtCore import pyqtSlot, Qt
 
 class CheckboxGroup(QGroupBox):
-    def __init__(self, title:str, checkboxes:List[str], defaults:List[bool]=[], parent=None):
+    def __init__(self, title:str, checkboxes:List[str], defaults:List[bool]=[], allow_multiple: bool = True, parent=None):
         """
         A custom QGroupBox that ensures at least one checkbox remains checked.
         """
         super().__init__(title, parent)
         self.checkboxes = []
         self.defaults = defaults
+        self.allow_multiple = allow_multiple
 
         layout = QHBoxLayout()
         self.setLayout(layout)
@@ -31,12 +32,21 @@ class CheckboxGroup(QGroupBox):
         Slot to ensure at least one checkbox remains checked.
         """
         
+        sender = self.sender()
+        if not isinstance(sender, QCheckBox):
+            return
+        
+        if not self.allow_multiple:
+            if sender.isChecked():
+                for cb in self.checkboxes:
+                    if cb != sender:
+                        cb.setChecked(False)
+                        cb.setCheckState(Qt.CheckState.Unchecked)
+
         checked_boxes = [cb for cb in self.checkboxes if cb.isChecked()]
-        if len(checked_boxes) == 0:
-            sender = self.sender()
-            if isinstance(sender, QCheckBox):
-                sender.setChecked(True)
-                sender.setCheckState(Qt.CheckState.Checked)
+        if len(checked_boxes) == 0: 
+            sender.setChecked(True) 
+            sender.setCheckState(Qt.CheckState.Checked)
 
     def get_checkbox_states(self) -> Dict[str, bool]:
         """

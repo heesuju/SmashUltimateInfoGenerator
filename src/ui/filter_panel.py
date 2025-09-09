@@ -41,7 +41,7 @@ class FilterPanel(SidePanel):
         self.author.setPlaceholderText("Author Name")
         self.body.addWidget(self.author)
 
-        self.category = CheckableComboBox(Category.list(), True)
+        self.category = CheckableComboBox(Category.list(), [True] * (len(Category.list()) + 1), True)
         self.body.addWidget(self.category)
 
         self.series = QComboBox()
@@ -51,10 +51,12 @@ class FilterPanel(SidePanel):
         self.series.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # Prevent adding new items
         self.body.addWidget(self.series)
 
-        self.character = CheckableComboBox(DataManager.get_character_names(), True)
+        characters = DataManager.get_character_names()
+        defaults = ([True] * (len(characters) + 1))
+        self.character = CheckableComboBox(characters, defaults, True)
         self.body.addWidget(self.character)
 
-        self.elements = CheckableComboBox(Element.list(), True)
+        self.elements = CheckableComboBox(Element.list(), ([True] * (len(Element.list()) + 1)), True)
         self.body.addWidget(self.elements)
         
         slots = QGroupBox("Slots")
@@ -71,17 +73,17 @@ class FilterPanel(SidePanel):
         range_layout.addWidget(self.max_value)
         self.body.addWidget(slots)
 
-        self.wifi = CheckableComboBox(Wifi.list(), True)
+        self.wifi = CheckableComboBox(Wifi.list(), ([True] * (len(Wifi.list()) + 1)), True)
         self.body.addWidget(self.wifi)
 
-        self.info = CheckableComboBox(InfoToml.list(), True)  
+        self.info = CheckableComboBox(InfoToml.list(), ([True] * (len(InfoToml.list()) + 1)), True)  
         self.body.addWidget(self.info)
         
 
-        self.visibility = CheckableComboBox(Visibility.list(), True)  
+        self.visibility = CheckableComboBox(Visibility.list(), ([True] * (len(Visibility.list()) + 1)), True)  
         self.body.addWidget(self.visibility)
 
-        self.enabled = CheckableComboBox(EnabledState.list(), True)  
+        self.enabled = CheckableComboBox(EnabledState.list(), ([True] * (len(EnabledState.list()) + 1)), True)  
         self.body.addWidget(self.enabled)
 
         self.body.addStretch(1)

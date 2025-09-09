@@ -1,9 +1,10 @@
-from PyQt6.QtWidgets import QApplication, QTextEdit, QWidget, QVBoxLayout
+from PyQt6.QtWidgets import QApplication, QTextEdit, QWidget, QVBoxLayout 
 from PyQt6.QtCore import QPropertyAnimation
 from PyQt6 import QtGui, QtCore
+from PyQt6.QtGui import QTextDocument
 
 class ShrinkingTextEdit(QTextEdit):
-    def __init__(self, placeholder="", line_height=30, max_height=400):
+    def __init__(self, placeholder="", line_height=60, max_height=400):
         super().__init__()
         self.line_height = line_height
         self.max_height = max_height
@@ -22,9 +23,6 @@ class ShrinkingTextEdit(QTextEdit):
 
         # Adjust height while typing
         self.textChanged.connect(self.adjust_height)
-
-        # Keep reference to animation
-        self._animation = None
 
     def focusInEvent(self, event):
         # Expand with content while focused
@@ -49,7 +47,12 @@ class ShrinkingTextEdit(QTextEdit):
         if shrink:
             self.current_text = self.toPlainText()
             self.setFixedHeight(self.line_height)
-            self.setText(self.current_text.split("\n")[0][:60] + "...")
+            shortened_text = self.get_first_n_lines()
+            if len(self.current_text) > len(shortened_text):
+                self.setText(shortened_text + "...")
+            else:
+                self.setText(shortened_text)
+
             self.setReadOnly(True)
         else:
             self.adjust_height()
@@ -58,3 +61,35 @@ class ShrinkingTextEdit(QTextEdit):
             cursor = self.textCursor()
             cursor.movePosition(cursor.MoveOperation.End)
             self.setTextCursor(cursor)
+
+    def get_first_n_lines(self, n=2):
+        text = self.toPlainText()
+        words = text.split()
+        lines = []
+        current_line = ""
+
+        for word in words:
+            # Check if adding this word exceeds a line (rough approx)
+            if current_line:
+                candidate = current_line + " " + word
+            else:
+                candidate = word
+
+            doc = QTextDocument()
+            doc.setPlainText(candidate)
+            doc.setTextWidth(self.viewport().width())
+            line_count = doc.blockCount()
+
+            if line_count > 1:  # exceeded line width
+                lines.append(current_line)
+                current_line = word
+            else:
+                current_line = candidate
+
+            if len(lines) >= n:
+                break
+
+        if len(lines) < n and current_line:
+            lines.append(current_line)
+
+        return "\n".join(lines[:n])

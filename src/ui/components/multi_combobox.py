@@ -4,9 +4,10 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt
 
 class CheckableComboBox(QComboBox):
-    def __init__(self, items:List[str]=[], include_all:bool=False):
+    def __init__(self, items:List=[], defaults:List[bool]=[], include_all:bool=False):
         super().__init__()
         self.include_all = include_all
+        self.defaults = defaults
         self.setModel(QStandardItemModel(self))
         # self.setEditable(False)  # prevent typing
         self.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
@@ -19,10 +20,25 @@ class CheckableComboBox(QComboBox):
             self.add_item("Select All")
         if len(items) > 0:
             self.add_items(items)
+
+        if len(self.defaults) > 0:
+            self.reset()
         
-    def add_items(self, items:List[str]):
+    def reset(self):
+        items = self.get_all_items()
+
+        for n in range(self.get_item_count()):
+            if len(self.defaults) - 1 >= n:
+                if self.defaults[n]:
+                    items[n].setCheckState(Qt.CheckState.Checked)
+                else:
+                    items[n].setCheckState(Qt.CheckState.Unchecked)
+            else:
+                items[n].setCheckState(Qt.CheckState.Unchecked)
+
+    def add_items(self, items:List):
         for item in items:
-            self.add_item(item)
+            self.add_item(str(item))
 
     def add_item(self, text):
         item = QStandardItem(text)
