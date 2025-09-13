@@ -223,7 +223,7 @@ def scan_mod(mod:Mod)->Mod:
         if Element.ALL_NAME in output_arr and Element.ONE_NAME in output_arr:
             output_arr.remove(Element.ONE_NAME)
         return output_arr
-
+    
     mod.characters = []
     mod = scan_character(mod)
     mod = scan_fighter(mod)
@@ -235,10 +235,12 @@ def scan_mod(mod:Mod)->Mod:
     mod = scan_camera(mod)
     mod = scan_ui(mod)
     mod = scan_thumbnail(mod)
+    
     mod.category = get_category(mod)
+    
     mod.includes = check_includes(mod.includes)
 
-    keys = mod.get_character_keys
+    keys = mod.get_character_keys()
     slots = mod.get_character_slots()
 
     if not mod.mod_name:
@@ -246,7 +248,7 @@ def scan_mod(mod:Mod)->Mod:
             mod.display_name,
             keys,
             slots,
-            mod.category
+            str(mod.category)
         )
 
     return mod

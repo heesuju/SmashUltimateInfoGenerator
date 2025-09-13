@@ -97,7 +97,9 @@ class ModList(QWidget):
         footer_layout.addWidget(self.paging)
         self.paging.page_size = LIST_PAGE_SIZE
 
-        self.scan()
+        # Start scanning if valid root mod directory exists
+        if self.config_manager.config.root_dir:
+            self.scan()
 
     def on_grid_selected(self):
         self.mode = ListLayout.GRID

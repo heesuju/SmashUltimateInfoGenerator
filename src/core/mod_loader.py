@@ -35,18 +35,19 @@ class ModWorker(QRunnable):
 
             data = load_toml(self.mod_path)
             mod = Mod()
+            
             if data is not None:
                 try:
                     mod = Mod(**data)
                     mod.contains_info = True
                 except Exception as e:
                     output_log(f"Error loading mod info for {self.mod_name}: {e}")
-                    
+            
             mod.display_name = self.mod_name
             mod.path = self.mod_path
             mod.hash = get_hash(self.mod_name)
             mod.folder_name = self.mod_name
-
+            
             mod = scan_mod(mod)
             self.signals.finished.emit(mod)
         except Exception as e:

@@ -43,7 +43,11 @@ class DataManager:
             return get_columns_by_key(CHARACTER_DATA_PATH, str(character), column)
         else:
             return csv_to_dict(CHARACTER_DATA_PATH, column)
-
+        
+    @staticmethod
+    def get_character_by_key():
+        return get_columns_by_key(CHARACTER_DATA_PATH)
+        
     @staticmethod
     def get_character_series(character:Fighter=None)-> list[str]:
         return DataManager.get_character_data(character, "Series")    

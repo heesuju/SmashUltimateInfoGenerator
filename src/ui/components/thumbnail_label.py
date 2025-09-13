@@ -9,7 +9,10 @@ class ThumbnailLabel(QLabel):
         self.setStyleSheet("background-color: black;")  # fallback black
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    def set_thumbnail(self, path: str | None):
+    def set_thumbnail(self, path:str):
+        if not path:
+            return 
+        
         size = self.size()  # QSize(320,200)
 
         # Make black background

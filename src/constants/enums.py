@@ -1,6 +1,6 @@
 from enum import Enum
 
-class BaseEnum(Enum):
+class BaseEnum(str, Enum):
     def __str__(self):
         return str(self.value)
     

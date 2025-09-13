@@ -17,7 +17,7 @@ from src.utils.string_helper import (
     BLACKLIST_CHARS
 )
 
-from data import PATH_CHAR_NAMES
+from src.managers.data_manager import DataManager
 
 def format_folder_name(characters:str, slots:str, mod_name:str, category:str):
     format = get_folder_name_format()
@@ -78,7 +78,7 @@ def remove_characters(text:str, characters:list[str]):
     text = text.replace("&", " ")
     arr_to_remove = []
     set_char = set()
-    char_dict = get_columns_by_key(PATH_CHAR_NAMES)
+    char_dict = DataManager.get_character_by_key()
     
     for key in characters:
         set_char.add(key)
@@ -147,7 +147,7 @@ def group_char_name(char_names, group_names):
     return outstr
 
 def get_group_count(group_name):
-    dict_arr = csv_to_dict(PATH_CHAR_NAMES) 
+    dict_arr = DataManager.get_character_data()
     count = 0
 
     for dict in dict_arr:

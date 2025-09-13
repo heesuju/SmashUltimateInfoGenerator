@@ -31,6 +31,10 @@ class ModManager():
     def scan_all(self):
         self.mods = {}
         root_dir = self.config_manager.config.root_dir
+        
+        if not root_dir:
+            return 
+        
         mod_folders = [os.path.join(root_dir, name) for name in os.listdir(root_dir)]
         self.scan(mod_folders)
 
