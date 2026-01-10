@@ -200,10 +200,51 @@ class FilterPanel(SidePanel):
         self.series.blockSignals(False)
     
     def apply(self):
-        self.filter_manager.params.character = [DataManager.get_character_by_custom(self.character.currentText())] if self.character.currentText() and self.character.currentIndex() != 0 else []
+        # Get all checked characters and convert to Fighter enums
+        checked_chars = self.character.get_checked()
+        # Filter out "Select All" if present
+        checked_chars = [c for c in checked_chars if c != "Select All"]
+        self.filter_manager.params.character = [DataManager.get_character_by_custom(c) for c in checked_chars]
+        
+        # Set author filter
         self.filter_manager.params.authors = self.author.text()
-        self.filter_manager.params.category = [Category(self.category.currentText())] if self.category.currentText() and self.category.currentIndex() != 0 else []
-        self.filter_manager.params.elements = [Element(self.elements.currentText())] if self.elements.currentIndex() != 0 else []
-        self.filter_manager.params.slot_min=self.min_value.value()
-        self.filter_manager.params.slot_max=self.max_value.value()
+        
+        # Get all checked categories
+        checked_categories = self.category.get_checked()
+        checked_categories = [c for c in checked_categories if c != "Select All"]
+        self.filter_manager.params.category = [Category(c) for c in checked_categories]
+        
+        # Get all checked elements
+        checked_elements = self.elements.get_checked()
+        checked_elements = [e for e in checked_elements if e != "Select All"]
+        self.filter_manager.params.elements = [Element(e) for e in checked_elements]
+        
+        # Set slot range
+        # In single mode, both min and max should be the same value
+        if self.slot_mode.currentIndex() == 1:  # Single mode
+            self.filter_manager.params.slot_min = self.min_value.value()
+            self.filter_manager.params.slot_max = self.min_value.value()
+        else:  # Range mode
+            self.filter_manager.params.slot_min = self.min_value.value()
+            self.filter_manager.params.slot_max = self.max_value.value()
+        
+        # Get all checked wifi states
+        checked_wifi = self.wifi.get_checked()
+        checked_wifi = [w for w in checked_wifi if w != "Select All"]
+        self.filter_manager.params.wifi = [Wifi(w) for w in checked_wifi]
+        
+        # Get all checked info states
+        checked_info = self.info.get_checked()
+        checked_info = [i for i in checked_info if i != "Select All"]
+        self.filter_manager.params.info = [InfoToml(i) for i in checked_info]
+        
+        # Get all checked enabled states
+        checked_enabled = self.enabled.get_checked()
+        checked_enabled = [e for e in checked_enabled if e != "Select All"]
+        self.filter_manager.params.enabled = [EnabledState(e) for e in checked_enabled]
+        
+        # Set include_hidden flag
+        self.filter_manager.params.include_hidden = self.include_hidden.isChecked()
+        
+        # Trigger filter update
         self.filter_manager.on_change()
