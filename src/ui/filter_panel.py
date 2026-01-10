@@ -25,12 +25,14 @@ from src.managers.data_manager import DataManager
 from src.constants.enums import *
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.multi_combobox import CheckableComboBox
+from src.ui.components.zero_padded_spinbox import ZeroPaddedSpinBox
 
 WIDTH = 300
 FONT = "Arial"
 FONT_SIZE = 10
 
 BODY_FONT_SIZE = 8
+
 
 class FilterPanel(SidePanel):
     def __init__(self, filter_manager:FilterManager):
@@ -68,20 +70,37 @@ class FilterPanel(SidePanel):
         self.elements = CheckableComboBox(Element.list(), ([True] * (len(Element.list()) + 1)), True, "All Elements")
         self.body.addWidget(self.elements)
         
-        slots = QGroupBox("Slots")
-        range_layout = QHBoxLayout()
-        slots.setLayout(range_layout)
-        self.min_value = QSpinBox()
+        # Slot filter controls in horizontal layout
+        slots_layout = QHBoxLayout()
+        self.slot_mode = QComboBox()
+        self.slot_mode.addItems(["Range", "Single"])
+        self.slot_mode.setCurrentIndex(0)  # Default to "Range"
+        self.slot_mode.setEditable(True)
+        self.slot_mode.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        self.slot_mode.lineEdit().setReadOnly(True)
+        self.slot_mode.currentIndexChanged.connect(self.on_slot_mode_changed)
+        slots_layout.addWidget(self.slot_mode)
+        
+        self.min_value = ZeroPaddedSpinBox()
         self.min_value.setRange(0, 255)
-        self.min_value.setPrefix("Min: ")
-        range_layout.addWidget(self.min_value)
-        self.max_value = QSpinBox()
+        self.min_value.setPrefix("C")
+        slots_layout.addWidget(self.min_value)
+        
+        # Range separator
+        self.range_separator = QLabel("~")
+        self.range_separator.setFont(QFont(FONT, FONT_SIZE))
+        self.range_separator.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.range_separator.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        slots_layout.addWidget(self.range_separator)
+        
+        self.max_value = ZeroPaddedSpinBox()
         self.max_value.setRange(0, 255)
-        self.max_value.setPrefix("Max: ")
+        self.max_value.setPrefix("C")
         self.max_value.setValue(255) 
-        range_layout.addWidget(self.max_value)
-        self.body.addWidget(slots)
-
+        slots_layout.addWidget(self.max_value)
+        
+        self.body.addLayout(slots_layout)
+        
         self.wifi = CheckableComboBox(Wifi.list(), ([True] * (len(Wifi.list()) + 1)), True, "All Wifi States")
         self.body.addWidget(self.wifi)
 
@@ -114,12 +133,22 @@ class FilterPanel(SidePanel):
         self.series.setCurrentIndex(0)
         self.character.reset()
         self.elements.reset()
+        self.slot_mode.setCurrentIndex(0)  # Reset to "Range"
         self.min_value.setValue(0)
         self.max_value.setValue(255)
         
 
         for checkbox in [self.wifi, self.info, self.visibility, self.enabled]:
             checkbox.reset()
+    
+    def on_slot_mode_changed(self, index:int):
+        """When slot mode is changed, update the spinbox states and labels"""
+        if index == 0:  # "Range" mode
+            self.range_separator.setVisible(True)
+            self.max_value.setVisible(True)
+        else:  # "Single" mode
+            self.range_separator.setVisible(False)
+            self.max_value.setVisible(False)
     
     def on_series_changed(self, index:int):
         """When series is changed, update character selection to match the series"""
