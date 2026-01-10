@@ -26,6 +26,7 @@ from src.constants.enums import *
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.zero_padded_spinbox import ZeroPaddedSpinBox
+from src.ui.components.single_combobox import SingleComboBox
 
 WIDTH = 300
 FONT = "Arial"
@@ -46,14 +47,11 @@ class FilterPanel(SidePanel):
         self.category = CheckableComboBox(Category.list(), [True] * (len(Category.list()) + 1), True, "All Categories")
         self.body.addWidget(self.category)
 
-        char_layout = HBox()
+        char_layout = QHBoxLayout()
         
-        self.series = QComboBox()
+        self.series = SingleComboBox()
         self.series.addItem("All Series")
         self.series.addItems(Series.list())
-        self.series.setEditable(True)  # Allow custom text display
-        self.series.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # Prevent adding new items
-        self.series.lineEdit().setReadOnly(True)  # Prevent typing
         char_layout.addWidget(self.series)
 
         characters = DataManager.get_character_names()
@@ -72,12 +70,9 @@ class FilterPanel(SidePanel):
         
         # Slot filter controls in horizontal layout
         slots_layout = QHBoxLayout()
-        self.slot_mode = QComboBox()
+        self.slot_mode = SingleComboBox()
         self.slot_mode.addItems(["Range", "Single"])
         self.slot_mode.setCurrentIndex(0)  # Default to "Range"
-        self.slot_mode.setEditable(True)
-        self.slot_mode.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
-        self.slot_mode.lineEdit().setReadOnly(True)
         self.slot_mode.currentIndexChanged.connect(self.on_slot_mode_changed)
         slots_layout.addWidget(self.slot_mode)
         
