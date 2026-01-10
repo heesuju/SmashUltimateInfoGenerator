@@ -21,6 +21,7 @@ class CheckableComboBox(QComboBox):
             self.add_item("Select All")
         if len(items) > 0:
             self.add_items(items)
+            self.sort_items()  # Sort items alphabetically after adding
 
         if len(self.defaults) > 0:
             self.reset()
@@ -39,6 +40,7 @@ class CheckableComboBox(QComboBox):
             else:
                 items[n].setCheckState(Qt.CheckState.Unchecked)
 
+        self.sort_items()  # Sort after applying defaults
         self.update_display()
 
     def add_items(self, items:List):
@@ -76,6 +78,42 @@ class CheckableComboBox(QComboBox):
         model = self.model()
         root = model.invisibleRootItem()
         return root.rowCount()
+    
+    def sort_items(self):
+        """Sort items alphabetically, with selected items appearing first.
+        'Select All' option always stays at index 0."""
+        if self.get_item_count() <= 1:  # Nothing to sort if 0 or 1 items
+            return
+        
+        model = self.model()
+        root = model.invisibleRootItem()
+        
+        # Collect all items except "Select All" (if present)
+        items_data = []
+        start_index = 1 if self.include_all else 0
+        
+        for row in range(start_index, root.rowCount()):
+            item = root.child(row)
+            items_data.append({
+                'text': item.text(),
+                'checked': item.checkState() == Qt.CheckState.Checked,
+                'item': item
+            })
+        
+        # Sort by: 1. checked status (checked first), 2. alphabetically
+        items_data.sort(key=lambda x: (not x['checked'], x['text'].lower()))
+        
+        # Remove all items except "Select All"
+        for _ in range(len(items_data)):
+            root.removeRow(start_index)
+        
+        # Re-add items in sorted order
+        for data in items_data:
+            new_item = QStandardItem(data['text'])
+            new_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+            check_state = Qt.CheckState.Checked if data['checked'] else Qt.CheckState.Unchecked
+            new_item.setData(check_state, Qt.ItemDataRole.CheckStateRole)
+            root.appendRow(new_item)
 
     def handle_item_pressed(self, index):
         item = self.model().itemFromIndex(index)
@@ -90,6 +128,7 @@ class CheckableComboBox(QComboBox):
             else:
                 first_item = self.model().invisibleRootItem().child(0)
                 first_item.setCheckState(Qt.CheckState.Unchecked)
+        
         self.update_display()
 
     def select_all(self, is_selected:bool):
@@ -98,6 +137,11 @@ class CheckableComboBox(QComboBox):
                 item.setCheckState(Qt.CheckState.Checked)
             else:
                 item.setCheckState(Qt.CheckState.Unchecked)
+    
+    def showPopup(self):
+        """Override to sort items before showing the popup"""
+        self.sort_items()  # Sort only when opening the dropdown
+        super().showPopup()
 
     def update_display(self):
         checked = self.get_checked()

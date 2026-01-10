@@ -182,7 +182,6 @@ class Series(BaseEnum):
     ARMS="Arms"
     WIIFIT="Wii Fit"
     FATALFURY="Fatal Fury"
-    SERIES="Series"
     FINALFANTASY="Final Fantasy"
     METROID="Metroid"
     STREETFIGHTER="Street Fighter"
