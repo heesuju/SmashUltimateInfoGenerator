@@ -4,10 +4,11 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt
 
 class CheckableComboBox(QComboBox):
-    def __init__(self, items:List=[], defaults:List[bool]=[], include_all:bool=False):
+    def __init__(self, items:List=[], defaults:List[bool]=[], include_all:bool=False, placeholder_text:str="All"):
         super().__init__()
         self.include_all = include_all
         self.defaults = defaults
+        self.placeholder_text = placeholder_text
         self.setModel(QStandardItemModel(self))
         # self.setEditable(False)  # prevent typing
         self.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
@@ -24,6 +25,8 @@ class CheckableComboBox(QComboBox):
         if len(self.defaults) > 0:
             self.reset()
         
+        self.update_display()  # Initialize display with proper text
+        
     def reset(self):
         items = self.get_all_items()
 
@@ -35,6 +38,8 @@ class CheckableComboBox(QComboBox):
                     items[n].setCheckState(Qt.CheckState.Unchecked)
             else:
                 items[n].setCheckState(Qt.CheckState.Unchecked)
+
+        self.update_display()
 
     def add_items(self, items:List):
         for item in items:
@@ -93,13 +98,18 @@ class CheckableComboBox(QComboBox):
         checked = [self.model().item(i).text()
                    for i in range(self.model().rowCount())
                    if self.model().item(i).checkState() == Qt.CheckState.Checked]
-        text = ", ".join(checked)
+        
+        # Show placeholder text when all items are selected or none selected
         if self.include_all:
             if len(checked) == self.get_item_count():
-                self.setCurrentText("All")
-                return None
+                self.setCurrentText(self.placeholder_text)
+                return
+            elif len(checked) == self.get_item_count() - 1 and "Select All" not in checked:
+                self.setCurrentText(self.placeholder_text)
+                self.model().item(0).setCheckState(Qt.CheckState.Checked)
+                return
             elif self.is_item_selected(0):
-                checked = checked[1:]
+                checked = checked[1:]  # Remove "Select All" from display
             
         self.setCurrentText(", ".join(checked))
 

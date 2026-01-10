@@ -41,7 +41,7 @@ class FilterPanel(SidePanel):
         self.author.setPlaceholderText("Author Name")
         self.body.addWidget(self.author)
 
-        self.category = CheckableComboBox(Category.list(), [True] * (len(Category.list()) + 1), True)
+        self.category = CheckableComboBox(Category.list(), [True] * (len(Category.list()) + 1), True, "All Categories")
         self.body.addWidget(self.category)
 
         self.series = QComboBox()
@@ -53,10 +53,10 @@ class FilterPanel(SidePanel):
 
         characters = DataManager.get_character_names()
         defaults = ([True] * (len(characters) + 1))
-        self.character = CheckableComboBox(characters, defaults, True)
+        self.character = CheckableComboBox(characters, defaults, True, "All Characters")
         self.body.addWidget(self.character)
 
-        self.elements = CheckableComboBox(Element.list(), ([True] * (len(Element.list()) + 1)), True)
+        self.elements = CheckableComboBox(Element.list(), ([True] * (len(Element.list()) + 1)), True, "All Elements")
         self.body.addWidget(self.elements)
         
         slots = QGroupBox("Slots")
@@ -73,17 +73,17 @@ class FilterPanel(SidePanel):
         range_layout.addWidget(self.max_value)
         self.body.addWidget(slots)
 
-        self.wifi = CheckableComboBox(Wifi.list(), ([True] * (len(Wifi.list()) + 1)), True)
+        self.wifi = CheckableComboBox(Wifi.list(), ([True] * (len(Wifi.list()) + 1)), True, "All Wifi States")
         self.body.addWidget(self.wifi)
 
-        self.info = CheckableComboBox(InfoToml.list(), ([True] * (len(InfoToml.list()) + 1)), True)  
+        self.info = CheckableComboBox(InfoToml.list(), ([True] * (len(InfoToml.list()) + 1)), True, "All Info States")  
         self.body.addWidget(self.info)
         
 
-        self.visibility = CheckableComboBox(Visibility.list(), ([True] * (len(Visibility.list()) + 1)), True)  
+        self.visibility = CheckableComboBox(Visibility.list(), ([True] * (len(Visibility.list()) + 1)), True, "All Visibility")  
         self.body.addWidget(self.visibility)
 
-        self.enabled = CheckableComboBox(EnabledState.list(), ([True] * (len(EnabledState.list()) + 1)), True)  
+        self.enabled = CheckableComboBox(EnabledState.list(), ([True] * (len(EnabledState.list()) + 1)), True, "All Enabled States")  
         self.body.addWidget(self.enabled)
 
         self.body.addStretch(1)
@@ -101,10 +101,10 @@ class FilterPanel(SidePanel):
         Resets all filter fields to their default state.
         """
         self.author.clear()
-        self.category.setCurrentIndex(0)
+        self.category.reset()
         self.series.setCurrentIndex(0)
-        self.character.setCurrentIndex(0)
-        self.elements.setCurrentIndex(0)
+        self.character.reset()
+        self.elements.reset()
         self.min_value.setValue(0)
         self.max_value.setValue(255)
         
