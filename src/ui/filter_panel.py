@@ -102,12 +102,12 @@ class FilterPanel(SidePanel):
         self.info = CheckableComboBox(InfoToml.list(), ([True] * (len(InfoToml.list()) + 1)), True, "All Info States")  
         self.body.addWidget(self.info)
         
-
-        self.visibility = CheckableComboBox(Visibility.list(), ([True] * (len(Visibility.list()) + 1)), True, "All Visibility")  
-        self.body.addWidget(self.visibility)
-
         self.enabled = CheckableComboBox(EnabledState.list(), ([True] * (len(EnabledState.list()) + 1)), True, "All Enabled States")  
         self.body.addWidget(self.enabled)
+        
+        # Include Hidden checkbox
+        self.include_hidden = QCheckBox("Include Hidden")
+        self.body.addWidget(self.include_hidden)
 
         self.body.addStretch(1)
 
@@ -133,8 +133,10 @@ class FilterPanel(SidePanel):
         self.max_value.setValue(255)
         
 
-        for checkbox in [self.wifi, self.info, self.visibility, self.enabled]:
+        for checkbox in [self.wifi, self.info, self.enabled]:
             checkbox.reset()
+        
+        self.include_hidden.setChecked(False)
     
     def on_slot_mode_changed(self, index:int):
         """When slot mode is changed, update the spinbox states and labels"""
