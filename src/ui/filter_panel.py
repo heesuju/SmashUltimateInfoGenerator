@@ -44,17 +44,26 @@ class FilterPanel(SidePanel):
         self.category = CheckableComboBox(Category.list(), [True] * (len(Category.list()) + 1), True, "All Categories")
         self.body.addWidget(self.category)
 
+        char_layout = HBox()
+        
         self.series = QComboBox()
         self.series.addItem("All Series")
         self.series.addItems(Series.list())
-        self.series.setEditable(True)  # ComboBox itself is not editable
+        self.series.setEditable(True)  # Allow custom text display
         self.series.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # Prevent adding new items
-        self.body.addWidget(self.series)
+        self.series.lineEdit().setReadOnly(True)  # Prevent typing
+        char_layout.addWidget(self.series)
 
         characters = DataManager.get_character_names()
         defaults = ([True] * (len(characters) + 1))
         self.character = CheckableComboBox(characters, defaults, True, "All Characters")
-        self.body.addWidget(self.character)
+        char_layout.addWidget(self.character)
+        
+        self.body.addLayout(char_layout)
+        
+        # Connect event handlers for series-character synchronization
+        self.series.currentIndexChanged.connect(self.on_series_changed)
+        self.character.model().dataChanged.connect(self.on_character_changed)
 
         self.elements = CheckableComboBox(Element.list(), ([True] * (len(Element.list()) + 1)), True, "All Elements")
         self.body.addWidget(self.elements)
@@ -112,11 +121,62 @@ class FilterPanel(SidePanel):
         for checkbox in [self.wifi, self.info, self.visibility, self.enabled]:
             checkbox.reset()
     
+    def on_series_changed(self, index:int):
+        """When series is changed, update character selection to match the series"""
+        # Block character model signals to prevent triggering on_character_changed
+        self.character.model().blockSignals(True)
+        
+        if index == 0:  # "All Series" selected
+            # Select all characters
+            for i in range(self.character.get_item_count()):
+                item = self.character.model().invisibleRootItem().child(i)
+                item.setCheckState(Qt.CheckState.Checked)
+        else:
+            # Get series name and find matching characters
+            series_name = self.series.currentText()
+            
+            # Ignore if it's "Custom" text (not an actual series)
+            if series_name == "Custom":
+                self.character.model().blockSignals(False)
+                return
+            
+            series_characters = DataManager.get_characters_by_series(series_name)
+            
+            # Update character checkboxes
+            for i in range(self.character.get_item_count()):
+                item = self.character.model().invisibleRootItem().child(i)
+                char_name = item.text()
+                
+                # Skip "Select All" item (first item)
+                if i == 0 and char_name == "Select All":
+                    item.setCheckState(Qt.CheckState.Unchecked)
+                    continue
+                
+                # Check if character belongs to selected series
+                if char_name in series_characters:
+                    item.setCheckState(Qt.CheckState.Checked)
+                else:
+                    item.setCheckState(Qt.CheckState.Unchecked)
+        
+        # Unblock signals and update display
+        self.character.model().blockSignals(False)
+        self.character.update_display()
+    
+    def on_character_changed(self):
+        """When character selection changes manually, set series text to 'Custom'"""
+        # Only change if a specific series is currently selected (index > 0)
+        self.series.blockSignals(True)
+            
+        if len(self.character.get_checked()) == self.character.get_item_count():
+            self.series.setCurrentIndex(0)
+        else:
+            self.series.setCurrentText("Custom")
+        self.series.blockSignals(False)
+    
     def apply(self):
         self.filter_manager.params.character = [DataManager.get_character_by_custom(self.character.currentText())] if self.character.currentText() and self.character.currentIndex() != 0 else []
         self.filter_manager.params.authors = self.author.text()
         self.filter_manager.params.category = [Category(self.category.currentText())] if self.category.currentText() and self.category.currentIndex() != 0 else []
-        self.filter_manager.params.series = [Series(self.series.currentText())] if self.series.currentIndex() != 0 else []
         self.filter_manager.params.elements = [Element(self.elements.currentText())] if self.elements.currentIndex() != 0 else []
         self.filter_manager.params.slot_min=self.min_value.value()
         self.filter_manager.params.slot_max=self.max_value.value()

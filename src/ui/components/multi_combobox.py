@@ -67,6 +67,11 @@ class CheckableComboBox(QComboBox):
             return item.checkState == Qt.CheckState.Checked
         return False
 
+    def get_checked(self)->List[str]:
+        return [self.model().item(i).text()
+            for i in range(self.model().rowCount())
+            if self.model().item(i).checkState() == Qt.CheckState.Checked]
+
     def get_item_count(self)->int:
         model = self.model()
         root = model.invisibleRootItem()
@@ -95,9 +100,7 @@ class CheckableComboBox(QComboBox):
                 item.setCheckState(Qt.CheckState.Unchecked)
 
     def update_display(self):
-        checked = [self.model().item(i).text()
-                   for i in range(self.model().rowCount())
-                   if self.model().item(i).checkState() == Qt.CheckState.Checked]
+        checked = self.get_checked()
         
         # Show placeholder text when all items are selected or none selected
         if self.include_all:

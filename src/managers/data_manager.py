@@ -75,6 +75,16 @@ class DataManager:
             if d.get("Group") == group_name:
                 output.append(d.get("Key"))
         return output
+    
+    @staticmethod
+    def get_characters_by_series(series_name:str)-> list[str]:
+        """Get list of character custom names that belong to a specific series"""
+        output = []
+        data = DataManager.get_character_data()
+        for d in data:
+            if d.get("Series") == series_name:
+                output.append(d.get("Custom"))
+        return output
 
     @staticmethod
     def get_character_icon(character:str) -> str:

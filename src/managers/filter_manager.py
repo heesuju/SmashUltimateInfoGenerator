@@ -17,7 +17,6 @@ class FilterParameters(BaseModel):
     mod_name: str = ""
     authors: str = ""
     category: List[Category] = []
-    series: str = ""
     character: List[Fighter] = []
     elements: List[Element] = Element.list()
     slot_min: int = 0
@@ -56,8 +55,6 @@ class FilterManager():
             if self.params.category:
                 if mod.category not in self.params.category:
                     continue
-            # if self.params.series and self.params.series.lower() not in mod.series.lower():
-            #     continue
             if self.params.character:
                 if self.params.character and not any(char in [Fighter(c.fighter) for c in mod.characters] for char in self.params.character):
                     continue
