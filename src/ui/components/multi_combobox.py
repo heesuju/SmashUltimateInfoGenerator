@@ -105,8 +105,8 @@ class CheckableComboBox(QComboBox):
                 self.setCurrentText(self.placeholder_text)
                 return
             elif len(checked) == self.get_item_count() - 1 and "Select All" not in checked:
-                self.setCurrentText(self.placeholder_text)
                 self.model().item(0).setCheckState(Qt.CheckState.Checked)
+                self.setCurrentText(self.placeholder_text)
                 return
             elif self.is_item_selected(0):
                 checked = checked[1:]  # Remove "Select All" from display
