@@ -24,19 +24,17 @@ class Navigation(QWidget):
         self.selected_menu = NavigationMenuIcon.NONE
         layout = VBox()
         self.menus:List[NavigationMenu] = []
+        self.buttons = {}  # Dictionary to track buttons by icon
         self.setLayout(layout)
         self.setFixedWidth(WIDTH)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         self.frame = QFrame()
         self.frame.setFrameShape(QFrame.Shape.NoFrame)
-        self.frame.setAutoFillBackground(True)
+        self.frame.setAutoFillBackground(False)  # Use theme colors
         frame_layout = VBox()
         self.frame.setLayout(frame_layout)
         layout.addWidget(self.frame)
-        palette = self.frame.palette()
-        palette.setColor(QPalette.ColorRole.Highlight, QColor(100, 255, 255))  # White background
-        self.frame.setPalette(palette)
 
         for n, group in enumerate(menus):
             for menu in group:
@@ -44,14 +42,18 @@ class Navigation(QWidget):
                 button.clicked.connect(partial(self.on_clicked, NavigationMenuIcon(menu.icon)))
                 frame_layout.addWidget(button)
                 self.menus.append(menu)
+                self.buttons[menu.icon] = button  # Store button reference
 
             if n < len(menus) - 1:
                 frame_layout.addStretch(1)
 
-        self.frame.setStyleSheet("""QFrame {
-                                 background-color: rgba(100, 255, 200, 200);
-                                 border-radius: 0px;
-                                 }""")
+        # Navigation frame styling with subtle background
+        self.frame.setStyleSheet("""
+            QFrame {
+                background-color: rgba(0, 0, 0, 0.2);
+                border-radius: 0px;
+            }
+        """)
         
     def on_clicked(self, menu:NavigationMenuIcon):
         if self.selected_menu != menu:
@@ -59,21 +61,32 @@ class Navigation(QWidget):
         else:
             self.selected_menu = NavigationMenuIcon.NONE
 
+        # Update button states and panel visibility
         for item in self.menus:
+            button = self.buttons.get(item.icon)
             if item.icon == self.selected_menu.value:
                 item.widget.show()
+                if button:
+                    button.setChecked(True)
                 if item.callback is not None:
                     item.callback()
             else:
                 item.widget.hide()
+                if button:
+                    button.setChecked(False)
     
     def show_panel(self, panel_widget: QWidget):
         """Programmatically show a specific panel"""
         for item in self.menus:
+            button = self.buttons.get(item.icon)
             if item.widget == panel_widget:
                 self.selected_menu = NavigationMenuIcon(item.icon)
                 item.widget.show()
+                if button:
+                    button.setChecked(True)
                 if item.callback is not None:
                     item.callback()
             else:
                 item.widget.hide()
+                if button:
+                    button.setChecked(False)

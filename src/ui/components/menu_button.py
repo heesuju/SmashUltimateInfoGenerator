@@ -21,18 +21,28 @@ class MenuButton(QPushButton):
 
         self.setFixedSize(width, height)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.setIconSize(QSize(32, 32))
-        self.setFlat(True)
-        # setStyleSheet("""
-        #     QPushButton {
-        #         border: none;
-        #         background-color: white;
-        #         border-radius: 0px;
-        #     }
-        #     QPushButton:hover {
-        #         background-color: lightgray;
-        #     }
-        #     QPushButton:pressed {
-        #         background-color: gray;
-        #     }
-        # """)
+        self.setIconSize(QSize(ICON_SIZE, ICON_SIZE))
+        self.setFlat(False)
+        self.setCheckable(True)
+        
+        # Theme-aware styling with selected state
+        self.setStyleSheet("""
+            QPushButton {
+                border: none;
+                background-color: transparent;
+                border-radius: 0px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+            QPushButton:pressed {
+                background-color: rgba(255, 255, 255, 0.15);
+            }
+            QPushButton:checked {
+                background-color: rgba(100, 150, 255, 0.3);
+                border-left: 3px solid #6496FF;
+            }
+            QPushButton:checked:hover {
+                background-color: rgba(100, 150, 255, 0.4);
+            }
+        """)
