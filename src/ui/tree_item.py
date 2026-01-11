@@ -31,12 +31,23 @@ class TreeItem(QTreeWidgetItem):
         from PyQt6.QtWidgets import QHBoxLayout
         icons_layout = QHBoxLayout(icons_widget)
         icons_layout.setContentsMargins(0, 0, 0, 0)
-        icons_layout.setSpacing(0)
+        icons_layout.setSpacing(2)
         
-        for path in self.mod.character_icons:
+        # Show maximum 3 icons
+        max_icons = 3
+        total_icons = len(self.mod.character_icons)
+        
+        for i, path in enumerate(self.mod.character_icons[:max_icons]):
             icon_label = QLabel()
             icon_label.setPixmap(QPixmap(path).scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
             icons_layout.addWidget(icon_label)
+        
+        # Add "+N" label if there are more icons
+        if total_icons > max_icons:
+            remaining = total_icons - max_icons
+            plus_label = QLabel(f"+{remaining}")
+            plus_label.setStyleSheet("color: #888; font-size: 11px; padding-left: 4px;")
+            icons_layout.addWidget(plus_label)
 
         icons_layout.addStretch()
         
@@ -50,14 +61,15 @@ class TreeItem(QTreeWidgetItem):
         btn.setFixedHeight(32)
         btn.clicked.connect(partial(self.on_item_toggled, self.mod.name, btn))
             
-        parent.setItemWidget(self, 0, check_widget)  # <-- custom widget in column 0
-        parent.setItemWidget(self, 1, name_widget)
-        parent.setItemWidget(self, 2, category_widget)
-        parent.setItemWidget(self, 3, authors_widget)
-        parent.setItemWidget(self, 4, slot_widget)
-        parent.setItemWidget(self, 5, icons_widget)
-        parent.setItemWidget(self, 6, btn)
-        self.widgets = [check_widget, name_widget, category_widget, authors_widget, slot_widget, icons_widget, btn]
+            
+        parent.setItemWidget(self, 0, check_widget)     # Column 0: Checkbox
+        parent.setItemWidget(self, 1, category_widget)  # Column 1: Category
+        parent.setItemWidget(self, 2, name_widget)      # Column 2: Mod Name
+        parent.setItemWidget(self, 3, authors_widget)   # Column 3: Authors
+        parent.setItemWidget(self, 4, slot_widget)      # Column 4: Slot
+        parent.setItemWidget(self, 5, icons_widget)     # Column 5: Characters
+        parent.setItemWidget(self, 6, btn)              # Column 6: Enabled
+        self.widgets = [check_widget, category_widget, name_widget, authors_widget, slot_widget, icons_widget, btn]
 
     def on_item_toggled(self):
         pass

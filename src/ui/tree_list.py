@@ -100,16 +100,42 @@ class TreeList(QWidget):
             }
         """)
         self.tree_widget.setAlternatingRowColors(True)
-        self.tree_widget.setColumnCount(8)
-        self.tree_widget.setColumnWidth(0, 50)
+        self.tree_widget.setColumnCount(7)
+        self.tree_widget.setHeaderLabels(["", "Category", "Mod Name", "Authors", "Slot", "Characters", "Enabled"])
         
-        self.tree_widget.header().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        # Prevent the last column from auto-stretching
+        self.tree_widget.header().setStretchLastSection(False)
+        
+        # Column 0: Checkbox - Fixed width
+        self.tree_widget.setColumnWidth(0, 50)
         self.tree_widget.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        
+        # Column 1: Category - Fixed width
         self.tree_widget.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
-        self.tree_widget.header().setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
-        self.tree_widget.header().resizeSection(1, 300)
-        self.tree_widget.header().resizeSection(3, 200)
-        self.tree_widget.setHeaderLabels(["", "Mod Name", "Category", "Authors", "Slot", "Characters", "Enabled", ""])
+        self.tree_widget.setColumnWidth(1, 80)
+        
+        # Column 2: Mod Name - Stretch
+        self.tree_widget.header().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        self.tree_widget.setColumnWidth(2, 300)  # Initial/minimum width
+        
+        # Column 3: Authors - Stretch
+        self.tree_widget.header().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        self.tree_widget.setColumnWidth(3, 150)  # Initial/minimum width
+        
+        # Column 4: Slot - Fixed width
+        self.tree_widget.header().setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
+        self.tree_widget.setColumnWidth(4, 120)
+        
+        # Column 5: Characters - Fixed width
+        self.tree_widget.header().setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)
+        self.tree_widget.setColumnWidth(5, 120)
+        
+        # Column 6: Enabled - Fixed width
+        self.tree_widget.header().setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)
+        self.tree_widget.setColumnWidth(6, 50)
+        
+        # Set minimum section sizes for stretch columns to prevent over-squashing
+        self.tree_widget.header().setMinimumSectionSize(50)
         
         # Add checkbox to header
         header = self.tree_widget.header()
