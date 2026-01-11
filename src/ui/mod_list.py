@@ -32,7 +32,7 @@ class ModList(QWidget):
         self.mod_manager.set_callback(self.on_filter_changed)
         
         self.filter_manager = filter_manager
-        self.filter_manager.add_callback(self.set_data)
+        self.filter_manager.add_callback(self.on_filter_changed)
         self.config_manager = config_manager
 
         self.mode = ListLayout.LIST
