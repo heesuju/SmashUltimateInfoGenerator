@@ -134,8 +134,15 @@ class ModList(QWidget):
         mods = self.mod_manager.get_mods()
         if self.filter_manager:
             mods = self.filter_manager.apply_filters(mods)
-        self.paging.update(len(mods))
+        total_items = len(mods)
+        self.paging.update(total_items)
         self.populate(mods)
+        
+        # Update count label in filter chips
+        current_page = self.paging.cur_page
+        page_size = self.paging.page_size
+        current_items = min(page_size, total_items - (current_page - 1) * page_size)
+        self.filter_chips.update_count(current_items, total_items)
 
     def clear(self):
         self._populate_active = False

@@ -79,21 +79,31 @@ class FilterChips(QWidget):
         self.filter_manager = filter_manager
         self.filter_manager.add_callback(self.update_chips)
         
+        self.setFixedHeight(40)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        
         # Main horizontal layout
         main_layout = QHBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        main_layout.setSpacing(10)
         self.setLayout(main_layout)
         
         # Scroll area for chips
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        self.scroll_area.setMaximumHeight(40)
-        self.scroll_area.setMinimumHeight(0)
-        main_layout.addWidget(self.scroll_area)
+        self.scroll_area.setFixedHeight(40)
+        main_layout.addWidget(self.scroll_area, 1)  # Stretch factor 1
+        
+        # Count label (aligned to the right)
+        self.count_label = QLabel("")
+        self.count_label.setFont(QFont("Arial", 9))
+        self.count_label.setStyleSheet("color: #aaa; padding: 0px 5px;")
+        self.count_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.count_label.setFixedHeight(40)
+        main_layout.addWidget(self.count_label)
         
         # Container widget for chips
         self.chips_container = QWidget()
@@ -104,8 +114,8 @@ class FilterChips(QWidget):
         self.chips_container.setLayout(self.chips_layout)
         self.scroll_area.setWidget(self.chips_container)
         
-        # Initially hidden
-        self.setVisible(False)
+        # Scroll area initially hidden (no chips)
+        self.scroll_area.setVisible(False)
         
     def update_chips(self):
         """Update chips based on current filter state"""
@@ -196,12 +206,7 @@ class FilterChips(QWidget):
             self.chips_layout.insertWidget(chip_count, chip)
             chip_count += 1
         
-        # Show/hide the chips widget based on whether there are any chips
-        self.setVisible(chip_count > 0)
-        if chip_count > 0:
-            self.setMaximumHeight(40)
-        else:
-            self.setMaximumHeight(0)
+        self.scroll_area.setVisible(chip_count > 0)
     
     def on_chip_closed(self, filter_type: str):
         """Reset the specific filter when its chip is closed"""
@@ -232,3 +237,10 @@ class FilterChips(QWidget):
         
         # Trigger filter update
         self.filter_manager.on_change()
+    
+    def update_count(self, current_items: int, total_items: int):
+        """Update the count label showing current items out of total"""
+        if total_items == 0:
+            self.count_label.setText("")
+        else:
+            self.count_label.setText(f"Showing {current_items} items of {total_items}")
