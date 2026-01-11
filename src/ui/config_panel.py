@@ -45,6 +45,21 @@ class Config(SidePanel):
         self.theme_drop.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # Prevent adding new items
         self.body.addWidget(self.theme_drop)
 
+        # Cache management section
+        cache_group = QGroupBox("Cache Management")
+        cache_layout = QVBoxLayout()
+        
+        cache_info = QLabel("Clear scan cache to force rescan of all mods on next load.")
+        cache_info.setWordWrap(True)
+        cache_layout.addWidget(cache_info)
+        
+        clear_cache_btn = QPushButton("Clear Scan Cache")
+        clear_cache_btn.clicked.connect(self.clear_scan_cache)
+        cache_layout.addWidget(clear_cache_btn)
+        
+        cache_group.setLayout(cache_layout)
+        self.body.addWidget(cache_group)
+
         restore_btn = QPushButton("Restore")
         restore_btn.clicked.connect(self.init)
         save_btn = QPushButton("Save")
@@ -85,6 +100,12 @@ class Config(SidePanel):
         cache_dir = choose_folder(self, self.config_manager.config.cache_dir)
         if cache_dir:
             self.cache_dir.set_text(cache_dir)
+    
+    def clear_scan_cache(self):
+        """Clear the mod scan cache"""
+        from src.managers.cache_manager import CacheManager
+        cache_manager = CacheManager()
+        cache_manager.clear_all()
 
     def check_validity(self)->bool:
         is_valid = True

@@ -14,6 +14,7 @@ from src.utils.hash import get_hash
 from src.models.mod import Mod
 from .scanner import scan_mod
 from src.utils.logger import output_log
+from src.managers.cache_manager import CacheManager
 
 # Worker Signals
 class ModWorkerSignals(QObject):
@@ -22,10 +23,11 @@ class ModWorkerSignals(QObject):
 
 # Worker Runnable
 class ModWorker(QRunnable):
-    def __init__(self, mod_name:str, mod_path:str):
+    def __init__(self, mod_name:str, mod_path:str, cache_manager:CacheManager):
         super().__init__()
         self.mod_name = mod_name
         self.mod_path = mod_path
+        self.cache_manager = cache_manager
         self.signals = ModWorkerSignals()
 
     def run(self):
@@ -33,6 +35,22 @@ class ModWorker(QRunnable):
             if not is_valid_dir(self.mod_path):
                 return
 
+            # Try to load from cache first
+            cached_data = self.cache_manager.get_cached_mod(self.mod_path)
+            
+            if cached_data is not None:
+                # Cache hit - load from cache
+                try:
+                    mod = Mod(**cached_data)
+                    mod.path = self.mod_path
+                    mod.hash = get_hash(self.mod_name)
+                    self.signals.finished.emit(mod)
+                    return
+                except Exception as e:
+                    output_log(f"Error loading from cache for {self.mod_name}: {e}")
+                    # Fall through to regular scan
+            
+            # Cache miss or invalid - perform full scan
             data = load_toml(self.mod_path)
             mod = Mod()
             
@@ -49,6 +67,11 @@ class ModWorker(QRunnable):
             mod.folder_name = self.mod_name
             
             mod = scan_mod(mod)
+            
+            # Store in cache for next time
+            cache_data = mod.model_dump(exclude={'is_selected', 'path', 'hash'})
+            self.cache_manager.set_cached_mod(self.mod_path, cache_data)
+            
             self.signals.finished.emit(mod)
         except Exception as e:
             self.signals.error.emit(f"Error loading mod {self.mod_name}: {e}")
@@ -64,6 +87,9 @@ class ModLoader(QObject):
         if isinstance(self.directory, str):
             self.directory = [self.directory]
         self.thread_pool = QThreadPool()
+        # Optimize for HDD: limit to 4 threads to reduce disk seek overhead
+        self.thread_pool.setMaxThreadCount(4)
+        self.cache_manager = CacheManager()
         self.pending = len(self.directory) 
         self.total = len(self.directory)
         self.success = 0
@@ -95,13 +121,16 @@ class ModLoader(QObject):
             self.all_finished.emit()
             return
 
+        # Cleanup orphaned cache entries before scanning
+        self.cache_manager.cleanup()
+        
         for mod_path in self.directory:
             if not is_valid_dir(mod_path):
                 output_log(f"Invalid mod directory: {mod_path}")
                 on_progress(None)
 
             mod_name = get_base_name(mod_path)
-            worker = ModWorker(mod_name, mod_path)
+            worker = ModWorker(mod_name, mod_path, self.cache_manager)
             worker.signals.finished.connect(on_progress)  # send each mod to UI
             worker.signals.finished.connect(lambda *_: self._worker_done())
             worker.signals.error.connect(self._worker_failed)
