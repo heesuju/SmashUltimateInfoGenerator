@@ -9,9 +9,9 @@ from PyQt6.QtGui import QPixmap, QColor, QPalette
 from PyQt6.QtWidgets import QListWidget, QListView, QStyledItemDelegate, QStyleOptionViewItem, QGraphicsDropShadowEffect, QSizePolicy, QStyle
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTreeWidget,
-    QTreeWidgetItem, QCheckBox, QHeaderView
+    QTreeWidgetItem, QCheckBox, QHeaderView, QScrollBar
 )
-from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPainterPath, QImage, QBrush, QPen, QColor
+from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPainterPath, QImage, QBrush, QPen, QColor, QWheelEvent
 from PyQt6.QtWidgets import QGraphicsOpacityEffect
 from PyQt6.QtCore import QPropertyAnimation
 
@@ -27,24 +27,67 @@ class CustomTreeWidget(QTreeWidget):
         super().__init__()
         self.icon_size = 20  # Size of each icon
         self.setItemDelegate(CustomDelegate())
+        
+        # Overlay Scrollbar Implementation
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.overlay_scrollbar = QScrollBar(Qt.Orientation.Vertical, self)
+        
+        # Stylesheet for overlay - make it sit on top transparently
+        self.overlay_scrollbar.setStyleSheet("""
+            QScrollBar:vertical {
+                border: none;
+                background: transparent;
+                width: 10px;
+                margin: 0px; 
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255, 255, 255, 0.2);
+                min-height: 20px;
+                border-radius: 5px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: rgba(255, 255, 255, 0.3);
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: none;
+            }
+        """)
+        
+        # Syncing logic
+        self.verticalScrollBar().rangeChanged.connect(self.update_scrollbar_range)
+        self.verticalScrollBar().valueChanged.connect(self.overlay_scrollbar.setValue)
+        self.overlay_scrollbar.valueChanged.connect(self.verticalScrollBar().setValue)
+        
+        # Ensure scrollbar is raised
+        self.overlay_scrollbar.raise_()
 
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        painter = QPainter(self.viewport())
+    def update_scrollbar_range(self, min_val, max_val):
+        self.overlay_scrollbar.setRange(min_val, max_val)
+        self.overlay_scrollbar.setPageStep(self.verticalScrollBar().pageStep())
+        if max_val <= min_val:
+            self.overlay_scrollbar.hide()
+        else:
+            self.overlay_scrollbar.show()
 
-        for row in range(self.topLevelItemCount()):
-            item = self.topLevelItem(row)
-            rect = self.visualItemRect(item)
-            
-            # Specify the column where you want multiple icons
-            icons = item.data(4, Qt.ItemDataRole.UserRole)
-            if icons:
-                x_offset = self.columnViewportPosition(4) + 5  # Adjust position in column
-                y_center = rect.center().y() - self.icon_size // 2
-                for icon in icons:
-                    icon_rect = QRect(x_offset, y_center, self.icon_size, self.icon_size)
-                    icon.paint(painter, icon_rect, Qt.AlignmentFlag.AlignCenter)
-                    x_offset += self.icon_size + 5  # Add spacing between icons
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        sb_width = 10
+        # Position at the right edge, overlaying content
+        self.overlay_scrollbar.setGeometry(
+            self.width() - sb_width, 
+            0, 
+            sb_width, 
+            self.height()
+        )
+        self.overlay_scrollbar.raise_()
+
+    def wheelEvent(self, event: QWheelEvent):
+        # Forward wheel events to the hidden scrollbar functionality
+        super().wheelEvent(event)
+        # Verify overlay updates (usually handled by valueChanged connection)
 
 class CustomDelegate(QStyledItemDelegate):
     def sizeHint(self, option, index):
@@ -89,6 +132,28 @@ class TreeList(QWidget):
             QTreeWidget::item:selected:hover {
                 background-color: rgba(100, 150, 255, 0.3);
             }
+            
+            QScrollBar:vertical {
+                border: none;
+                background: transparent;
+                width: 8px;
+                margin: 0px;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255, 255, 255, 0.2);
+                min-height: 20px;
+                border-radius: 4px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: rgba(255, 255, 255, 0.3);
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: none;
+            }
+
             QHeaderView::section {
                 background-color: rgba(0, 0, 0, 0.3);
                 color: white;
