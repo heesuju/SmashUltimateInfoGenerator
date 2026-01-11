@@ -137,6 +137,10 @@ class FilterPanel(SidePanel):
             checkbox.reset()
         
         self.include_hidden.setChecked(False)
+        
+        # Reset filter manager parameters
+        self.filter_manager.reset()
+        self.filter_manager.on_change()
     
     def on_slot_mode_changed(self, index:int):
         """When slot mode is changed, update the spinbox states and labels"""
@@ -248,3 +252,57 @@ class FilterPanel(SidePanel):
         
         # Trigger filter update
         self.filter_manager.on_change()
+    
+    def focus_filter(self, filter_type: str):
+        """Focus on a specific filter input based on filter type"""
+        if filter_type == "authors":
+            self.author.setFocus()
+            self.author.selectAll()
+        elif filter_type == "category":
+            self.category.setFocus()
+            self.category.showPopup()
+        elif filter_type == "character":
+            self.character.setFocus()
+            self.character.showPopup()
+        elif filter_type == "elements":
+            self.elements.setFocus()
+            self.elements.showPopup()
+        elif filter_type == "slots":
+            self.min_value.setFocus()
+            self.min_value.selectAll()
+        elif filter_type == "wifi":
+            self.wifi.setFocus()
+            self.wifi.showPopup()
+        elif filter_type == "info":
+            self.info.setFocus()
+            self.info.showPopup()
+        elif filter_type == "enabled":
+            self.enabled.setFocus()
+            self.enabled.showPopup()
+        elif filter_type == "include_hidden":
+            self.include_hidden.setFocus()
+    
+    def reset_filter(self, filter_type: str):
+        """Reset a specific filter UI component to its default state"""
+        if filter_type == "authors":
+            self.author.clear()
+        elif filter_type == "category":
+            self.category.reset()
+        elif filter_type == "character":
+            self.character.reset()
+            self.series.setCurrentIndex(0)  # Also reset series
+        elif filter_type == "elements":
+            self.elements.reset()
+        elif filter_type == "slots":
+            self.min_value.setValue(0)
+            self.max_value.setValue(255)
+            self.slot_mode.setCurrentIndex(0)  # Reset to Range mode
+            self.on_slot_mode_changed(0)  # Update visibility
+        elif filter_type == "wifi":
+            self.wifi.reset()
+        elif filter_type == "info":
+            self.info.reset()
+        elif filter_type == "enabled":
+            self.enabled.reset()
+        elif filter_type == "include_hidden":
+            self.include_hidden.setChecked(False)

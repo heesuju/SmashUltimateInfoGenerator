@@ -16,6 +16,7 @@ from src.models.mod import Mod, ModItem
 from src.ui.components.toggle_button import ToggleButton
 from src.ui.components.paging import Paging
 from src.ui.search_bar import SearchBar
+from src.ui.components.filter_chips import FilterChips
 from src.managers.mod_manager import ModManager
 
 from src.constants.enums import Fighter, ListLayout
@@ -60,6 +61,10 @@ class ModList(QWidget):
 
         self.search = SearchBar(self.mod_manager, self.filter_manager)
         self.frame_layout.addWidget(self.search)
+        
+        # Filter chips widget
+        self.filter_chips = FilterChips(self.filter_manager)
+        self.frame_layout.addWidget(self.filter_chips)
 
         # init child layouts
         header_layout = HBox(spacing=10)

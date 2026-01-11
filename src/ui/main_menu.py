@@ -59,7 +59,20 @@ class MainMenu(QWidget):
         
         vlayout.addLayout(hlayout)
         
+        # Connect filter chips to filter panel
+        self.list_widget.filter_chips.chip_clicked.connect(self.on_filter_chip_clicked)
+        self.list_widget.filter_chips.chip_reset.connect(self.filter.reset_filter)
         
         layout.addLayout(vlayout)
         layout.addWidget(self.menu)
-        self.setLayout(layout)     
+        self.setLayout(layout)
+    
+    def on_filter_chip_clicked(self, filter_type: str):
+        """Handle filter chip clicks by showing filter panel and focusing the input"""
+        # Show the filter panel if it's hidden
+        if self.filter.isHidden():
+            self.menu.show_panel(self.filter)
+        
+        # Focus on the specific filter input
+        self.filter.focus_filter(filter_type)
+     

@@ -66,3 +66,14 @@ class Navigation(QWidget):
                     item.callback()
             else:
                 item.widget.hide()
+    
+    def show_panel(self, panel_widget: QWidget):
+        """Programmatically show a specific panel"""
+        for item in self.menus:
+            if item.widget == panel_widget:
+                self.selected_menu = NavigationMenuIcon(item.icon)
+                item.widget.show()
+                if item.callback is not None:
+                    item.callback()
+            else:
+                item.widget.hide()
