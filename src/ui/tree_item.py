@@ -47,7 +47,7 @@ class TreeItem(QTreeWidgetItem):
             border-radius: 0px;
             border: none;
         }"""))
-        btn.setFixedHeight(20)  # keep it small to fit row
+        btn.setFixedHeight(32)
         btn.clicked.connect(partial(self.on_item_toggled, self.mod.name, btn))
             
         parent.setItemWidget(self, 0, check_widget)  # <-- custom widget in column 0

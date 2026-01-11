@@ -49,7 +49,7 @@ class CustomTreeWidget(QTreeWidget):
 class CustomDelegate(QStyledItemDelegate):
     def sizeHint(self, option, index):
         size = super().sizeHint(option, index)
-        size.setHeight(20)  # Set row height
+        size.setHeight(32)
         return size
     
 class TreeList(QWidget):
@@ -72,9 +72,34 @@ class TreeList(QWidget):
         self.tree_widget.setStyleSheet("""
             QTreeWidget {
                 border: none;
-                background: transparent;  /* optional if you want no background as well */
+                background: transparent;
+                outline: 0;
+            }
+            QTreeWidget::item {
+                padding: 4px;
+                border: none;
+            }
+            QTreeWidget::item:hover {
+                background-color: rgba(255, 255, 255, 0.12);
+            }
+            QTreeWidget::item:selected {
+                background-color: rgba(100, 150, 255, 0.2);
+                color: white;
+            }
+            QTreeWidget::item:selected:hover {
+                background-color: rgba(100, 150, 255, 0.3);
+            }
+            QHeaderView::section {
+                background-color: rgba(0, 0, 0, 0.3);
+                color: white;
+                padding: 6px;
+                border: none;
+                border-right: 1px solid rgba(255, 255, 255, 0.1);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+                font-weight: bold;
             }
         """)
+        self.tree_widget.setAlternatingRowColors(True)
         self.tree_widget.setColumnCount(8)
         self.tree_widget.setColumnWidth(0, 50)
         
