@@ -11,13 +11,13 @@ from src.ui.components.layout import HBox
 from src.constants.styles import BORDERLESS_BUTTON
 
 class ToggleButton(QPushButton):
-    def __init__(self, a:str, b:str, callback_a:Callable=None, callback_b:Callable=None, size:int=0):
+    def __init__(self, a:str, b:str, callback_a:Callable=None, callback_b:Callable=None, size:int=0, initial_state:bool=True):
         super().__init__()
         self.a=a
         self.b=b
         self.callback_a = callback_a
         self.callback_b = callback_b
-        self.toggle_state = False
+        self.toggle_state = initial_state  # Allow customizable initial state
         if size > 0:
             self.setFixedSize(QSize(size, size))
         
