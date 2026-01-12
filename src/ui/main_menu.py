@@ -6,6 +6,7 @@ from src.ui.sort_panel import SortPanel
 from src.ui.preview_panel import PreviewPanel
 from src.ui.edit_panel import EditPanel
 from src.ui.config_panel import Config
+from src.ui.workspace_panel import WorkspacePanel
 from src.ui.components.navigation import Navigation, NavigationMenu
 from src.ui.components.layout import HBox, VBox
 from src.models.mod import Mod
@@ -33,6 +34,7 @@ class MainMenu(QWidget):
         self.preview =PreviewPanel(self.mod_manager)
         self.edit = EditPanel(self.mod_manager, config_manager)
         self.config = Config(config_manager)
+        self.workspace = WorkspacePanel(config_manager)
         
         # Connect preview edit button to edit panel
         self.preview.edit_requested.connect(self.on_edit_requested)
@@ -51,6 +53,7 @@ class MainMenu(QWidget):
         self.preview.hide()
         self.edit.hide()
         self.config.hide()
+        self.workspace.hide()
 
         self.menu = Navigation(
             [
@@ -61,6 +64,7 @@ class MainMenu(QWidget):
                     NavigationMenu(NavigationMenuIcon.EDIT.value, self.edit),
                 ],
                 [
+                    NavigationMenu(NavigationMenuIcon.WORKSPACE.value, self.workspace),
                     NavigationMenu(NavigationMenuIcon.CONFIG.value, self.config)
                 ]
             ]
@@ -78,6 +82,7 @@ class MainMenu(QWidget):
         hlayout.addWidget(self.preview)
         hlayout.addWidget(self.edit)
         hlayout.addWidget(self.config)
+        hlayout.addWidget(self.workspace)
         
         vlayout.addLayout(hlayout)
         

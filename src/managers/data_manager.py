@@ -13,6 +13,7 @@ class NavigationMenuIcon(Enum):
     FILTER = "assets/icons/menu/filter_32.png"
     SORT = "assets/icons/menu/sort_32.png"
     EDIT = "assets/icons/menu/edit_32.png"
+    WORKSPACE = "assets/icons/menu/workspace_32.png"
     NONE = ""
 
 class ButtonIcons(Enum):
