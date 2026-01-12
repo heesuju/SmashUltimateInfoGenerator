@@ -177,15 +177,53 @@ class EditPanel(SidePanel):
 
     def on_get_url(self):
         url = self.url.get_text()
+        
+        # Auto-Search Mode
         if not url:
+            mod_name = self.mod_name.text().strip()
+            if not mod_name:
+                QMessageBox.warning(self, "Missing Information", "Please enter a Mod Name to search.")
+                return
+            
+            author_name = self.author.text().strip()
+            
+            # Append Characters to search query to filter results
+            selected_chars = self.character.get_checked()
+            
+            # Limit to 3 characters to prevent query from becoming too long/messy
+            if 0 < len(selected_chars) <= 3:
+                # Group characters if possible
+                search_terms = set()
+                mod_name_lower = mod_name.lower()
+                
+                for char_name in selected_chars:
+                    fighter_key = DataManager.get_character_by_custom(char_name)
+                    group = DataManager.get_character_groups(fighter_key)
+                    
+                    term_to_add = None
+                    # Use Group if available, else Custom Name
+                    if group:
+                        term_to_add = group
+                    else:
+                        term_to_add = char_name
+                        
+                    # Only add if not already in the mod name (case-insensitive)
+                    if term_to_add and term_to_add.lower() not in mod_name_lower:
+                        search_terms.add(term_to_add)
+                
+                # Append unique terms to mod name
+                if search_terms:
+                    mod_name += " " + " ".join(search_terms)
+
+            # Start thread in search mode
+            # Pass mod_name as ID, but set is_search=True
+            Gamebanana(mod_name, self.gb_data_ready.emit, is_search=True, author_filter=author_name)
             return
             
-        # Extract ID (simple regex or parsing)
+        # Direct URL Mode
         match = re.search(r"gamebanana\.com/mods/(\d+)", url)
         if match:
             mod_id = match.group(1)
-            # Start thread (it automatically starts in init)
-            # Pass lambda/wrapper to emit signal
             Gamebanana(mod_id, self.gb_data_ready.emit)
         else:
             QMessageBox.warning(self, "Invalid URL", "Could not parse Mod ID from the URL.")
@@ -198,11 +236,19 @@ class EditPanel(SidePanel):
     def _populate_mod_info(self, data:dict):
         # Data is dict of {id: info}
         if not data:
+            QMessageBox.warning(self, "Mod not found", "Could not find any mod matching the search criteria.")
             return
-            
-        # Get first value
-        info = next(iter(data.values()))
+
+        # Get first key (ID) and value (Info)
+        mod_id = next(iter(data))
+        info = data[mod_id]
         
+        # Update URL field if empty (Auto-Search case) or different
+        current_url = self.url.get_text()
+        new_url = f"https://gamebanana.com/mods/{mod_id}"
+        if not current_url or current_url != new_url:
+             self.url.set_text(new_url)
+
         # Populate fields
         if info.get("mod_name"):
             self.mod_name.setText(info["mod_name"])
@@ -350,6 +396,8 @@ class EditPanel(SidePanel):
         # Set URL if available
         if mod.url:
             self.url.set_text(mod.url)
+        else:
+            self.url.set_text("")
         
         # Set mod name
         self.mod_name.setText(mod.mod_name)

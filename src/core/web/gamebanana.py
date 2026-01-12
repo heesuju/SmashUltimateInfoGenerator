@@ -2,7 +2,9 @@ import threading
 from typing import Union
 import concurrent.futures
 from src.utils.web import get_request
-from src.constants.apis import GAMEBANANA_URL
+from src.constants.apis import GAMEBANANA_URL, GAMEBANANA_SEARCH_URL
+import difflib
+import urllib.parse
 
 WIFI_SAFE_TAGS = [
     "wifi safe",
@@ -31,6 +33,60 @@ def get_thumbnails(data:dict)->tuple[list[str], list[str]]:
                     file_names.append(file_name)
     
     return links, file_names
+
+def search_mod(mod_name: str, author_name: str = "") -> str | None:
+    """
+    Search for a mod by name and optionally filter by author.
+    Returns the Mod ID if found, else None.
+    """
+    try:
+        encoded_name = urllib.parse.quote(mod_name)
+        url = GAMEBANANA_SEARCH_URL.format(encoded_name)
+        data = get_request(url)
+        
+        if not data or not data.get("_aRecords"):
+            return None
+            
+        records = data.get("_aRecords", [])
+        
+        # If no author provided, fallback to view count
+        if not author_name:
+            # Sort by view count descending
+            records.sort(key=lambda x: x.get("_nViewCount", 0), reverse=True)
+            if records:
+                return str(records[0].get("_idRow"))
+            return None
+            
+        # If author provided, try fuzzy match
+        best_match = None
+        best_ratio = 0.0
+        
+        for record in records:
+            submitter = record.get("_aSubmitter", {})
+            submitter_name = submitter.get("_sName", "")
+            
+            if not submitter_name:
+                continue
+                
+            ratio = difflib.SequenceMatcher(None, author_name.lower(), submitter_name.lower()).ratio()
+            
+            if ratio > best_ratio:
+                best_ratio = ratio
+                best_match = record
+        
+        # Threshold for match? Let's say 0.4 to be lenient
+        if best_match and best_ratio > 0.4:
+            return str(best_match.get("_idRow"))
+        
+        records.sort(key=lambda x: x.get("_nViewCount", 0), reverse=True)
+        if records:
+            return str(records[0].get("_idRow"))
+            
+    except Exception as e:
+        print(f"Error searching mod: {e}")
+        return None
+        
+    return None
 
 def process_mod_info(data:dict)->tuple[str, dict]:
     profile = data.get("_sProfileUrl", "")
@@ -90,10 +146,12 @@ def process_mod_info(data:dict)->tuple[str, dict]:
     }
 
 class Gamebanana(threading.Thread):
-    def __init__(self, id:Union[str, list], callback:callable):
+    def __init__(self, id:Union[str, list], callback:callable, is_search:bool=False, author_filter:str=""):
         threading.Thread.__init__(self)
         self.id = id
         self.callback = callback
+        self.is_search = is_search
+        self.author_filter = author_filter
         self.daemon = True
         self.start()
 
@@ -101,7 +159,15 @@ class Gamebanana(threading.Thread):
         results = []
         output_data = {}
 
-        if isinstance(self.id, str):
+        if self.is_search and isinstance(self.id, str):
+            # Treat self.id as search query
+            found_id = search_mod(self.id, self.author_filter)
+            if found_id:
+                # Proceed to fetch info for the found ID
+                result = get_mod_info(found_id)
+                if result is not None:
+                    results.append(result)
+        elif isinstance(self.id, str):
             result = get_mod_info(self.id)
             if result is not None:
                 results.append(result)
