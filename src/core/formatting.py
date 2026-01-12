@@ -35,8 +35,51 @@ def format_display_name(characters:str, slots:str, mod_name:str, category:str):
     display_name = display_name.replace("{category}", category)
     return clean_display_name(display_name)
 
-def format_character_names(characters:list[str]):
-    return ", ".join(sorted(characters))
+def get_grouped_names(character_names: list[str]) -> list[str]:
+    """
+    Consolidates character names into their group name if all members of the group are present.
+    """
+    if not character_names:
+        return []
+
+    input_keys = set()
+    key_to_display = {} 
+    
+    for name in character_names:
+        key = DataManager.get_character_by_custom(name)
+        if key:
+            input_keys.add(key)
+            key_to_display[key] = name
+        else:
+            pass
+
+    groups_to_check = set()
+    char_data = DataManager.get_character_by_key()
+    
+    for key in input_keys:
+        if key in char_data:
+            group = char_data[key][2]
+            if group:
+                groups_to_check.add(group)
+
+    final_names = []
+    processed_keys = set()
+
+    for group in groups_to_check:
+        group_members = set()
+        for k, v in char_data.items():
+            if v[2] == group:
+                group_members.add(k)
+        
+        if group_members.issubset(input_keys):
+            final_names.append(group)
+            processed_keys.update(group_members)
+
+    for key in input_keys:
+        if key not in processed_keys:
+            final_names.append(key_to_display[key])
+            
+    return sorted(final_names)
 
 def format_slots(slots:list[int], is_cap:bool=True):
     if len(slots) <= 0:
@@ -145,6 +188,29 @@ def group_char_name(char_names, group_names):
         else: outstr += names
             
     return outstr
+    
+def format_character_names_for_display(characters:list[str]):
+    """
+    Formats character names for display (comma separated, groups consolidated)
+    """
+    grouped = get_grouped_names(characters)
+    return ", ".join(grouped)
+
+def format_character_names_for_folder(characters:list[str]):
+    """
+    Formats character names for folder (CamelCase, no spaces/commas, groups consolidated)
+    """
+    grouped = get_grouped_names(characters)
+    # Remove spaces from each name and join them
+    cleaned = [name.replace(" ", "") for name in grouped]
+    return "".join(cleaned)
+
+def format_character_names(characters:list[str]):
+    """
+    Legacy method kept for compatibility, uses display format
+    """
+    return format_character_names_for_display(characters)
+
 
 def get_group_count(group_name):
     dict_arr = DataManager.get_character_data()

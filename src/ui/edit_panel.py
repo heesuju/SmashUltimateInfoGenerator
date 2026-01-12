@@ -21,7 +21,7 @@ from src.managers.mod_manager import ModManager
 from src.managers.cache_manager import CacheManager
 from src.managers.data_manager import DataManager
 from src.ui.components.validators import limit_version
-from src.core.formatting import format_folder_name, format_display_name, format_character_names, format_slots
+from src.core.formatting import format_folder_name, format_display_name, format_character_names_for_display, format_character_names_for_folder, format_slots
 from src.core.web.gamebanana import Gamebanana
 from src.utils.web import open_page
 from src.core.data import generate_toml
@@ -287,19 +287,16 @@ class EditPanel(SidePanel):
     
     def _update_generated_names(self):
         """Auto-generate folder_name and display_name when relevant fields change"""
-        # Get mod name
         mod_name = self.mod_name.text().strip()
         if not mod_name:
             return
         
-        # Get selected characters
         checked_chars = self.character.get_checked()
         checked_chars = [c for c in checked_chars if c != "Select All"]
         
-        # Format character names
-        characters_str = format_character_names(checked_chars)
+        characters_str_display = format_character_names_for_display(checked_chars)
+        characters_str_folder = format_character_names_for_folder(checked_chars)
         
-        # Get selected slots
         checked_slots = []
         for i in range(self.slots.get_item_count()):
             item = self.slots.model().invisibleRootItem().child(i)
@@ -311,7 +308,6 @@ class EditPanel(SidePanel):
                 except (ValueError, IndexError):
                     pass
         
-        # Format slots using format_slots() - returns "C00-02,05" format (no brackets)
         slots_str_folder = ""
         slots_str_display = ""
         if checked_slots:
@@ -322,16 +318,12 @@ class EditPanel(SidePanel):
             slots_str_folder = format_slots(sorted_slots, cap_slots_folder)
             slots_str_display = format_slots(sorted_slots, cap_slots_display)
         
-        # Get category
         category_str = self.category.currentText()
         
-        # Generate folder name
-        folder_name = format_folder_name(characters_str, slots_str_folder, mod_name, category_str)
+        folder_name = format_folder_name(characters_str_folder, slots_str_folder, mod_name, category_str)
         
-        # Generate display name 
-        display_name = format_display_name(characters_str, slots_str_display, mod_name, category_str)
+        display_name = format_display_name(characters_str_display, slots_str_display, mod_name, category_str)
         
-        # Update the fields
         self.folder.setText(folder_name)
         self.display.setText(display_name)
     
