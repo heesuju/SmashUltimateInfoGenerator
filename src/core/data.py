@@ -62,10 +62,10 @@ def get_workspace()->str:
     return config.workspace
 
 def get_folder_name_format()->str:
-    return load_config().folder_name_format
+    return load_config().name_rules.folder_name_format
 
 def get_display_name_format()->str:
-    return load_config().display_name_format
+    return load_config().name_rules.display_name_format
 
 def get_start_w_editor()->bool:
     return load_config().start_with_editor

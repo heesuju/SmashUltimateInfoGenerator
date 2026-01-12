@@ -12,7 +12,8 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QCheckBox,
     QGroupBox,
-    QSpinBox
+    QSpinBox,
+    QTextEdit
 )
 from functools import partial
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont
@@ -25,6 +26,7 @@ from src.constants.enums import Theme
 from src.managers.config_manager import ConfigManager
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.input_button_widget import InputButtonWidget, InputButton
+from src.ui.components.format_editor import FormatEditor
 from src.ui.common import choose_folder
 from src.utils.common import is_valid_dir
 
@@ -44,6 +46,51 @@ class Config(SidePanel):
         self.theme_drop.setEditable(False)  # ComboBox itself is not editable
         self.theme_drop.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # Prevent adding new items
         self.body.addWidget(self.theme_drop)
+
+        # Name Format Settings
+        format_group = QGroupBox("Name Format Settings")
+        format_layout = QVBoxLayout()
+        
+        # Folder Name Format
+        folder_format_label = QLabel("Folder Name Format:")
+        folder_format_label.setStyleSheet("font-weight: bold; margin-top: 4px;")
+        format_layout.addWidget(folder_format_label)
+        
+        self.folder_name_format = FormatEditor(
+            placeholder_text="{category}_{characters}[{slots}]_{mod}",
+            sample_data={
+                "category": "Fighter",
+                "characters": "Sonic",
+                "slots": "C01-03",
+                "mod": "Shadow"
+            }
+        )
+        format_layout.addWidget(self.folder_name_format)
+        
+        # Separator
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.HLine)
+        separator.setStyleSheet("color: gray; margin: 8px 0px;")
+        format_layout.addWidget(separator)
+        
+        # Display Name Format
+        display_format_label = QLabel("Display Name Format:")
+        display_format_label.setStyleSheet("font-weight: bold; margin-top: 4px;")
+        format_layout.addWidget(display_format_label)
+        
+        self.display_name_format = FormatEditor(
+            placeholder_text="{characters} {slots} {mod}",
+            sample_data={
+                "category": "Fighter",
+                "characters": "Sonic",
+                "slots": "C01-03",
+                "mod": "Shadow"
+            }
+        )
+        format_layout.addWidget(self.display_name_format)
+        
+        format_group.setLayout(format_layout)
+        self.body.addWidget(format_group)
 
         # Cache management section
         cache_group = QGroupBox("Cache Management")
@@ -80,6 +127,8 @@ class Config(SidePanel):
         self.root_dir.set_text(self.config_manager.config.root_dir)
         self.cache_dir.set_text(self.config_manager.config.cache_dir)
         self.theme_drop.setCurrentText(theme)
+        self.folder_name_format.set_text(self.config_manager.config.name_rules.folder_name_format)
+        self.display_name_format.set_text(self.config_manager.config.name_rules.display_name_format)
         self.check_validity()
 
     def save(self):
@@ -87,6 +136,8 @@ class Config(SidePanel):
             self.config_manager.config.theme = Theme(self.theme_drop.currentText())
             self.config_manager.config.root_dir = self.root_dir.get_text()
             self.config_manager.config.cache_dir = self.cache_dir.get_text()
+            self.config_manager.config.name_rules.folder_name_format = self.folder_name_format.get_text()
+            self.config_manager.config.name_rules.display_name_format = self.display_name_format.get_text()
             self.config_manager.save()
         else:
             pass
