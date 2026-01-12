@@ -97,7 +97,7 @@ class SortPanel(SidePanel):
         
         self.body.addStretch(1)
 
-        clear_button = QPushButton("Clear")
+        clear_button = QPushButton("Reset")
         clear_button.clicked.connect(self.reset)
         apply_button = QPushButton("Apply")
         apply_button.setStyleSheet(MAIN_BUTTON)
@@ -127,15 +127,8 @@ class SortPanel(SidePanel):
                 selected_values.append(value)
     
     def reset(self):
-        """Reset all sort combos to None"""
-        self.sort_combo_1.setCurrentText("None")
-        self.sort_combo_2.setCurrentText("None")
-        self.sort_combo_3.setCurrentText("None")
-        self.sort_combo_4.setCurrentText("None")
-        self.sort_toggle_1.set_state(True)  # True = ASC
-        self.sort_toggle_2.set_state(True)
-        self.sort_toggle_3.set_state(True)
-        self.sort_toggle_4.set_state(True)
+        """Reset sort combos to saved settings from config"""
+        self.load_sort_rules()
     
     def apply(self):
         """Save sort rules to config and trigger filter update"""
