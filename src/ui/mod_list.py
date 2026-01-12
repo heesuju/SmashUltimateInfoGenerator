@@ -43,6 +43,14 @@ class ModList(QWidget):
         
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
+        # Performance optimization: Cache icon existence and group data
+        self._icon_cache = {}  # Cache for icon file existence
+        self._group_cache = {}  # Cache for group character data
+        self._initialize_caches()
+        
+        # Cache for filtered results to avoid re-filtering on page changes
+        self.cached_filtered_mods = []
+        
         self.frame = QFrame()
         self.frame.setObjectName("modListFrame")
         self.frame.setFrameShape(QFrame.Shape.Box)
@@ -105,6 +113,28 @@ class ModList(QWidget):
         # Start scanning if valid root mod directory exists
         if self.config_manager.config.root_dir:
             self.scan()
+    
+    def _initialize_caches(self):
+        """Initialize caches for icon existence and group data to improve performance"""
+        # Pre-cache which character icons exist
+        from src.constants.enums import Fighter
+        for fighter in Fighter:
+            icon_path = DataManager.get_character_icon(str(fighter.value))
+            self._icon_cache[str(fighter.value)] = os.path.exists(icon_path)
+        
+        # Pre-cache group character data
+        character_data = DataManager.get_character_data()
+        groups = set()
+        for char in character_data:
+            group = char.get("Group")
+            if group:
+                groups.add(group)
+        
+        for group in groups:
+            self._group_cache[group] = DataManager.get_group_characters(group)
+            # Also cache whether the group icon exists
+            icon_path = DataManager.get_character_icon(group)
+            self._icon_cache[group] = os.path.exists(icon_path)
 
     def on_grid_selected(self):
         self.mode = ListLayout.GRID
@@ -112,8 +142,8 @@ class ModList(QWidget):
         self.body_layout.addWidget(self.grid_list)
         self.paging.cur_page = 1
         self.paging.page_size = GRID_PAGE_SIZE
-        self.paging.update(len(self.mod_manager.get_mods()))
-        self.set_data()
+        self.paging.update(len(self.cached_filtered_mods))
+        self.update_view()
         
     def on_list_selected(self):
         self.mode = ListLayout.LIST
@@ -121,28 +151,49 @@ class ModList(QWidget):
         self.body_layout.addWidget(self.tree_list)
         self.paging.cur_page = 1
         self.paging.page_size = LIST_PAGE_SIZE
-        self.set_data()
+        self.paging.update(len(self.cached_filtered_mods))
+        self.update_view()
     
     def on_page_changed(self, page:int, size:int):
-        self.set_data()
+        self.update_view()
 
     def on_filter_changed(self):
-        self.paging.cur_page = 1
-        self.set_data()
+        self.refresh_filtered_data()
 
-    def set_data(self):
+    def refresh_filtered_data(self):
+        """Re-runs filtering/sorting and updates the cache. Called when filters/data change."""
         mods = self.mod_manager.get_mods()
         if self.filter_manager:
             mods = self.filter_manager.apply_filters(mods)
-        total_items = len(mods)
-        self.paging.update(total_items)
-        self.populate(mods)
+        self.cached_filtered_mods = mods
         
-        # Update count label in filter chips
-        current_page = self.paging.cur_page
-        page_size = self.paging.page_size
-        current_items = min(page_size, total_items - (current_page - 1) * page_size)
-        self.filter_chips.update_count(current_items, total_items)
+        # Reset to page 1 for new results
+        self.paging.cur_page = 1
+        self.paging.update(len(self.cached_filtered_mods))
+        
+        self.update_view()
+
+    def update_view(self):
+        """Updates the UI from the cached filtered data. Called on page/layout change."""
+        # Clear immediately to show responsive feedback
+        self.clear()
+        
+        # Defer the rendering to allow UI to remain responsive
+        def process_render():
+            total_items = len(self.cached_filtered_mods)
+            self.populate(self.cached_filtered_mods)
+            
+            # Update count label in filter chips
+            current_page = self.paging.cur_page
+            page_size = self.paging.page_size
+            current_items = min(page_size, total_items - (current_page - 1) * page_size)
+            self.filter_chips.update_count(current_items, total_items)
+        
+        QTimer.singleShot(0, process_render)
+
+    def set_data(self):
+        """Legacy method - redirects to refresh_filtered_data"""
+        self.refresh_filtered_data()
 
     def clear(self):
         self._populate_active = False
@@ -164,16 +215,17 @@ class ModList(QWidget):
         def process(mod:Mod)->ModItem:
             keys = mod.get_grouped_character_keys()
             
-            # Check if group icons exist, if not ungroup them
+            # Check if group icons exist, if not ungroup them (using cache)
             final_keys = []
             for key in keys:
-                icon_path = DataManager.get_character_icon(key)
-                if os.path.exists(icon_path):
+                # Use cached icon existence check
+                icon_exists = self._icon_cache.get(key, False)
+                if icon_exists:
                     # Icon exists, use the key as-is
                     final_keys.append(key)
                 else:
-                    # Icon doesn't exist, check if it's a group and ungroup it
-                    group_chars = DataManager.get_group_characters(key)
+                    # Icon doesn't exist, check if it's a group and ungroup it (using cache)
+                    group_chars = self._group_cache.get(key, [])
                     if group_chars:
                         # This is a group without an icon, add all individual characters
                         final_keys.extend(group_chars)
@@ -200,13 +252,21 @@ class ModList(QWidget):
         def add_next():
             if not self._populate_active or self._populate_index is None or self._populate_mods is None:
                 return  # Stop if cancelled or cleared
-            if self._populate_index < len(self._populate_mods):
-                mod = self._populate_mods[self._populate_index]
+            
+            # Batch process multiple items per tick for better performance
+            batch_size = 5
+            end_index = min(self._populate_index + batch_size, len(self._populate_mods))
+            
+            for i in range(self._populate_index, end_index):
+                mod = self._populate_mods[i]
                 if self.mode == ListLayout.LIST:
                     self.tree_list.add_item(process(mod))
                 elif self.mode == ListLayout.GRID:
                     self.grid_list.add_item(process(mod))
-                self._populate_index += 1
+            
+            self._populate_index = end_index
+            
+            if self._populate_index < len(self._populate_mods):
                 QTimer.singleShot(0, add_next)
             else:
                 self._populate_mods = None
@@ -218,7 +278,7 @@ class ModList(QWidget):
         self.mod_manager.scan_all()
 
     def on_scanned(self):
-        self.set_data()
+        self.refresh_filtered_data()
     
     def on_progress(self, mod:Mod):
         pass
