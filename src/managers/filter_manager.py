@@ -30,6 +30,7 @@ class FilterManager():
     def __init__(self):
         self.params = FilterParameters()
         self.callbacks = []
+        self.sort_rules = []
 
     def add_callback(self, callback:callable):
         self.callbacks.append(callback)
@@ -40,6 +41,10 @@ class FilterManager():
     def set(self, params:FilterParameters):
         self.params = params
         self.on_change()
+    
+    def set_sort_rules(self, sort_rules):
+        """Set the sort rules for filtering"""
+        self.sort_rules = sort_rules
         
     def on_change(self):
         for callback in self.callbacks:
@@ -101,4 +106,56 @@ class FilterManager():
                     continue
 
             filtered.append(mod)
+        
+        # Apply sorting
+        if self.sort_rules:
+            filtered = self._apply_sorting(filtered)
+        
         return filtered 
+    
+    def _apply_sorting(self, mods:List[Mod]) -> List[Mod]:
+        """Apply multi-level sorting based on sort rules"""
+        if not self.sort_rules:
+            return mods
+        
+        # Sort by priority (highest priority first, which is lowest number)
+        sorted_rules = sorted(self.sort_rules, key=lambda r: r.priority, reverse=True)
+        
+        result = mods.copy()
+        for rule in sorted_rules:
+            result = self._sort_by_field(result, rule.name, rule.asc)
+        
+        return result
+    
+    def _sort_by_field(self, mods:List[Mod], field_name:str, ascending:bool) -> List[Mod]:
+        """Sort mods by a specific field"""
+        def get_sort_key(mod):
+            if field_name == "Category":
+                return str(mod.category)
+            elif field_name == "Characters":
+                # Get custom name of first character for sorting
+                if mod.characters:
+                    from src.managers.data_manager import DataManager
+                    fighter_key = str(mod.characters[0].fighter)
+                    # Get all character data to find custom name
+                    char_data = DataManager.get_character_data()
+                    for char in char_data:
+                        if char.get("Key") == fighter_key:
+                            return char.get("Custom", fighter_key)
+                    return fighter_key
+                return ""
+            elif field_name == "Mod Name":
+                return mod.mod_name.lower()
+            elif field_name == "Authors":
+                return mod.authors.lower()
+            elif field_name == "Slots":
+                # Get minimum slot number
+                if mod.characters:
+                    all_slots = []
+                    for char in mod.characters:
+                        all_slots.extend(char.slots)
+                    return min(all_slots) if all_slots else 999
+                return 999
+            return ""
+        
+        return sorted(mods, key=get_sort_key, reverse=not ascending)

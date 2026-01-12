@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import QWidget
 
 from src.ui.mod_list import ModList
 from src.ui.filter_panel import FilterPanel
+from src.ui.sort_panel import SortPanel
 from src.ui.preview_panel import PreviewPanel
 from src.ui.edit_panel import EditPanel
 from src.ui.config_panel import Config
@@ -27,8 +28,9 @@ class MainMenu(QWidget):
         hlayout = HBox()
 
         self.list_widget = ModList(self.mod_manager, self.filter_manager, self.config_manager)
-        self.filter = FilterPanel(self.filter_manager)
-        self.preview = PreviewPanel(self.mod_manager)
+        self.filter = FilterPanel(self.filter_manager, config_manager)
+        self.sort = SortPanel(config_manager)
+        self.preview =PreviewPanel(self.mod_manager)
         self.edit = EditPanel(self.mod_manager, config_manager)
         self.config = Config(config_manager)
         
@@ -40,8 +42,12 @@ class MainMenu(QWidget):
         
         # Connect mod selection to show preview panel
         self.mod_manager.add_focus_callback(self.on_mod_selected)
+        
+        # Connect sort panel to filter manager
+        self.sort.set_sort_change_callback(self.on_sort_changed)
 
         self.filter.hide()
+        self.sort.hide()
         self.preview.hide()
         self.edit.hide()
         self.config.hide()
@@ -50,6 +56,7 @@ class MainMenu(QWidget):
             [
                 [
                     NavigationMenu(NavigationMenuIcon.FILTER.value, self.filter),
+                    NavigationMenu(NavigationMenuIcon.SORT.value, self.sort),
                     NavigationMenu(NavigationMenuIcon.PREVIEW.value, self.preview),
                     NavigationMenu(NavigationMenuIcon.EDIT.value, self.edit),
                 ],
@@ -67,6 +74,7 @@ class MainMenu(QWidget):
         hlayout.addWidget(self.list_widget)
         
         hlayout.addWidget(self.filter)
+        hlayout.addWidget(self.sort)
         hlayout.addWidget(self.preview)
         hlayout.addWidget(self.edit)
         hlayout.addWidget(self.config)
@@ -94,6 +102,11 @@ class MainMenu(QWidget):
         """Handle mod selection from list - show preview panel"""
         if self.preview.isHidden():
             self.menu.show_panel(self.preview)
+    
+    def on_sort_changed(self, sort_rules):
+        """Handle sort rules change from sort panel"""
+        self.filter_manager.set_sort_rules(sort_rules)
+        self.filter_manager.on_change()
     
     def on_edit_requested(self, mod_id: str):
         """Handle edit button click from preview panel"""

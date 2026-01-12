@@ -11,6 +11,7 @@ class NavigationMenuIcon(Enum):
     PREVIEW = "assets/icons/menu/details_32.png"
     CONFIG = "assets/icons/menu/config_32.png"
     FILTER = "assets/icons/menu/filter_32.png"
+    SORT = "assets/icons/menu/sort_32.png"
     EDIT = "assets/icons/menu/edit_32.png"
     NONE = ""
 
@@ -30,6 +31,8 @@ class ButtonIcons(Enum):
     ENABLE = "assets/icons/buttons/on.png"
     DISABLE = "assets/icons/buttons/off.png"
     MENU = "assets/icons/buttons/menu_16.png"
+    SORT_ASC = "assets/icons/buttons/sort_asc_16.png"
+    SORT_DESC = "assets/icons/buttons/sort_desc_16.png"
 
 class DataManager:
     @staticmethod

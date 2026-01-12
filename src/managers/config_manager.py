@@ -10,6 +10,7 @@ class ConfigManager():
         self.load()
 
     def load(self)->None:
+        config_loaded_successfully = False
         if(is_valid_file(PATH_CONFIG)):
             try:
                 json_file = open(PATH_CONFIG, "r", encoding="utf-8")
@@ -18,25 +19,29 @@ class ConfigManager():
                 json_file.close()
                 output_log("Loaded config")
                 self.config = settings
-                
-                # Set default format templates if empty
-                if not self.config.name_rules.folder_name_format:
-                    self.config.name_rules.folder_name_format = "{category}_{characters}[{slots}]_{mod}"
-                if not self.config.name_rules.display_name_format:
-                    self.config.name_rules.display_name_format = "{characters} {slots} {mod}"
-                
-                # Save config with defaults if they were added
-                self.save()
-                return None
+                config_loaded_successfully = True
             except Exception as e:
                 output_log(f"Failed to load config: {e}")
         
-        output_log(f"No config found\nMaking new config...")
-        self.config = Settings()
+        if not config_loaded_successfully:
+            output_log(f"No config found\nMaking new config...")
+            self.config = Settings()
         
-        # Set default format templates for new config
-        self.config.name_rules.folder_name_format = "{category}_{characters}{slots}_{mod}"
-        self.config.name_rules.display_name_format = "{characters} {slots} {mod}"
+        # Set default sort rules if empty
+        if not self.config.sort_rules:
+            from src.models.settings import SortRule
+            self.config.sort_rules = [
+                SortRule(name="Category", priority=1, asc=True),
+                SortRule(name="Characters", priority=2, asc=True),
+                SortRule(name="Mod Name", priority=3, asc=True),
+                SortRule(name="Slots", priority=4, asc=True)
+            ]
+        
+        # Set default format templates if empty
+        if not self.config.name_rules.folder_name_format:
+            self.config.name_rules.folder_name_format = "{category}_{characters}[{slots}]_{mod}"
+        if not self.config.name_rules.display_name_format:
+            self.config.name_rules.display_name_format = "{characters} {slots} {mod}"
         
         self.save()
     
