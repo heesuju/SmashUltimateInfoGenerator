@@ -37,6 +37,9 @@ class MainMenu(QWidget):
         
         # Connect edit panel cancel to close edit
         self.edit.close_requested.connect(self.on_edit_close)
+        
+        # Connect mod selection to show preview panel
+        self.mod_manager.add_focus_callback(self.on_mod_selected)
 
         self.filter.hide()
         self.preview.hide()
@@ -86,6 +89,11 @@ class MainMenu(QWidget):
         
         # Focus on the specific filter input
         self.filter.focus_filter(filter_type)
+    
+    def on_mod_selected(self, mod_id: str):
+        """Handle mod selection from list - show preview panel"""
+        if self.preview.isHidden():
+            self.menu.show_panel(self.preview)
     
     def on_edit_requested(self, mod_id: str):
         """Handle edit button click from preview panel"""
