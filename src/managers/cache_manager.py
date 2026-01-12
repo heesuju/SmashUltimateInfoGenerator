@@ -1,41 +1,48 @@
 """
-cache_manager.py: Manages mod scan result caching to improve performance
+cache_manager.py: Manages mod scan result caching using SQLite
 """
 
 import os
 import json
+import sqlite3
 from typing import Optional
 from src.utils.file import is_valid_dir
 from src.utils.logger import output_log
 
-CACHE_FILE = "data/cache/mod_scan_cache.json"
+CACHE_DB = "data/cache/mod_scan_cache.db"
 
 class CacheManager:
     def __init__(self):
-        self.cache = self._load_cache()
+        self._init_database()
+        self.cleanup()  # Remove stale entries on startup
     
-    def _load_cache(self) -> dict:
-        """Load cache from disk"""
-        if not os.path.exists(CACHE_FILE):
-            return {}
+    def _init_database(self):
+        """Initialize SQLite database with proper schema"""
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(CACHE_DB), exist_ok=True)
         
-        try:
-            with open(CACHE_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception as e:
-            output_log(f"Failed to load scan cache: {e}")
-            return {}
-    
-    def _save_cache(self):
-        """Save cache to disk"""
-        try:
-            # Ensure directory exists
-            os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
-            
-            with open(CACHE_FILE, 'w', encoding='utf-8') as f:
-                json.dump(self.cache, f, indent=2)
-        except Exception as e:
-            output_log(f"Failed to save scan cache: {e}")
+        # Connect to database
+        self.conn = sqlite3.connect(CACHE_DB, check_same_thread=False)
+        
+        # Enable WAL mode for better concurrent access
+        self.conn.execute("PRAGMA journal_mode=WAL")
+        
+        # Create table if it doesn't exist
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS mod_cache (
+                mod_path TEXT PRIMARY KEY,
+                mtime REAL NOT NULL,
+                scan_data TEXT NOT NULL
+            )
+        """)
+        
+        # Create index for faster mtime lookups
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_mtime ON mod_cache(mtime)
+        """)
+        
+        self.conn.commit()
+        output_log("Cache database initialized")
     
     def _get_mtime(self, mod_path: str) -> Optional[float]:
         """Get modification time of mod directory"""
@@ -48,17 +55,28 @@ class CacheManager:
     
     def is_cache_valid(self, mod_path: str) -> bool:
         """Check if cache entry is valid for given mod path"""
-        if mod_path not in self.cache:
+        try:
+            cursor = self.conn.execute(
+                "SELECT mtime FROM mod_cache WHERE mod_path = ?",
+                (mod_path,)
+            )
+            row = cursor.fetchone()
+            
+            if row is None:
+                return False
+            
+            cached_mtime = row[0]
+            current_mtime = self._get_mtime(mod_path)
+            
+            if cached_mtime is None or current_mtime is None:
+                return False
+            
+            # Cache is valid if modification times match
+            return cached_mtime == current_mtime
+            
+        except Exception as e:
+            output_log(f"Error checking cache validity: {e}")
             return False
-        
-        cached_mtime = self.cache[mod_path].get('mtime')
-        current_mtime = self._get_mtime(mod_path)
-        
-        if cached_mtime is None or current_mtime is None:
-            return False
-        
-        # Cache is valid if modification times match
-        return cached_mtime == current_mtime
     
     def get_cached_mod(self, mod_path: str) -> Optional[dict]:
         """
@@ -68,7 +86,21 @@ class CacheManager:
         if not self.is_cache_valid(mod_path):
             return None
         
-        return self.cache[mod_path].get('scan_data')
+        try:
+            cursor = self.conn.execute(
+                "SELECT scan_data FROM mod_cache WHERE mod_path = ?",
+                (mod_path,)
+            )
+            row = cursor.fetchone()
+            
+            if row is None:
+                return None
+            
+            return json.loads(row[0])
+            
+        except Exception as e:
+            output_log(f"Error retrieving cached mod: {e}")
+            return None
     
     def set_cached_mod(self, mod_path: str, mod_data: dict):
         """Store mod scan result in cache"""
@@ -77,30 +109,62 @@ class CacheManager:
         if mtime is None:
             return
         
-        self.cache[mod_path] = {
-            'mtime': mtime,
-            'scan_data': mod_data
-        }
-        
-        self._save_cache()
+        try:
+            self.conn.execute(
+                "INSERT OR REPLACE INTO mod_cache (mod_path, mtime, scan_data) VALUES (?, ?, ?)",
+                (mod_path, mtime, json.dumps(mod_data))
+            )
+            self.conn.commit()
+            
+        except Exception as e:
+            output_log(f"Error caching mod data: {e}")
     
     def cleanup(self):
         """Remove cache entries for mods that no longer exist"""
-        paths_to_remove = []
-        
-        for mod_path in self.cache.keys():
-            if not is_valid_dir(mod_path):
-                paths_to_remove.append(mod_path)
-        
-        for path in paths_to_remove:
-            del self.cache[path]
-        
-        if paths_to_remove:
-            output_log(f"Cleaned {len(paths_to_remove)} orphaned cache entries")
-            self._save_cache()
+        try:
+            cursor = self.conn.execute("SELECT mod_path FROM mod_cache")
+            all_paths = [row[0] for row in cursor.fetchall()]
+            
+            paths_to_remove = [path for path in all_paths if not is_valid_dir(path)]
+            
+            if paths_to_remove:
+                for path in paths_to_remove:
+                    self.conn.execute("DELETE FROM mod_cache WHERE mod_path = ?", (path,))
+                
+                self.conn.commit()
+                output_log(f"Cleaned {len(paths_to_remove)} orphaned cache entries")
+                
+        except Exception as e:
+            output_log(f"Error during cache cleanup: {e}")
     
     def clear_all(self):
         """Clear entire cache"""
-        self.cache = {}
-        self._save_cache()
-        output_log("Scan cache cleared")
+        try:
+            self.conn.execute("DELETE FROM mod_cache")
+            self.conn.commit()
+            output_log("Scan cache cleared")
+            
+        except Exception as e:
+            output_log(f"Error clearing cache: {e}")
+    
+    def get_stats(self) -> dict:
+        """Get cache statistics"""
+        try:
+            cursor = self.conn.execute("SELECT COUNT(*) FROM mod_cache")
+            total_entries = cursor.fetchone()[0]
+            
+            # Get database file size
+            db_size = os.path.getsize(CACHE_DB) if os.path.exists(CACHE_DB) else 0
+            
+            return {
+                'total_entries': total_entries,
+                'db_size_mb': db_size / (1024 * 1024)
+            }
+        except Exception as e:
+            output_log(f"Error getting cache stats: {e}")
+            return {'total_entries': 0, 'db_size_mb': 0}
+    
+    def close(self):
+        """Close database connection"""
+        if hasattr(self, 'conn'):
+            self.conn.close()
