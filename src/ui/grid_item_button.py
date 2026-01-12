@@ -20,6 +20,9 @@ def convert_to_grayscale(pixmap:QPixmap):
     return QPixmap.fromImage(grayscale_image)
 
 class Overlay(QGraphicsView):
+    # Static cache for cartridge icons to avoid repeated loading/scaling
+    _cartridge_cache = {}
+
     def __init__(self, image_path:str, parent=None):
         super().__init__(parent)
         self.image_path = image_path
@@ -35,8 +38,12 @@ class Overlay(QGraphicsView):
         # self.setStyleSheet("QGraphicsView { border: none; padding: 0px; }")
         # self.setStyleSheet("background: transparent;")
 
-        cartridge = QPixmap(ICON_OFF)
-        cartridge = cartridge.scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        # Use cached cartridge icon
+        if ICON_OFF not in Overlay._cartridge_cache:
+             pix = QPixmap(ICON_OFF).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+             Overlay._cartridge_cache[ICON_OFF] = pix
+        
+        cartridge = Overlay._cartridge_cache[ICON_OFF]
 
         preview = QPixmap(image_path)
         preview = preview.scaled(cartridge.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
@@ -91,13 +98,21 @@ class Overlay(QGraphicsView):
         cartridge = None
 
         if self.enabled:
-            cartridge = QPixmap(ICON_OFF).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            # Use cached ICON_OFF
+            if ICON_OFF not in Overlay._cartridge_cache:
+                Overlay._cartridge_cache[ICON_OFF] = QPixmap(ICON_OFF).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            cartridge = Overlay._cartridge_cache[ICON_OFF]
+            
             preview = QPixmap(self.image_path).scaled(cartridge.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            preview = convert_to_grayscale(preview)
+            # preview = convert_to_grayscale(preview)  # Optimization: removed expensive grayscale conversion
             self.play_audio("assets/sounds/deselect.wav")
             self.enabled = False
         else:
-            cartridge = QPixmap(ICON_ON).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            # Use cached ICON_ON
+            if ICON_ON not in Overlay._cartridge_cache:
+                Overlay._cartridge_cache[ICON_ON] = QPixmap(ICON_ON).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            cartridge = Overlay._cartridge_cache[ICON_ON]
+            
             preview = QPixmap(self.image_path).scaled(cartridge.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.play_audio("assets/sounds/select.wav")
             self.enabled = True

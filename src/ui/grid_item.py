@@ -35,6 +35,9 @@ class GridListItem(QListWidgetItem):
         parent.setItemWidget(self, self.widget)
 
 class GridListItemWidget(QWidget):
+    # Static cache for scaled character icons
+    _icon_cache = {}
+
     def __init__(self, mod:ModItem, height:int=80):
         super().__init__()
         self.image_path = mod.thumbnail
@@ -101,7 +104,15 @@ class GridListItemWidget(QWidget):
         
         for char_img in mod.character_icons:
             img_label = QLabel()
-            char_icon = QPixmap(char_img).scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            
+            # Use cached icon if available
+            if char_img in GridListItemWidget._icon_cache:
+                char_icon = GridListItemWidget._icon_cache[char_img]
+            else:
+                # Load and scale, then cache
+                char_icon = QPixmap(char_img).scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                GridListItemWidget._icon_cache[char_img] = char_icon
+            
             img_label.setPixmap(char_icon)
             icon_layout.addWidget(img_label)
 
