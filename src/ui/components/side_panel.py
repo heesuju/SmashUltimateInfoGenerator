@@ -29,17 +29,6 @@ class SidePanel(QWidget):
         self.root = VBox(margin=0, spacing=10)
         self.frame.setLayout(self.root)
 
-        title_label = QLabel(title)
-        title_font = QFont(FONT, FONT_SIZE)  # Set the font and font size
-        title_font.setBold(True)
-        title_label.setFont(title_font)
-        self.root.addWidget(title_label)
-
-        line = QFrame()
-        line.setFrameShape(QFrame.Shape.HLine)   # horizontal line
-        line.setFrameShadow(QFrame.Shadow.Sunken)  # optional, makes it look recessed
-        self.root.addWidget(line)
-        
         self.header = HBox(margin=0, spacing=2)
         self.root.addLayout(self.header)
 

@@ -27,6 +27,7 @@ from src.ui.components.side_panel import SidePanel
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.zero_padded_spinbox import ZeroPaddedSpinBox
 from src.ui.components.single_combobox import SingleComboBox
+from src.ui.components.collapsible_section import CollapsibleSection
 
 WIDTH = 300
 FONT = "Arial"
@@ -40,12 +41,15 @@ class FilterPanel(SidePanel):
         super().__init__("Filter")
         self.filter_manager = filter_manager
         
+        # Create collapsible Filters section (expanded by default)
+        self.filters_section = CollapsibleSection("Filters", FONT, FONT_SIZE, expanded=True)
+        
         self.author = QLineEdit()
         self.author.setPlaceholderText("Author Name")
-        self.body.addWidget(self.author)
+        self.filters_section.add_widget(self.author)
 
         self.category = CheckableComboBox(Category.list(), [True] * (len(Category.list()) + 1), True, "All Categories")
-        self.body.addWidget(self.category)
+        self.filters_section.add_widget(self.category)
 
         char_layout = QHBoxLayout()
         
@@ -59,14 +63,14 @@ class FilterPanel(SidePanel):
         self.character = CheckableComboBox(characters, defaults, True, "All Characters")
         char_layout.addWidget(self.character)
         
-        self.body.addLayout(char_layout)
+        self.filters_section.add_layout(char_layout)
         
         # Connect event handlers for series-character synchronization
         self.series.currentIndexChanged.connect(self.on_series_changed)
         self.character.model().dataChanged.connect(self.on_character_changed)
 
         self.elements = CheckableComboBox(Element.list(), ([True] * (len(Element.list()) + 1)), True, "All Elements")
-        self.body.addWidget(self.elements)
+        self.filters_section.add_widget(self.elements)
         
         # Slot filter controls in horizontal layout
         slots_layout = QHBoxLayout()
@@ -94,20 +98,92 @@ class FilterPanel(SidePanel):
         self.max_value.setValue(255) 
         slots_layout.addWidget(self.max_value)
         
-        self.body.addLayout(slots_layout)
+        self.filters_section.add_layout(slots_layout)
         
         self.wifi = CheckableComboBox(Wifi.list(), ([True] * (len(Wifi.list()) + 1)), True, "All Wifi States")
-        self.body.addWidget(self.wifi)
+        self.filters_section.add_widget(self.wifi)
 
         self.info = CheckableComboBox(InfoToml.list(), ([True] * (len(InfoToml.list()) + 1)), True, "All Info States")  
-        self.body.addWidget(self.info)
+        self.filters_section.add_widget(self.info)
         
         self.enabled = CheckableComboBox(EnabledState.list(), ([True] * (len(EnabledState.list()) + 1)), True, "All Enabled States")  
-        self.body.addWidget(self.enabled)
+        self.filters_section.add_widget(self.enabled)
         
         # Include Hidden checkbox
         self.include_hidden = QCheckBox("Include Hidden")
-        self.body.addWidget(self.include_hidden)
+        self.filters_section.add_widget(self.include_hidden)
+        
+        # Add filters section to body
+        self.body.addWidget(self.filters_section)
+        
+        # Create collapsible Sorting section (collapsed by default)
+        self.sorting_section = CollapsibleSection("Sorting", FONT, FONT_SIZE, expanded=False)
+        
+        # Sorting options for comboboxes
+        sort_options = ["None", "Category", "Characters", "Mod Name", "Authors", "Slots"]
+        
+        # Sort by row 1
+        sort_row_1 = QHBoxLayout()
+        sort_label_1 = QLabel("Sort by:")
+        sort_label_1.setFont(QFont(FONT, BODY_FONT_SIZE))
+        sort_row_1.addWidget(sort_label_1)
+        self.sort_combo_1 = QComboBox()
+        self.sort_combo_1.addItems(sort_options)
+        sort_row_1.addWidget(self.sort_combo_1)
+        self.sort_toggle_1 = QPushButton("ASC")
+        self.sort_toggle_1.setFixedWidth(50)
+        self.sort_toggle_1.setCheckable(True)
+        self.sort_toggle_1.clicked.connect(lambda: self.toggle_sort_order(self.sort_toggle_1))
+        sort_row_1.addWidget(self.sort_toggle_1)
+        self.sorting_section.add_layout(sort_row_1)
+        
+        # Sort by row 2
+        sort_row_2 = QHBoxLayout()
+        sort_label_2 = QLabel("Then by:")
+        sort_label_2.setFont(QFont(FONT, BODY_FONT_SIZE))
+        sort_row_2.addWidget(sort_label_2)
+        self.sort_combo_2 = QComboBox()
+        self.sort_combo_2.addItems(sort_options)
+        sort_row_2.addWidget(self.sort_combo_2)
+        self.sort_toggle_2 = QPushButton("ASC")
+        self.sort_toggle_2.setFixedWidth(50)
+        self.sort_toggle_2.setCheckable(True)
+        self.sort_toggle_2.clicked.connect(lambda: self.toggle_sort_order(self.sort_toggle_2))
+        sort_row_2.addWidget(self.sort_toggle_2)
+        self.sorting_section.add_layout(sort_row_2)
+        
+        # Sort by row 3
+        sort_row_3 = QHBoxLayout()
+        sort_label_3 = QLabel("Then by:")
+        sort_label_3.setFont(QFont(FONT, BODY_FONT_SIZE))
+        sort_row_3.addWidget(sort_label_3)
+        self.sort_combo_3 = QComboBox()
+        self.sort_combo_3.addItems(sort_options)
+        sort_row_3.addWidget(self.sort_combo_3)
+        self.sort_toggle_3 = QPushButton("ASC")
+        self.sort_toggle_3.setFixedWidth(50)
+        self.sort_toggle_3.setCheckable(True)
+        self.sort_toggle_3.clicked.connect(lambda: self.toggle_sort_order(self.sort_toggle_3))
+        sort_row_3.addWidget(self.sort_toggle_3)
+        self.sorting_section.add_layout(sort_row_3)
+        
+        # Sort by row 4
+        sort_row_4 = QHBoxLayout()
+        sort_label_4 = QLabel("Then by:")
+        sort_label_4.setFont(QFont(FONT, BODY_FONT_SIZE))
+        sort_row_4.addWidget(sort_label_4)
+        self.sort_combo_4 = QComboBox()
+        self.sort_combo_4.addItems(sort_options)
+        sort_row_4.addWidget(self.sort_combo_4)
+        self.sort_toggle_4 = QPushButton("ASC")
+        self.sort_toggle_4.setFixedWidth(50)
+        self.sort_toggle_4.setCheckable(True)
+        self.sort_toggle_4.clicked.connect(lambda: self.toggle_sort_order(self.sort_toggle_4))
+        sort_row_4.addWidget(self.sort_toggle_4)
+        self.sorting_section.add_layout(sort_row_4)
+        
+        # Add sorting section to body
+        self.body.addWidget(self.sorting_section)
 
         self.body.addStretch(1)
 
@@ -118,6 +194,13 @@ class FilterPanel(SidePanel):
         apply_button.clicked.connect(self.apply)
         self.footer.addWidget(clear_button)
         self.footer.addWidget(apply_button)
+    
+    def toggle_sort_order(self, button: QPushButton):
+        """Toggle between ASC and DESC for a sort button"""
+        if button.isChecked():
+            button.setText("DESC")
+        else:
+            button.setText("ASC")
     
     def reset(self):
         """
