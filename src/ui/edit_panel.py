@@ -296,11 +296,8 @@ class EditPanel(SidePanel):
         checked_chars = self.character.get_checked()
         checked_chars = [c for c in checked_chars if c != "Select All"]
         
-        # Format character names - join with &
-        if checked_chars:
-            characters_str = " & ".join(checked_chars)
-        else:
-            characters_str = ""
+        # Format character names
+        characters_str = format_character_names(checked_chars)
         
         # Get selected slots
         checked_slots = []
@@ -328,43 +325,11 @@ class EditPanel(SidePanel):
         # Get category
         category_str = self.category.currentText()
         
-        # Get format templates from config
-        folder_format = self.config_manager.config.name_rules.folder_name_format or "{category}_{characters}[{slots}]_{mod}"
-        display_format = self.config_manager.config.name_rules.display_name_format or "{characters} {slots} {mod}"
+        # Generate folder name
+        folder_name = format_folder_name(characters_str, slots_str_folder, mod_name, category_str)
         
-        # Generate folder name using.format() (more Pythonic and safer)
-        try:
-            folder_name = folder_format.format(
-                category=category_str,
-                characters=characters_str,
-                slots=slots_str_folder,
-                mod=mod_name
-            )
-            # Clean the folder name (remove special chars, etc.)
-            from src.core.formatting import clean_folder_name
-            folder_name = clean_folder_name(folder_name)
-        except KeyError:
-            # If template has invalid placeholder, fall back to default
-            folder_name = f"{category_str}_{characters_str}[{slots_str_folder}]_{mod_name}"
-            from src.core.formatting import clean_folder_name
-            folder_name = clean_folder_name(folder_name)
-        
-        # Generate display name using .format()
-        try:
-            display_name = display_format.format(
-                category=category_str,
-                characters=characters_str,
-                slots=slots_str_display,
-                mod=mod_name
-            )
-            # Clean the display name
-            from src.core.formatting import clean_display_name
-            display_name = clean_display_name(display_name)
-        except KeyError:
-            # If template has invalid placeholder, fall back to default
-            display_name = f"{characters_str} {slots_str_display} {mod_name}"
-            from src.core.formatting import clean_display_name
-            display_name = clean_display_name(display_name)
+        # Generate display name 
+        display_name = format_display_name(characters_str, slots_str_display, mod_name, category_str)
         
         # Update the fields
         self.folder.setText(folder_name)
