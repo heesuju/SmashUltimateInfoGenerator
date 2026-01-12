@@ -273,25 +273,29 @@ class EditPanel(SidePanel):
                     self.preview_map[name] = links[i]
                     self.preview_selector.addItem(name)
             
+            self.preview_selector.blockSignals(False)
+
             if self.preview_selector.count() > 0:
                 self.preview_selector.setPlaceholderText("Select Preview Image")
-                # Don't auto-select first one to avoid overwriting current preview implicitly
-                self.preview_selector.setCurrentIndex(-1)
                 
-            self.preview_selector.blockSignals(False)
+                # Check if current mod has a valid thumbnail
+                has_thumbnail = False
+                if self.mod and self.mod.thumbnail and os.path.exists(self.mod.thumbnail):
+                    has_thumbnail = True
+                
+                # If no thumbnail exists, auto-select the first one from GB
+                if not has_thumbnail:
+                    # Manually trigger download if signal assumes change (index might be 0 already if logic differs, but here it is new items)
+                    # Actually, if we just added items, index is -1. Setting to 0 should trigger.
+                    self.preview_selector.setCurrentIndex(0)
+                else:
+                    self.preview_selector.setCurrentIndex(-1)
 
         # Wifi Safe
         if "is_wifi_safe" in info:
             is_safe = info["is_wifi_safe"]
-            # Map boolean to Wifi enum index
-            # Wifi.SAFE, Wifi.UNSAFE, Wifi.UNCERTAIN
-            # Assuming list order: SAFE, UNSAFE, UNCERTAIN
-            # Actually need to check Wifi.list() order or values
-            safe_index = 0 if is_safe else 2 # Default to Uncertain if false? Or Unsafe?
-            # GameBanana logic: if "wifi safe" tag -> True. If not -> False.
-            # False doesn't mean unsafe. It just means unknown/not tagged.
-            # So maybe use Uncertain(2) if False, and Safe(0) if True?
-            # Wait, Wifi.list() usually returns strings.
+            safe_index = 0 if is_safe else 2 
+            
             try:
                 if is_safe:
                     target = Wifi.SAFE.value
@@ -537,7 +541,7 @@ class EditPanel(SidePanel):
         try:
             self.mod.wifi_safe = Wifi(self.wifi.currentText())
         except:
-             pass 
+            pass 
              
         try:
             self.mod.category = Category(self.category.currentText())
@@ -600,27 +604,25 @@ class EditPanel(SidePanel):
                 
         # 3. Generate TOML & Rename
         try:
-             generate_toml(self.mod)
+            generate_toml(self.mod)
              
-             new_dir = os.path.join(get_parent_dir(self.mod.path), self.mod.folder_name)
-             if os.path.exists(new_dir):
-                 self.mod.path = new_dir
-                 self.mod_path = new_dir # Update local ref too
+            new_dir = os.path.join(get_parent_dir(self.mod.path), self.mod.folder_name)
+            if os.path.exists(new_dir):
+                self.mod.path = new_dir
+                self.mod_path = new_dir # Update local ref too
                  
-                 # If renamed, update thumbnail path too
-                 self.mod.thumbnail = os.path.join(new_dir, "preview.webp")
+                # If renamed, update thumbnail path too
+                self.mod.thumbnail = os.path.join(new_dir, "preview.webp")
         except Exception as e:
-             print(f"Save error: {e}")
+            print(f"Save error: {e}")
              
         # 4. Update Persistent Cache
         try:
-             # ModLoader uses path as key. Path is now self.mod.path (updated above if renamed).
-             # We must update cache manually because mtime of directory might not have changed,
-             # causing ModLoader to load stale cache on next startup.
-             cache_data = self.mod.model_dump(mode='json', exclude={'is_selected', 'path', 'hash'})
-             CacheManager().set_cached_mod(self.mod.path, cache_data)
+            # ModLoader uses path as key. Path is now self.mod.path (updated above if renamed).
+            cache_data = self.mod.model_dump(mode='json', exclude={'is_selected', 'path', 'hash'})
+            CacheManager().set_cached_mod(self.mod.path, cache_data)
         except Exception as e:
-             print(f"Cache update error: {e}")
+            print(f"Cache update error: {e}")
 
         # 5. Emit
         self.save_complete.emit(str(self.mod.hash))
