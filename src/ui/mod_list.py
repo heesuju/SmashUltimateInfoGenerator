@@ -171,7 +171,7 @@ class ModList(QWidget):
                 thumbnail=mod.thumbnail,
                 category=str(mod.category),
                 authors=mod.authors,
-                slots=format_slots(mod.get_character_slots(), self.config_manager.config.name_rules.cap_slots),
+                slots=format_slots(mod.get_character_slots(), self.config_manager.config.name_rules.cap_slots_display),
                 version=mod.version,
                 enabled=False,
                 selected=False,

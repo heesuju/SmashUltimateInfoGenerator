@@ -173,10 +173,15 @@ class EditPanel(SidePanel):
                     pass
         
         # Format slots using format_slots() - returns "C00-02,05" format (no brackets)
-        slots_str = ""
+        slots_str_folder = ""
+        slots_str_display = ""
         if checked_slots:
             sorted_slots = sorted(checked_slots)
-            slots_str = format_slots(sorted_slots)
+            # Get cap_slots settings from config
+            cap_slots_folder = self.config_manager.config.name_rules.cap_slots_folder
+            cap_slots_display = self.config_manager.config.name_rules.cap_slots_display
+            slots_str_folder = format_slots(sorted_slots, cap_slots_folder)
+            slots_str_display = format_slots(sorted_slots, cap_slots_display)
         
         # Get category
         category_str = self.category.currentText()
@@ -185,12 +190,12 @@ class EditPanel(SidePanel):
         folder_format = self.config_manager.config.name_rules.folder_name_format or "{category}_{characters}[{slots}]_{mod}"
         display_format = self.config_manager.config.name_rules.display_name_format or "{characters} {slots} {mod}"
         
-        # Generate folder name using .format() (more Pythonic and safer)
+        # Generate folder name using.format() (more Pythonic and safer)
         try:
             folder_name = folder_format.format(
                 category=category_str,
                 characters=characters_str,
-                slots=slots_str,
+                slots=slots_str_folder,
                 mod=mod_name
             )
             # Clean the folder name (remove special chars, etc.)
@@ -198,7 +203,7 @@ class EditPanel(SidePanel):
             folder_name = clean_folder_name(folder_name)
         except KeyError:
             # If template has invalid placeholder, fall back to default
-            folder_name = f"{category_str}_{characters_str}[{slots_str}]_{mod_name}"
+            folder_name = f"{category_str}_{characters_str}[{slots_str_folder}]_{mod_name}"
             from src.core.formatting import clean_folder_name
             folder_name = clean_folder_name(folder_name)
         
@@ -207,7 +212,7 @@ class EditPanel(SidePanel):
             display_name = display_format.format(
                 category=category_str,
                 characters=characters_str,
-                slots=slots_str,
+                slots=slots_str_display,
                 mod=mod_name
             )
             # Clean the display name
@@ -215,7 +220,7 @@ class EditPanel(SidePanel):
             display_name = clean_display_name(display_name)
         except KeyError:
             # If template has invalid placeholder, fall back to default
-            display_name = f"{characters_str} {slots_str} {mod_name}"
+            display_name = f"{characters_str} {slots_str_display} {mod_name}"
             from src.core.formatting import clean_display_name
             display_name = clean_display_name(display_name)
         

@@ -5,7 +5,8 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QLabel,
     QPushButton,
-    QFrame
+    QFrame,
+    QCheckBox
 )
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
@@ -39,6 +40,7 @@ class FormatEditor(QWidget):
     """Visual format editor with clickable placeholders and live preview"""
     
     formatChanged = pyqtSignal(str)
+    capSlotsChanged = pyqtSignal(bool)
     
     def __init__(self, placeholder_text:str = "", sample_data:dict = None):
         super().__init__()
@@ -87,6 +89,13 @@ class FormatEditor(QWidget):
         self.text_input.textChanged.connect(self.on_text_changed)
         layout.addWidget(self.text_input)
         
+        # Cap slots checkbox
+        self.cap_slots_checkbox = QCheckBox("Capitalize slots (C01 vs c01)")
+        self.cap_slots_checkbox.setChecked(True)
+        self.cap_slots_checkbox.setStyleSheet("font-size: 10px;")
+        self.cap_slots_checkbox.stateChanged.connect(self.on_cap_slots_changed)
+        layout.addWidget(self.cap_slots_checkbox)
+        
         # Preview section
         preview_container = QFrame()
         preview_layout = QVBoxLayout(preview_container)
@@ -124,6 +133,12 @@ class FormatEditor(QWidget):
         self.update_preview(text)
         self.formatChanged.emit(text)
     
+    def on_cap_slots_changed(self, state:int):
+        """Emit signal when cap_slots changes"""
+        is_checked = state == Qt.CheckState.Checked.value
+        self.update_preview(self.text_input.text())
+        self.capSlotsChanged.emit(is_checked)
+    
     def update_preview(self, format_text:str):
         """Update preview with formatted sample data"""
         if not format_text:
@@ -131,7 +146,17 @@ class FormatEditor(QWidget):
             return
         
         preview = format_text
-        for placeholder, value in self.sample_data.items():
+        sample_data_copy = self.sample_data.copy()
+        
+        # Apply cap_slots to slots in preview
+        if "slots" in sample_data_copy:
+            slots_value = sample_data_copy["slots"]
+            if self.cap_slots_checkbox.isChecked():
+                sample_data_copy["slots"] = slots_value.upper() if slots_value else slots_value
+            else:
+                sample_data_copy["slots"] = slots_value.lower() if slots_value else slots_value
+        
+        for placeholder, value in sample_data_copy.items():
             preview = preview.replace(f"{{{placeholder}}}", value)
         
         self.preview_label.setText(f"<b>{preview}</b>")
@@ -143,6 +168,14 @@ class FormatEditor(QWidget):
     def set_text(self, text:str):
         """Set format text"""
         self.text_input.setText(text)
+    
+    def get_cap_slots(self) -> bool:
+        """Get cap_slots checkbox state"""
+        return self.cap_slots_checkbox.isChecked()
+    
+    def set_cap_slots(self, value:bool):
+        """Set cap_slots checkbox state"""
+        self.cap_slots_checkbox.setChecked(value)
     
     def set_sample_data(self, data:dict):
         """Update sample data for preview"""

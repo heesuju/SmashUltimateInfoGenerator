@@ -128,7 +128,9 @@ class Config(SidePanel):
         self.cache_dir.set_text(self.config_manager.config.cache_dir)
         self.theme_drop.setCurrentText(theme)
         self.folder_name_format.set_text(self.config_manager.config.name_rules.folder_name_format)
+        self.folder_name_format.set_cap_slots(self.config_manager.config.name_rules.cap_slots_folder)
         self.display_name_format.set_text(self.config_manager.config.name_rules.display_name_format)
+        self.display_name_format.set_cap_slots(self.config_manager.config.name_rules.cap_slots_display)
         self.check_validity()
 
     def save(self):
@@ -137,7 +139,9 @@ class Config(SidePanel):
             self.config_manager.config.root_dir = self.root_dir.get_text()
             self.config_manager.config.cache_dir = self.cache_dir.get_text()
             self.config_manager.config.name_rules.folder_name_format = self.folder_name_format.get_text()
+            self.config_manager.config.name_rules.cap_slots_folder = self.folder_name_format.get_cap_slots()
             self.config_manager.config.name_rules.display_name_format = self.display_name_format.get_text()
+            self.config_manager.config.name_rules.cap_slots_display = self.display_name_format.get_cap_slots()
             self.config_manager.save()
         else:
             pass

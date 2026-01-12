@@ -3,7 +3,8 @@ from pydantic import BaseModel
 from src.constants.enums import Theme
 
 class NameRules(BaseModel):
-    cap_slots:bool=True
+    cap_slots_folder:bool=True
+    cap_slots_display:bool=True
     folder_name_format:str=""
     display_name_format:str=""
 
