@@ -7,7 +7,7 @@ from src.ui.components.layout import HBox, VBox
 from src.constants.styles import MAIN_BUTTON
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.thumbnail_label import ThumbnailLabel
-from src.ui.components.collapsible_label import CollapsibleLabel
+from src.ui.components.collapsible_section import CollapsibleSection
 from src.ui.components.toggle_button import ToggleButton
 from src.managers.mod_manager import ModManager
 from src.managers.data_manager import DataManager, ButtonIcons
@@ -87,10 +87,20 @@ class PreviewPanel(SidePanel):
         version_layout.addWidget(self.wifi)
         version_layout.addStretch(1)
 
-        self.description = CollapsibleLabel("Description", "", self)
+        # Description section (collapsed by default)
+        self.description = CollapsibleSection("Description", BODY_FONT, BODY_FONT_SIZE, expanded=False)
+        self.description_label = QLabel("")
+        self.description_label.setWordWrap(True)
+        self.description_label.setFont(QFont(BODY_FONT, BODY_FONT_SIZE))
+        self.description.add_widget(self.description_label)
         self.body.addWidget(self.description)
 
-        self.elements = CollapsibleLabel("Elements", "", self)
+        # Elements section (collapsed by default)
+        self.elements = CollapsibleSection("Elements", BODY_FONT, BODY_FONT_SIZE, expanded=False)
+        self.elements_label = QLabel("")
+        self.elements_label.setWordWrap(True)
+        self.elements_label.setFont(QFont(BODY_FONT, BODY_FONT_SIZE))
+        self.elements.add_widget(self.elements_label)
         self.body.addWidget(self.elements)
         
         self.body.addStretch(1)
@@ -114,12 +124,12 @@ class PreviewPanel(SidePanel):
         self.thumbnail.set_thumbnail(mod.thumbnail)
         self.author.setText(mod.authors)
         self.version.setText(mod.version)
-        self.description.set_value(mod.description)
+        self.description_label.setText(mod.description)
         self.wifi.setText(str(mod.wifi_safe))
         elements = [str(element) for element in mod.includes]
         text = "\n".join([f"- {item}" for item in elements])
-        self.elements.set_value(text)
-        self.elements.set_title(f"Elements ({len(mod.includes)})")
+        self.elements_label.setText(text)
+        self.elements.set_status(f"{len(mod.includes)} items")
 
     def on_open_clicked(self):
         id =self.mod_manager.focused_id
