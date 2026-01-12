@@ -34,6 +34,28 @@ FONT_SIZE = 10
 BODY_FONT_SIZE = 8
 
 
+
+class ImageDownloadThread(QtCore.QThread):
+    finished = pyqtSignal(str)
+    error = pyqtSignal(str)
+
+    def __init__(self, url):
+        super().__init__()
+        self.url = url
+
+    def run(self):
+        try:
+            response = requests.get(self.url, stream=True)
+            if response.status_code == 200:
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
+                with open(temp_file, 'wb') as f:
+                    shutil.copyfileobj(response.raw, f)
+                self.finished.emit(temp_file)
+            else:
+                self.error.emit(f"Status code: {response.status_code}")
+        except Exception as e:
+            self.error.emit(str(e))
+
 class EditPanel(SidePanel):
     close_requested = pyqtSignal()  # Signal to close edit panel
     gb_data_ready = pyqtSignal(dict) # Signal for thread-safe data update
@@ -504,8 +526,8 @@ class EditPanel(SidePanel):
         self.thumbnail.set_thumbnail(mod.thumbnail)
     
     def reset(self):
-        """Clear all fields to their default state"""
-        self.url.clear()
+        """Clear all fields to their default state and remove any temporary preview data."""
+        self.url.input_box.clear()
         self.mod_name.clear()
         self.character.reset()
         self.slots.reset()
@@ -517,13 +539,27 @@ class EditPanel(SidePanel):
         self.wifi.setCurrentIndex(0)
         self.display.clear()
         self.folder.clear()
+        # Clear preview selector and map
         self.preview_selector.clear()
+        self.preview_map = {}
+        # Delete temporary preview file if it exists
+        if self.pending_preview_path and os.path.exists(self.pending_preview_path):
+            try:
+                os.remove(self.pending_preview_path)
+            except Exception:
+                pass
         self.pending_preview_path = None
         self.mod_path = None
         self.mod = None
+        # Reset thumbnail widget to placeholder/empty
+        try:
+            self.thumbnail.set_thumbnail("")
+        except Exception:
+            pass
     
     def on_cancel(self):
         """Cancel edit and close panel"""
+        self.reset()
         self.close_requested.emit()
     
     def on_save(self):
@@ -639,14 +675,16 @@ class EditPanel(SidePanel):
         if not url:
             return
             
-        # Download to temp file
-        try:
-            response = requests.get(url, stream=True)
-            if response.status_code == 200:
-                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
-                with open(temp_file, 'wb') as f:
-                    shutil.copyfileobj(response.raw, f)
-                self.pending_preview_path = temp_file
-                self.thumbnail.set_thumbnail(temp_file)
-        except Exception as e:
-            print(f"Error downloading preview: {e}")
+        # Download in background to avoid freezing UI
+        if hasattr(self, 'image_downloader') and self.image_downloader.isRunning():
+            self.image_downloader.terminate()
+            self.image_downloader.wait()
+            
+        self.image_downloader = ImageDownloadThread(url)
+        self.image_downloader.finished.connect(self._on_download_complete)
+        self.image_downloader.error.connect(lambda e: print(f"Download error: {e}"))
+        self.image_downloader.start()
+        
+    def _on_download_complete(self, path):
+         self.pending_preview_path = path
+         self.thumbnail.set_thumbnail(path)

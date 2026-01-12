@@ -97,11 +97,8 @@ class ModList(QWidget):
         add_button = QPushButton("+ Add New")
         header_layout.addWidget(add_button)
 
-        save_button = QPushButton("Save (3 Enabled)")
-        header_layout.addWidget(save_button)
-
         action_dropdown = QComboBox()
-        action_dropdown.addItems(["Batch Actions", "Enable", "Disable", "Get URL", "Generate Info.toml", "Remove"])
+        action_dropdown.addItems(["Batch Actions", "Enable", "Disable", "Generate Info.toml", "Remove"])
         header_layout.addWidget(action_dropdown)
         
         self.body_layout.addWidget(self.tree_list)
