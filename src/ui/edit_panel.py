@@ -91,7 +91,20 @@ class EditPanel(SidePanel):
 
         # Slots
         self._add_label("Slots")
-        self.slots = CheckableComboBox([f"C{i:02d}" for i in range(256)], [False] * 257, False, "Select Slots")
+        
+        def slot_formatter(items):
+            if not items: return ""
+            # Convert "C00" -> 0
+            slots_int = []
+            for item in items:
+                try:
+                    if item.startswith("C"):
+                        slots_int.append(int(item[1:]))
+                except:
+                    pass
+            return format_slots(sorted(slots_int))
+
+        self.slots = CheckableComboBox([f"C{i:02d}" for i in range(256)], [False] * 257, False, "Select Slots", formatter=slot_formatter)
         self.slots.model().dataChanged.connect(self._update_generated_names)
         self.body.addWidget(self.slots)
 

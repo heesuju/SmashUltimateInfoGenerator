@@ -4,11 +4,12 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt
 
 class CheckableComboBox(QComboBox):
-    def __init__(self, items:List=[], defaults:List[bool]=[], include_all:bool=False, placeholder_text:str="All"):
+    def __init__(self, items:List=[], defaults:List[bool]=[], include_all:bool=False, placeholder_text:str="All", formatter=None):
         super().__init__()
         self.include_all = include_all
         self.defaults = defaults
         self.placeholder_text = placeholder_text
+        self.formatter = formatter
         self.setModel(QStandardItemModel(self))
         # self.setEditable(False)  # prevent typing
         self.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
@@ -143,6 +144,11 @@ class CheckableComboBox(QComboBox):
         self.sort_items()  # Sort only when opening the dropdown
         super().showPopup()
 
+    def hidePopup(self):
+        """Override to ensure display text is correct after closing"""
+        super().hidePopup()
+        self.update_display()
+
     def update_display(self):
         checked = self.get_checked()
         
@@ -158,7 +164,10 @@ class CheckableComboBox(QComboBox):
             elif self.is_item_selected(0):
                 checked = checked[1:]  # Remove "Select All" from display
             
-        self.setCurrentText(", ".join(checked))
+        if self.formatter:
+            self.setCurrentText(self.formatter(checked))
+        else:
+            self.setCurrentText(", ".join(checked))
 
     def eventFilter(self, obj, event):
         # Intercept clicks on the line edit
