@@ -1,6 +1,6 @@
 import re
 from PyQt6.QtWidgets import ( 
-    QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QLineEdit, QTextEdit
+    QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QLineEdit, QTextEdit, QSizePolicy
 )
 from PyQt6 import QtCore
 from PyQt6.QtGui import QPixmap, QFont
@@ -14,6 +14,7 @@ from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.single_combobox import SingleComboBox
 from src.ui.components.thumbnail_label import ThumbnailLabel
 from src.managers.mod_manager import ModManager
+from src.managers.data_manager import DataManager
 from src.ui.components.validators import limit_version
 from src.core.formatting import format_folder_name, format_display_name, format_character_names, format_slots
 
@@ -53,7 +54,8 @@ class EditPanel(SidePanel):
 
         # Character
         self._add_label("Character")
-        self.character = CheckableComboBox(Fighter.list(), [False] * (len(Fighter.list()) + 1), False, "Select Characters")
+        characters = DataManager.get_character_names()
+        self.character = CheckableComboBox(characters, [False] * (len(characters) + 1), False, "Select Characters")
         self.character.model().dataChanged.connect(self._update_generated_names)
         self.body.addWidget(self.character)
 
@@ -87,8 +89,10 @@ class EditPanel(SidePanel):
         self._add_label("Description")
         self.description = QTextEdit()
         self.description.setPlaceholderText("Enter description")
-        self.description.setMinimumHeight(80)
-        self.description.setMaximumHeight(120)
+        self.description.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.description.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.description.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.description.textChanged.connect(self._adjust_description_height)
         self.body.addWidget(self.description)
 
         # Elements
@@ -140,6 +144,13 @@ class EditPanel(SidePanel):
             self.version.blockSignals(True)
             self.version.setText(limited)
             self.version.blockSignals(False)
+    
+    def _adjust_description_height(self):
+        """Adjust description field height to fit content without scrolling"""
+        doc_height = self.description.document().size().height()
+        margins = self.description.contentsMargins()
+        total_height = int(doc_height + margins.top() + margins.bottom() + 10)
+        self.description.setFixedHeight(max(80, total_height))
     
     def _update_generated_names(self):
         """Auto-generate folder_name and display_name when relevant fields change"""
@@ -248,8 +259,11 @@ class EditPanel(SidePanel):
             if i == 0 and char_text == "Select All":
                 continue
             
+            # Convert custom name back to Fighter key for comparison
+            fighter_key = DataManager.get_character_by_custom(char_text)
+            
             # Match character from mod's character list
-            is_checked = any(char.fighter.value == char_text for char in mod.characters)
+            is_checked = any(char.fighter == fighter_key for char in mod.characters)
             item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
         
         self.character.update_display()

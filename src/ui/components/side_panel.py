@@ -33,7 +33,31 @@ class SidePanel(QWidget):
         self.root.addLayout(self.header)
 
         scroll = QScrollArea()
-        scroll.setStyleSheet("QScrollArea { border: none; }")
+        scroll.setStyleSheet("""
+            QScrollArea { 
+                border: none; 
+            }
+            QScrollBar:vertical {
+                border: none;
+                background: transparent;
+                width: 10px;
+                margin: 0px;
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255, 255, 255, 0.2);
+                min-height: 20px;
+                border-radius: 5px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: rgba(255, 255, 255, 0.3);
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: none;
+            }
+        """)
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)  # Disable horizontal scroll
         self.root.addWidget(scroll, stretch=1)

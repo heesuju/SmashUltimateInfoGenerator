@@ -12,6 +12,7 @@ class SingleComboBox(QComboBox):
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setEditable(True)
         self.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         self.lineEdit().setReadOnly(True)
@@ -26,6 +27,10 @@ class SingleComboBox(QComboBox):
                 self.showPopup()
                 return True
         return super().eventFilter(obj, event)
+    
+    def wheelEvent(self, event):
+        """Ignore wheel events to prevent accidental selection changes"""
+        event.ignore()
     
     def showPopup(self):
         """Override to sort items alphabetically before showing the popup"""
