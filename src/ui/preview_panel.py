@@ -7,8 +7,8 @@ from src.ui.components.layout import HBox, VBox
 from src.constants.styles import MAIN_BUTTON
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.thumbnail_label import ThumbnailLabel
-from src.ui.components.collapsible_section import CollapsibleSection
 from src.ui.components.toggle_button import ToggleButton
+from src.ui.components.flow_layout import FlowLayout, ElementTag
 from src.managers.mod_manager import ModManager
 from src.managers.data_manager import DataManager, ButtonIcons
 from src.utils.file import open_folder
@@ -46,62 +46,29 @@ class PreviewPanel(SidePanel):
         self.thumbnail = ThumbnailLabel()
         self.body.addWidget(self.thumbnail)
 
+        # Author and Version on same row
+        info_layout = QHBoxLayout()
+        self.body.addLayout(info_layout)
         
-        author_layout = QHBoxLayout()
-        self.body.addLayout(author_layout)
-
-        author_label = QLabel("Author:")
-        author_label.setFixedWidth(60)
-        body_font = QFont(BODY_FONT, BODY_FONT_SIZE)  # Set the font and font size
-        author_label.setFont(body_font)
-        author_layout.addWidget(author_label)
+        body_font = QFont(BODY_FONT, BODY_FONT_SIZE)
+        
         self.author = QLabel("")
-        body_font = QFont(BODY_FONT, BODY_FONT_SIZE)  # Set the font and font size
         self.author.setFont(body_font)
-        author_layout.addWidget(self.author)
-        author_layout.addStretch(1)
+        info_layout.addWidget(self.author)
         
-        version_layout = QHBoxLayout()
-        self.body.addLayout(version_layout)
-        version_label = QLabel("Version:")
-        version_label.setFixedWidth(60)
-        body_font = QFont(BODY_FONT, BODY_FONT_SIZE)  # Set the font and font size
-        version_label.setFont(body_font)
-        version_layout.addWidget(version_label)
+        info_layout.addStretch(1)
+        
         self.version = QLabel("1.0.0")
-        body_font = QFont(BODY_FONT, BODY_FONT_SIZE)  # Set the font and font size
         self.version.setFont(body_font)
-        version_layout.addWidget(self.version)
-        version_layout.addStretch(1)
+        info_layout.addWidget(self.version)
 
-        version_layout = QHBoxLayout()
-        self.body.addLayout(version_layout)
-        wifi_label = QLabel("Wifi-Safe:")
-        wifi_label.setFixedWidth(60)
-        body_font = QFont(BODY_FONT, BODY_FONT_SIZE)  # Set the font and font size
-        version_label.setFont(body_font)
-        version_layout.addWidget(wifi_label)
-        self.wifi = QLabel("")
-        body_font = QFont(BODY_FONT, BODY_FONT_SIZE)  # Set the font and font size
-        self.wifi.setFont(body_font)
-        version_layout.addWidget(self.wifi)
-        version_layout.addStretch(1)
+        self.elements_container = FlowLayout(spacing=5)
+        self.body.addWidget(self.elements_container)
 
-        # Description section (collapsed by default)
-        self.description = CollapsibleSection("Description", BODY_FONT, BODY_FONT_SIZE, expanded=False)
         self.description_label = QLabel("")
         self.description_label.setWordWrap(True)
         self.description_label.setFont(QFont(BODY_FONT, BODY_FONT_SIZE))
-        self.description.add_widget(self.description_label)
-        self.body.addWidget(self.description)
-
-        # Elements section (collapsed by default)
-        self.elements = CollapsibleSection("Elements", BODY_FONT, BODY_FONT_SIZE, expanded=False)
-        self.elements_label = QLabel("")
-        self.elements_label.setWordWrap(True)
-        self.elements_label.setFont(QFont(BODY_FONT, BODY_FONT_SIZE))
-        self.elements.add_widget(self.elements_label)
-        self.body.addWidget(self.elements)
+        self.body.addWidget(self.description_label)        
         
         self.body.addStretch(1)
 
@@ -125,11 +92,20 @@ class PreviewPanel(SidePanel):
         self.author.setText(mod.authors)
         self.version.setText(mod.version)
         self.description_label.setText(mod.description)
-        self.wifi.setText(str(mod.wifi_safe))
-        elements = [str(element) for element in mod.includes]
-        text = "\n".join([f"- {item}" for item in elements])
-        self.elements_label.setText(text)
-        self.elements.set_status(f"{len(mod.includes)} items")
+        
+        # Clear and repopulate element tags
+        self.elements_container.clear()
+        
+        # Add wifi-safe tag if not uncertain
+        if str(mod.wifi_safe).lower() != "uncertain":
+            wifi_text = "Wifi-Safe" if str(mod.wifi_safe).lower() == "safe" else "Not Wifi-Safe"
+            wifi_tag = ElementTag(wifi_text)
+            self.elements_container.add_widget(wifi_tag)
+        
+        # Add element tags
+        for element in mod.includes:
+            tag = ElementTag(str(element))
+            self.elements_container.add_widget(tag)
 
     def on_open_clicked(self):
         id =self.mod_manager.focused_id

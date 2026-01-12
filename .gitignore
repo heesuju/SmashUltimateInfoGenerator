@@ -6,3 +6,5 @@ thumbnails/
 presets
 .env
 data/cache/log/*
+*.db
+*.ttf
