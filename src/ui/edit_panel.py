@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6 import QtCore
 from PyQt6.QtGui import QPixmap, QFont
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt, QSize, pyqtSignal
 from src.ui.components.layout import HBox, VBox
 from src.constants.styles import MAIN_BUTTON
 from src.ui.components.side_panel import SidePanel
@@ -12,8 +12,10 @@ from src.constants.enums import Category, Element, Fighter, Wifi
 from src.ui.components.input_button_widget import InputButtonWidget, InputButton
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.single_combobox import SingleComboBox
+from src.ui.components.thumbnail_label import ThumbnailLabel
 from src.managers.mod_manager import ModManager
 from src.ui.components.validators import limit_version
+from src.core.formatting import format_folder_name, format_display_name, format_character_names, format_slots
 
 FONT = "Arial"
 FONT_SIZE = 10
@@ -21,9 +23,12 @@ BODY_FONT_SIZE = 8
 
 
 class EditPanel(SidePanel):
-    def __init__(self, mod_manager: ModManager):
+    close_requested = pyqtSignal()  # Signal to close edit panel
+    
+    def __init__(self, mod_manager: ModManager, config_manager):
         super().__init__("Edit")
         self.mod_manager = mod_manager
+        self.config_manager = config_manager
 
         # GameBanana URL section
         self.url = InputButtonWidget(
@@ -35,33 +40,34 @@ class EditPanel(SidePanel):
         )
         self.body.addWidget(self.url)
         
-        # Thumbnail preview
-        thumbnail = QLabel()
-        preview_dir = "assets/img/preview.webp"
-        preview_img = QPixmap(preview_dir).scaled(314, 314, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        thumbnail.setPixmap(preview_img)
-        self.body.addWidget(thumbnail)
+        # Thumbnail preview (async loading)
+        self.thumbnail = ThumbnailLabel()
+        self.body.addWidget(self.thumbnail)
         
         # Mod Name
         self._add_label("Mod Name")
         self.mod_name = QLineEdit()
         self.mod_name.setPlaceholderText("Enter mod name")
+        self.mod_name.textChanged.connect(self._update_generated_names)
         self.body.addWidget(self.mod_name)
 
         # Character
         self._add_label("Character")
         self.character = CheckableComboBox(Fighter.list(), [False] * (len(Fighter.list()) + 1), False, "Select Characters")
+        self.character.model().dataChanged.connect(self._update_generated_names)
         self.body.addWidget(self.character)
 
         # Slots
         self._add_label("Slots")
         self.slots = CheckableComboBox([f"C{i:02d}" for i in range(256)], [False] * 257, False, "Select Slots")
+        self.slots.model().dataChanged.connect(self._update_generated_names)
         self.body.addWidget(self.slots)
 
         # Category
         self._add_label("Category")
         self.category = SingleComboBox()
         self.category.addItems(Category.list())
+        self.category.currentIndexChanged.connect(self._update_generated_names)
         self.body.addWidget(self.category)
 
         # Authors
@@ -74,7 +80,7 @@ class EditPanel(SidePanel):
         self._add_label("Version")
         self.version = QLineEdit()
         self.version.setPlaceholderText("1.0.0")
-        self.version.textChanged.connect(lambda text: limit_version(self.version))
+        self.version.textChanged.connect(self._on_version_changed)
         self.body.addWidget(self.version)
         
         # Description
@@ -111,12 +117,13 @@ class EditPanel(SidePanel):
         self.body.addStretch()
 
         # Footer buttons
-        clear_button = QPushButton("Clear")
-        clear_button.clicked.connect(self.reset)
-        apply_button = QPushButton("Apply")
-        apply_button.setStyleSheet(MAIN_BUTTON)
-        self.footer.addWidget(clear_button)
-        self.footer.addWidget(apply_button)
+        cancel_button = QPushButton("Cancel")
+        cancel_button.clicked.connect(self.on_cancel)
+        save_button = QPushButton("Save")
+        save_button.setStyleSheet(MAIN_BUTTON)
+        save_button.clicked.connect(self.on_save)
+        self.footer.addWidget(cancel_button)
+        self.footer.addWidget(save_button)
     
     def _add_label(self, text: str):
         """Helper to add a consistent label above input fields"""
@@ -125,6 +132,192 @@ class EditPanel(SidePanel):
         label_font.setBold(True)
         label.setFont(label_font)
         self.body.addWidget(label)
+    
+    def _on_version_changed(self, text: str):
+        """Validate and limit version input"""
+        limited = limit_version(text)
+        if limited != text:
+            self.version.blockSignals(True)
+            self.version.setText(limited)
+            self.version.blockSignals(False)
+    
+    def _update_generated_names(self):
+        """Auto-generate folder_name and display_name when relevant fields change"""
+        # Get mod name
+        mod_name = self.mod_name.text().strip()
+        if not mod_name:
+            return
+        
+        # Get selected characters
+        checked_chars = self.character.get_checked()
+        checked_chars = [c for c in checked_chars if c != "Select All"]
+        
+        # Format character names - join with &
+        if checked_chars:
+            characters_str = " & ".join(checked_chars)
+        else:
+            characters_str = ""
+        
+        # Get selected slots
+        checked_slots = []
+        for i in range(self.slots.get_item_count()):
+            item = self.slots.model().invisibleRootItem().child(i)
+            if i == 0:  # Skip "Select All"
+                continue
+            if item.checkState() == Qt.CheckState.Checked:
+                slot_text = item.text()
+                try:
+                    slot_num = int(slot_text[1:])  # Remove 'C' prefix
+                    checked_slots.append(slot_num)
+                except (ValueError, IndexError):
+                    pass
+        
+        # Format slots using format_slots() - returns "C00-02,05" format (no brackets)
+        slots_str = ""
+        if checked_slots:
+            sorted_slots = sorted(checked_slots)
+            slots_str = format_slots(sorted_slots)
+        
+        # Get category
+        category_str = self.category.currentText()
+        
+        # Get format templates from config
+        folder_format = self.config_manager.config.name_rules.folder_name_format or "{category}_{characters}[{slots}]_{mod}"
+        display_format = self.config_manager.config.name_rules.display_name_format or "{characters} {slots} {mod}"
+        
+        # Generate folder name using .format() (more Pythonic and safer)
+        try:
+            folder_name = folder_format.format(
+                category=category_str,
+                characters=characters_str,
+                slots=slots_str,
+                mod=mod_name
+            )
+            # Clean the folder name (remove special chars, etc.)
+            from src.core.formatting import clean_folder_name
+            folder_name = clean_folder_name(folder_name)
+        except KeyError:
+            # If template has invalid placeholder, fall back to default
+            folder_name = f"{category_str}_{characters_str}[{slots_str}]_{mod_name}"
+            from src.core.formatting import clean_folder_name
+            folder_name = clean_folder_name(folder_name)
+        
+        # Generate display name using .format()
+        try:
+            display_name = display_format.format(
+                category=category_str,
+                characters=characters_str,
+                slots=slots_str,
+                mod=mod_name
+            )
+            # Clean the display name
+            from src.core.formatting import clean_display_name
+            display_name = clean_display_name(display_name)
+        except KeyError:
+            # If template has invalid placeholder, fall back to default
+            display_name = f"{characters_str} {slots_str} {mod_name}"
+            from src.core.formatting import clean_display_name
+            display_name = clean_display_name(display_name)
+        
+        # Update the fields
+        self.folder.setText(folder_name)
+        self.display.setText(display_name)
+    
+    def load_mod(self, mod_id: str):
+        """Load mod data into edit panel"""
+        mod = self.mod_manager.get_mod(mod_id)
+        
+        # Set URL if available
+        if mod.url:
+            self.url.set_text(mod.url)
+        
+        # Set mod name
+        self.mod_name.setText(mod.mod_name)
+        
+        # Set characters - check all matching fighters
+        for i in range(self.character.get_item_count()):
+            item = self.character.model().invisibleRootItem().child(i)
+            char_text = item.text()
+            
+            # Skip "Select All" item
+            if i == 0 and char_text == "Select All":
+                continue
+            
+            # Match character from mod's character list
+            is_checked = any(char.fighter.value == char_text for char in mod.characters)
+            item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+        
+        self.character.update_display()
+        
+        # Set slots - collect all unique slots from all characters
+        all_slots = set()
+        for char in mod.characters:
+            all_slots.update(char.slots)
+        
+        for i in range(self.slots.get_item_count()):
+            item = self.slots.model().invisibleRootItem().child(i)
+            slot_text = item.text()
+            
+            # Skip "Select All" item
+            if i == 0 and slot_text == "Select All":
+                continue
+            
+            # Extract slot number from "C00" format
+            try:
+                slot_num = int(slot_text[1:])  # Remove 'C' prefix
+                is_checked = slot_num in all_slots
+                item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+            except (ValueError, IndexError):
+                item.setCheckState(Qt.CheckState.Unchecked)
+        
+        self.slots.update_display()
+        
+        # Set category
+        try:
+            category_index = Category.list().index(mod.category.value)
+            self.category.setCurrentIndex(category_index)
+        except (ValueError, AttributeError):
+            self.category.setCurrentIndex(0)
+        
+        # Set author
+        self.author.setText(mod.authors)
+        
+        # Set version
+        self.version.setText(mod.version)
+        
+        # Set description
+        self.description.setText(mod.description)
+        
+        # Set elements
+        for i in range(self.elements.get_item_count()):
+            item = self.elements.model().invisibleRootItem().child(i)
+            element_text = item.text()
+            
+            # Skip "Select All" item
+            if i == 0 and element_text == "Select All":
+                continue
+            
+            # Match element from mod's includes list
+            is_checked = any(el.value == element_text for el in mod.includes)
+            item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+        
+        self.elements.update_display()
+        
+        # Set wifi safe
+        try:
+            wifi_index = Wifi.list().index(mod.wifi_safe.value)
+            self.wifi.setCurrentIndex(wifi_index)
+        except (ValueError, AttributeError):
+            self.wifi.setCurrentIndex(0)
+        
+        # Set display name
+        self.display.setText(mod.display_name)
+        
+        # Set folder name
+        self.folder.setText(mod.folder_name)
+        
+        # Set thumbnail from mod's preview.webp
+        self.thumbnail.set_thumbnail(mod.thumbnail)
     
     def reset(self):
         """Clear all fields to their default state"""
@@ -140,3 +333,17 @@ class EditPanel(SidePanel):
         self.wifi.setCurrentIndex(0)
         self.display.clear()
         self.folder.clear()
+    
+    def on_cancel(self):
+        """Cancel edit and close panel"""
+        self.close_requested.emit()
+    
+    def on_save(self):
+        """Save changes (to be implemented)"""
+        # TODO: Implement save functionality
+        # This should:
+        # 1. Collect all field values
+        # 2. Update mod object
+        # 3. Generate info.toml
+        # 4. Optionally rename folder
+        pass

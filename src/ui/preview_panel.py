@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QSizePolicy, QLabel, QFrame, QHBoxLayout, QPushButton
 )
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont
-from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
+from PyQt6.QtCore import Qt, QSize, QPoint, QPointF, pyqtSignal
 from src.ui.components.layout import HBox, VBox
 from src.constants.styles import MAIN_BUTTON
 from src.ui.components.side_panel import SidePanel
@@ -15,6 +15,8 @@ from src.utils.file import open_folder
 from src.constants.ui_params import BODY_FONT, BODY_FONT_SIZE, TITLE_FONT, TITLE_FONT_SIZE
 
 class PreviewPanel(SidePanel):
+    edit_requested = pyqtSignal(str)  # Emits mod_id when edit is requested
+    
     def __init__(self, mod_manager:ModManager):
         super().__init__("Preview")
         self.mod_manager = mod_manager
@@ -77,6 +79,7 @@ class PreviewPanel(SidePanel):
         self.footer.addWidget(open_btn)
 
         edit = QPushButton("Edit")
+        edit.clicked.connect(self.on_edit_clicked)
         self.footer.addWidget(edit)
 
         save_button = QPushButton("Enable")
@@ -142,3 +145,7 @@ class PreviewPanel(SidePanel):
         id =self.mod_manager.focused_id
         mod = self.mod_manager.get_mod(id)
         self.mod_manager.remove_enabled(mod.hash)
+    
+    def on_edit_clicked(self):
+        """Emit signal to request edit mode for current mod"""
+        self.edit_requested.emit(self.mod_manager.focused_id)

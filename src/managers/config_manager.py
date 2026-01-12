@@ -18,12 +18,26 @@ class ConfigManager():
                 json_file.close()
                 output_log("Loaded config")
                 self.config = settings
+                
+                # Set default format templates if empty
+                if not self.config.name_rules.folder_name_format:
+                    self.config.name_rules.folder_name_format = "{category}_{characters}[{slots}]_{mod}"
+                if not self.config.name_rules.display_name_format:
+                    self.config.name_rules.display_name_format = "{characters} {slots} {mod}"
+                
+                # Save config with defaults if they were added
+                self.save()
                 return None
             except Exception as e:
                 output_log(f"Failed to load config: {e}")
         
         output_log(f"No config found\nMaking new config...")
         self.config = Settings()
+        
+        # Set default format templates for new config
+        self.config.name_rules.folder_name_format = "{category}_{characters}{slots}_{mod}"
+        self.config.name_rules.display_name_format = "{characters} {slots} {mod}"
+        
         self.save()
     
     def save(self)->None:

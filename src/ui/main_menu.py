@@ -29,8 +29,14 @@ class MainMenu(QWidget):
         self.list_widget = ModList(self.mod_manager, self.filter_manager, self.config_manager)
         self.filter = FilterPanel(self.filter_manager)
         self.preview = PreviewPanel(self.mod_manager)
-        self.edit = EditPanel(self.mod_manager)
+        self.edit = EditPanel(self.mod_manager, config_manager)
         self.config = Config(config_manager)
+        
+        # Connect preview edit button to edit panel
+        self.preview.edit_requested.connect(self.on_edit_requested)
+        
+        # Connect edit panel cancel to close edit
+        self.edit.close_requested.connect(self.on_edit_close)
 
         self.filter.hide()
         self.preview.hide()
@@ -48,7 +54,12 @@ class MainMenu(QWidget):
                     NavigationMenu(NavigationMenuIcon.CONFIG.value, self.config)
                 ]
             ]
-        )        
+        )
+        
+        # Hide edit button by default (will be shown when edit is clicked)
+        edit_button = self.menu.buttons.get(NavigationMenuIcon.EDIT.value)
+        if edit_button:
+            edit_button.hide()        
         
         hlayout.addWidget(self.list_widget)
         
@@ -75,4 +86,30 @@ class MainMenu(QWidget):
         
         # Focus on the specific filter input
         self.filter.focus_filter(filter_type)
+    
+    def on_edit_requested(self, mod_id: str):
+        """Handle edit button click from preview panel"""
+        # Show edit button in navigation if hidden
+        edit_button = self.menu.buttons.get(NavigationMenuIcon.EDIT.value)
+        if edit_button:
+            edit_button.show()
+        
+        # Load mod data into edit panel
+        self.edit.load_mod(mod_id)
+        
+        # Switch to edit panel
+        self.menu.show_panel(self.edit)
+    
+    def on_edit_close(self):
+        """Handle edit panel close/cancel"""
+        # Hide edit panel
+        self.edit.hide()
+        
+        # Hide edit button from navigation
+        edit_button = self.menu.buttons.get(NavigationMenuIcon.EDIT.value)
+        if edit_button:
+            edit_button.hide()
+        
+        # Reset navigation state
+        self.menu.selected_menu = NavigationMenuIcon.NONE
      
