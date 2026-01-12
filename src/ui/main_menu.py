@@ -47,6 +47,11 @@ class MainMenu(QWidget):
         
         # Connect sort panel to filter manager
         self.sort.set_sort_change_callback(self.on_sort_changed)
+        
+        # Load and apply saved sort rules from config on startup
+        saved_sort_rules = self.sort.get_sort_rules()
+        if saved_sort_rules:
+            self.filter_manager.set_sort_rules(saved_sort_rules)
 
         self.filter.hide()
         self.sort.hide()

@@ -177,6 +177,11 @@ class SortPanel(SidePanel):
                 toggle.set_state(rule.asc)  # True = ASC, False = DESC
                 combo.blockSignals(False)
     
+    
     def set_sort_change_callback(self, callback):
         """Set callback to be called when sort rules change"""
         self.on_sort_change_callback = callback
+    
+    def get_sort_rules(self):
+        """Get current sort rules from config"""
+        return self.config_manager.config.sort_rules
