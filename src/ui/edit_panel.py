@@ -173,8 +173,6 @@ class EditPanel(SidePanel):
         checked_slots = []
         for i in range(self.slots.get_item_count()):
             item = self.slots.model().invisibleRootItem().child(i)
-            if i == 0:  # Skip "Select All"
-                continue
             if item.checkState() == Qt.CheckState.Checked:
                 slot_text = item.text()
                 try:
@@ -273,23 +271,32 @@ class EditPanel(SidePanel):
         for char in mod.characters:
             all_slots.update(char.slots)
         
-        for i in range(self.slots.get_item_count()):
-            item = self.slots.model().invisibleRootItem().child(i)
-            slot_text = item.text()
-            
-            # Skip "Select All" item
-            if i == 0 and slot_text == "Select All":
-                continue
-            
-            # Extract slot number from "C00" format
-            try:
-                slot_num = int(slot_text[1:])  # Remove 'C' prefix
-                is_checked = slot_num in all_slots
-                item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
-            except (ValueError, IndexError):
-                item.setCheckState(Qt.CheckState.Unchecked)
+        print(f"DEBUG: Loading slots for {mod.mod_name}: {all_slots}")
+
+        # Block signals to prevent _update_generated_names from running for every item
+        self.slots.model().blockSignals(True)
+        try:
+            for i in range(self.slots.get_item_count()):
+                item = self.slots.model().invisibleRootItem().child(i)
+                slot_text = item.text()
+                
+                # Skip "Select All" item
+                if i == 0 and slot_text == "Select All":
+                    continue
+                
+                # Extract slot number from "C00" format
+                try:
+                    slot_num = int(slot_text[1:])  # Remove 'C' prefix
+                    is_checked = slot_num in all_slots
+                    item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+                except (ValueError, IndexError):
+                    item.setCheckState(Qt.CheckState.Unchecked)
+        finally:
+             self.slots.model().blockSignals(False)
         
         self.slots.update_display()
+        # Manually trigger update
+        self._update_generated_names()
         
         # Set category
         try:
