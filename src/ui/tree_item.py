@@ -33,8 +33,8 @@ class TreeItem(QTreeWidgetItem):
         icons_layout.setContentsMargins(0, 0, 0, 0)
         icons_layout.setSpacing(2)
         
-        # Show maximum 3 icons
-        max_icons = 3
+        # Show maximum 4 icons
+        max_icons = 4
         total_icons = len(self.mod.character_icons)
         
         for i, path in enumerate(self.mod.character_icons[:max_icons]):

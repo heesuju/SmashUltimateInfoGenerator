@@ -193,7 +193,7 @@ class TreeList(QWidget):
         
         # Column 5: Characters - Fixed width
         self.tree_widget.header().setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)
-        self.tree_widget.setColumnWidth(5, 120)
+        self.tree_widget.setColumnWidth(5, 140)
         
         # Column 6: Enabled - Fixed width
         self.tree_widget.header().setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)

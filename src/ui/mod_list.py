@@ -163,7 +163,25 @@ class ModList(QWidget):
 
         def process(mod:Mod)->ModItem:
             keys = mod.get_grouped_character_keys()
-            character_icons = DataManager.get_character_icons([character for character in keys])
+            
+            # Check if group icons exist, if not ungroup them
+            final_keys = []
+            for key in keys:
+                icon_path = DataManager.get_character_icon(key)
+                if os.path.exists(icon_path):
+                    # Icon exists, use the key as-is
+                    final_keys.append(key)
+                else:
+                    # Icon doesn't exist, check if it's a group and ungroup it
+                    group_chars = DataManager.get_group_characters(key)
+                    if group_chars:
+                        # This is a group without an icon, add all individual characters
+                        final_keys.extend(group_chars)
+                    else:
+                        # Not a group, keep the key anyway (fallback)
+                        final_keys.append(key)
+            
+            character_icons = DataManager.get_character_icons([character for character in final_keys])
 
             return ModItem(
                 id=str(mod.hash),
@@ -177,6 +195,7 @@ class ModList(QWidget):
                 selected=False,
                 character_icons=character_icons
             )
+
 
         def add_next():
             if not self._populate_active or self._populate_index is None or self._populate_mods is None:
