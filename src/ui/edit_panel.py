@@ -1,39 +1,33 @@
 import re
-from PyQt6.QtWidgets import ( QWidget, QHBoxLayout, QVBoxLayout,  QPushButton,  QLabel, QTreeWidgetItem,QScrollArea,
-    QSizePolicy, QListWidget, QListWidgetItem, QFrame, QLineEdit,QComboBox,QCheckBox,QGroupBox,QSpinBox,QTreeWidget,
+from PyQt6.QtWidgets import ( 
+    QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QLineEdit, QTextEdit
 )
-from PyQt6 import QtGui, QtCore
-from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont
-from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
+from PyQt6 import QtCore
+from PyQt6.QtGui import QPixmap, QFont
+from PyQt6.QtCore import Qt, QSize
 from src.ui.components.layout import HBox, VBox
-from src.ui.components.checkbox_group import CheckboxGroup
 from src.constants.styles import MAIN_BUTTON
 from src.ui.components.side_panel import SidePanel
-from src.ui.components.checkbox_tree import CheckBoxTree
 from src.constants.enums import Category, Element, Fighter, Wifi
 from src.ui.components.input_button_widget import InputButtonWidget, InputButton
 from src.ui.components.multi_combobox import CheckableComboBox
-from src.ui.components.collapsible_text_edit import ShrinkingTextEdit
-from src.ui.components.top_label_wrapper import TopLabelWrapper
-from src.ui.components.line_edit import LineEdit
-from src.ui.components.combo_box import ComboBox
+from src.ui.components.single_combobox import SingleComboBox
 from src.managers.mod_manager import ModManager
-from src.constants.strings import (
-    PLACEHOLDER_EDIT_DISPLAY_NAME,
-    PLACEHOLDER_EDIT_FOLDER_NAME,
-    PLACEHOLDER_EDIT_MOD_NAME,
-    PLACEHOLDER_EDIT_VERSION,
-    PLACEHOLDER_EDIT_AUTHORS
-)
 from src.ui.components.validators import limit_version
 
+FONT = "Arial"
+FONT_SIZE = 10
+BODY_FONT_SIZE = 8
+
+
 class EditPanel(SidePanel):
-    def __init__(self, mod_manager:ModManager):
+    def __init__(self, mod_manager: ModManager):
         super().__init__("Edit")
         self.mod_manager = mod_manager
 
+        # GameBanana URL section
         self.url = InputButtonWidget(
-            "Gamebanana URL", 
+            "GameBanana URL", 
             [
                 InputButton(text="Open", callback=None),
                 InputButton(text="Get", callback=None, highlight=True)
@@ -41,49 +35,82 @@ class EditPanel(SidePanel):
         )
         self.body.addWidget(self.url)
         
+        # Thumbnail preview
         thumbnail = QLabel()
         preview_dir = "assets/img/preview.webp"
         preview_img = QPixmap(preview_dir).scaled(314, 314, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-
         thumbnail.setPixmap(preview_img)
         self.body.addWidget(thumbnail)
         
-        self.mod_name = LineEdit(PLACEHOLDER_EDIT_MOD_NAME)
-        self.body.addWidget(TopLabelWrapper(self.mod_name, "Mod Name"))
+        # Mod Name
+        self._add_label("Mod Name")
+        self.mod_name = QLineEdit()
+        self.mod_name.setPlaceholderText("Enter mod name")
+        self.body.addWidget(self.mod_name)
 
-        self.character = CheckableComboBox(Fighter.list())
-        self.body.addWidget(TopLabelWrapper(self.character, "Character"))
+        # Character
+        self._add_label("Character")
+        self.character = CheckableComboBox(Fighter.list(), [False] * (len(Fighter.list()) + 1), False, "Select Characters")
+        self.body.addWidget(self.character)
 
-        self.slots = CheckableComboBox(range(255))
-        self.body.addWidget(TopLabelWrapper(self.slots, "Slots"))
+        # Slots
+        self._add_label("Slots")
+        self.slots = CheckableComboBox([f"C{i:02d}" for i in range(256)], [False] * 257, False, "Select Slots")
+        self.body.addWidget(self.slots)
 
-        self.category = ComboBox("Category", Category.list())
-        self.body.addWidget(TopLabelWrapper(self.category, "Category"))
+        # Category
+        self._add_label("Category")
+        self.category = SingleComboBox()
+        self.category.addItems(Category.list())
+        self.body.addWidget(self.category)
 
-        self.author = LineEdit(PLACEHOLDER_EDIT_AUTHORS)
-        self.body.addWidget(TopLabelWrapper(self.author, "Authors"))
+        # Authors
+        self._add_label("Authors")
+        self.author = QLineEdit()
+        self.author.setPlaceholderText("Enter author name(s)")
+        self.body.addWidget(self.author)
 
-        self.version = LineEdit(PLACEHOLDER_EDIT_VERSION, limit_version)
-        self.body.addWidget(TopLabelWrapper(self.version, "Version"))
+        # Version
+        self._add_label("Version")
+        self.version = QLineEdit()
+        self.version.setPlaceholderText("1.0.0")
+        self.version.textChanged.connect(lambda text: limit_version(self.version))
+        self.body.addWidget(self.version)
         
-        self.description = ShrinkingTextEdit("Enter description")
-        self.body.addWidget(TopLabelWrapper(self.description, "Description"), alignment=QtCore.Qt.AlignmentFlag.AlignTop)
-        self.description.setFixedHeight(self.description.line_height)
+        # Description
+        self._add_label("Description")
+        self.description = QTextEdit()
+        self.description.setPlaceholderText("Enter description")
+        self.description.setMinimumHeight(80)
+        self.description.setMaximumHeight(120)
+        self.body.addWidget(self.description)
 
-        self.elements = CheckableComboBox(Element.list())
-        self.body.addWidget(TopLabelWrapper(self.elements, "Elements"))
+        # Elements
+        self._add_label("Elements")
+        self.elements = CheckableComboBox(Element.list(), [False] * (len(Element.list()) + 1), False, "Select Elements")
+        self.body.addWidget(self.elements)
 
-        self.wifi = ComboBox("Wifi Safe", Wifi.list())
-        self.body.addWidget(TopLabelWrapper(self.wifi, "Wifi Safe"))
+        # Wifi Safe
+        self._add_label("Wifi Safe")
+        self.wifi = SingleComboBox()
+        self.wifi.addItems(Wifi.list())
+        self.body.addWidget(self.wifi)
 
-        self.display = LineEdit(PLACEHOLDER_EDIT_DISPLAY_NAME)
-        self.body.addWidget(TopLabelWrapper(self.display, "Display Name"))
+        # Display Name
+        self._add_label("Display Name")
+        self.display = QLineEdit()
+        self.display.setPlaceholderText("Auto-generated display name")
+        self.body.addWidget(self.display)
 
-        self.folder = LineEdit(PLACEHOLDER_EDIT_FOLDER_NAME)
-        self.body.addWidget(TopLabelWrapper(self.folder, "Folder Name"))        
+        # Folder Name
+        self._add_label("Folder Name")
+        self.folder = QLineEdit()
+        self.folder.setPlaceholderText("Auto-generated folder name")
+        self.body.addWidget(self.folder)
         
         self.body.addStretch()
 
+        # Footer buttons
         clear_button = QPushButton("Clear")
         clear_button.clicked.connect(self.reset)
         apply_button = QPushButton("Apply")
@@ -91,17 +118,25 @@ class EditPanel(SidePanel):
         self.footer.addWidget(clear_button)
         self.footer.addWidget(apply_button)
     
+    def _add_label(self, text: str):
+        """Helper to add a consistent label above input fields"""
+        label = QLabel(text)
+        label_font = QFont(FONT, BODY_FONT_SIZE)
+        label_font.setBold(True)
+        label.setFont(label_font)
+        self.body.addWidget(label)
+    
     def reset(self):
-        """
-        Resets all filter fields to their default state.
-        """
-        self.author.clear()
+        """Clear all fields to their default state"""
+        self.url.clear()
+        self.mod_name.clear()
+        self.character.reset()
+        self.slots.reset()
         self.category.setCurrentIndex(0)
-        self.series.setCurrentIndex(0)
-        self.character.setCurrentIndex(0)
-        self.elements.setCurrentIndex(0)
-        self.min_value.setValue(0)
-        self.max_value.setValue(255)
-        
-        for checkbox in [self.wifi, self.info, self.visibility, self.enabled]:
-            checkbox.reset()
+        self.author.clear()
+        self.version.clear()
+        self.description.clear()
+        self.elements.reset()
+        self.wifi.setCurrentIndex(0)
+        self.display.clear()
+        self.folder.clear()
