@@ -1,10 +1,14 @@
 import re
 from PyQt6.QtWidgets import ( 
-    QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QLineEdit, QTextEdit, QSizePolicy
+    QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QLineEdit, QTextEdit, QSizePolicy, QMessageBox, QComboBox, QFileDialog
 )
 from PyQt6 import QtCore
 from PyQt6.QtGui import QPixmap, QFont
 from PyQt6.QtCore import Qt, QSize, pyqtSignal
+import shutil
+import requests
+import tempfile
+import os
 from src.ui.components.layout import HBox, VBox
 from src.constants.styles import MAIN_BUTTON
 from src.ui.components.side_panel import SidePanel
@@ -12,11 +16,18 @@ from src.constants.enums import Category, Element, Fighter, Wifi
 from src.ui.components.input_button_widget import InputButtonWidget, InputButton
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.single_combobox import SingleComboBox
-from src.ui.components.thumbnail_label import ThumbnailLabel
+from src.ui.components.thumbnail_label import ThumbnailLabel, ImageCache
 from src.managers.mod_manager import ModManager
+from src.managers.cache_manager import CacheManager
 from src.managers.data_manager import DataManager
 from src.ui.components.validators import limit_version
 from src.core.formatting import format_folder_name, format_display_name, format_character_names, format_slots
+from src.core.web.gamebanana import Gamebanana
+from src.utils.web import open_page
+from src.core.data import generate_toml
+from src.models.mod import Character
+from src.constants.enums import Fighter, Category, Wifi, Element
+from src.utils.file import get_parent_dir
 
 FONT = "Arial"
 FONT_SIZE = 10
@@ -25,18 +36,24 @@ BODY_FONT_SIZE = 8
 
 class EditPanel(SidePanel):
     close_requested = pyqtSignal()  # Signal to close edit panel
+    gb_data_ready = pyqtSignal(dict) # Signal for thread-safe data update
+    save_complete = pyqtSignal(str) # Signal when save is complete (emits mod hash)
     
     def __init__(self, mod_manager: ModManager, config_manager):
         super().__init__("Edit")
         self.mod_manager = mod_manager
         self.config_manager = config_manager
+        self.pending_preview_path = None
+        self.mod_path = None
+        self.mod = None # Current Mod object
+        self.preview_map = {} # Maps display text to URL
 
         # GameBanana URL section
         self.url = InputButtonWidget(
             "GameBanana URL", 
             [
-                InputButton(text="Open", callback=None),
-                InputButton(text="Get", callback=None, highlight=True)
+                InputButton(text="Open", callback=self.on_open_url),
+                InputButton(text="Get", callback=self.on_get_url, highlight=True)
             ]
         )
         self.body.addWidget(self.url)
@@ -44,6 +61,19 @@ class EditPanel(SidePanel):
         # Thumbnail preview (async loading)
         self.thumbnail = ThumbnailLabel()
         self.body.addWidget(self.thumbnail)
+        
+        # Preview Selector (Files from GB) + Browse Button
+        preview_layout = QHBoxLayout()
+        self.preview_selector = QComboBox()
+        self.preview_selector.setPlaceholderText("Select Preview from GameBanana")
+        self.preview_selector.currentIndexChanged.connect(self.on_preview_selected)
+        
+        self.browse_button = QPushButton("Browse...")
+        self.browse_button.clicked.connect(self.on_browse_image)
+        
+        preview_layout.addWidget(self.preview_selector)
+        preview_layout.addWidget(self.browse_button)
+        self.body.addLayout(preview_layout)
         
         # Mod Name
         self._add_label("Mod Name")
@@ -128,6 +158,109 @@ class EditPanel(SidePanel):
         save_button.clicked.connect(self.on_save)
         self.footer.addWidget(cancel_button)
         self.footer.addWidget(save_button)
+        
+        # Connect signal
+        self.gb_data_ready.connect(self._populate_mod_info)
+
+    def on_get_url(self):
+        url = self.url.get_text()
+        if not url:
+            return
+            
+        # Extract ID (simple regex or parsing)
+        match = re.search(r"gamebanana\.com/mods/(\d+)", url)
+        if match:
+            mod_id = match.group(1)
+            # Start thread (it automatically starts in init)
+            # Pass lambda/wrapper to emit signal
+            Gamebanana(mod_id, self.gb_data_ready.emit)
+        else:
+            QMessageBox.warning(self, "Invalid URL", "Could not parse Mod ID from the URL.")
+
+    def on_open_url(self):
+        url = self.url.get_text()
+        if url:
+            open_page(url)
+
+    def _populate_mod_info(self, data:dict):
+        # Data is dict of {id: info}
+        if not data:
+            return
+            
+        # Get first value
+        info = next(iter(data.values()))
+        
+        # Populate fields
+        if info.get("mod_name"):
+            self.mod_name.setText(info["mod_name"])
+            
+        if info.get("authors"):
+            self.author.setText(info["authors"])
+            
+        if info.get("version"):
+            self.version.setText(info["version"])
+
+        # Populate Preview Selector
+        if info.get("preview_files"):
+            files = info["preview_files"]
+            links = info["preview_links"]
+            self.preview_selector.blockSignals(True)
+            self.preview_selector.clear()
+            self.preview_map = {}
+            
+            # Combine logic if lengths match (they should from gamebanana.py)
+            for i, name in enumerate(files):
+                if i < len(links):
+                    self.preview_map[name] = links[i]
+                    self.preview_selector.addItem(name)
+            
+            if self.preview_selector.count() > 0:
+                self.preview_selector.setPlaceholderText("Select Preview Image")
+                # Don't auto-select first one to avoid overwriting current preview implicitly
+                self.preview_selector.setCurrentIndex(-1)
+                
+            self.preview_selector.blockSignals(False)
+
+        # Wifi Safe
+        if "is_wifi_safe" in info:
+            is_safe = info["is_wifi_safe"]
+            # Map boolean to Wifi enum index
+            # Wifi.SAFE, Wifi.UNSAFE, Wifi.UNCERTAIN
+            # Assuming list order: SAFE, UNSAFE, UNCERTAIN
+            # Actually need to check Wifi.list() order or values
+            safe_index = 0 if is_safe else 2 # Default to Uncertain if false? Or Unsafe?
+            # GameBanana logic: if "wifi safe" tag -> True. If not -> False.
+            # False doesn't mean unsafe. It just means unknown/not tagged.
+            # So maybe use Uncertain(2) if False, and Safe(0) if True?
+            # Wait, Wifi.list() usually returns strings.
+            try:
+                if is_safe:
+                    target = Wifi.SAFE.value
+                else:
+                    target = Wifi.UNCERTAIN.value # Default to uncertain
+                
+                if target in Wifi.list():
+                    self.wifi.setCurrentIndex(Wifi.list().index(target))
+            except:
+                pass
+
+        # Elements (Moveset / Final Smash)
+        targets = []
+        if info.get("is_moveset"):
+            targets.append("Moveset")
+        if info.get("is_final_smash"):
+            targets.append("Final Smash")
+            
+        if targets:
+            for i in range(self.elements.get_item_count()):
+                item = self.elements.model().invisibleRootItem().child(i)
+                if item.text() in targets:
+                    item.setCheckState(Qt.CheckState.Checked)
+            self.elements.update_display()
+
+        # Trigger name generation updates
+        self._update_generated_names()
+
     
     def _add_label(self, text: str):
         """Helper to add a consistent label above input fields"""
@@ -240,6 +373,9 @@ class EditPanel(SidePanel):
     def load_mod(self, mod_id: str):
         """Load mod data into edit panel"""
         mod = self.mod_manager.get_mod(mod_id)
+        self.mod = mod # Store ref
+        self.mod_path = mod.path # Store path for saving
+        self.pending_preview_path = None # Reset pending changes
         
         # Set URL if available
         if mod.url:
@@ -359,17 +495,138 @@ class EditPanel(SidePanel):
         self.wifi.setCurrentIndex(0)
         self.display.clear()
         self.folder.clear()
+        self.preview_selector.clear()
+        self.pending_preview_path = None
+        self.mod_path = None
+        self.mod = None
     
     def on_cancel(self):
         """Cancel edit and close panel"""
         self.close_requested.emit()
     
     def on_save(self):
-        """Save changes (to be implemented)"""
-        # TODO: Implement save functionality
-        # This should:
-        # 1. Collect all field values
-        # 2. Update mod object
-        # 3. Generate info.toml
-        # 4. Optionally rename folder
-        pass
+        """Save changes"""
+        # 1. Update Mod Object
+        self.mod.mod_name = self.mod_name.text()
+        self.mod.url = self.url.get_text()
+        self.mod.authors = self.author.text()
+        self.mod.version = self.version.text()
+        self.mod.display_name = self.display.text()
+        self.mod.folder_name = self.folder.text()
+        self.mod.description = self.description.toPlainText()
+        
+        # Enums
+        try:
+            self.mod.wifi_safe = Wifi(self.wifi.currentText())
+        except:
+             pass 
+             
+        try:
+            self.mod.category = Category(self.category.currentText())
+        except:
+            pass
+            
+        # Elements
+        self.mod.includes = []
+        checked_elements = self.elements.get_checked()
+        for text in checked_elements:
+            try:
+                if text != "Select All":
+                    self.mod.add_to_included(Element(text))
+            except:
+                pass
+
+        # Characters
+        # Flatten logic: Apply all selected slots to all selected characters
+        new_chars = []
+        selected_chars = self.character.get_checked()
+        if "Select All" in selected_chars:
+            selected_chars.remove("Select All")
+
+        selected_slots_text = self.slots.get_checked()
+        if "Select All" in selected_slots_text:
+            selected_slots_text.remove("Select All")
+            
+        slots = []
+        for text in selected_slots_text:
+            try:
+                # "C00" -> 0
+                slots.append(int(text[1:]))
+            except:
+                pass
+        
+        for char_text in selected_chars:
+            try:
+                # Convert display name ("Mario") to Fighter key value ("mario")
+                fighter = DataManager.get_character_by_custom(char_text)
+                if fighter:
+                    new_chars.append(Character(fighter=fighter, slots=slots))
+            except:
+                pass
+        
+        self.mod.characters = new_chars
+
+        # 2. Save Preview (Deferred)
+        if self.pending_preview_path and self.mod_path:
+            try:
+                dest = os.path.join(self.mod_path, "preview.webp")
+                shutil.copy2(self.pending_preview_path, dest)
+                
+                # Invalidate cache for this image
+                ImageCache().remove(dest)
+                
+                # Update Mod's thumbnail path immediately
+                self.mod.thumbnail = dest
+            except Exception as e:
+                print(f"Error saving preview: {e}")
+                
+        # 3. Generate TOML & Rename
+        try:
+             generate_toml(self.mod)
+             
+             new_dir = os.path.join(get_parent_dir(self.mod.path), self.mod.folder_name)
+             if os.path.exists(new_dir):
+                 self.mod.path = new_dir
+                 self.mod_path = new_dir # Update local ref too
+                 
+                 # If renamed, update thumbnail path too
+                 self.mod.thumbnail = os.path.join(new_dir, "preview.webp")
+        except Exception as e:
+             print(f"Save error: {e}")
+             
+        # 4. Update Persistent Cache
+        try:
+             # ModLoader uses path as key. Path is now self.mod.path (updated above if renamed).
+             # We must update cache manually because mtime of directory might not have changed,
+             # causing ModLoader to load stale cache on next startup.
+             cache_data = self.mod.model_dump(mode='json', exclude={'is_selected', 'path', 'hash'})
+             CacheManager().set_cached_mod(self.mod.path, cache_data)
+        except Exception as e:
+             print(f"Cache update error: {e}")
+
+        # 5. Emit
+        self.save_complete.emit(str(self.mod.hash))
+
+    def on_browse_image(self):
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select Preview Image", "", "Images (*.png *.jpg *.jpeg *.webp)")
+        if file_path:
+            self.pending_preview_path = file_path
+            self.thumbnail.set_thumbnail(file_path)
+
+    def on_preview_selected(self, index):
+        name = self.preview_selector.currentText()
+        url = self.preview_map.get(name)
+        if not url:
+            return
+            
+        # Download to temp file
+        try:
+            response = requests.get(url, stream=True)
+            if response.status_code == 200:
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png").name
+                with open(temp_file, 'wb') as f:
+                    shutil.copyfileobj(response.raw, f)
+                self.pending_preview_path = temp_file
+                self.thumbnail.set_thumbnail(temp_file)
+        except Exception as e:
+            print(f"Error downloading preview: {e}")

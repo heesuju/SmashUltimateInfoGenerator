@@ -2,7 +2,7 @@ import threading
 from typing import Union
 import concurrent.futures
 from src.utils.web import get_request
-from src.constants.api import GAMEBANANA_URL
+from src.constants.apis import GAMEBANANA_URL
 
 WIFI_SAFE_TAGS = [
     "wifi safe",
@@ -65,16 +65,17 @@ def process_mod_info(data:dict)->tuple[str, dict]:
     attributes = data.get("_aAttributes", None)
     is_wifi_safe = False
     if attributes is not None:
-        misc = attributes.get("Miscellaneous", [])
-        if "Wifi Safe" in misc:
-            is_wifi_safe = True
+        if isinstance(attributes, dict):
+            misc = attributes.get("Miscellaneous", [])
+            if "Wifi Safe" in misc:
+                is_wifi_safe = True
 
-        if is_wifi_safe == False:
-            for tag in WIFI_SAFE_TAGS:
-                wifi_safe = attributes.get(tag, [])
-                if "yes" in wifi_safe:
-                    is_wifi_safe = True
-                    break
+            if is_wifi_safe == False:
+                for tag in WIFI_SAFE_TAGS:
+                    wifi_safe = attributes.get(tag, [])
+                    if "yes" in wifi_safe:
+                        is_wifi_safe = True
+                        break
 
     return id, {
         "mod_name": mod_name, 

@@ -22,6 +22,12 @@ class ImageCache:
             self.cache.pop(next(iter(self.cache)))
         self.cache[key] = value
 
+    def remove(self, path):
+        """Remove all cache entries related to a path"""
+        keys_to_remove = [k for k in self.cache.keys() if k[0] == path]
+        for k in keys_to_remove:
+            self.cache.pop(k, None)
+
 class WorkerSignals(QObject):
     result = pyqtSignal(object)
 

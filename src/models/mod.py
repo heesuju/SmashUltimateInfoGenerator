@@ -4,6 +4,7 @@ mod.py: model class for each mod
 
 from pydantic import BaseModel
 from typing import List
+from enum import Enum
 from src.constants.enums import Fighter, Category, Wifi, Element
 from src.managers.data_manager import DataManager
 
@@ -49,7 +50,9 @@ class Mod(BaseModel):
 
     def to_dict(self):
         def convert(obj):
-            if isinstance(obj, list):
+            if isinstance(obj, Enum):
+                return obj.value
+            elif isinstance(obj, list):
                 return [convert(item) for item in obj]
             elif hasattr(obj, "__dict__"):
                 return {key: convert(value) for key, value in obj.__dict__.items() if key not in EXCLUDED_KEYS}

@@ -42,6 +42,9 @@ class MainMenu(QWidget):
         # Connect edit panel cancel to close edit
         self.edit.close_requested.connect(self.on_edit_close)
         
+        # Connect edit panel save to update list
+        self.edit.save_complete.connect(self.list_widget.on_mod_saved)
+        
         # Connect mod selection to show preview panel
         self.mod_manager.add_focus_callback(self.on_mod_selected)
         

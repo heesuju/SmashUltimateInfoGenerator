@@ -282,7 +282,9 @@ class ModList(QWidget):
     
     def on_progress(self, mod:Mod):
         pass
-        # if self.mode == ModListMode.LIST:
         #     self.tree_list.add_item(mod)
         # elif self.mode == ModListMode.GRID:
         #     self.grid_list.add_item(mod)
+
+    def on_mod_saved(self, mod_id:str):
+        self.refresh_filtered_data()
