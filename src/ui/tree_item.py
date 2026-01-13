@@ -10,18 +10,46 @@ from src.managers.data_manager import ButtonIcons, DataManager
 from src.models.mod import Mod, ModItem
 
 class TreeItem(QTreeWidgetItem):
-    def __init__(self, parent, mod:ModItem, on_clicked:callable, on_enabled:callable):
+    def __init__(self, parent, mod:ModItem, on_clicked:callable, on_enabled:callable, tree_list=None):
         self.mod = mod
         self.on_clicked = on_clicked
         self.on_enabled = on_enabled
+        self.tree_list = tree_list  # Reference to TreeList widget
         self.animations = []
         super().__init__(["", "", "", "", "", "", ""])
 
         parent.addTopLevelItem(self)
 
         check_widget = QCheckBox()
-        check_widget.setChecked(False)
-        check_widget.stateChanged.connect(lambda state: self.on_enabled(self.mod) if self.on_enabled else None)
+        # Set initial checked state based on ModManager selection
+        check_widget.setChecked(self.mod.selected)
+        
+        # Store reference in TreeList if available
+        if tree_list and hasattr(tree_list, 'item_checkboxes'):
+            tree_list.item_checkboxes[self.mod.id] = check_widget
+        
+        # Connect to selection manager
+        def on_checkbox_changed(state):
+            if tree_list and hasattr(tree_list, 'mod_manager'):
+                from PyQt6.QtCore import Qt
+                if state == Qt.CheckState.Checked.value:
+                    tree_list.mod_manager.add_selection(self.mod.id)
+                else:
+                    tree_list.mod_manager.remove_selection(self.mod.id)
+                
+                # Update header checkbox via ModList
+                parent = tree_list
+                while parent is not None:
+                    parent = parent.parent()
+                    if hasattr(parent, 'update_header_checkbox_state'):
+                        parent.update_header_checkbox_state()
+                        break
+            
+            # Call user callback if provided
+            if self.on_enabled:
+                self.on_enabled(self.mod)
+        
+        check_widget.stateChanged.connect(on_checkbox_changed)
         name_widget = QLabel(self.mod.name)
         category_widget = QLabel(self.mod.category)
         authors_widget = QLabel(self.mod.authors)

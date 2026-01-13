@@ -3,13 +3,13 @@ import os
 from typing import List
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (
-    QWidget, QSizePolicy, QLabel, QFrame, QPushButton, QComboBox
+    QWidget, QSizePolicy, QLabel, QFrame, QPushButton, QComboBox, QHBoxLayout
 )
 from PyQt6.QtGui import (
     QPixmap, QIcon, QFont
 )
 from src.core.formatting import format_slots
-from src.ui.components.layout import HBox, VBox
+from src.ui.components.layout import VBox
 from src.ui.grid_list import GridList
 from src.ui.tree_list import TreeList
 from src.models.mod import Mod, ModItem
@@ -75,23 +75,36 @@ class ModList(QWidget):
         self.frame_layout.addWidget(self.filter_chips)
 
         # init child layouts
-        header_layout = HBox(spacing=10)
+        header_layout = QHBoxLayout(spacing=10)
         
         self.frame_layout.addLayout(header_layout)
 
         self.body_layout = VBox()
         self.frame_layout.addLayout(self.body_layout)
 
-        footer_layout = HBox(spacing=10)
+        footer_layout = QHBoxLayout(spacing=10)
         self.frame_layout.addLayout(footer_layout)
 
         layout_toggle = ToggleButton(
             ButtonIcons.LIST.value, ButtonIcons.GRID.value, self.on_list_selected, self.on_grid_selected)
         header_layout.addWidget(layout_toggle)
         
+        # Add header checkbox for select all
+        from PyQt6.QtWidgets import QCheckBox, QLabel
+        select_all_container = QHBoxLayout(spacing=4)
+        self.header_checkbox = QCheckBox()
+        self.header_checkbox.setFixedSize(20, 20)
+        self.header_checkbox.setTristate(True)  # Allow partial state for visual feedback
+        self.header_checkbox.stateChanged.connect(self.on_header_checkbox_changed)
+        select_all_label = QLabel("Select All")
+        select_all_container.addWidget(self.header_checkbox)
+        select_all_container.addWidget(select_all_label)
+        header_layout.addLayout(select_all_container)
+        
         header_layout.addStretch(1)
 
         select_button = QPushButton("Deselect All")
+        select_button.clicked.connect(self.on_deselect_all)
         header_layout.addWidget(select_button)
         
         add_button = QPushButton("+ Add New")
@@ -241,7 +254,7 @@ class ModList(QWidget):
                 slots=format_slots(mod.get_character_slots(), self.config_manager.config.name_rules.cap_slots_display),
                 version=mod.version,
                 enabled=False,
-                selected=False,
+                selected=self.mod_manager.is_selected(str(mod.hash)),
                 character_icons=character_icons
             )
 
@@ -268,6 +281,8 @@ class ModList(QWidget):
             else:
                 self._populate_mods = None
                 self._populate_index = None
+                # Update header checkbox once after all items are loaded
+                self.update_header_checkbox_state()
 
         add_next()
 
@@ -285,3 +300,89 @@ class ModList(QWidget):
 
     def on_mod_saved(self, mod_id:str):
         self.refresh_filtered_data()
+    
+    def on_header_checkbox_changed(self, state):
+        """Handle header checkbox state change - delegates to current view"""
+        from PyQt6.QtCore import Qt
+        
+        # If user clicks while in partial state, toggle to checked
+        if state == Qt.CheckState.PartiallyChecked.value:
+            # Block signals to prevent recursion
+            self.header_checkbox.blockSignals(True)
+            self.header_checkbox.setCheckState(Qt.CheckState.Checked)
+            self.header_checkbox.blockSignals(False)
+            state = Qt.CheckState.Checked.value
+        
+        if self.mode == ListLayout.LIST:
+            # TreeList handles selection directly now
+            self.tree_list.on_header_checkbox_changed(state)
+        elif self.mode == ListLayout.GRID:
+            # GridList will handle selection via its items
+            self.grid_list.on_header_checkbox_changed(state)
+    
+    def on_deselect_all(self):
+        """Deselect all mods"""
+        self.mod_manager.clear_selection()
+        # Update all checkboxes/visuals
+        if self.mode == ListLayout.LIST:
+            # Update row checkboxes
+            for item_id, checkbox in self.tree_list.item_checkboxes.items():
+                checkbox.blockSignals(True)
+                checkbox.setChecked(False)
+                checkbox.blockSignals(False)
+            # Update header checkbox via ModList
+            self.update_header_checkbox_state()
+        elif self.mode == ListLayout.GRID:
+            # Update visual state of all grid items
+            for item_id, widget in self.grid_list.item_widgets.items():
+                widget.mod.selected = False
+                widget.update_selection_style()
+            # Update header checkbox via ModList
+            self.update_header_checkbox_state()
+    
+    def update_header_checkbox_state(self):
+        """Update the shared header checkbox based on current view"""
+        from PyQt6.QtCore import Qt
+        
+        if self.mode == ListLayout.LIST:
+            # Calculate state from TreeList current page items
+            if not self.tree_list.current_page_item_ids:
+                self.header_checkbox.blockSignals(True)
+                self.header_checkbox.setCheckState(Qt.CheckState.Unchecked)
+                self.header_checkbox.blockSignals(False)
+                return
+            
+            selected_count = sum(1 for item_id in self.tree_list.current_page_item_ids 
+                               if self.mod_manager.is_selected(item_id))
+            total_count = len(self.tree_list.current_page_item_ids)
+            
+            self.header_checkbox.blockSignals(True)
+            if selected_count == 0:
+                self.header_checkbox.setCheckState(Qt.CheckState.Unchecked)
+            elif selected_count == total_count:
+                self.header_checkbox.setCheckState(Qt.CheckState.Checked)
+            else:
+                self.header_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+            self.header_checkbox.blockSignals(False)
+            
+        elif self.mode == ListLayout.GRID:
+            # Calculate state from GridList
+            from PyQt6.QtCore import Qt
+            if not self.grid_list.current_page_item_ids:
+                self.header_checkbox.blockSignals(True)
+                self.header_checkbox.setCheckState(Qt.CheckState.Unchecked)
+                self.header_checkbox.blockSignals(False)
+                return
+            
+            selected_count = sum(1 for item_id in self.grid_list.current_page_item_ids 
+                               if self.mod_manager.is_selected(item_id))
+            total_count = len(self.grid_list.current_page_item_ids)
+            
+            self.header_checkbox.blockSignals(True)
+            if selected_count == 0:
+                self.header_checkbox.setCheckState(Qt.CheckState.Unchecked)
+            elif selected_count == total_count:
+                self.header_checkbox.setCheckState(Qt.CheckState.Checked)
+            else:
+                self.header_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+            self.header_checkbox.blockSignals(False)

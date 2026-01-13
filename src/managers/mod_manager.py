@@ -80,3 +80,37 @@ class ModManager():
     def remove_hidden(self, id:str):
         if id in self.hidden_ids:
             self.hidden_ids.remove(id)
+    
+    # Selection management methods
+    def toggle_selection(self, id:str):
+        """Toggle selection state of a mod"""
+        if id in self.selected_ids:
+            self.selected_ids.remove(id)
+        else:
+            self.selected_ids.append(id)
+    
+    def add_selection(self, id:str):
+        """Add a mod to selection"""
+        if id not in self.selected_ids:
+            self.selected_ids.append(id)
+    
+    def remove_selection(self, id:str):
+        """Remove a mod from selection"""
+        if id in self.selected_ids:
+            self.selected_ids.remove(id)
+    
+    def clear_selection(self):
+        """Clear all selections"""
+        self.selected_ids = []
+    
+    def is_selected(self, id:str)->bool:
+        """Check if a mod is selected"""
+        return id in self.selected_ids
+    
+    def are_all_selected(self, ids:List[str])->bool:
+        """Check if all provided IDs are selected"""
+        return all(id in self.selected_ids for id in ids)
+    
+    def get_selected_ids(self)->List[str]:
+        """Get all selected mod IDs"""
+        return self.selected_ids

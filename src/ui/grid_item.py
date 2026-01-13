@@ -25,11 +25,11 @@ ICON_OFF = "assets/icons/cartridge_off"
 ICON_ON = "assets/icons/cartridge_off"
 
 class GridListItem(QListWidgetItem):
-    def __init__(self, parent, mod:ModItem, height:int=80):
+    def __init__(self, parent, mod:ModItem, height:int=80, grid_list=None):
         super().__init__()
         self.parent = parent
         self.mod=mod
-        self.widget = GridListItemWidget(self.mod, height)
+        self.widget = GridListItemWidget(self.mod, height, grid_list=grid_list)
         self.setSizeHint(QSize(350, 110))
         parent.addItem(self)
         parent.setItemWidget(self, self.widget)
@@ -38,13 +38,16 @@ class GridListItemWidget(QWidget):
     # Static cache for scaled character icons
     _icon_cache = {}
 
-    def __init__(self, mod:ModItem, height:int=80):
+    def __init__(self, mod:ModItem, height:int=80, grid_list=None):
         super().__init__()
+        self.mod = mod
+        self.grid_list = grid_list
         self.image_path = mod.thumbnail
         layout = QHBoxLayout()
         self.setLayout(layout)
 
         self.frame = QFrame()
+        self.frame.setObjectName("gridItemFrame")  # Set unique name for CSS targeting
         self.frame.setFrameShape(QFrame.Shape.NoFrame)
         self.frame.setAutoFillBackground(True)
         frame_layout = HBox(margin=4, spacing=4)
@@ -54,6 +57,9 @@ class GridListItemWidget(QWidget):
         palette = self.frame.palette()
         palette.setColor(QPalette.ColorRole.Window, QColor(255, 255, 255))  # White background
         self.frame.setPalette(palette)
+        
+        # Set initial border style based on selection state (will be set by update_selection_style)
+        # update_selection_style() will be called after frame is built
         
         overlay = Overlay(self.image_path, self)
 
@@ -139,30 +145,68 @@ class GridListItemWidget(QWidget):
         version_text.setAlignment(Qt.AlignmentFlag.AlignRight)  # Align text to the left
         right_layout.addWidget(version_text)
 
+        # Set initial selection style (shadow will be applied here)
+        self.update_selection_style()
         
-
-        # line_push_button.clicked.connect(self.clicked)
+        layout.addWidget(self.frame)
+    
+    def update_selection_style(self):
+        """Update the frame shadow to show selection state"""
+        from PyQt6.QtWidgets import QGraphicsDropShadowEffect
+        from PyQt6.QtGui import QColor
         
         shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(10)
-        shadow.setOffset(2, 2)
-        shadow.setColor(QColor(0, 0, 0, 160))  # Semi-transparent black
-
-        # Apply shadow effect to the widget
+        
+        if self.mod.selected:
+            # Selected: Blue glowing shadow (no border)
+            shadow.setBlurRadius(25)  # Increased for better visibility
+            shadow.setOffset(0, 0)  # No offset for glow effect
+            shadow.setColor(QColor(74, 144, 226, 220))  # #4A90E2 with higher alpha
+            
+            # No border - just the glow
+            self.frame.setStyleSheet("""
+                QFrame#gridItemFrame {
+                    border: none;
+                    border-radius: 4px;
+                }
+            """)
+        else:
+            # Not selected: Subtle gray shadow
+            shadow.setBlurRadius(10)
+            shadow.setOffset(2, 2)
+            shadow.setColor(QColor(0, 0, 0, 160))  # Semi-transparent black
+            
+            # No border
+            self.frame.setStyleSheet("""
+                QFrame#gridItemFrame {
+                    border: none;
+                    border-radius: 4px;
+                }
+            """)
+        
         self.frame.setGraphicsEffect(shadow)
-        layout.addWidget(self.frame)
 
     def mousePressEvent(self, event):
-        # self.frame.setStyleSheet(self.selected_style)
-
-        # base_pixmap = QPixmap(ICON_ON)
-        # alpha_pixmap = QPixmap(self.image_path)
-
-        # # Combine images
-        # combined_pixmap = create_image_overlay(base_pixmap, alpha_pixmap)
-        # self.icon = add_text_to_image(combined_pixmap, "FIGHTER", (0, -64, 0, -64))  # Overlay text "TXT" on image
-        # self.icon = self.icon.scaled(70, 70, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        # # self.icon_label.setPixmap(self.icon)
+        from PyQt6.QtCore import Qt
+        
+        # Check if Ctrl is held down
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            # Ctrl+Click: Toggle selection
+            if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
+                self.grid_list.mod_manager.toggle_selection(self.mod.id)
+                self.mod.selected = self.grid_list.mod_manager.is_selected(self.mod.id)
+                self.update_selection_style()
+                
+                # Update header checkbox
+                parent = self
+                while parent is not None:
+                    parent = parent.parent()
+                    if hasattr(parent, 'update_header_checkbox_state'):
+                        parent.update_header_checkbox_state()
+                        break
+            return
+        
+        # Normal click: show preview (default behavior)
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):

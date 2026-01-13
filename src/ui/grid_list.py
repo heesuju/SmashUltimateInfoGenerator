@@ -18,7 +18,9 @@ from src.managers.mod_manager import ModManager
 class GridList(QListWidget):
     def __init__(self, mod_manager:ModManager):
         super().__init__()
-        self.mod_manager =mod_manager
+        self.mod_manager = mod_manager
+        self.current_page_item_ids = []  # Track IDs of items on current page
+        self.item_widgets = {}  # Map item ID to GridListItemWidget for visual updates
         self.setStyleSheet("QListWidget"
                                   "{"
                                   "border : none;"
@@ -106,7 +108,18 @@ class GridList(QListWidget):
         super().wheelEvent(event)
 
     def add_item(self, mod:ModItem):
-        item = GridListItem(self,mod)
+        # Track this item as part of current page
+        if mod.id not in self.current_page_item_ids:
+            self.current_page_item_ids.append(mod.id)
+        
+        # Update selected state from ModManager
+        mod.selected = self.mod_manager.is_selected(mod.id)
+        
+        item = GridListItem(self, mod, grid_list=self)
+        
+        # Store widget reference for visual updates
+        if hasattr(item, 'widget'):
+            self.item_widgets[mod.id] = item.widget
 
     def on_item_clicked(self, item):
         print(f"Item clicked: {item.mod.name}")
@@ -117,3 +130,33 @@ class GridList(QListWidget):
         Removes all items from the grid widget.
         """
         self.clear()
+        self.current_page_item_ids = []
+        self.item_widgets = {}
+    
+    def on_header_checkbox_changed(self, state):
+        """
+        Handle header checkbox state change - select/deselect all items on current page
+        """
+        from PyQt6.QtCore import Qt
+        
+        should_select = (state == Qt.CheckState.Checked.value)
+        
+        # Update all items on current page
+        for item_id in self.current_page_item_ids:
+            if should_select:
+                self.mod_manager.add_selection(item_id)
+            else:
+                self.mod_manager.remove_selection(item_id)
+            
+            # Update the widget's visual state if it exists
+            if item_id in self.item_widgets:
+                widget = self.item_widgets[item_id]
+                widget.mod.selected = should_select
+                widget.update_selection_style()
+    
+    def update_header_checkbox_state(self):
+        """
+        Update header checkbox state based on current page selection
+        Note: This is called by ModList.update_header_checkbox_state()
+        """
+        pass  # ModList handles this directly
