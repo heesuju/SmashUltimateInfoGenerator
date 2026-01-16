@@ -182,11 +182,13 @@ class BatchPanel(SidePanel):
 
     def on_task_started(self, mod_hash: str):
         """Handle task started signal"""
-        # Update task status directly to avoid triggering BatchManager callbacks (which rebuild UI)
-        task = self.batch_manager.get_task(mod_hash)
-        if task:
-            task.status = BatchTaskStatus.PROCESSING
-            task.progress_message = "Starting..."
+        # Update BatchManager with notification to trigger MainMenu progress update
+        self.batch_manager.update_task_status(
+            mod_hash, 
+            BatchTaskStatus.PROCESSING, 
+            "Starting...", 
+            notify=True
+        )
         
         self.update_stats_ui()
         
@@ -196,12 +198,28 @@ class BatchPanel(SidePanel):
     
     def on_task_progress(self, mod_hash: str, message: str):
         """Handle task progress signal"""
+        # Silent update to BatchManager (no notify) to key data in sync but avoid UI rebuild
+        self.batch_manager.update_task_status(
+            mod_hash,
+            BatchTaskStatus.PROCESSING,
+            message,
+            notify=False
+        )
+        
         widget = self.task_widgets.get(mod_hash)
         if widget:
             widget.update_status(BatchTaskStatus.PROCESSING, message)
     
     def on_task_complete(self, mod_hash: str):
         """Handle task complete signal"""
+        # Notify BatchManager of completion
+        self.batch_manager.update_task_status(
+            mod_hash, 
+            BatchTaskStatus.COMPLETE, 
+            "Data fetched successfully", 
+            notify=True
+        )
+        
         widget = self.task_widgets.get(mod_hash)
         if widget:
             # Get task with fetched data
@@ -224,6 +242,8 @@ class BatchPanel(SidePanel):
     
     def on_task_error(self, mod_hash: str, error: str):
         """Handle task error signal"""
+        self.batch_manager.update_task_error(mod_hash, error, notify=True)
+        
         widget = self.task_widgets.get(mod_hash)
         if widget:
             widget.update_status(BatchTaskStatus.ERROR, "", error)

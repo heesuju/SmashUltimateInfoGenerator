@@ -65,6 +65,9 @@ class MainMenu(QWidget):
         saved_sort_rules = self.sort.get_sort_rules()
         if saved_sort_rules:
             self.filter_manager.set_sort_rules(saved_sort_rules)
+            
+        # Connect batch manager to update progress on nav button
+        self.batch_manager.add_callback(self.update_batch_progress)
 
         self.filter.hide()
         self.sort.hide()
@@ -173,3 +176,34 @@ class MainMenu(QWidget):
         
         # Switch to batch panel (but don't auto-start processing)
         self.menu.show_panel(self.batch)
+
+    def update_batch_progress(self):
+        """Update batch progress indicator on navigation button"""
+        batch_button = self.menu.buttons.get(NavigationMenuIcon.BATCH.value)
+        if not batch_button:
+            return
+            
+        tasks = self.batch_manager.get_tasks()
+        total = len(tasks)
+        if total == 0:
+            batch_button.set_progress(-1)
+            return
+
+        processing = self.batch_manager.get_processing_count()
+        pending = self.batch_manager.get_pending_count()
+        complete = self.batch_manager.get_complete_count()
+        error = self.batch_manager.get_error_count()
+        
+        # Only show progress if there are processing tasks or we are in the middle of a queue
+        if processing == 0 and pending == 0:
+            batch_button.set_progress(-1)
+            return
+            
+        # Calculate progress
+        done = complete + error
+        progress = done / total if total > 0 else 0
+        
+        if processing > 0 and progress == 0:
+            progress = 0.1
+            
+        batch_button.set_progress(progress)
