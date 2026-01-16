@@ -1,4 +1,3 @@
-from pydantic import BaseModel
 import os
 from typing import List
 from PyQt6.QtCore import QTimer
@@ -24,11 +23,15 @@ from src.managers.data_manager import ButtonIcons, DataManager
 from src.managers.filter_manager import FilterManager, FilterParameters
 from src.managers.config_manager import ConfigManager
 from src.constants.ui_params import SPACING, GRID_PAGE_SIZE, LIST_PAGE_SIZE
+from PyQt6.QtCore import pyqtSignal
 
 class ModList(QWidget):
-    def __init__(self, mod_manager:ModManager, filter_manager:FilterManager, config_manager:ConfigManager):
+    batch_tasks_added = pyqtSignal()  # Signal when tasks are added to batch queue
+    
+    def __init__(self, mod_manager:ModManager, filter_manager:FilterManager, config_manager:ConfigManager, batch_manager=None):
         super().__init__()
         self.mod_manager = mod_manager
+        self.batch_manager = batch_manager
         
         self.mod_manager.set_callback(self.on_filter_changed)
         
@@ -112,6 +115,7 @@ class ModList(QWidget):
 
         action_dropdown = QComboBox()
         action_dropdown.addItems(["Batch Actions", "Enable", "Disable", "Generate Info.toml", "Remove"])
+        action_dropdown.currentIndexChanged.connect(self.on_batch_action)
         header_layout.addWidget(action_dropdown)
         
         self.body_layout.addWidget(self.tree_list)
@@ -386,3 +390,55 @@ class ModList(QWidget):
             else:
                 self.header_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
             self.header_checkbox.blockSignals(False)
+    
+    def on_batch_action(self, index):
+        """Handle batch action dropdown selection"""
+        if index == 0:  # "Batch Actions" placeholder
+            return
+        
+        # Get action name
+        action = ["", "Enable", "Disable", "Generate Info.toml", "Remove"][index]
+        
+        if action == "Generate Info.toml":
+            # Get selected mods by iterating through all mods and checking is_selected
+            selected_mods = []
+            for mod in self.mod_manager.get_mods():
+                if self.mod_manager.is_selected(str(mod.hash)):
+                    selected_mods.append(mod)
+            
+            if not selected_mods:
+                from PyQt6.QtWidgets import QMessageBox
+                QMessageBox.warning(self, "No Selection", "Please select mods to process.")
+                return
+            
+            # Add selected mods to batch queue
+            if self.batch_manager:
+                self.batch_manager.add_tasks(selected_mods)
+                
+                # Deselect items after adding to batch queue
+                for mod in selected_mods:
+                    self.mod_manager.remove_selection(str(mod.hash))
+                
+                # Update checkboxes visually
+                if self.mode == ListLayout.LIST:
+                    for item_id, checkbox in self.tree_list.item_checkboxes.items():
+                        checkbox.blockSignals(True)
+                        checkbox.setChecked(self.mod_manager.is_selected(item_id))
+                        checkbox.blockSignals(False)
+                elif self.mode == ListLayout.GRID:
+                    for item_id, widget in self.grid_list.item_widgets.items():
+                        widget.mod.selected = self.mod_manager.is_selected(item_id)
+                        widget.update_selection_style()
+                
+                # Update header checkbox state
+                self.update_header_checkbox_state()
+                
+                # Emit signal to trigger batch panel display
+                self.batch_tasks_added.emit()
+        
+        # Reset dropdown to placeholder
+        sender = self.sender()
+        if sender:
+            sender.blockSignals(True)
+            sender.setCurrentIndex(0)
+            sender.blockSignals(False)

@@ -15,3 +15,17 @@ QPushButton:pressed {
 BORDERLESS_BUTTON = """QPushButton {
     border : none;
 }"""
+
+DANGER_BUTTON = """QPushButton {
+    background-color: #f44336;
+    color: white;
+    font-weight: bold;
+    border-radius: 5px;
+    padding: 5px 10px;
+}
+QPushButton:hover {
+    background-color: #e53935;
+}
+QPushButton:pressed {
+    background-color: #c62828;
+}"""

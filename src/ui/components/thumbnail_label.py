@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import QLabel
 from PyQt6.QtGui import QPixmap, QPainter, QColor, QImage
 from PyQt6.QtCore import Qt, QSize, QRunnable, QThreadPool, QObject, pyqtSignal
 from functools import lru_cache
+import requests
 
 class ImageCache:
     _instance = None
@@ -43,7 +44,19 @@ class ImageWorker(QRunnable):
             self.signals.result.emit(None)
             return
 
-        image = QImage(self.path)
+        if self.path.startswith("http"):
+            try:
+                response = requests.get(self.path, timeout=10)
+                if response.status_code == 200:
+                    image = QImage.fromData(response.content)
+                else:
+                    image = QImage()
+            except Exception as e:
+                # print(f"Error downloading image: {e}")
+                image = QImage()
+        else:
+            image = QImage(self.path)
+
         if image.isNull():
             self.signals.result.emit(None)
             return

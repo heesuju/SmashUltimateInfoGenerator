@@ -5,6 +5,7 @@ from src.ui.filter_panel import FilterPanel
 from src.ui.sort_panel import SortPanel
 from src.ui.preview_panel import PreviewPanel
 from src.ui.edit_panel import EditPanel
+from src.ui.batch_panel import BatchPanel
 from src.ui.config_panel import Config
 from src.ui.workspace_panel import WorkspacePanel
 from src.ui.components.navigation import Navigation, NavigationMenu
@@ -14,6 +15,7 @@ from src.managers.data_manager import NavigationMenuIcon
 from src.managers.config_manager import ConfigManager
 from src.managers.mod_manager import ModManager
 from src.managers.filter_manager import FilterManager
+from src.managers.batch_manager import BatchManager
 
 class MainMenu(QWidget):
     def __init__(self, config_manager:ConfigManager):
@@ -21,6 +23,7 @@ class MainMenu(QWidget):
         self.config_manager = config_manager
         self.mod_manager = ModManager(config_manager)
         self.filter_manager = FilterManager()
+        self.batch_manager = BatchManager()
         self.setWindowTitle("SmashGen")
         self.setGeometry(100, 100, 1400, 800)
         
@@ -28,11 +31,12 @@ class MainMenu(QWidget):
         vlayout = VBox()
         hlayout = HBox()
 
-        self.list_widget = ModList(self.mod_manager, self.filter_manager, self.config_manager)
+        self.list_widget = ModList(self.mod_manager, self.filter_manager, self.config_manager, self.batch_manager)
         self.filter = FilterPanel(self.filter_manager, config_manager)
         self.sort = SortPanel(config_manager)
         self.preview =PreviewPanel(self.mod_manager)
         self.edit = EditPanel(self.mod_manager, config_manager)
+        self.batch = BatchPanel(self.batch_manager)
         self.config = Config(config_manager)
         self.workspace = WorkspacePanel(config_manager)
         
@@ -44,6 +48,12 @@ class MainMenu(QWidget):
         
         # Connect edit panel save to update list
         self.edit.save_complete.connect(self.list_widget.on_mod_saved)
+        
+        # Connect batch panel apply to refresh list (use lambda since on_mod_saved expects mod_id)
+        self.batch.apply_requested.connect(lambda: self.list_widget.on_mod_saved(""))
+        
+        # Connect list widget batch signal to show batch panel
+        self.list_widget.batch_tasks_added.connect(self.on_batch_tasks_added)
         
         # Connect mod selection to show preview panel
         self.mod_manager.add_focus_callback(self.on_mod_selected)
@@ -60,6 +70,7 @@ class MainMenu(QWidget):
         self.sort.hide()
         self.preview.hide()
         self.edit.hide()
+        self.batch.hide()
         self.config.hide()
         self.workspace.hide()
 
@@ -70,6 +81,7 @@ class MainMenu(QWidget):
                     NavigationMenu(NavigationMenuIcon.SORT.value, self.sort),
                     NavigationMenu(NavigationMenuIcon.PREVIEW.value, self.preview),
                     NavigationMenu(NavigationMenuIcon.EDIT.value, self.edit),
+                    NavigationMenu(NavigationMenuIcon.BATCH.value, self.batch),
                 ],
                 [
                     NavigationMenu(NavigationMenuIcon.WORKSPACE.value, self.workspace),
@@ -78,10 +90,14 @@ class MainMenu(QWidget):
             ]
         )
         
-        # Hide edit button by default (will be shown when edit is clicked)
+        # Hide edit and batch buttons by default
         edit_button = self.menu.buttons.get(NavigationMenuIcon.EDIT.value)
         if edit_button:
-            edit_button.hide()        
+            edit_button.hide()
+        
+        batch_button = self.menu.buttons.get(NavigationMenuIcon.BATCH.value)
+        if batch_button:
+            batch_button.hide()        
         
         hlayout.addWidget(self.list_widget)
         
@@ -89,6 +105,7 @@ class MainMenu(QWidget):
         hlayout.addWidget(self.sort)
         hlayout.addWidget(self.preview)
         hlayout.addWidget(self.edit)
+        hlayout.addWidget(self.batch)
         hlayout.addWidget(self.config)
         hlayout.addWidget(self.workspace)
         
@@ -146,4 +163,13 @@ class MainMenu(QWidget):
         
         # Reset navigation state
         self.menu.selected_menu = NavigationMenuIcon.NONE
-     
+    
+    def on_batch_tasks_added(self):
+        """Handle when batch tasks are added from mod_list"""
+        # Show batch button in navigation
+        batch_button = self.menu.buttons.get(NavigationMenuIcon.BATCH.value)
+        if batch_button:
+            batch_button.show()
+        
+        # Switch to batch panel (but don't auto-start processing)
+        self.menu.show_panel(self.batch)
