@@ -1,8 +1,9 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QSizePolicy, QLabel, QFrame, QHBoxLayout, QPushButton
+    QWidget, QVBoxLayout, QSizePolicy, QLabel, QFrame, QHBoxLayout, QPushButton,
+    QMenu
 )
-from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont
-from PyQt6.QtCore import Qt, QSize, QPoint, QPointF, pyqtSignal
+from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont, QAction, QDesktopServices
+from PyQt6.QtCore import Qt, QSize, QPoint, QPointF, pyqtSignal, QUrl
 from src.ui.components.layout import HBox, VBox
 from src.constants.styles import MAIN_BUTTON
 from src.ui.components.side_panel import SidePanel
@@ -35,13 +36,25 @@ class PreviewPanel(SidePanel):
         self.hide_button = ToggleButton(ButtonIcons.HIDE_ON.value, ButtonIcons.HIDE_OFF.value, self.on_vis_off, self.on_vis_on, 24)
         self.header.addWidget(self.hide_button)
 
+        web_button = QPushButton()
+        web_button.setIcon(QIcon(ButtonIcons.WEB.value))
+        web_button.setFlat(True)
+        web_button.setObjectName("obj")
+        web_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        web_button.setFixedSize(QSize(24, 24))
+        web_button.clicked.connect(self.open_web_page)
+        self.header.addWidget(web_button)
+        self.web_button = web_button
+
         menu_button = QPushButton()
         menu_button.setIcon(QIcon(QPixmap(ButtonIcons.MENU.value)))
         menu_button.setFlat(True)
         menu_button.setObjectName("obj")
         menu_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         menu_button.setFixedSize(QSize(24, 24))
+        menu_button.clicked.connect(self.show_context_menu)
         self.header.addWidget(menu_button)
+        self.menu_button = menu_button
         
         
         
@@ -110,6 +123,14 @@ class PreviewPanel(SidePanel):
             tag = ElementTag(str(element))
             self.elements_container.add_widget(tag)
 
+        # Update Web Button State
+        if mod.url and mod.url.startswith("http"):
+            self.web_button.setEnabled(True)
+            self.web_button.setToolTip(mod.url)
+        else:
+             self.web_button.setEnabled(False)
+             self.web_button.setToolTip("No URL available")
+
     def on_open_clicked(self):
         id =self.mod_manager.focused_id
         mod = self.mod_manager.get_mod(id)
@@ -149,3 +170,23 @@ class PreviewPanel(SidePanel):
     def on_edit_clicked(self):
         """Emit signal to request edit mode for current mod"""
         self.edit_requested.emit(self.mod_manager.focused_id)
+
+    def show_context_menu(self):
+        """Show context menu for mod options"""
+        menu = QMenu(self)
+        
+        action = QAction("Copy Mod ID", self)
+        action.triggered.connect(lambda: None) # Todo implement copy
+        title = QAction("Mod Options", self)
+        title.setEnabled(False)
+        menu.addAction(title)
+        
+        menu.exec(self.menu_button.mapToGlobal(QPoint(0, self.menu_button.height())))
+
+    def open_web_page(self):
+        """Open mod URL in browser"""
+        id = self.mod_manager.focused_id
+        if id:
+            mod = self.mod_manager.get_mod(id)
+            if mod.url and mod.url.startswith("http"):
+                QDesktopServices.openUrl(QUrl(mod.url))
