@@ -2,7 +2,6 @@ import threading
 from typing import Union
 import concurrent.futures
 from src.utils.web import get_request
-from src.constants.apis import GAMEBANANA_URL, GAMEBANANA_SEARCH_URL
 import difflib
 import urllib.parse
 
@@ -14,8 +13,7 @@ WIFI_SAFE_TAGS = [
 ]
 
 def get_mod_info(id:str):
-    url = GAMEBANANA_URL.format(id)
-    result = get_request(url)
+    result = get_request(f"https://gamebanana.com/apiv4/Mod/{id}")
     return result
 
 def get_thumbnails(data:dict)->tuple[list[str], list[str]]:
@@ -34,6 +32,22 @@ def get_thumbnails(data:dict)->tuple[list[str], list[str]]:
     
     return links, file_names
 
+def get_mod_description(id:str):
+    """
+    Get mod description
+    """
+    try:
+        GAMEBANANA_URL = "https://api.gamebanana.com/Core/Item/Data?\
+            itemid={id}&\
+            itemtype=Mod&\
+            fields=text"
+        url = GAMEBANANA_URL.format(id=id)
+        data = get_request(url)
+        return data[0]
+    except Exception as e:
+        print(f"Error getting mod description: {e}")
+        return None
+
 def search_mod(mod_name: str, author_name: str = "") -> str | None:
     """
     Search for a mod by name and optionally filter by author.
@@ -41,7 +55,15 @@ def search_mod(mod_name: str, author_name: str = "") -> str | None:
     """
     try:
         encoded_name = urllib.parse.quote(mod_name)
-        url = GAMEBANANA_SEARCH_URL.format(encoded_name)
+        
+        GAMEBANANA_SEARCH_URL = "https://gamebanana.com/apiv11/Util/Search/Results?\
+            _sSearchString={query}&\
+            _nPage=1&\
+            _sModelName=Mod&\
+            _sOrder=best_match&\
+            _idGameRow=6498"
+        url = GAMEBANANA_SEARCH_URL.format(query=encoded_name,
+        author_name=author_name)
         data = get_request(url)
         
         if not data or not data.get("_aRecords"):
@@ -76,11 +98,12 @@ def search_mod(mod_name: str, author_name: str = "") -> str | None:
         
         # Threshold for match? Let's say 0.4 to be lenient
         if best_match and best_ratio > 0.4:
-            return str(best_match.get("_idRow"))
+            return best_match
         
         records.sort(key=lambda x: x.get("_nViewCount", 0), reverse=True)
         if records:
-            return str(records[0].get("_idRow"))
+            return records[0]
+        return records
             
     except Exception as e:
         print(f"Error searching mod: {e}")
