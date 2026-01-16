@@ -13,6 +13,7 @@ from src.ui.components.single_combobox import SingleComboBox
 from src.ui.components.thumbnail_label import ThumbnailLabel
 from src.ui.components.validators import limit_version
 from src.core.formatting import format_slots, format_display_name, format_folder_name, format_character_names_for_display, format_character_names_for_folder, clean_version
+import os
 
 
 # Table cell styles
@@ -337,8 +338,6 @@ class BatchTaskItem(QWidget):
         # Bottom row: Thumbnail Preview
         self.new_thumbnail = ThumbnailLabel()
         self.new_thumbnail.setFixedSize(THUMBNAIL_SIZE * 2, THUMBNAIL_SIZE * 2) # Larger preview?
-        # Keep same size for consistency for now, or maybe variable?
-        # User didn't ask for size change, but combo takes width.
         self.new_thumbnail.setFixedSize(THUMBNAIL_SIZE * 2, int(THUMBNAIL_SIZE * 1.5))
         self.new_thumbnail.setScaledContents(False) # ThumbnailLabel handles scaling
         
@@ -531,8 +530,6 @@ class BatchTaskItem(QWidget):
             if name:
                 current_chars.append(name)
         
-        # Don't pass defaults - items get sorted alphabetically which breaks index-based defaults
-        # Instead, create combo first then set check states by matching text
         combo = CheckableComboBox(all_characters, [], False, "Select Characters")
         
         # Manually set check states by matching item text (after sort has happened)
@@ -591,7 +588,6 @@ class BatchTaskItem(QWidget):
             current_slots.update(c.slots)
             
         # Optimize: Only show slots 0-31 + any existing slots used by this mod
-        # Instead of creating 256 items for every row which kills performance
         display_slots = set(range(32))
         display_slots.update(current_slots)
         slot_options = [f"C{i:02d}" for i in sorted(display_slots)]
@@ -810,19 +806,15 @@ class BatchTaskItem(QWidget):
                     self.thumb_combo.addItem(f"Fetched {i+1}", link)
                     added_count += 1
             
-            # If we added fetched links, select the first one automatically?
-            if added_count > 0:
-                # Find index of first fetched
-                # Usually it's after "Current" (index 0)
-                # If Custom is not selected, select the first fetched
-                if self.thumb_combo.currentIndex() == 0:
-                     # Select the first fetched image
-                     # Assume "Current" is 0. 
-                     # Fetched 1 is at index 1 (if no Custom)
-                     # Let's find "Fetched 1"
-                     idx = self.thumb_combo.findText("Fetched 1")
-                     if idx >= 0:
-                         self.thumb_combo.setCurrentIndex(idx)
+            if added_count > 0 and self.thumb_combo.currentIndex() == 0:
+                has_original = False
+                if self.task.original_thumbnail and os.path.exists(self.task.original_thumbnail):
+                    has_original = True
+                
+                if not has_original:
+                    idx = self.thumb_combo.findText("Fetched 1")
+                    if idx >= 0:
+                        self.thumb_combo.setCurrentIndex(idx)
 
     def _set_changed_style(self, widget, changed: bool):
         """Apply changed style to widget if value differs from original"""
@@ -839,10 +831,10 @@ class BatchTaskItem(QWidget):
             else:
                 # Restore original input style
                 if isinstance(widget, QLineEdit):
-                     widget.setStyleSheet(TABLE_INPUT_STYLE)
+                    widget.setStyleSheet(TABLE_INPUT_STYLE)
                 else: 
-                     # Restore TextEdit style
-                     widget.setStyleSheet("""
+                    # Restore TextEdit style
+                    widget.setStyleSheet("""
                         QTextEdit {
                             border: 1px solid rgba(128, 128, 128, 0.2);
                             border-top: none;
@@ -856,10 +848,10 @@ class BatchTaskItem(QWidget):
                         }
                     """)
         elif isinstance(widget, (QComboBox, SingleComboBox, CheckableComboBox)):
-             if changed:
-                 widget.setStyleSheet(COMBO_CHANGED_STYLE)
-             else:
-                 widget.setStyleSheet(TABLE_DEFAULT_STYLE)
+            if changed:
+                widget.setStyleSheet(COMBO_CHANGED_STYLE)
+            else:
+                widget.setStyleSheet(TABLE_DEFAULT_STYLE)
         else:
             # Other widgets
             widget.setStyleSheet(style)
