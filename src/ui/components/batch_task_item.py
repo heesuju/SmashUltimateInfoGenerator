@@ -774,7 +774,8 @@ class BatchTaskItem(QWidget):
 
     def update_new_data(self, mod_name: str = None, authors: str = None, 
                         version: str = None, url: str = None, description: str = None,
-                        preview_links: list = None):
+                        preview_links: list = None, wifi_safe: bool = None,
+                        category: str = None, is_moveset: bool = None, is_final_smash: bool = None):
         """Update the editable fields with new data (e.g., after fetching)"""
         if mod_name is not None and "mod_name" in self.input_fields:
             self.input_fields["mod_name"].setText(mod_name)
@@ -787,6 +788,41 @@ class BatchTaskItem(QWidget):
             self.input_fields["url"].setText(url)
         if description is not None and "description" in self.input_fields:
             self.input_fields["description"].setText(description)
+            
+        if wifi_safe is not None and "wifi_safe" in self.input_fields:
+            # wifi_safe is boolean coming from fetch logic
+            val = Wifi.SAFE.value if wifi_safe else Wifi.UNCERTAIN.value
+            combo = self.input_fields["wifi_safe"]
+            idx = combo.findText(val)
+            if idx >= 0:
+                combo.setCurrentIndex(idx)
+                
+        if category is not None and "category" in self.input_fields:
+            combo = self.input_fields["category"]
+            idx = combo.findText(category)
+            if idx >= 0:
+                combo.setCurrentIndex(idx)
+                
+        if (is_moveset or is_final_smash) and "elements" in self.input_fields:
+            combo = self.input_fields["elements"]
+            model = combo.model()
+            changed = False
+            for i in range(model.rowCount()):
+                item = model.item(i)
+                if not item: continue
+                text = item.text()
+                
+                if is_moveset and text == Element.MOVESET.value:
+                    if item.checkState() != Qt.CheckState.Checked:
+                        item.setCheckState(Qt.CheckState.Checked)
+                        changed = True
+                elif is_final_smash and text == Element.FINAL_SMASH.value:
+                    if item.checkState() != Qt.CheckState.Checked:
+                        item.setCheckState(Qt.CheckState.Checked)
+                        changed = True
+            
+            if changed:
+                combo.update_display()
             
         if preview_links:
             # Add fetched previews to combobox
@@ -820,10 +856,6 @@ class BatchTaskItem(QWidget):
         """Apply changed style to widget if value differs from original"""
         if not widget: return
         style = TABLE_CHANGED_STYLE if changed else TABLE_DEFAULT_STYLE
-        
-        # For QLineEdit and QTextEdit, we need to respect their type in stylesheet?
-        # No, setStyleSheet works on the widget.
-        # But we previously defined TABLE_INPUT_STYLE using QLineEdit selector.
         
         if isinstance(widget, (QLineEdit, QTextEdit)):
             if changed:

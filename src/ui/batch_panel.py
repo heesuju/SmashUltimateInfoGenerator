@@ -232,7 +232,10 @@ class BatchPanel(SidePanel):
                 version=task.fetched_version,
                 url=task.fetched_url,
                 description=task.fetched_description,
-                preview_links=task.fetched_preview_links
+                preview_links=task.fetched_preview_links,
+                wifi_safe=task.fetched_is_wifi_safe,
+                is_moveset=task.fetched_is_moveset,
+                is_final_smash=task.fetched_is_final_smash
             )
             
             # Update status display
@@ -308,6 +311,32 @@ class BatchPanel(SidePanel):
                 widget = self.task_widgets.get(mod_hash)
                 
                 if widget:
+                    # Explicitly read text fields from widget to ensure latest values (failsafe)
+                    if "mod_name" in widget.input_fields:
+                        mod.mod_name = widget.input_fields["mod_name"].text()
+                    if "authors" in widget.input_fields:
+                        mod.authors = widget.input_fields["authors"].text()
+                    if "version" in widget.input_fields:
+                        mod.version = widget.input_fields["version"].text()
+                    if "url" in widget.input_fields:
+                        mod.url = widget.input_fields["url"].text()
+                    if "description" in widget.input_fields:
+                        mod.description = widget.input_fields["description"].toPlainText()
+                    if "display_name" in widget.input_fields:
+                        mod.display_name = widget.input_fields["display_name"].text()
+                    if "folder_name" in widget.input_fields:
+                        mod.folder_name = widget.input_fields["folder_name"].text()
+                    if "category" in widget.input_fields:
+                        try:
+                            mod.category = Category(widget.input_fields["category"].currentText())
+                        except:
+                            pass
+                    if "wifi_safe" in widget.input_fields:
+                        try:
+                            mod.wifi_safe = Wifi(widget.input_fields["wifi_safe"].currentText())
+                        except:
+                            pass
+
                     # Read Characters and Slots from widget multi-selects
                     selected_chars = widget.get_selected_characters()
                     selected_slots = widget.get_selected_slots()
@@ -354,53 +383,6 @@ class BatchPanel(SidePanel):
                             mod.thumbnail = dest
                     except Exception as e:
                         print(f"Error copying/downloading thumbnail: {e}")
-                
-                # Regenerate formatted display_name
-                try:
-                    char_keys = mod.get_character_keys()
-                    char_names = []
-                    
-                    for k in char_keys:
-                        try:
-                            if k:
-                                f_enum = Fighter(k)
-                                name = DataManager.get_character_data(f_enum, "Custom")
-                                if name:
-                                    char_names.append(name)
-                        except Exception as e:
-                            print(f"Warning: Could not get char name for key '{k}': {e}")
-                            continue
-                    
-                    char_str = format_character_names_for_display(char_names)
-                    slot_list = mod.get_character_slots()
-                    slot_str = format_slots(slot_list)
-                    
-                    cat_str = ""
-                    try:
-                        cat_str = mod.category.value if hasattr(mod.category, 'value') else str(mod.category)
-                    except:
-                        cat_str = str(mod.category)
-                    
-                    mod.display_name = format_display_name(
-                        char_str,
-                        slot_str,
-                        mod.mod_name,
-                        cat_str
-                    )
-                except Exception as e:
-                    print(f"Error formatting display name: {e}")
-                
-                # Apply fetched data if available (from GameBanana fetch)
-                if task.fetched_is_wifi_safe is not None:
-                    mod.wifi_safe = Wifi.SAFE if task.fetched_is_wifi_safe else Wifi.UNCERTAIN
-                
-                if task.fetched_is_moveset:
-                    if Element.MOVESET not in mod.includes:
-                        mod.add_to_included(Element.MOVESET)
-                
-                if task.fetched_is_final_smash:
-                    if Element.FINAL_SMASH not in mod.includes:
-                        mod.add_to_included(Element.FINAL_SMASH)
                 
                 # Download preview image if fetched (and no pending thumbnail)
                 if not (widget and widget.get_pending_thumbnail()):

@@ -103,8 +103,6 @@ class BatchWorker(QThread):
                 task.fetched_preview_files = info.get("preview_files")
                 task.fetched_is_wifi_safe = info.get("is_wifi_safe")
                 task.fetched_is_moveset = info.get("is_moveset")
-                task.fetched_is_wifi_safe = info.get("is_wifi_safe")
-                task.fetched_is_moveset = info.get("is_moveset")
                 task.fetched_is_final_smash = info.get("is_final_smash")
                 
                 # Fetch detailed description (separate API call)
