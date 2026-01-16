@@ -13,6 +13,7 @@ class NavigationMenuIcon(Enum):
     FILTER = "assets/icons/menu/filter_32.png"
     SORT = "assets/icons/menu/sort_32.png"
     EDIT = "assets/icons/menu/edit_32.png"
+    BATCH = "assets/icons/menu/batch_32.svg"
     WORKSPACE = "assets/icons/menu/workspace_32.png"
     NONE = ""
 
@@ -34,8 +35,19 @@ class ButtonIcons(Enum):
     MENU = "assets/icons/buttons/menu_16.png"
     SORT_ASC = "assets/icons/buttons/sort_asc_16.png"
     SORT_DESC = "assets/icons/buttons/sort_desc_16.png"
+    WEB = "assets/icons/buttons/web_16.svg"
 
 class DataManager:
+    _data_list_cache = None
+    _key_map_cache = None
+
+    @staticmethod
+    def _init_cache():
+        if DataManager._data_list_cache is None:
+            DataManager._data_list_cache = csv_to_dict(CHARACTER_DATA_PATH)
+        if DataManager._key_map_cache is None:
+            DataManager._key_map_cache = get_columns_by_key(CHARACTER_DATA_PATH)
+
     @staticmethod
     def get_character_keys()-> list[str]:
         data = Fighter.list()
@@ -43,14 +55,42 @@ class DataManager:
     
     @staticmethod
     def get_character_data(character:Fighter=None, column:str = ""):
+        DataManager._init_cache()
         if character is not None:
-            return get_columns_by_key(CHARACTER_DATA_PATH, str(character), column)
+            # Emulate get_columns_by_key behavior which relies on Key being first column
+            char_key = str(character)
+            # Find in list cache for read efficiency
+            target_row = None
+            for row in DataManager._data_list_cache:
+                if row.get("Key") == char_key:
+                    target_row = row
+                    break
+            
+            if not target_row:
+                return "" if column else {}
+                
+            if column:
+                return target_row.get(column, "")
+            else:
+                # Return dict excluding the Key (to match get_columns_by_key behavior)
+                return {k: v for k, v in target_row.items() if k != "Key"}
         else:
-            return csv_to_dict(CHARACTER_DATA_PATH, column)
+            if column:
+                # Return list of values for column (unique)
+                values = []
+                seen = set()
+                for row in DataManager._data_list_cache:
+                    val = row.get(column, "")
+                    if val and val not in seen:
+                        values.append(val)
+                        seen.add(val)
+                return values
+            return DataManager._data_list_cache
         
     @staticmethod
     def get_character_by_key():
-        return get_columns_by_key(CHARACTER_DATA_PATH)
+        DataManager._init_cache()
+        return DataManager._key_map_cache
         
     @staticmethod
     def get_character_series(character:Fighter=None)-> list[str]:
