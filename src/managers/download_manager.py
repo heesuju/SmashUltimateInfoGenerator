@@ -105,9 +105,10 @@ class DownloadManager(QObject):
         request.setAttribute(QNetworkRequest.Attribute.RedirectPolicyAttribute, True)
         
         # Spoof User Agent
-        request.setRawHeader(b"User-Agent", b"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+        request.setRawHeader(b"User-Agent", b"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         
         reply = self.manager.get(request)
+        reply.setReadBufferSize(4 * 1024 * 1024) # 4MB buffer (default is often smaller/adaptive)
         self.active_downloads[download_id] = reply
         
         # Connect signals
@@ -157,7 +158,19 @@ class DownloadManager(QObject):
             file.write(data)
             
     def _on_progress(self, download_id, received, total):
-        self.progress_updated.emit(download_id, received, total)
+        import time
+        current_time = time.time()
+        
+        # Initialize tracking if needed
+        if not hasattr(self, 'last_progress_updates'):
+            self.last_progress_updates = {}
+            
+        last_time = self.last_progress_updates.get(download_id, 0)
+        
+        # Throttle to ~10fps (100ms) or if complete
+        if (current_time - last_time >= 0.1) or (received == total and total > 0):
+            self.progress_updated.emit(download_id, received, total)
+            self.last_progress_updates[download_id] = current_time
         
     def _on_finished(self, download_id):
         reply = self.active_downloads.pop(download_id, None)
@@ -368,7 +381,10 @@ class DownloadManager(QObject):
             if existing_version:
                 mod.version = clean_version(existing_version)
             else:
-                mod.version = clean_version(mod_data.get("version", "1.0.0"))
+                raw_ver = mod_data.get("version", "1.0.0")
+                if not raw_ver or raw_ver == "0":
+                    raw_ver = "1.0.0"
+                mod.version = clean_version(raw_ver)
 
             mod.url = f"https://gamebanana.com/mods/{meta.get('mod_id_str')}"
             
