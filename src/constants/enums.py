@@ -61,6 +61,7 @@ class Element(BaseEnum):
     ITEM = "Item"
     MOVESET = "Moveset"
     FINAL_SMASH = "Final Smash"
+    FLAGS = "Flags"
 
 class Fighter(BaseEnum):
     MARIO="mario"

@@ -196,6 +196,14 @@ def scan_thumbnail(mod:Mod)->Mod:
     
     return mod
 
+def scan_flags(mod:Mod)->Mod:
+    root_dir = os.path.join(mod.path, "flags")
+
+    if is_valid_dir(root_dir):
+        mod.add_to_included(Element.FLAGS)
+    
+    return mod
+
 def scan_mod(mod:Mod)->Mod:
     """
     Scans mod directory and auto-fills information
@@ -211,6 +219,10 @@ def scan_mod(mod:Mod)->Mod:
             return Category.AUDIO
         elif Element.UI in mod.includes:
             return Category.UI
+        elif Element.FLAGS in mod.includes:
+            return Category.PARAM
+        elif len(mod.characters) > 0:
+            return Category.FIGHTER
         else:
             return Category.MISC
         
@@ -235,6 +247,7 @@ def scan_mod(mod:Mod)->Mod:
     mod = scan_camera(mod)
     mod = scan_ui(mod)
     mod = scan_thumbnail(mod)
+    mod = scan_flags(mod)
     
     mod.category = get_category(mod)
     

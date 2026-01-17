@@ -53,7 +53,11 @@ def get_request(url:str, params:dict=None):
     :return: The response JSON or text, or an error message.
     """
     try:
-        response = requests.get(url, params=params, timeout=10)
+        with requests.Session() as session:
+            # Disable environment settings (system proxy) to prevent console flickering on Windows
+            session.trust_env = False
+            response = session.get(url, params=params, timeout=10)
+            
         response.raise_for_status()  # Raise an HTTPError for bad responses (4xx and 5xx)
         
         # Try to return JSON response, otherwise return text
