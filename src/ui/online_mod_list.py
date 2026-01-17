@@ -13,6 +13,8 @@ from src.ui.online_grid_item import OnlineGridListItem
 from src.ui.search_bar import SearchBar
 from src.ui.components.filter_chips import FilterChips
 
+from src.ui.components.loading_overlay import LoadingOverlay
+
 class OnlineModList(QWidget):
     def __init__(self, online_manager: OnlineManager, filter_manager=None):
         super().__init__()
@@ -46,6 +48,14 @@ class OnlineModList(QWidget):
         layout.addWidget(self.paging)
         self.paging.page_size = 15
         
+        # Initialize Overlay
+        self.loading_overlay = LoadingOverlay(self.frame) # Check parent
+        
+    def resizeEvent(self, event):
+        if hasattr(self, 'loading_overlay'):
+            self.loading_overlay.resize(self.frame.size())
+        super().resizeEvent(event)
+        
     def on_page_changed(self, page: int, size: int):
         self.online_manager.search(
             self.online_manager.current_query, 
@@ -55,8 +65,12 @@ class OnlineModList(QWidget):
         )
         
     def update_view(self):
-        pass
-
+        if self.online_manager.is_loading:
+            self.loading_overlay.resize(self.frame.size())
+            self.loading_overlay.show_loading()
+        else:
+            self.loading_overlay.hide_loading()
+            
     def populate(self, mods: List[ModItem]):
         self.grid_list.clear()
         
