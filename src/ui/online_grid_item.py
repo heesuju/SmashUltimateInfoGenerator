@@ -214,6 +214,26 @@ class OnlineGridListItemWidget(GridListItemWidget):
         
         self.frame.setGraphicsEffect(shadow)
 
+    def mousePressEvent(self, event):
+        from PyQt6.QtCore import Qt
+        
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
+                manager = self.grid_list.mod_manager
+                if hasattr(manager, 'toggle_selection'):
+                    manager.toggle_selection(self.mod.id)
+                    self.mod.selected = manager.is_selected(self.mod.id)
+                    self.update_selection_style()
+            return
+        
+        if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
+            manager = self.grid_list.mod_manager
+            if hasattr(manager, 'set_focus'):
+                print(f"[OnlineGridItem] Calling manager.set_focus({self.mod.id})")
+                manager.set_focus(self.mod.id)
+        
+        super().mousePressEvent(event)
+
     def open_url(self):
         if self.mod.url:
             QDesktopServices.openUrl(QUrl(self.mod.url))

@@ -17,12 +17,19 @@ from src.constants.ui_params import BODY_FONT, BODY_FONT_SIZE, TITLE_FONT, TITLE
 class PreviewPanel(SidePanel):
     edit_requested = pyqtSignal(str)  # Emits mod_id when edit is requested
     
-    def __init__(self, mod_manager:ModManager):
+    def __init__(self, mod_manager:ModManager, online_manager=None):
         super().__init__("Preview")
         self.mod_manager = mod_manager
+        self.online_manager = online_manager
+        self.is_online_mode = False
+        
         self.mod_manager.add_focus_callback(self.set_data)
         self.mod_manager.add_favorite_callback(self.on_favorite_changed)
         self.mod_manager.add_hidden_callback(self.on_hidden_changed)
+        
+        if self.online_manager:
+            self.online_manager.add_focus_callback(self.set_online_data)
+            self.online_manager.mod_details_ready.connect(self.update_online_details)
 
         self.header.addStretch()
         self.fav_button = ToggleButton(ButtonIcons.FAV_ON.value, ButtonIcons.FAV_OFF.value, self.on_fav_on, self.on_fav_off, 24)
@@ -86,12 +93,64 @@ class PreviewPanel(SidePanel):
         self.add_footer_button("Edit", self.on_edit_clicked)
         self.add_footer_button("Enable", self.on_enabled, primary=True)
 
+    def set_online_data(self, id:str):
+        """Handle online mod selection - show basic info immediately"""
+        self.is_online_mode = True
+        mod = self.online_manager.get_mod(id)
+        if not mod:
+            return
+            
+        self.fav_button.hide()
+        self.hide_button.hide()
+        
+        if self.title_label:
+            self.title_label.setText(mod.name)
+            
+        self.thumbnail.set_thumbnail(mod.thumbnail)
+        self.author.setText(mod.authors)
+        self.version.setText(mod.version)
+        self.description_label.setText("Loading details...")
+        
+        self.elements_container.clear()
+        
+        if mod.url and mod.url.startswith("http"):
+            self.web_button.setEnabled(True)
+            self.web_button.setToolTip(mod.url)
+        else:
+            self.web_button.setEnabled(False)
+
+    def update_online_details(self, details:dict):
+        """Update preview with full details from API"""
+        if not self.is_online_mode:
+            return
+            
+        description = details.get('description', '')
+        if description:
+            self.description_label.setText(description)
+        
+        self.elements_container.clear()
+        
+        if details.get('is_wifi_safe'):
+            wifi_tag = ElementTag("Wifi-Safe")
+            self.elements_container.add_widget(wifi_tag)
+        
+        if details.get('is_moveset'):
+            tag = ElementTag("Moveset")
+            self.elements_container.add_widget(tag)
+            
+        if details.get('is_final_smash'):
+            tag = ElementTag("Final Smash")
+            self.elements_container.add_widget(tag)
+
     def set_data(self, id:str):
+        """Handle installed mod selection"""
+        self.is_online_mode = False
         mod = self.mod_manager.get_mod(id)
+        self.fav_button.show()
+        self.hide_button.show()
         self.fav_button.set_state(str(mod.hash) in self.mod_manager.favorite_ids)
         self.hide_button.set_state(str(mod.hash) in self.mod_manager.hidden_ids)
         
-        # Use standard title label
         if self.title_label:
             self.title_label.setText(mod.mod_name)
             
@@ -100,16 +159,13 @@ class PreviewPanel(SidePanel):
         self.version.setText(mod.version)
         self.description_label.setText(mod.description)
         
-        # Clear and repopulate element tags
         self.elements_container.clear()
         
-        # Add wifi-safe tag if not uncertain
         if str(mod.wifi_safe).lower() != "uncertain":
             wifi_text = "Wifi-Safe" if str(mod.wifi_safe).lower() == "safe" else "Not Wifi-Safe"
             wifi_tag = ElementTag(wifi_text)
             self.elements_container.add_widget(wifi_tag)
         
-        # Add element tags
         for element in mod.includes:
             tag = ElementTag(str(element))
             self.elements_container.add_widget(tag)
@@ -186,8 +242,15 @@ class PreviewPanel(SidePanel):
 
     def open_web_page(self):
         """Open mod URL in browser"""
-        id = self.mod_manager.focused_id
-        if id:
-            mod = self.mod_manager.get_mod(id)
-            if mod.url and mod.url.startswith("http"):
-                QDesktopServices.openUrl(QUrl(mod.url))
+        if self.is_online_mode:
+            id = self.online_manager.focused_id
+            if id:
+                mod = self.online_manager.get_mod(id)
+                if mod and mod.url and mod.url.startswith("http"):
+                    QDesktopServices.openUrl(QUrl(mod.url))
+        else:
+            id = self.mod_manager.focused_id
+            if id:
+                mod = self.mod_manager.get_mod(id)
+                if mod.url and mod.url.startswith("http"):
+                    QDesktopServices.openUrl(QUrl(mod.url))

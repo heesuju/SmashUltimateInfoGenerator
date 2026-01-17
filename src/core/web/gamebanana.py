@@ -241,62 +241,9 @@ class Gamebanana(threading.Thread):
 
         if self.is_search and isinstance(self.id, str):
             # Treat self.id as search query
-            # If requesting a list (indicated by specific query or just general search usage)
-            # For now, let's assume if it is a search, we might want a list if we are coming from OnlineManager
-            # But the existing code expects a single result for "search_mod" call
-            
-            # We will use a convention: if page > 0, we want a list
             if self.page > 0:
                 search_results = search_mods_list(self.id, self.author_filter, self.page, self.sort)
-                # search_results is now a dict with records, total_count, per_page, is_complete
-                # Pass the whole dict to callback
                 self.callback(search_results)
-                return
-                # Convert list of dicts to standard format
-                # We need to process each mod info partially since search results have limited data compared to full mod info
-                # But search results usually have _idRow, _sName, _aPreviewMedia etc.
-                
-                final_list = []
-                for record in search_results:
-                    # Process record to extract key info
-                    # Note: search records might differ slightly from full Get Item Data
-                    # But process_mod_info expects certain structure.
-                    # Search record keys: _idRow, _sName, _sProfileUrl, _aPreviewMedia, _aSubmitter etc.
-                    
-                    # Synthesize a data dict that process_mod_info can handle or extract manually
-                    mod_id = str(record.get("_idRow", ""))
-                    name = record.get("_sName", "")
-                    submitter = record.get("_aSubmitter", {})
-                    author = submitter.get("_sName", "") if submitter else ""
-                    
-                    # Preview handling for search records
-                    previews = record.get("_aPreviewMedia", {}).get("_aImages", [])
-                    thumb = ""
-                    if previews:
-                        # Get the first image object
-                        image_obj = previews[0]
-                        base_url = image_obj.get("_sBaseUrl", "")
-                        
-                        # Try to get a smaller file first (220px width seems good for grid)
-                        # Fallback to 530, then 100, then original
-                        file = image_obj.get("_sFile220", "")
-                        if not file:
-                            file = image_obj.get("_sFile530", "")
-                        if not file:
-                            file = image_obj.get("_sFile", "")
-                            
-                        if base_url and file:
-                            thumb = f"{base_url}/{file}"
-                    
-                    final_list.append({
-                        "id": mod_id,
-                        "name": name,
-                        "author": author,
-                        "thumbnail": thumb,
-                        "record": record # Keep raw record just in case
-                    })
-                
-                self.callback(final_list)
                 return
 
             found_id = search_mod(self.id, self.author_filter)
@@ -306,6 +253,7 @@ class Gamebanana(threading.Thread):
                 if result is not None:
                     results.append(result)
         elif isinstance(self.id, str):
+            # Direct ID fetch
             result = get_mod_info(self.id)
             if result is not None:
                 results.append(result)
@@ -317,9 +265,20 @@ class Gamebanana(threading.Thread):
                     if result is not None:
                         results.append(result)
         
+        # Process results
         if len(results) > 0:
-            for r in results:
-                key, value = process_mod_info(r)
+            if len(results) == 1:
+                # Single result - process full info
+                key, value = process_mod_info(results[0])
+                # Add description which process_mod_info doesn't currently get
+                desc = get_mod_description(key)
+                if desc:
+                    value['description'] = desc
+                # Wrap in dict keyed by ID
                 output_data[key] = value
+            else:
+                for r in results:
+                    key, value = process_mod_info(r)
+                    output_data[key] = value
 
         self.callback(output_data)

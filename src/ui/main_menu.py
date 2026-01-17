@@ -37,15 +37,18 @@ class MainMenu(QWidget):
         self.list_widget = ModList(self.mod_manager, self.filter_manager, self.config_manager, self.batch_manager)
         self.filter = FilterPanel(self.filter_manager, config_manager)
         self.sort = SortPanel(config_manager)
-        self.preview =PreviewPanel(self.mod_manager)
-        self.edit = EditPanel(self.mod_manager, config_manager)
-        self.batch = BatchPanel(self.batch_manager)
-        self.config = Config(config_manager)
-        self.workspace = WorkspacePanel(config_manager)
         
         # Online panels
         self.online_manager = OnlineManager()
         self.online_filter = OnlineFilterPanel(self.online_manager)
+        
+        # Pass both managers to preview panel for dual mode support
+        self.preview = PreviewPanel(self.mod_manager, self.online_manager)
+        
+        self.edit = EditPanel(self.mod_manager, config_manager)
+        self.batch = BatchPanel(self.batch_manager)
+        self.config = Config(config_manager)
+        self.workspace = WorkspacePanel(config_manager)
         
         # Connect preview edit button to edit panel
         self.preview.edit_requested.connect(self.on_edit_requested)
@@ -64,6 +67,9 @@ class MainMenu(QWidget):
         
         # Connect mod selection to show preview panel
         self.mod_manager.add_focus_callback(self.on_mod_selected)
+        
+        # Connect online mod selection to show preview panel
+        self.online_manager.add_focus_callback(self.on_online_mod_selected)
         
         # Connect sort panel to filter manager
         self.sort.set_sort_change_callback(self.on_sort_changed)
@@ -169,14 +175,13 @@ class MainMenu(QWidget):
                 break
         
         if is_online:
-            # Online tab - hide installed panels, swap filter panel
+            # Online tab - hide installed-only panels, swap filter panel
             if filter_menu:
                 # Swap the widget in the menu item
                 filter_menu.widget = self.online_filter
             if sort_btn:
                 sort_btn.setVisible(False)
-            if preview_btn:
-                preview_btn.setVisible(False)
+            # Preview is now supported in online mode, keep it visible
             if edit_btn:
                 edit_btn.setVisible(False)
             if batch_btn:
@@ -215,6 +220,11 @@ class MainMenu(QWidget):
     
     def on_mod_selected(self, mod_id: str):
         """Handle mod selection from list - show preview panel"""
+        if self.preview.isHidden():
+            self.menu.show_panel(self.preview)
+    
+    def on_online_mod_selected(self, mod_id: str):
+        """Handle online mod selection from list - show preview panel"""
         if self.preview.isHidden():
             self.menu.show_panel(self.preview)
     

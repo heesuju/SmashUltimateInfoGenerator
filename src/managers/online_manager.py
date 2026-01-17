@@ -8,6 +8,7 @@ from PyQt6.QtCore import QObject, pyqtSignal
 class OnlineManager(QObject):
     search_complete = pyqtSignal(list)
     state_changed = pyqtSignal()
+    mod_details_ready = pyqtSignal(dict) # New signal for full mod details
     
     def __init__(self):
         super().__init__()
@@ -17,23 +18,110 @@ class OnlineManager(QObject):
         self.current_author = ""
         self.current_sort = "best_match"
         self.is_loading = False
-        self.total_results = 0 # GameBanana search doesn't easily give total count, might need to infer
+        self.total_results = 0 
         
         self.selected_ids: set[str] = set()
-        
+        self._focused_id = None # Track currently focused mod for preview
         
         self.callbacks: List[Callable] = []
-        # Remove on_mods_ready as we will use signal
-        # self.on_mods_ready: Optional[Callable[[List[ModItem]], None]] = None
-        
+        self.focus_callbacks: List[Callable] = []
+
+    @property
+    def focused_id(self):
+        return self._focused_id
+
     def add_callback(self, callback: Callable):
         self.callbacks.append(callback)
+
+    def add_focus_callback(self, callback: Callable):
+        self.focus_callbacks.append(callback)
         
     def _notify(self):
         self.state_changed.emit()
         for callback in self.callbacks:
             callback()
+
+    def set_focus(self, mod_id: str):
+        """Set the focused mod (clicked item) and fetch details"""
+        print(f"[OnlineManager] set_focus called with mod_id: {mod_id}")
+        if self._focused_id == mod_id:
+            print(f"[OnlineManager] Same mod already focused, skipping")
+            return
             
+        self._focused_id = mod_id
+        
+        # Notify focus listeners (like PreviewPanel)
+        print(f"[OnlineManager] Notifying {len(self.focus_callbacks)} focus callbacks")
+        for callback in self.focus_callbacks:
+            callback(mod_id)
+            
+        # Fetch detailed info asynchronously
+        self.fetch_metadata(mod_id)
+
+    def fetch_metadata(self, mod_id: str):
+        if not mod_id:
+            return
+        
+        # Fetch detailed info
+        Gamebanana(
+            id=mod_id,
+            callback=self._on_metadata_complete,
+            is_search=False # Direct fetch
+        )
+
+    def _on_metadata_complete(self, data: Dict):
+        """Callback from Gamebanana thread for single item details"""
+        # data is keyed by ID: { "12345": { ... } }
+        if self._focused_id in data:
+            details = data[self._focused_id]
+            self.mod_details_ready.emit(details)
+
+    def get_mod(self, mod_id: str) -> OnlineModItem:
+        """Retrieve a mod item by ID from search results"""
+        # Linear search in current results (fast enough for page size 15)
+        for item in self.search_results:
+            if str(item.get("_idRow", "")) == str(mod_id):
+                # Construct OnlineModItem again (or cache them)
+                pass
+        pass 
+        
+        record = None
+        for r in self.search_results:
+            if str(r.get("_idRow")) == str(mod_id):
+                record = r
+                break
+        
+        if record:
+             # Create temp item
+            id_val = record.get("_idRow", "")
+            preview_media = record.get("_aPreviewMedia", {})
+            thumbnail = ""
+            if preview_media:
+                 images = preview_media.get("_aImages", [])
+                 if images:
+                     image_obj = images[0]
+                     base_url = image_obj.get("_sBaseUrl", "")
+                     file_name = image_obj.get("_sFile220", "") or image_obj.get("_sFile", "")
+                     if base_url and file_name:
+                         thumbnail = f"{base_url}/{file_name}"
+
+            return OnlineModItem(
+                id=str(id_val),
+                name=record.get("_sName", "Unknown"),
+                thumbnail=thumbnail,
+                category="Misc", # Simplified
+                authors=record.get("_aSubmitter", {}).get("_sName", "Unknown"),
+                slots="",
+                version=record.get("_sVersion", ""),
+                enabled=False,
+                selected=False,
+                favorited=False,
+                hidden=False,
+                character_icons=[],
+                url=f"https://gamebanana.com/mods/{id_val}"
+            )
+        return None
+
     def search(self, query: str = "", author: str = "", page: int = 1, sort: str = "best_match"):
         """Initiate a search"""
         self.current_query = query
@@ -44,7 +132,6 @@ class OnlineManager(QObject):
         self._notify()
         
         # Start search thread
-        # Note: Gamebanana thread is fire-and-forget, calls callback when done
         Gamebanana(
             id=query,
             callback=self._on_search_complete,
