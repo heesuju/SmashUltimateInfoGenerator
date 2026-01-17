@@ -2,10 +2,11 @@ import os
 from typing import List
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import (
-    QWidget, QSizePolicy, QLabel, QFrame, QPushButton, QComboBox, QHBoxLayout
+    QWidget, QSizePolicy, QLabel, QFrame, QPushButton, QComboBox, QHBoxLayout,
+    QMenu, QFileDialog
 )
 from PyQt6.QtGui import (
-    QPixmap, QIcon, QFont
+    QPixmap, QIcon, QFont, QDragEnterEvent, QDropEvent
 )
 from src.core.formatting import format_slots
 from src.ui.components.layout import VBox
@@ -27,6 +28,7 @@ from PyQt6.QtCore import pyqtSignal
 
 class ModList(QWidget):
     batch_tasks_added = pyqtSignal()  # Signal when tasks are added to batch queue
+    data_changed = pyqtSignal() # Signal when data changes (thread-safe update)
     
     def __init__(self, mod_manager:ModManager, filter_manager:FilterManager, config_manager:ConfigManager, batch_manager=None):
         super().__init__()
@@ -108,7 +110,19 @@ class ModList(QWidget):
         header_layout.addWidget(select_button)
         
         add_button = QPushButton("+ Add New")
+        
+        # Create menu for add button
+        add_menu = QMenu(self)
+        add_folder_action = add_menu.addAction("Add from Folder...")
+        add_folder_action.triggered.connect(self.on_add_folder_clicked)
+        add_zip_action = add_menu.addAction("Add from ZIP...")
+        add_zip_action.triggered.connect(self.on_add_zip_clicked)
+        
+        add_button.setMenu(add_menu)
         header_layout.addWidget(add_button)
+        
+        # Enable dropping files
+        self.setAcceptDrops(True)
 
         action_dropdown = QComboBox()
         action_dropdown.addItems(["Batch Actions", "Enable", "Disable", "Generate Info.toml", "Remove"])
@@ -124,6 +138,8 @@ class ModList(QWidget):
         # Start scanning if valid root mod directory exists
         if self.config_manager.config.root_dir:
             self.scan()
+            
+        self.data_changed.connect(self.refresh_filtered_data)
     
     def _initialize_caches(self):
         """Initialize caches for icon existence and group data to improve performance"""
@@ -169,7 +185,7 @@ class ModList(QWidget):
         self.update_view()
 
     def on_filter_changed(self):
-        self.refresh_filtered_data()
+        self.data_changed.emit()
 
     def refresh_filtered_data(self):
         """Re-runs filtering/sorting and updates the cache. Called when filters/data change."""
@@ -468,3 +484,34 @@ class ModList(QWidget):
             sender.blockSignals(True)
             sender.setCurrentIndex(0)
             sender.blockSignals(False)
+
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        if event.mimeData().hasUrls():
+            # Check if at least one URL is a valid directory or zip file
+            for url in event.mimeData().urls():
+                path = url.toLocalFile()
+                if os.path.isdir(path) or path.lower().endswith(('.zip', '.7z')):
+                    event.accept()
+                    return
+        event.ignore()
+
+    def dropEvent(self, event: QDropEvent):
+        for url in event.mimeData().urls():
+            path = url.toLocalFile()
+            if os.path.isdir(path) or path.lower().endswith(('.zip', '.7z')):
+                self.mod_manager.add_mod_from_path(path)
+    
+    def on_add_folder_clicked(self):
+        folder_path = QFileDialog.getExistingDirectory(self, "Select Mod Folder")
+        if folder_path:
+            self.mod_manager.add_mod_from_path(folder_path)
+
+    def on_add_zip_clicked(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, 
+            "Select Mod Archive", 
+            "", 
+            "Archive Files (*.zip *.7z);;All Files (*)"
+        )
+        if file_path:
+            self.mod_manager.add_mod_from_path(file_path)

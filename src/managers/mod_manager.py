@@ -1,18 +1,22 @@
 import os
 from typing import Union, List
+from PyQt6.QtCore import QObject, pyqtSignal
 from src.core.mod_loader import ModLoader
+from src.core.mod_installer import ModInstaller
 from src.managers.config_manager import ConfigManager
 from src.models.mod import Mod
 from src.utils.logger import output_log
 
-class ModManager():
+class ModManager(QObject):
     def __init__(self, config_manager:ConfigManager):
+        super().__init__()
         self.config_manager = config_manager
         self.mods = {}
         self.focused_id = ""
         self.selected_ids = []
         self.callback = None
         self.focus_callbacks = []
+        self._current_loader = None # Prevent GC of active loader
     @property
     def favorite_ids(self):
         return self.config_manager.config.favorites
@@ -48,8 +52,9 @@ class ModManager():
                 callback(mod_id, is_hidden)
 
     def scan(self, scan_target:Union[str, List[str]]):
-        loader = ModLoader(scan_target)
-        loader.load_mods(self.on_progress, self.on_complete)
+        # Keep reference to prevent GC
+        self._current_loader = ModLoader(scan_target)
+        self._current_loader.load_mods(self.on_progress, self.on_complete)
 
     def scan_all(self):
         self.mods = {}
@@ -60,6 +65,31 @@ class ModManager():
         
         mod_folders = [os.path.join(root_dir, name) for name in os.listdir(root_dir)]
         self.scan(mod_folders)
+
+    def add_mod_from_path(self, path:str):
+        """Add a mod from a folder or zip file path"""
+        root_dir = self.config_manager.config.root_dir
+        if not root_dir:
+            return
+            
+        output_log(f"Adding mod from: {path}")
+        # Keep reference to installer to prevent GC/early termination
+        self._current_installer = ModInstaller(
+            directory=path,
+            root_dir=root_dir,
+            on_finish=None
+        )
+        self._current_installer.install_finished.connect(self._on_mod_install_finish)
+        self._current_installer.start()
+    
+    def _on_mod_install_finish(self, new_paths:List[str]):
+        """Callback when ModInstaller finishes"""
+        if not new_paths:
+            return
+            
+        # Scan the newly added mods
+        self._current_loader = ModLoader(new_paths)
+        self._current_loader.load_mods(self.on_progress, self.on_complete)
 
     def on_progress(self, mod:Mod):
         self.mods[str(mod.hash)] = mod
