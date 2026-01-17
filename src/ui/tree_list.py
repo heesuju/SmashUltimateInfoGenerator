@@ -279,6 +279,20 @@ class TreeList(QWidget):
                     item.fav_button.set_state(is_favorite)
                 break
 
+    def update_item_hidden_status(self, mod_id:str, is_hidden:bool):
+        """Update hidden status of a specific item without reloading"""
+        # Iterate through visible items
+        root = self.tree_widget.invisibleRootItem()
+        for i in range(root.childCount()):
+            item = root.child(i)
+            if isinstance(item, TreeItem) and item.mod.id == mod_id:
+                # Update the mod object
+                item.mod.hidden = is_hidden
+                # Update the button state (Hidden = True)
+                if hasattr(item, 'hide_button'):
+                    item.hide_button.set_state(is_hidden)
+                break
+
     def clear(self):
         """
         Removes all items from the tree widget.

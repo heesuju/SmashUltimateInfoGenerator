@@ -35,6 +35,7 @@ class ModList(QWidget):
         
         self.mod_manager.set_callback(self.on_filter_changed)
         self.mod_manager.add_favorite_callback(self.on_favorite_changed)
+        self.mod_manager.add_hidden_callback(self.on_hidden_changed)
         
         self.filter_manager = filter_manager
         self.filter_manager.add_callback(self.on_filter_changed)
@@ -261,6 +262,7 @@ class ModList(QWidget):
                 enabled=False,
                 selected=self.mod_manager.is_selected(str(mod.hash)),
                 favorited=str(mod.hash) in self.mod_manager.favorite_ids,
+                hidden=str(mod.hash) in self.mod_manager.hidden_ids,
                 character_icons=character_icons
             )
 
@@ -314,6 +316,13 @@ class ModList(QWidget):
             self.tree_list.update_item_favorite_status(mod_id, is_favorite)
         elif self.mode == ListLayout.GRID:
             self.grid_list.update_item_favorite_status(mod_id, is_favorite)
+
+    def on_hidden_changed(self, mod_id:str, is_hidden:bool):
+        """Handle hidden status change from other components"""
+        if self.mode == ListLayout.LIST:
+            self.tree_list.update_item_hidden_status(mod_id, is_hidden)
+        elif self.mode == ListLayout.GRID:
+            self.grid_list.update_item_hidden_status(mod_id, is_hidden)
     
     def on_header_checkbox_changed(self, state):
         """Handle header checkbox state change - delegates to current view"""

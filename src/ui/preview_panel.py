@@ -23,6 +23,7 @@ class PreviewPanel(SidePanel):
         self.mod_manager = mod_manager
         self.mod_manager.add_focus_callback(self.set_data)
         self.mod_manager.add_favorite_callback(self.on_favorite_changed)
+        self.mod_manager.add_hidden_callback(self.on_hidden_changed)
 
         self.mod_name = QLabel("")
         title_font = QFont(TITLE_FONT, TITLE_FONT_SIZE)  # Set the font and font size
@@ -156,12 +157,17 @@ class PreviewPanel(SidePanel):
         id =self.mod_manager.focused_id
         mod = self.mod_manager.get_mod(id)
         self.mod_manager.remove_hidden(mod.hash)
-
+        
     def on_vis_off(self):
         id =self.mod_manager.focused_id
         mod = self.mod_manager.get_mod(id)
         self.mod_manager.add_hidden(mod.hash)
-        print()
+
+    def on_hidden_changed(self, mod_id:str, is_hidden:bool):
+        # Update UI if the changed mod is the currently displayed one
+        if self.mod_manager.focused_id and self.mod_manager.get_mod(self.mod_manager.focused_id).hash == mod_id:
+            # Note: is_hidden=True means Hidden, Button State True = Hidden.
+            self.hide_button.set_state(is_hidden)
 
     def on_enabled(self):
         id =self.mod_manager.focused_id

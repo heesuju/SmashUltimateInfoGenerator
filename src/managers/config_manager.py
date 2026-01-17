@@ -15,6 +15,12 @@ class ConfigManager():
             try:
                 json_file = open(PATH_CONFIG, "r", encoding="utf-8")
                 data = json.loads(json_file.read())
+                if "favorites" in data and isinstance(data["favorites"], list):
+                    data["favorites"] = [str(item) for item in data["favorites"]]
+
+                if "hidden_folders" in data and isinstance(data["hidden_folders"], list):
+                    data["hidden_folders"] = [str(item) for item in data["hidden_folders"]]
+                    
                 settings = Settings(**data)
                 json_file.close()
                 output_log("Loaded config")

@@ -170,3 +170,13 @@ class GridList(QListWidget):
             # Update the button state
             if hasattr(widget, 'fav_button'):
                 widget.fav_button.set_state(is_favorite)
+
+    def update_item_hidden_status(self, mod_id:str, is_hidden:bool):
+        """Update hidden status of a specific item without reloading"""
+        if mod_id in self.item_widgets:
+            widget = self.item_widgets[mod_id]
+            # Update the mod object
+            widget.mod.hidden = is_hidden
+            # Update the button state (Hidden = True)
+            if hasattr(widget, 'hide_button'):
+                widget.hide_button.set_state(is_hidden)

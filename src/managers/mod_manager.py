@@ -13,13 +13,13 @@ class ModManager():
         self.selected_ids = []
         self.callback = None
         self.focus_callbacks = []
-        self.hidden_ids = []
-        self.enabled_ids = []
-        self.workspace = "Default"
-
     @property
     def favorite_ids(self):
         return self.config_manager.config.favorites
+
+    @property
+    def hidden_ids(self):
+        return self.config_manager.config.hidden_folders
 
     def set_callback(self, callback:callable):
         self.callback = callback
@@ -36,6 +36,16 @@ class ModManager():
         if hasattr(self, 'favorite_callbacks'):
             for callback in self.favorite_callbacks:
                 callback(mod_id, is_favorite)
+
+    def add_hidden_callback(self, callback:callable):
+        if not hasattr(self, 'hidden_callbacks'):
+            self.hidden_callbacks = []
+        self.hidden_callbacks.append(callback)
+
+    def _notify_hidden_changed(self, mod_id:str, is_hidden:bool):
+        if hasattr(self, 'hidden_callbacks'):
+            for callback in self.hidden_callbacks:
+                callback(mod_id, is_hidden)
 
     def scan(self, scan_target:Union[str, List[str]]):
         loader = ModLoader(scan_target)
@@ -93,12 +103,18 @@ class ModManager():
             self.enabled_ids.remove(id)
 
     def add_hidden(self, id:str):
+        id = str(id)
         if id not in self.hidden_ids:
             self.hidden_ids.append(id)
+            self.config_manager.save()
+            self._notify_hidden_changed(id, True)
 
     def remove_hidden(self, id:str):
+        id = str(id)
         if id in self.hidden_ids:
             self.hidden_ids.remove(id)
+            self.config_manager.save()
+            self._notify_hidden_changed(id, False)
     
     # Selection management methods
     def toggle_selection(self, id:str):

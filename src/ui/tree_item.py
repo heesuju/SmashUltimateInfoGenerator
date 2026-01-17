@@ -94,6 +94,13 @@ class TreeItem(QTreeWidgetItem):
         
         # Add Fav Button
         actions_layout.addWidget(self.fav_button)
+
+        # Add Hide Button
+        self.hide_button = ToggleButton(ButtonIcons.HIDE_ON.value, ButtonIcons.HIDE_OFF.value, self.on_vis_off, self.on_vis_on, 24, initial_state=self.mod.hidden)
+        # ON (True) = Hidden (Eye Closed) -> Calls on_vis_off (add_hidden)
+        # OFF (False) = Visible (Eye Open) -> Calls on_vis_on (remove_hidden)
+        
+        actions_layout.addWidget(self.hide_button)
         
         # Add Enable Button
         btn = QPushButton()
@@ -129,3 +136,13 @@ class TreeItem(QTreeWidgetItem):
     def on_fav_off(self):
         if self.tree_list and hasattr(self.tree_list, 'mod_manager'):
             self.tree_list.mod_manager.remove_favorite(self.mod.id)
+
+    def on_vis_on(self):
+        # Called when eye is toggled ON (Visible) -> Remove from hidden
+        if self.tree_list and hasattr(self.tree_list, 'mod_manager'):
+            self.tree_list.mod_manager.remove_hidden(self.mod.id)
+
+    def on_vis_off(self):
+        # Called when eye is toggled OFF (Hidden) -> Add to hidden
+        if self.tree_list and hasattr(self.tree_list, 'mod_manager'):
+            self.tree_list.mod_manager.add_hidden(self.mod.id)

@@ -123,9 +123,11 @@ class GridListItemWidget(QWidget):
             icon_layout.addWidget(img_label)
 
         self.fav_button = ToggleButton(ButtonIcons.FAV_ON.value, ButtonIcons.FAV_OFF.value, self.on_fav_on, self.on_fav_off, 24)
+        self.fav_button.set_state(self.mod.favorited)
         action_layout.addWidget(self.fav_button)
         
         self.hide_button = ToggleButton(ButtonIcons.HIDE_ON.value, ButtonIcons.HIDE_OFF.value, self.on_vis_off, self.on_vis_on, 24)
+        self.hide_button.set_state(self.mod.hidden)
         action_layout.addWidget(self.hide_button)
 
 
@@ -225,7 +227,9 @@ class GridListItemWidget(QWidget):
             self.grid_list.mod_manager.remove_favorite(self.mod.id)
 
     def on_vis_on(self):
-        pass
+        if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
+            self.grid_list.mod_manager.remove_hidden(self.mod.id)
     
     def on_vis_off(self):
-        pass
+        if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
+            self.grid_list.mod_manager.add_hidden(self.mod.id)

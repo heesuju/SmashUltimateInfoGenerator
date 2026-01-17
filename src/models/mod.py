@@ -21,6 +21,7 @@ class ModItem(BaseModel):
     enabled:bool = False
     selected:bool = False
     favorited:bool = False
+    hidden:bool = False
     character_icons:List[str] = []
 
 class Character(BaseModel):    
