@@ -111,6 +111,61 @@ def search_mod(mod_name: str, author_name: str = "") -> str | None:
         
     return None
 
+def search_mods_list(mod_name: str, author_name: str = "", page: int = 1, sort: str = "best_match") -> dict:
+    """
+    Search for mods and return a list of matches.
+    
+    Args:
+        mod_name: Search query
+        author_name: Optional author filter
+        page: Page number (1-indexed)
+        sort: Sort order - "best_match", "popularity", "date", or "udate"
+    """
+    try:
+        encoded_name = urllib.parse.quote(mod_name)
+        
+        GAMEBANANA_SEARCH_URL = "https://gamebanana.com/apiv11/Util/Search/Results?\
+            _sSearchString={query}&\
+            _nPage={page}&\
+            _sModelName=Mod&\
+            _sOrder={sort}&\
+            _idGameRow=6498"
+        url = GAMEBANANA_SEARCH_URL.format(query=encoded_name, page=page, sort=sort)
+        
+        data = get_request(url)
+        
+        if not data:
+            return {"records": [], "total_count": 0, "per_page": 15, "is_complete": True}
+        
+        # Extract metadata
+        metadata = data.get("_aMetadata", {})
+        total_count = metadata.get("_nRecordCount", 0)
+        per_page = metadata.get("_nPerpage", 15)
+        is_complete = metadata.get("_bIsComplete", True)
+            
+        records = data.get("_aRecords", [])
+        
+        # Filter by author if provided
+        if author_name:
+            filtered_records = []
+            for record in records:
+                submitter = record.get("_aSubmitter", {})
+                submitter_name = submitter.get("_sName", "")
+                if submitter_name and author_name.lower() in submitter_name.lower():
+                    filtered_records.append(record)
+            records = filtered_records
+            
+        return {
+            "records": records,
+            "total_count": total_count,
+            "per_page": per_page,
+            "is_complete": is_complete
+        }
+            
+    except Exception as e:
+        print(f"Error searching mod list: {e}")
+        return {"records": [], "total_count": 0, "per_page": 15, "is_complete": True}
+
 def process_mod_info(data:dict)->tuple[str, dict]:
     profile = data.get("_sProfileUrl", "")
     id = profile.split("/")[-1]
@@ -169,12 +224,14 @@ def process_mod_info(data:dict)->tuple[str, dict]:
     }
 
 class Gamebanana(threading.Thread):
-    def __init__(self, id:Union[str, list], callback:callable, is_search:bool=False, author_filter:str=""):
+    def __init__(self, id:Union[str, list], callback:callable, is_search:bool=False, author_filter:str="", page:int=1, sort:str="best_match"):
         threading.Thread.__init__(self)
         self.id = id
         self.callback = callback
         self.is_search = is_search
         self.author_filter = author_filter
+        self.page = page
+        self.sort = sort
         self.daemon = True
         self.start()
 
@@ -184,6 +241,64 @@ class Gamebanana(threading.Thread):
 
         if self.is_search and isinstance(self.id, str):
             # Treat self.id as search query
+            # If requesting a list (indicated by specific query or just general search usage)
+            # For now, let's assume if it is a search, we might want a list if we are coming from OnlineManager
+            # But the existing code expects a single result for "search_mod" call
+            
+            # We will use a convention: if page > 0, we want a list
+            if self.page > 0:
+                search_results = search_mods_list(self.id, self.author_filter, self.page, self.sort)
+                # search_results is now a dict with records, total_count, per_page, is_complete
+                # Pass the whole dict to callback
+                self.callback(search_results)
+                return
+                # Convert list of dicts to standard format
+                # We need to process each mod info partially since search results have limited data compared to full mod info
+                # But search results usually have _idRow, _sName, _aPreviewMedia etc.
+                
+                final_list = []
+                for record in search_results:
+                    # Process record to extract key info
+                    # Note: search records might differ slightly from full Get Item Data
+                    # But process_mod_info expects certain structure.
+                    # Search record keys: _idRow, _sName, _sProfileUrl, _aPreviewMedia, _aSubmitter etc.
+                    
+                    # Synthesize a data dict that process_mod_info can handle or extract manually
+                    mod_id = str(record.get("_idRow", ""))
+                    name = record.get("_sName", "")
+                    submitter = record.get("_aSubmitter", {})
+                    author = submitter.get("_sName", "") if submitter else ""
+                    
+                    # Preview handling for search records
+                    previews = record.get("_aPreviewMedia", {}).get("_aImages", [])
+                    thumb = ""
+                    if previews:
+                        # Get the first image object
+                        image_obj = previews[0]
+                        base_url = image_obj.get("_sBaseUrl", "")
+                        
+                        # Try to get a smaller file first (220px width seems good for grid)
+                        # Fallback to 530, then 100, then original
+                        file = image_obj.get("_sFile220", "")
+                        if not file:
+                            file = image_obj.get("_sFile530", "")
+                        if not file:
+                            file = image_obj.get("_sFile", "")
+                            
+                        if base_url and file:
+                            thumb = f"{base_url}/{file}"
+                    
+                    final_list.append({
+                        "id": mod_id,
+                        "name": name,
+                        "author": author,
+                        "thumbnail": thumb,
+                        "record": record # Keep raw record just in case
+                    })
+                
+                self.callback(final_list)
+                return
+
             found_id = search_mod(self.id, self.author_filter)
             if found_id:
                 # Proceed to fetch info for the found ID
@@ -194,7 +309,7 @@ class Gamebanana(threading.Thread):
             result = get_mod_info(self.id)
             if result is not None:
                 results.append(result)
-        elif isinstance(self.id, list[str]):
+        elif isinstance(self.id, list):
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 futures = [executor.submit(get_mod_info, id) for id in self.id]
                 for future in concurrent.futures.as_completed(futures):

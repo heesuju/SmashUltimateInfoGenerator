@@ -1,3 +1,4 @@
+import os
 from PyQt6.QtWidgets import (QGraphicsView, QGraphicsScene, 
                              QGraphicsSimpleTextItem, QGraphicsPixmapItem )
 from PyQt6.QtGui import QPixmap, QFont, QBrush, QColor, QImage
@@ -62,8 +63,18 @@ class Overlay(QGraphicsView):
         self.item_width = preview.width()
         self.item_height = preview.height()
         self.preview_item.setPos((self.parent_width - self.item_width)/2, (self.parent_height - self.item_height)/2)
+        
+        # Determine category text from parent
+        cat_text = "FIGHTER"
+        if parent and hasattr(parent, "mod") and hasattr(parent.mod, "category"):
+            c = parent.mod.category
+            # Handle Enum or String
+            if hasattr(c, "value"):
+                cat_text = str(c.value).upper()
+            else:
+                cat_text = str(c).upper()
 
-        self.text = QGraphicsSimpleTextItem('FIGHTER')
+        self.text = QGraphicsSimpleTextItem(cat_text)
         font = QFont(FONT, FONT_SIZE)  # Set the font and font size
         font.setBold(True)
         self.text.setFont(font)
@@ -128,3 +139,32 @@ class Overlay(QGraphicsView):
         audio_file = QUrl.fromLocalFile(path)
         self.player.setSource(audio_file)
         self.player.play()
+
+    def update_image(self, image_path: str):
+        """Update the preview image dynamically"""
+        self.image_path = image_path
+        
+        # Determine current cartridge based on state
+        cartridge = None
+        if self.enabled:
+             if ICON_ON not in Overlay._cartridge_cache:
+                 Overlay._cartridge_cache[ICON_ON] = QPixmap(ICON_ON).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+             cartridge = Overlay._cartridge_cache[ICON_ON]
+        else:
+             if ICON_OFF not in Overlay._cartridge_cache:
+                 Overlay._cartridge_cache[ICON_OFF] = QPixmap(ICON_OFF).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+             cartridge = Overlay._cartridge_cache[ICON_OFF]
+        
+        # Determine center pos
+        self.parent_width = cartridge.width()
+        self.parent_height = cartridge.height() # Should be roughly SIZE
+        
+        if image_path and os.path.exists(image_path):
+            preview = QPixmap(image_path)
+            preview = preview.scaled(cartridge.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            self.item_width = preview.width()
+            self.item_height = preview.height()
+            self.preview_item.setPixmap(preview)
+            
+            # Re-center
+            self.preview_item.setPos((self.parent_width - self.item_width)/2, (self.parent_height - self.item_height)/2)

@@ -24,6 +24,13 @@ class ModItem(BaseModel):
     hidden:bool = False
     character_icons:List[str] = []
 
+class OnlineModItem(ModItem):
+    like_count: int = 0
+    post_count: int = 0
+    view_count: int = 0
+    date_updated: int = 0
+    url: str = ""
+
 class Character(BaseModel):    
     fighter:Fighter = None
     slots:list[int] = []

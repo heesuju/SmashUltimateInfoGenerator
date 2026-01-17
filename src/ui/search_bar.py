@@ -19,10 +19,11 @@ from src.managers.filter_manager import FilterManager, FilterParameters
 ICON_ELLIPSIS = "assets/img/search.png"
 
 class SearchBar(QWidget):
-    def __init__(self, mod_manager:ModManager, filter_manager:FilterManager):
+    def __init__(self, mod_manager:ModManager=None, filter_manager:FilterManager=None, online_manager=None):
         super().__init__()
         self.mod_manager = mod_manager
         self.filter_manager = filter_manager
+        self.online_manager = online_manager
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         layout = VBox()
         
@@ -77,15 +78,33 @@ class SearchBar(QWidget):
 
     def on_search_clicked(self):
         text = self.search_bar.get_text()
-        self.filter_manager.params.mod_name = text
-        self.filter_manager.on_change()
+        if self.online_manager:
+            # Online search
+            self.online_manager.search(query=text, page=1)
+        elif self.filter_manager:
+            # Installed search
+            self.filter_manager.params.mod_name = text
+            self.filter_manager.on_change()
 
     def on_clear_clicked(self):
         self.search_bar.set_text("")
-        self.filter_manager.params.mod_name = ""
-        self.filter_manager.on_change()
+        if self.online_manager:
+            # Clear online search (could trigger search with empty query)
+            pass
+        elif self.filter_manager:
+            self.filter_manager.params.mod_name = ""
+            self.filter_manager.on_change()
 
     def on_refresh_clicked(self):
         self.search_bar.set_text("")
-        self.filter_manager.params.mod_name = ""
-        self.mod_manager.scan_all()
+        if self.online_manager:
+            # Re-search with current query for online
+            self.online_manager.search(
+                self.online_manager.current_query,
+                self.online_manager.current_author,
+                1,
+                self.online_manager.current_sort
+            )
+        elif self.filter_manager and self.mod_manager:
+            self.filter_manager.params.mod_name = ""
+            self.mod_manager.scan_all()

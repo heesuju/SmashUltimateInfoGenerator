@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtWidgets import QWidget, QTabWidget
 
 from src.ui.mod_list import ModList
 from src.ui.filter_panel import FilterPanel
@@ -16,6 +16,9 @@ from src.managers.config_manager import ConfigManager
 from src.managers.mod_manager import ModManager
 from src.managers.filter_manager import FilterManager
 from src.managers.batch_manager import BatchManager
+from src.managers.online_manager import OnlineManager
+from src.ui.online_mod_list import OnlineModList
+from src.ui.online_filter_panel import OnlineFilterPanel
 
 class MainMenu(QWidget):
     def __init__(self, config_manager:ConfigManager):
@@ -39,6 +42,10 @@ class MainMenu(QWidget):
         self.batch = BatchPanel(self.batch_manager)
         self.config = Config(config_manager)
         self.workspace = WorkspacePanel(config_manager)
+        
+        # Online panels
+        self.online_manager = OnlineManager()
+        self.online_filter = OnlineFilterPanel(self.online_manager)
         
         # Connect preview edit button to edit panel
         self.preview.edit_requested.connect(self.on_edit_requested)
@@ -70,6 +77,7 @@ class MainMenu(QWidget):
         self.batch_manager.add_callback(self.update_batch_progress)
 
         self.filter.hide()
+        self.online_filter.hide()
         self.sort.hide()
         self.preview.hide()
         self.edit.hide()
@@ -81,6 +89,8 @@ class MainMenu(QWidget):
             [
                 [
                     NavigationMenu(NavigationMenuIcon.FILTER.value, self.filter),
+                    # Online filter uses same icon but different panel
+                    # We'll show/hide based on active tab
                     NavigationMenu(NavigationMenuIcon.SORT.value, self.sort),
                     NavigationMenu(NavigationMenuIcon.PREVIEW.value, self.preview),
                     NavigationMenu(NavigationMenuIcon.EDIT.value, self.edit),
@@ -102,9 +112,24 @@ class MainMenu(QWidget):
         if batch_button:
             batch_button.hide()        
         
-        hlayout.addWidget(self.list_widget)
+        if batch_button:
+            batch_button.hide()        
+        
+        # Tabs for Installed vs Online
+        self.tabs = QTabWidget()
+        self.tabs.addTab(self.list_widget, "Installed")
+        
+        # Create dedicated filter manager for online (or reuse the same one)
+        self.online_list = OnlineModList(self.online_manager, self.filter_manager)
+        self.tabs.addTab(self.online_list, "Online")
+        
+        # Connect tab change to show/hide appropriate panels
+        self.tabs.currentChanged.connect(self.on_tab_changed)
+        
+        hlayout.addWidget(self.tabs)
         
         hlayout.addWidget(self.filter)
+        hlayout.addWidget(self.online_filter)
         hlayout.addWidget(self.sort)
         hlayout.addWidget(self.preview)
         hlayout.addWidget(self.edit)
@@ -121,6 +146,63 @@ class MainMenu(QWidget):
         layout.addLayout(vlayout)
         layout.addWidget(self.menu)
         self.setLayout(layout)
+        
+        # Initialize panel visibility for installed tab (index 0)
+        self.on_tab_changed(0)
+    
+    def on_tab_changed(self, index):
+        """Handle tab changes to show/hide appropriate panels"""
+        is_online = (index == 1)
+        
+        # Get navigation buttons
+        filter_btn = self.menu.buttons.get(NavigationMenuIcon.FILTER.value)
+        sort_btn = self.menu.buttons.get(NavigationMenuIcon.SORT.value)
+        preview_btn = self.menu.buttons.get(NavigationMenuIcon.PREVIEW.value)
+        edit_btn = self.menu.buttons.get(NavigationMenuIcon.EDIT.value)
+        batch_btn = self.menu.buttons.get(NavigationMenuIcon.BATCH.value)
+        
+        # Find the filter menu item
+        filter_menu = None
+        for menu in self.menu.menus:
+            if menu.icon == NavigationMenuIcon.FILTER.value:
+                filter_menu = menu
+                break
+        
+        if is_online:
+            # Online tab - hide installed panels, swap filter panel
+            if filter_menu:
+                # Swap the widget in the menu item
+                filter_menu.widget = self.online_filter
+            if sort_btn:
+                sort_btn.setVisible(False)
+            if preview_btn:
+                preview_btn.setVisible(False)
+            if edit_btn:
+                edit_btn.setVisible(False)
+            if batch_btn:
+                batch_btn.setVisible(False)
+            
+            # Close any open installed panels
+            self.filter.hide()
+            self.sort.hide()
+            self.preview.hide()
+            self.edit.hide()
+            self.batch.hide()
+        else:
+            # Installed tab - restore all panels
+            if filter_menu:
+                filter_menu.widget = self.filter
+            if sort_btn:
+                sort_btn.setVisible(True)
+            if preview_btn:
+                preview_btn.setVisible(True)
+            if edit_btn:
+                edit_btn.setVisible(True)
+            if batch_btn:
+                batch_btn.setVisible(True)
+            
+            # Close any open online panels
+            self.online_filter.hide()
     
     def on_filter_chip_clicked(self, filter_type: str):
         """Handle filter chip clicks by showing filter panel and focusing the input"""

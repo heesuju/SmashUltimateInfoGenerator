@@ -17,12 +17,13 @@ from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
 
 class Paging(QWidget):
-    def __init__(self, parent=None, callback=None):
+    def __init__(self, parent=None, callback=None, lock_size=False):
         super().__init__(parent)
         self.cur_page = 1
         self.total_pages = 1
         self.page_size = 30
         self.callback = callback
+        self.lock_size = lock_size
         self.init_ui()
 
     def init_ui(self):
@@ -80,19 +81,27 @@ class Paging(QWidget):
         self.btn_right.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.btn_right.clicked.connect(self.next_page)
 
-        self.entry_size = QLineEdit()
-        self.entry_size.setFixedWidth(40)
-        self.entry_size.setValidator(QIntValidator(1, 100, self))
-        self.entry_size.returnPressed.connect(self.on_size_submitted)
-
         label_size = QLabel("Size:")
+        
+        if self.lock_size:
+            self.label_size_value = QLabel(str(self.page_size))
+            self.label_size_value.setFixedWidth(40)
+            self.label_size_value.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        else:
+            self.entry_size = QLineEdit()
+            self.entry_size.setFixedWidth(40)
+            self.entry_size.setValidator(QIntValidator(1, 100, self))
+            self.entry_size.returnPressed.connect(self.on_size_submitted)
 
         right_layout.addWidget(self.btn_right)
         right_layout.addStretch(1)
         right_layout.addSpacing(SPACING)
         right_layout.addWidget(label_size)
         
-        right_layout.addWidget(self.entry_size)
+        if self.lock_size:
+            right_layout.addWidget(self.label_size_value)
+        else:
+            right_layout.addWidget(self.entry_size)
 
         # Add to main layout
         main_layout.addWidget(left_widget, stretch=1)
@@ -105,7 +114,8 @@ class Paging(QWidget):
         self.setGraphicsEffect(effect)
 
     def clear(self):
-        self.entry_size.setText("")
+        if not self.lock_size:
+            self.entry_size.setText("")
         self.entry_page.setText("")
         for i in reversed(range(self.paging_layout.count())):
             widget = self.paging_layout.itemAt(i).widget()
@@ -158,7 +168,12 @@ class Paging(QWidget):
         self.show_paging()
         start, end = self.get_range(num)
         self.entry_page.setText(str(self.cur_page))
-        self.entry_size.setText(str(self.page_size))
+        
+        if self.lock_size:
+            self.label_size_value.setText(str(self.page_size))
+        else:
+            self.entry_size.setText(str(self.page_size))
+        
         return start, end
 
     def get_range(self, num:int):
