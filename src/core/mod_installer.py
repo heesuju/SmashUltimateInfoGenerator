@@ -29,6 +29,7 @@ ZIP_EXT = [
 ]
 
 ROOT_CHILDREN = [
+    "flags",
     "camera", 
     "effect", 
     "fighter", 
