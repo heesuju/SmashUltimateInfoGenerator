@@ -5,7 +5,7 @@ import shutil
 from collections import deque
 from src.managers.config_manager import ConfigManager
 from src.core.mod_installer import ModInstaller
-from src.utils.toml import dump_toml
+from src.utils.toml import dump_toml, load_toml
 from pathlib import Path
 from src.core.scanner import scan_mod
 from src.models.mod import Mod
@@ -15,8 +15,10 @@ from src.core.formatting import (
     format_slots, 
     format_character_names_for_display, 
     format_character_names_for_folder, 
-    get_mod_name
+    get_mod_name,
+    clean_version
 )
+from src.utils.string_helper import SPECIAL_CHARS, remove_redundant_spacing
 from src.constants.enums import Fighter
 from src.managers.data_manager import DataManager
 
@@ -52,6 +54,23 @@ class DownloadManager(QObject):
         import time
         download_id = f"{mod_name}_{filename}_{int(time.time())}"
         
+        # Check if multiple files exist and append suffix
+        if mod_data:
+            files = mod_data.get("files", [])
+            if len(files) > 1:
+                 # Find matching file logic
+                 matching_file = next((f for f in files if f.get("url") == url), None)
+                 if matching_file:
+                    desc = matching_file.get("description", "")
+                    if desc:
+                        import re
+                        clean_desc = re.sub(r'[()\[\]{}]', '', desc)
+                        for char in SPECIAL_CHARS:
+                            clean_desc = clean_desc.replace(char, "")
+                        clean_desc = remove_redundant_spacing(clean_desc).strip()
+                        if clean_desc:
+                            mod_name = f"{mod_name} ({clean_desc})"
+
         task = {
             "id": download_id,
             "url": url,
@@ -283,8 +302,9 @@ class DownloadManager(QObject):
             chars_str_folder = format_character_names_for_folder(char_names)
             
             # Clean Mod Name (Remove redundant chars/slots from title)
-            # Use online title as base for display name before cleaning
-            online_name = mod_data.get("mod_name", "")
+            # Use name from meta which was processed in start_download
+            online_name = meta.get("mod_name", mod_data.get("mod_name", ""))
+            
             mod.mod_name = online_name
             
             # Generate Final Names
@@ -316,10 +336,40 @@ class DownloadManager(QObject):
             
             # --- END FORMATTING LOGIC ---
             
+            # Load existing info.toml to check for description and other fields
+            existing_desc = ""
+            existing_authors = ""
+            existing_version = ""
+            existing_category = ""
+
+            existing_data = load_toml(mod.path)
+            if existing_data:
+                existing_desc = existing_data.get("description", "")
+                existing_authors = existing_data.get("authors", "")
+                existing_version = existing_data.get("version", "")
+                existing_category = existing_data.get("category", "")
+
             # Step 2: Overlay Online Metadata
-            mod.description = mod_data.get("description", "")
-            mod.authors = mod_data.get("authors", "")
-            mod.version = mod_data.get("version", "1.0.0")
+            
+            # Description
+            if existing_desc:
+                mod.description = existing_desc
+                print(f"Preserving existing description for {mod.mod_name}")
+            else:
+                mod.description = mod_data.get("description", "")
+            
+            # Authors
+            if existing_authors:
+                mod.authors = existing_authors
+            else:
+                mod.authors = mod_data.get("authors", "")
+
+            # Version
+            if existing_version:
+                mod.version = clean_version(existing_version)
+            else:
+                mod.version = clean_version(mod_data.get("version", "1.0.0"))
+
             mod.url = f"https://gamebanana.com/mods/{meta.get('mod_id_str')}"
             
             # Use original URL if available in data
