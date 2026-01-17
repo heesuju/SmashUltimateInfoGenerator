@@ -206,6 +206,14 @@ class FilterChips(QWidget):
             self.chips_layout.insertWidget(chip_count, chip)
             chip_count += 1
         
+        # Favorites only filter
+        if params.favorites_only:
+            chip = FilterChip("Favorites Only", "favorites_only")
+            chip.clicked.connect(self.chip_clicked.emit)
+            chip.closed.connect(self.on_chip_closed)
+            self.chips_layout.insertWidget(chip_count, chip)
+            chip_count += 1
+        
         self.scroll_area.setVisible(chip_count > 0)
     
     def on_chip_closed(self, filter_type: str):
@@ -234,6 +242,8 @@ class FilterChips(QWidget):
             params.enabled = []
         elif filter_type == "include_hidden":
             params.include_hidden = False
+        elif filter_type == "favorites_only":
+            params.favorites_only = False
         
         # Trigger filter update
         self.filter_manager.on_change()
