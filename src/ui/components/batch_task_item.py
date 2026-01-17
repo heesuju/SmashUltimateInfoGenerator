@@ -692,7 +692,10 @@ class BatchTaskItem(QWidget):
     
     def _update_generated_names(self, *args):
         """Auto-regenerate folder_name and display_name from current field values"""
-        mod_name = self.mod.mod_name
+        if "mod_name" in self.input_fields:
+            mod_name = self.input_fields["mod_name"].text()
+        else:
+            mod_name = self.mod.mod_name
         if not mod_name:
             return
         
