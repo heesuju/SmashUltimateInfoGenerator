@@ -146,20 +146,29 @@ class FilterManager():
     
     def _sort_by_field(self, mods:List[Mod], field_name:str, ascending:bool) -> List[Mod]:
         """Sort mods by a specific field"""
+        if field_name == "Characters":
+            from src.managers.data_manager import DataManager
+            # Build lookup map once
+            char_map = {}
+            char_data = DataManager.get_character_data()
+            for char in char_data:
+                key = char.get("Key")
+                if key:
+                    char_map[key] = char.get("Custom", key)
+
         def get_sort_key(mod):
             if field_name == "Category":
                 return str(mod.category)
             elif field_name == "Characters":
                 # Get custom name of first character for sorting
                 if mod.characters:
-                    from src.managers.data_manager import DataManager
-                    fighter_key = str(mod.characters[0].fighter)
-                    # Get all character data to find custom name
-                    char_data = DataManager.get_character_data()
-                    for char in char_data:
-                        if char.get("Key") == fighter_key:
-                            return char.get("Custom", fighter_key)
-                    return fighter_key
+                    char_names = []
+                    for char in mod.characters:
+                        k = str(char.fighter)
+                        char_names.append(char_map.get(k, k))
+                    if char_names:
+                        char_names.sort()
+                        return char_names[0]
                 return ""
             elif field_name == "Mod Name":
                 return mod.mod_name.lower()

@@ -224,12 +224,6 @@ class DownloadManager(QObject):
             self.active_installers.remove(installer)
             
         if not new_paths:
-            # Installation failed or no valid mod found
-            # Maybe it's a simple file that needs manual handling? 
-            # ModInstaller fallback handles dirs, but maybe not single files properly if not recognized?
-            # For now, assume failure if empty
-            # BUT: If ModInstaller failed, it might be because it's just a loose file we should move manually?
-            # Let's try the manual move as fallback if ModInstaller returned nothing and it wasn't a zip
             if not downloaded_path.lower().endswith(('.zip', '.7z', '.rar')):
                  self._manual_install_fallback(meta, downloaded_path)
                  return
