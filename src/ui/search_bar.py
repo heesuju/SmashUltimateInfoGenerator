@@ -40,7 +40,7 @@ class SearchBar(QWidget):
     }""")
 
         frame_layout.setSpacing(0)
-        frame_layout.setContentsMargins(10,10,10,10)
+        frame_layout.setContentsMargins(10,10,10,0)
         palette = self.frame.palette()
         palette.setColor(QPalette.ColorRole.Window, QColor(255, 255, 255))  # White background
         self.frame.setPalette(palette)

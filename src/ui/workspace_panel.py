@@ -7,7 +7,6 @@ from PyQt6.QtGui import QFont, QIcon, QPixmap
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.input_button_widget import InputButtonWidget, InputButton
 from src.ui.components.single_combobox import SingleComboBox
-from src.constants.styles import MAIN_BUTTON
 from src.managers.data_manager import ButtonIcons
 from src.managers.config_manager import ConfigManager
 
@@ -20,11 +19,6 @@ class WorkspacePanel(SidePanel):
     def __init__(self, config_manager: ConfigManager):
         super().__init__("Workspace")
         self.config_manager = config_manager
-        
-        # Workspace label
-        workspace_label = QLabel("Workspace")
-        workspace_label.setFont(QFont(FONT, FONT_SIZE))
-        self.body.addWidget(workspace_label)
         
         # Cache directory input with browse button
         self.cache_dir = InputButtonWidget(
@@ -99,15 +93,9 @@ class WorkspacePanel(SidePanel):
         
         self.body.addStretch(1)
         
-        # Action buttons - now only Restore and Apply
-        restore_button = QPushButton("Restore")
-        restore_button.clicked.connect(self.restore_workspaces)
-        apply_button = QPushButton("Apply")
-        apply_button.setStyleSheet(MAIN_BUTTON)
-        apply_button.clicked.connect(self.apply)
-        
-        self.footer.addWidget(restore_button)
-        self.footer.addWidget(apply_button)
+        # Action buttons
+        self.add_footer_button("Restore", self.restore_workspaces)
+        self.add_footer_button("Apply", self.apply, primary=True)
         
         # Load saved cache directory
         self.load_cache_dir()

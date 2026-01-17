@@ -18,11 +18,6 @@ class SortPanel(SidePanel):
         super().__init__("Sort")
         self.config_manager = config_manager
         
-        # Sorting label
-        sorting_label = QLabel("Sorting")
-        sorting_label.setFont(QFont(FONT, FONT_SIZE))
-        self.body.addWidget(sorting_label)
-        
         # Sorting options for comboboxes
         sort_options = ["None", "Category", "Characters", "Mod Name", "Authors", "Slots"]
         

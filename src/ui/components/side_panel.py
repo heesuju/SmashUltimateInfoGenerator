@@ -31,8 +31,23 @@ class SidePanel(QWidget):
         self.root = VBox(margin=0, spacing=10)
         self.frame.setLayout(self.root)
 
-        self.header = HBox(margin=0, spacing=2)
+        self.header = HBox(margin=(10, 10, 10, 0), spacing=10)
         self.root.addLayout(self.header)
+        
+        # Standard Title Label
+        if title:
+            self.title_label = QLabel(title)
+            title_font = QFont(FONT, 10) # Slightly larger for header
+            title_font.setBold(True)
+            self.title_label.setFont(title_font)
+            # Add to header
+            self.header.addWidget(self.title_label)
+        else:
+             self.title_label = None
+
+        spacer = QWidget()
+        spacer.setFixedSize(0, 26)
+        self.header.addWidget(spacer)
 
         scroll = QScrollArea()
         scroll.setStyleSheet("""
@@ -68,7 +83,7 @@ class SidePanel(QWidget):
         self.body_frame.setStyleSheet("QFrame { border: 0px; }")
         self.body_frame.setContentsMargins(0,0,0,0)
         self.body_frame.setFrameShape(QFrame.Shape.NoFrame)
-        self.body = VBox(margin=10, spacing=10)
+        self.body = VBox(margin=(10, 0, 10, 10), spacing=10)
         self.body_frame.setLayout(self.body)
         scroll.setWidget(self.body_frame)
 

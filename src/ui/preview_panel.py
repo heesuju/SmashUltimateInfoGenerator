@@ -24,12 +24,6 @@ class PreviewPanel(SidePanel):
         self.mod_manager.add_favorite_callback(self.on_favorite_changed)
         self.mod_manager.add_hidden_callback(self.on_hidden_changed)
 
-        self.mod_name = QLabel("")
-        title_font = QFont(TITLE_FONT, TITLE_FONT_SIZE)  # Set the font and font size
-        title_font.setBold(True)
-        self.mod_name.setFont(title_font)
-        self.header.addWidget(self.mod_name)
-
         self.header.addStretch()
         self.fav_button = ToggleButton(ButtonIcons.FAV_ON.value, ButtonIcons.FAV_OFF.value, self.on_fav_on, self.on_fav_off, 24)
         self.header.addWidget(self.fav_button)
@@ -96,7 +90,11 @@ class PreviewPanel(SidePanel):
         mod = self.mod_manager.get_mod(id)
         self.fav_button.set_state(str(mod.hash) in self.mod_manager.favorite_ids)
         self.hide_button.set_state(str(mod.hash) in self.mod_manager.hidden_ids)
-        self.mod_name.setText(mod.mod_name)
+        
+        # Use standard title label
+        if self.title_label:
+            self.title_label.setText(mod.mod_name)
+            
         self.thumbnail.set_thumbnail(mod.thumbnail)
         self.author.setText(mod.authors)
         self.version.setText(mod.version)

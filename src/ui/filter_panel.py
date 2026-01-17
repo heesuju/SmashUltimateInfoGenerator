@@ -42,12 +42,6 @@ class FilterPanel(SidePanel):
         self.filter_manager = filter_manager
         self.config_manager = config_manager
         
-        
-        # Filters label
-        filters_label = QLabel("Filters")
-        filters_label.setFont(QFont(FONT, FONT_SIZE))
-        self.body.addWidget(filters_label)
-        
         self.author = QLineEdit()
         self.author.setPlaceholderText("Author Name")
         self.body.addWidget(self.author)
