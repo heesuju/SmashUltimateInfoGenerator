@@ -118,8 +118,14 @@ class ModInstaller(QThread):
                 else:
                     mod_roots = scan_for_mod_roots(self.directory)
                     results = []
+                    
+                    # If empty, treat the directory itself as the mod root (Fallback)
+                    if not mod_roots and is_valid_dir(self.directory):
+                        mod_roots = [self.directory]
+
                     if mod_roots:
                         for root in mod_roots:
+                            # Using folder name if no specific fallback needed
                             mod = self.process_mod(root)
                             if mod:
                                 result = self.add_mod(mod)
@@ -163,11 +169,17 @@ class ModInstaller(QThread):
                 # Check contents recursively for mods
                 mod_roots = scan_for_mod_roots(temp_dir)
                 
+                # Fallback: if no roots found, use the temp dir itself as the mod root
+                fallback_used = False
+                if not mod_roots:
+                    mod_roots = [temp_dir]
+                    fallback_used = True
+                
                 for root in mod_roots:
-                    # Check if the root found IS the temp dir (meaning files were at root of zip)
-                    # Use os.path.abspath to ensure safe comparison
+                    # Check if the root found IS the temp dir
                     fallback = None
-                    if os.path.abspath(root) == os.path.abspath(temp_dir):
+                    # Use fallback name if we are using the temp root (either forced fallback or just happened to be files at root)
+                    if fallback_used or os.path.abspath(root) == os.path.abspath(temp_dir):
                         fallback = zip_name
                         
                     mod = self.process_mod(root, fallback_name=fallback)
