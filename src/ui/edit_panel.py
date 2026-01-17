@@ -10,7 +10,6 @@ import requests
 import tempfile
 import os
 from src.ui.components.layout import HBox, VBox
-from src.constants.styles import MAIN_BUTTON
 from src.ui.components.side_panel import SidePanel
 from src.constants.enums import Category, Element, Fighter, Wifi
 from src.ui.components.input_button_widget import InputButtonWidget, InputButton
@@ -186,13 +185,9 @@ class EditPanel(SidePanel):
         self.body.addStretch()
 
         # Footer buttons
-        cancel_button = QPushButton("Cancel")
-        cancel_button.clicked.connect(self.on_cancel)
-        save_button = QPushButton("Save")
-        save_button.setStyleSheet(MAIN_BUTTON)
-        save_button.clicked.connect(self.on_save)
-        self.footer.addWidget(cancel_button)
-        self.footer.addWidget(save_button)
+        # Footer buttons
+        self.add_footer_button("Cancel", self.on_cancel)
+        self.add_footer_button("Save", self.on_save, primary=True)
         
         # Connect signal
         self.gb_data_ready.connect(self._populate_mod_info)

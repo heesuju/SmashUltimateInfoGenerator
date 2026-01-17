@@ -123,13 +123,10 @@ class FilterPanel(SidePanel):
 
         self.body.addStretch(1)
 
-        clear_button = QPushButton("Clear")
-        clear_button.clicked.connect(self.reset)
-        apply_button = QPushButton("Apply")
-        apply_button.setStyleSheet(MAIN_BUTTON)
-        apply_button.clicked.connect(self.apply)
-        self.footer.addWidget(clear_button)
-        self.footer.addWidget(apply_button)
+        self.body.addStretch(1)
+
+        self.add_footer_button("Reset", self.reset)
+        self.add_footer_button("Apply", self.apply, primary=True)
     
 
     def reset(self):

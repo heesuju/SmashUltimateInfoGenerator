@@ -6,7 +6,6 @@ from src.ui.components.layout import VBox
 from src.ui.components.batch_task_item import BatchTaskItem
 from src.managers.batch_manager import BatchManager, BatchTaskStatus
 from src.core.batch_worker import BatchWorker
-from src.constants.styles import MAIN_BUTTON, DANGER_BUTTON
 import os
 import shutil
 import requests
@@ -74,18 +73,9 @@ class BatchPanel(SidePanel):
         self.body.addWidget(scroll, 1)
         
         # Footer buttons
-        self.clear_button = QPushButton("Clear Queue")
-        self.clear_button.clicked.connect(self.on_clear_queue)
-        self.footer.addWidget(self.clear_button)
-        
-        self.fetch_button = QPushButton("Fetch All")
-        self.fetch_button.clicked.connect(self.start_processing)
-        self.footer.addWidget(self.fetch_button)
-        
-        self.apply_button = QPushButton("Apply All")
-        self.apply_button.setStyleSheet(MAIN_BUTTON)
-        self.apply_button.clicked.connect(self.on_apply)
-        self.footer.addWidget(self.apply_button)
+        self.clear_button = self.add_footer_button("Clear", self.on_clear_queue)
+        self.fetch_button = self.add_footer_button("Fetch All", self.start_processing)
+        self.apply_button = self.add_footer_button("Apply All", self.on_apply, primary=True)
         
         # Connect to batch manager updates via Signal to ensure Main Thread execution
         self.queue_updated.connect(self.refresh_task_list)

@@ -20,7 +20,7 @@ from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
 from src.ui.components.layout import HBox, VBox
 from src.ui.components.checkbox_group import CheckboxGroup
-from src.constants.styles import MAIN_BUTTON
+from src.ui.components.checkbox_group import CheckboxGroup
 from src.managers.data_manager import ButtonIcons
 from src.constants.enums import Theme
 from src.managers.config_manager import ConfigManager
@@ -107,14 +107,8 @@ class Config(SidePanel):
         cache_group.setLayout(cache_layout)
         self.body.addWidget(cache_group)
 
-        restore_btn = QPushButton("Restore")
-        restore_btn.clicked.connect(self.init)
-        save_btn = QPushButton("Save")
-        save_btn.setStyleSheet(MAIN_BUTTON)
-        save_btn.clicked.connect(self.save)
-
-        self.footer.addWidget(restore_btn)
-        self.footer.addWidget(save_btn)
+        self.add_footer_button("Restore", self.init)
+        self.add_footer_button("Save", self.save, primary=True)
         
         self.body.addStretch(1)
         self.init()

@@ -5,7 +5,6 @@ from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont, QIcon, QPixmap
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.toggle_button import ToggleButton
-from src.constants.styles import MAIN_BUTTON
 from src.models.settings import SortRule
 from src.managers.data_manager import ButtonIcons
 
@@ -97,13 +96,8 @@ class SortPanel(SidePanel):
         
         self.body.addStretch(1)
 
-        clear_button = QPushButton("Reset")
-        clear_button.clicked.connect(self.reset)
-        apply_button = QPushButton("Apply")
-        apply_button.setStyleSheet(MAIN_BUTTON)
-        apply_button.clicked.connect(self.apply)
-        self.footer.addWidget(clear_button)
-        self.footer.addWidget(apply_button)
+        self.add_footer_button("Reset", self.reset)
+        self.add_footer_button("Apply", self.apply, primary=True)
         
         # Load saved sort rules from config
         self.load_sort_rules()

@@ -95,16 +95,11 @@ class ModList(QWidget):
         header_layout.addWidget(layout_toggle)
         
         # Add header checkbox for select all
-        from PyQt6.QtWidgets import QCheckBox, QLabel
-        select_all_container = QHBoxLayout(spacing=4)
-        self.header_checkbox = QCheckBox()
-        self.header_checkbox.setFixedSize(20, 20)
+        from PyQt6.QtWidgets import QCheckBox
+        self.header_checkbox = QCheckBox("Select All")
         self.header_checkbox.setTristate(True)  # Allow partial state for visual feedback
         self.header_checkbox.stateChanged.connect(self.on_header_checkbox_changed)
-        select_all_label = QLabel("Select All")
-        select_all_container.addWidget(self.header_checkbox)
-        select_all_container.addWidget(select_all_label)
-        header_layout.addLayout(select_all_container)
+        header_layout.addWidget(self.header_checkbox)
         
         header_layout.addStretch(1)
 

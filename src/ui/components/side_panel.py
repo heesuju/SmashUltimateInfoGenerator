@@ -4,11 +4,13 @@ from PyQt6.QtWidgets import (
     QLabel, 
     QSizePolicy, 
     QFrame,
-    QScrollArea
+    QScrollArea,
+    QPushButton
 )
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QIcon, QPixmap
 from src.ui.components.layout import VBox, HBox
+from src.constants.styles import MAIN_BUTTON, DANGER_BUTTON, SECONDARY_BUTTON
 
 FONT = "Arial"
 FONT_SIZE = 10
@@ -71,11 +73,29 @@ class SidePanel(QWidget):
         scroll.setWidget(self.body_frame)
 
         self.footer = QHBoxLayout()
+        self.footer.setContentsMargins(10, 0, 10, 10)
+        self.footer.setSpacing(10)
         self.root.addLayout(self.footer)
 
-        # Set the background color using QPalette
-        # palette = self.palette()
-        # palette.setColor(QPalette.ColorRole.Window, QColor('red'))
-        # self.setPalette(palette)
-
         layout.addWidget(self.frame)
+
+    def add_footer_button(self, text: str, callback, primary: bool = False, danger: bool = False, icon: str = None) -> QPushButton:
+        """Add a consistent button to the footer"""
+        btn = QPushButton(text)
+        if icon:
+            if isinstance(icon, str):
+                btn.setIcon(QIcon(QPixmap(icon)))
+            else:
+                btn.setIcon(icon)
+            
+        if primary:
+            btn.setStyleSheet(MAIN_BUTTON)
+        elif danger:
+            btn.setStyleSheet(DANGER_BUTTON)
+        else:
+            btn.setStyleSheet(SECONDARY_BUTTON)
+            
+        btn.setFixedHeight(26)
+        btn.clicked.connect(callback)
+        self.footer.addWidget(btn)
+        return btn

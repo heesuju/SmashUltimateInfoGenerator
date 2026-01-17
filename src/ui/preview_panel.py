@@ -5,7 +5,6 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont, QAction, QDesktopServices
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF, pyqtSignal, QUrl
 from src.ui.components.layout import HBox, VBox
-from src.constants.styles import MAIN_BUTTON
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.thumbnail_label import ThumbnailLabel
 from src.ui.components.toggle_button import ToggleButton
@@ -89,17 +88,9 @@ class PreviewPanel(SidePanel):
         
         self.body.addStretch(1)
 
-        open_btn = QPushButton("Open")
-        open_btn.clicked.connect(self.on_open_clicked)
-        self.footer.addWidget(open_btn)
-
-        edit = QPushButton("Edit")
-        edit.clicked.connect(self.on_edit_clicked)
-        self.footer.addWidget(edit)
-
-        save_button = QPushButton("Enable")
-        save_button.setStyleSheet(MAIN_BUTTON)
-        self.footer.addWidget(save_button)
+        self.add_footer_button("Open", self.on_open_clicked)
+        self.add_footer_button("Edit", self.on_edit_clicked)
+        self.add_footer_button("Enable", self.on_enabled, primary=True)
 
     def set_data(self, id:str):
         mod = self.mod_manager.get_mod(id)
