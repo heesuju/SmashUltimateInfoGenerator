@@ -13,8 +13,12 @@ from PyQt6.QtWidgets import (
     QCheckBox,
     QGroupBox,
     QSpinBox,
-    QTextEdit
+    QTextEdit,
+    QMessageBox,
+    QApplication
 )
+import os
+import sys
 from functools import partial
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
@@ -129,7 +133,10 @@ class Config(SidePanel):
 
     def save(self):
         if self.check_validity():
-            self.config_manager.config.theme = Theme(self.theme_drop.currentText())
+            current_theme = str(self.config_manager.config.theme)
+            new_theme = self.theme_drop.currentText()
+            
+            self.config_manager.config.theme = Theme(new_theme)
             self.config_manager.config.root_dir = self.root_dir.get_text()
             self.config_manager.config.cache_dir = self.cache_dir.get_text()
             self.config_manager.config.name_rules.folder_name_format = self.folder_name_format.get_text()
@@ -137,8 +144,24 @@ class Config(SidePanel):
             self.config_manager.config.name_rules.display_name_format = self.display_name_format.get_text()
             self.config_manager.config.name_rules.cap_slots_display = self.display_name_format.get_cap_slots()
             self.config_manager.save()
+            
+            if current_theme != new_theme:
+                reply = QMessageBox.question(
+                    self, 
+                    "Restart Required", 
+                    "Theme change requires a restart to take full effect.\nRestart now?",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                
+                if reply == QMessageBox.StandardButton.Yes:
+                    self.restart_program()
         else:
             pass
+
+    def restart_program(self):
+        """Restarts the current program."""
+        QApplication.quit()
+        os.execl(sys.executable, sys.executable, *sys.argv)
 
     def choose_root_dir(self):
         root_dir = choose_folder(self, self.config_manager.config.root_dir)
