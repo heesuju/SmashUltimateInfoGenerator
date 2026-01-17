@@ -248,6 +248,10 @@ def get_mod_name(display_name:str, character_keys:list, slots:list, category:str
     name = remove_paranthesis(name)
     if len(name) > 4:
         name = add_spaces_to_camel_case(name)
+    
+    if not name or len(name.strip()) == 0:
+        return display_name
+        
     return name
 
 def trim_mod_name(mod_name, ignored_list):

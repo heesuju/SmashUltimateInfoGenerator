@@ -64,7 +64,7 @@ def scan_for_mod_roots(root_path: str, current_depth: int = 0, max_depth: int = 
 
     is_root = False
     for name in path_list:
-        if name in ROOT_CHILDREN:
+        if name.lower() in ROOT_CHILDREN:
             is_root = True
             break
             

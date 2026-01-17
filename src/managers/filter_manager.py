@@ -97,13 +97,17 @@ class FilterManager():
             if mod.characters:
                 # Check if any character has a slot in the specified range
                 has_slot_in_range = False
-                for char in mod.characters:
-                    for slot in char.slots:
-                        if self.params.slot_min <= slot <= self.params.slot_max:
-                            has_slot_in_range = True
+
+                if self.params.slot_min == 0 and self.params.slot_max == 255:
+                    has_slot_in_range = True
+                else:
+                    for char in mod.characters:
+                        for slot in char.slots:
+                            if self.params.slot_min <= slot <= self.params.slot_max:
+                                has_slot_in_range = True
+                                break
+                        if has_slot_in_range:
                             break
-                    if has_slot_in_range:
-                        break
                 if not has_slot_in_range:
                     continue
             
