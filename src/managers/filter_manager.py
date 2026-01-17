@@ -25,6 +25,7 @@ class FilterParameters(BaseModel):
     info: List[InfoToml] = []
     enabled: List[EnabledState] = []
     include_hidden: bool = False
+    favorites_only: bool = False
 
 class FilterManager():
     def __init__(self):
@@ -50,9 +51,21 @@ class FilterManager():
         for callback in self.callbacks:
             callback()
 
-    def apply_filters(self, mods:List[Mod]) -> List[Mod]:
+    def apply_filters(self, mods:List[Mod], hidden_ids:List[str]=None, favorite_ids:List[str]=None) -> List[Mod]:
         filtered = []
         for mod in mods:
+            # Filter hidden
+            if not self.params.include_hidden:
+                if hidden_ids and str(mod.hash) in hidden_ids:
+                    continue
+            
+            # Filter favorites only
+            if self.params.favorites_only:
+                if favorite_ids and str(mod.hash) not in favorite_ids:
+                    continue
+                elif not favorite_ids: # If no favorites exist but filter is on, exclude all
+                     continue
+
             # Filter by mod name
             if self.params.mod_name:
                 if self.params.mod_name.lower() not in mod.mod_name.lower():

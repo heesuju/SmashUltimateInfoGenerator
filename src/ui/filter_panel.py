@@ -113,6 +113,10 @@ class FilterPanel(SidePanel):
         self.enabled = CheckableComboBox(EnabledState.list(), ([True] * (len(EnabledState.list()) + 1)), True, "All Enabled States")  
         self.body.addWidget(self.enabled)
         
+        # Favorites Only checkbox
+        self.favorites_only = QCheckBox("Favorites Only")
+        self.body.addWidget(self.favorites_only)
+
         # Include Hidden checkbox
         self.include_hidden = QCheckBox("Include Hidden")
         self.body.addWidget(self.include_hidden)
@@ -145,6 +149,7 @@ class FilterPanel(SidePanel):
         for checkbox in [self.wifi, self.info, self.enabled]:
             checkbox.reset()
         
+        self.favorites_only.setChecked(False)
         self.include_hidden.setChecked(False)
         
         # Reset filter manager parameters
@@ -259,6 +264,9 @@ class FilterPanel(SidePanel):
         # Set include_hidden flag
         self.filter_manager.params.include_hidden = self.include_hidden.isChecked()
         
+        # Set favorites_only flag
+        self.filter_manager.params.favorites_only = self.favorites_only.isChecked()
+        
         # Trigger filter update
         self.filter_manager.on_change()
     
@@ -290,6 +298,8 @@ class FilterPanel(SidePanel):
             self.enabled.showPopup()
         elif filter_type == "include_hidden":
             self.include_hidden.setFocus()
+        elif filter_type == "favorites_only":
+            self.favorites_only.setFocus()
     
     def reset_filter(self, filter_type: str):
         """Reset a specific filter UI component to its default state"""
@@ -315,5 +325,7 @@ class FilterPanel(SidePanel):
             self.enabled.reset()
         elif filter_type == "include_hidden":
             self.include_hidden.setChecked(False)
+        elif filter_type == "favorites_only":
+            self.favorites_only.setChecked(False)
     
 

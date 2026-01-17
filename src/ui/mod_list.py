@@ -180,7 +180,9 @@ class ModList(QWidget):
         """Re-runs filtering/sorting and updates the cache. Called when filters/data change."""
         mods = self.mod_manager.get_mods()
         if self.filter_manager:
-            mods = self.filter_manager.apply_filters(mods)
+            hidden_ids = self.mod_manager.hidden_ids
+            favorite_ids = self.mod_manager.favorite_ids
+            mods = self.filter_manager.apply_filters(mods, hidden_ids, favorite_ids)
         self.cached_filtered_mods = mods
         
         # Reset to page 1 for new results
@@ -311,6 +313,11 @@ class ModList(QWidget):
 
     def on_favorite_changed(self, mod_id:str, is_favorite:bool):
         """Handle favorite change from other components (like PreviewPanel)"""
+        # If we are showing favorites only and an item is unfavorited, we must refresh to remove it
+        if self.filter_manager.params.favorites_only and not is_favorite:
+            self.refresh_filtered_data()
+            return
+            
         # Pass the update to the active view without reloading
         if self.mode == ListLayout.LIST:
             self.tree_list.update_item_favorite_status(mod_id, is_favorite)
@@ -319,6 +326,11 @@ class ModList(QWidget):
 
     def on_hidden_changed(self, mod_id:str, is_hidden:bool):
         """Handle hidden status change from other components"""
+        # If we are NOT showing hidden items, we must refresh the list to remove/add the item
+        if not self.filter_manager.params.include_hidden:
+            self.refresh_filtered_data()
+            return
+
         if self.mode == ListLayout.LIST:
             self.tree_list.update_item_hidden_status(mod_id, is_hidden)
         elif self.mode == ListLayout.GRID:

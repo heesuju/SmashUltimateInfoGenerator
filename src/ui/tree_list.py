@@ -199,7 +199,7 @@ class TreeList(QWidget):
         
         # Column 6: Actions - Fixed width
         self.tree_widget.header().setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)
-        self.tree_widget.setColumnWidth(6, 80)
+        self.tree_widget.setColumnWidth(6, 100)
         
         # Set minimum section sizes for stretch columns to prevent over-squashing
         self.tree_widget.header().setMinimumSectionSize(50)
