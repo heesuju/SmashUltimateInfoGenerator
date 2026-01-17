@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QTabWidget
+from PyQt6.QtWidgets import QWidget, QTabWidget, QFrame
 
 from src.ui.mod_list import ModList
 from src.ui.filter_panel import FilterPanel
@@ -123,6 +123,7 @@ class MainMenu(QWidget):
         
         # Tabs for Installed vs Online
         self.tabs = QTabWidget()
+        self.tabs.setDocumentMode(True)  # Remove frame border
         self.tabs.addTab(self.list_widget, "Installed")
         
         # Create dedicated filter manager for online (or reuse the same one)
@@ -134,6 +135,10 @@ class MainMenu(QWidget):
         
         hlayout.addWidget(self.tabs)
         
+        # Vertical separator 1 (between list and side panel)
+        self.separator1 = self._create_separator()
+        hlayout.addWidget(self.separator1)
+        
         hlayout.addWidget(self.filter)
         hlayout.addWidget(self.online_filter)
         hlayout.addWidget(self.sort)
@@ -143,6 +148,7 @@ class MainMenu(QWidget):
         hlayout.addWidget(self.config)
         hlayout.addWidget(self.workspace)
         
+        
         vlayout.addLayout(hlayout)
         
         # Connect filter chips to filter panel
@@ -150,11 +156,39 @@ class MainMenu(QWidget):
         self.list_widget.filter_chips.chip_reset.connect(self.filter.reset_filter)
         
         layout.addLayout(vlayout)
+        
+        # Vertical separator 2 (between side panel and navigation)
+        self.separator2 = self._create_separator()
+        layout.addWidget(self.separator2)
+        
         layout.addWidget(self.menu)
         self.setLayout(layout)
         
+        # Connect navigation selection changes
+        self.menu.selection_changed.connect(self.update_separators_visibility)
+        
+        # Initialize visibility
+        self.update_separators_visibility()
+        
         # Initialize panel visibility for installed tab (index 0)
         self.on_tab_changed(0)
+
+    def _create_separator(self) -> QFrame:
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.VLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
+        sep.setStyleSheet("color: rgba(255, 255, 255, 0.1); background-color: rgba(255, 255, 255, 0.1); width: 1px;")
+        return sep
+
+    def update_separators_visibility(self):
+        """Show separators only if a side panel is visible"""
+        any_visible = any(p.isVisible() for p in [
+            self.filter, self.online_filter, self.sort, 
+            self.preview, self.edit, self.batch, 
+            self.config, self.workspace
+        ])
+        
+        self.separator1.setVisible(any_visible)
     
     def on_tab_changed(self, index):
         """Handle tab changes to show/hide appropriate panels"""
@@ -208,6 +242,9 @@ class MainMenu(QWidget):
             
             # Close any open online panels
             self.online_filter.hide()
+            
+        self.update_separators_visibility()
+
     
     def on_filter_chip_clicked(self, filter_type: str):
         """Handle filter chip clicks by showing filter panel and focusing the input"""
@@ -258,6 +295,8 @@ class MainMenu(QWidget):
         
         # Reset navigation state
         self.menu.selected_menu = NavigationMenuIcon.NONE
+        
+        self.update_separators_visibility()
     
     def on_batch_tasks_added(self):
         """Handle when batch tasks are added from mod_list"""

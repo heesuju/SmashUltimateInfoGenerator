@@ -34,7 +34,7 @@ class OnlineModList(QWidget):
             layout.addWidget(self.filter_chips)
         
         self.frame = QFrame()
-        self.frame.setFrameShape(QFrame.Shape.Box)
+        self.frame.setFrameShape(QFrame.Shape.NoFrame)
         self.frame_layout = VBox(margin=0, spacing=0)
         self.frame.setLayout(self.frame_layout)
         layout.addWidget(self.frame)

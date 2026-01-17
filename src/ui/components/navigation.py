@@ -10,6 +10,7 @@ from src.managers.data_manager import NavigationMenuIcon
 
 WIDTH = 60
 from typing import List, Optional, Callable
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QWidget
 
 class NavigationMenu():
@@ -19,6 +20,8 @@ class NavigationMenu():
         self.callback = callback       
 
 class Navigation(QWidget):
+    selection_changed = pyqtSignal()
+
     def __init__(self, menus:List[List[NavigationMenu]]):
         super().__init__()
         self.selected_menu = NavigationMenuIcon.NONE
@@ -74,6 +77,8 @@ class Navigation(QWidget):
                 item.widget.hide()
                 if button:
                     button.setChecked(False)
+        
+        self.selection_changed.emit()
     
     def show_panel(self, panel_widget: QWidget):
         """Programmatically show a specific panel"""
@@ -90,3 +95,5 @@ class Navigation(QWidget):
                 item.widget.hide()
                 if button:
                     button.setChecked(False)
+
+        self.selection_changed.emit()

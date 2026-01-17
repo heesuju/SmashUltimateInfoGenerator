@@ -58,7 +58,7 @@ class ModList(QWidget):
         
         self.frame = QFrame()
         self.frame.setObjectName("modListFrame")
-        self.frame.setFrameShape(QFrame.Shape.Box)
+        self.frame.setFrameShape(QFrame.Shape.NoFrame)
         self.frame.setAutoFillBackground(True)
         self.frame.setStyleSheet("""QFrame#modListFrame {
                                  border-radius: 0px;
