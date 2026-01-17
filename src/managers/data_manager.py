@@ -15,6 +15,7 @@ class NavigationMenuIcon(Enum):
     EDIT = "assets/icons/menu/edit_32.png"
     BATCH = "assets/icons/menu/batch_32.svg"
     WORKSPACE = "assets/icons/menu/workspace_32.png"
+    DOWNLOAD = "assets/icons/menu/download_32.png" # Placeholder path, will need to handle if missing or use existing
     NONE = ""
 
 class ButtonIcons(Enum):

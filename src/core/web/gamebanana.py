@@ -211,6 +211,18 @@ def process_mod_info(data:dict)->tuple[str, dict]:
                         is_wifi_safe = True
                         break
 
+    files = []
+    a_files = data.get("_aFiles", [])
+    if a_files:
+        for f in a_files:
+            file_entry = {
+                "name": f.get("_sFile", ""),
+                "url": f.get("_sDownloadUrl", ""),
+                "description": f.get("_sDescription", "")
+            }
+            if file_entry["name"] and file_entry["url"]:
+                files.append(file_entry)
+
     return id, {
         "mod_name": mod_name, 
         "version":version, 
@@ -220,7 +232,8 @@ def process_mod_info(data:dict)->tuple[str, dict]:
         "is_moveset":is_moveset,
         "is_final_smash":is_final_smash,
         "is_nsfw":is_nsfw,
-        "is_wifi_safe":is_wifi_safe
+        "is_wifi_safe":is_wifi_safe,
+        "files": files
     }
 
 class Gamebanana(threading.Thread):

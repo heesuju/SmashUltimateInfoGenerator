@@ -126,8 +126,8 @@ class ModLoader(QObject):
         
         for mod_path in self.directory:
             if not is_valid_dir(mod_path):
-                output_log(f"Invalid mod directory: {mod_path}")
-                on_progress(None)
+                self._worker_failed(f"Invalid mod directory: {mod_path}")
+                continue
 
             mod_name = get_base_name(mod_path)
             worker = ModWorker(mod_name, mod_path, self.cache_manager)

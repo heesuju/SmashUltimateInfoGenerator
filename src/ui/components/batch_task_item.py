@@ -962,8 +962,6 @@ class BatchTaskItem(QWidget):
              # But here we are IN the handler.
              pass
 
-
-    
     def get_selected_characters(self) -> list:
         """Get list of selected character names"""
         if "characters" in self.input_fields:

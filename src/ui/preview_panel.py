@@ -17,11 +17,13 @@ from src.constants.ui_params import BODY_FONT, BODY_FONT_SIZE, TITLE_FONT, TITLE
 class PreviewPanel(SidePanel):
     edit_requested = pyqtSignal(str)  # Emits mod_id when edit is requested
     
-    def __init__(self, mod_manager:ModManager, online_manager=None):
+    def __init__(self, mod_manager:ModManager, online_manager=None, download_manager=None):
         super().__init__("Preview")
         self.mod_manager = mod_manager
         self.online_manager = online_manager
+        self.download_manager = download_manager
         self.is_online_mode = False
+        self.current_online_details = {} # Cache for online mod details
         
         self.mod_manager.add_focus_callback(self.set_data)
         self.mod_manager.add_favorite_callback(self.on_favorite_changed)
@@ -89,13 +91,26 @@ class PreviewPanel(SidePanel):
         
         self.body.addStretch(1)
 
-        self.add_footer_button("Open", self.on_open_clicked)
-        self.add_footer_button("Edit", self.on_edit_clicked)
-        self.add_footer_button("Enable", self.on_enabled, primary=True)
+        self.open_btn = self.add_footer_button("Open", self.on_open_clicked)
+        self.edit_btn = self.add_footer_button("Edit", self.on_edit_clicked)
+        self.enable_btn = self.add_footer_button("Enable", self.on_enabled, primary=True)
+        self.download_btn = self.add_footer_button("Download", self.on_download_clicked, primary=True)
+        self.download_btn.hide()
 
     def set_online_data(self, id:str):
         """Handle online mod selection - show basic info immediately"""
         self.is_online_mode = True
+        self.current_online_details = {} # Reset cache
+        
+        # Toggle buttons
+        self.open_btn.hide()
+        self.edit_btn.hide()
+        self.enable_btn.hide()
+        self.download_btn.show()
+        # Disable download until details loaded
+        self.download_btn.setEnabled(False)
+        self.download_btn.setText("Loading...")
+        
         mod = self.online_manager.get_mod(id)
         if not mod:
             return
@@ -124,6 +139,10 @@ class PreviewPanel(SidePanel):
         if not self.is_online_mode:
             return
             
+        self.current_online_details = details
+        self.download_btn.setEnabled(True)
+        self.download_btn.setText("Download")
+
         description = details.get('description', '')
         if description:
             self.description_label.setText(description)
@@ -145,6 +164,12 @@ class PreviewPanel(SidePanel):
     def set_data(self, id:str):
         """Handle installed mod selection"""
         self.is_online_mode = False
+        # Toggle buttons
+        self.open_btn.show()
+        self.edit_btn.show()
+        self.enable_btn.show()
+        self.download_btn.hide()
+        
         mod = self.mod_manager.get_mod(id)
         self.fav_button.show()
         self.hide_button.show()
@@ -254,3 +279,69 @@ class PreviewPanel(SidePanel):
                 mod = self.mod_manager.get_mod(id)
                 if mod.url and mod.url.startswith("http"):
                     QDesktopServices.openUrl(QUrl(mod.url))
+
+    def on_download_clicked(self):
+        """Handle download button click"""
+        files = self.current_online_details.get("files", [])
+        
+        if not files:
+            print("No files to download")
+            return
+            
+        if len(files) == 1:
+            # Single file - download directly
+            # files[0]["name"] corresponds to _sFile from gamebanana.py
+            self.download_file(files[0]["url"], files[0].get("name"))
+        else:
+            # Multiple files - show menu
+            menu = QMenu(self)
+            
+            for file_data in files:
+                name = file_data.get("name", "Unknown")
+                desc = file_data.get("description", "")
+                label = f"{name}"
+                if desc:
+                    label += f" - {desc}"
+                    
+                action = QAction(label, self)
+                # Use closure to capture loop variable
+                # Pass Name (_sFile) if available
+                action.triggered.connect(lambda checked, url=file_data["url"], fname=name: self.download_file(url, fname))
+                menu.addAction(action)
+                
+            menu.addSeparator()
+            
+            download_all = QAction("Download All", self)
+            download_all.triggered.connect(lambda: self.download_all_files(files))
+            menu.addAction(download_all)
+            
+            # Show below button
+            menu.exec(self.download_btn.mapToGlobal(QPoint(0, self.download_btn.height())))
+            
+    def download_file(self, url:str, filename:str=None):
+        """Download file logic"""
+        if self.download_manager:
+            # Extract filename from URL or use default if not provided
+            if not filename:
+                filename = url.split("/")[-1]
+                if "?" in filename:
+                    filename = filename.split("?")[0]
+            if not filename:
+                filename = "download.zip"
+            
+            # Get mod name from details
+            mod_name = self.current_online_details.get("mod_name", "Unknown Mod")
+            # Get mod ID
+            mod_id = self.online_manager.focused_id
+            
+            self.download_manager.start_download(url, filename, mod_name, mod_id, self.current_online_details)
+        else:
+            # Fallback
+            QDesktopServices.openUrl(QUrl(url))
+        
+    def download_all_files(self, files:list):
+        """Download all files"""
+        print(f"Downloading {len(files)} files")
+        for f in files:
+             if f.get("url"):
+                self.download_file(f.get("url"), f.get("name"))

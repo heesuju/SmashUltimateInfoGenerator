@@ -17,8 +17,10 @@ from src.managers.mod_manager import ModManager
 from src.managers.filter_manager import FilterManager
 from src.managers.batch_manager import BatchManager
 from src.managers.online_manager import OnlineManager
+from src.managers.download_manager import DownloadManager
 from src.ui.online_mod_list import OnlineModList
 from src.ui.online_filter_panel import OnlineFilterPanel
+from src.ui.download_panel import DownloadPanel
 
 class MainMenu(QWidget):
     def __init__(self, config_manager:ConfigManager):
@@ -42,8 +44,19 @@ class MainMenu(QWidget):
         self.online_manager = OnlineManager()
         self.online_filter = OnlineFilterPanel(self.online_manager)
         
+        # Download Manager
+        self.download_manager = DownloadManager(config_manager)
+        self.download_panel = DownloadPanel(self.download_manager)
+        
+        # Auto-open download panel on start
+        self.download_manager.download_started.connect(self.on_download_started)
+        # Auto-scan on install
+        self.download_manager.install_finished.connect(self.on_mod_installed)
+        # Refresh mod when thumbnail finishes
+        self.download_manager.thumbnail_updated.connect(self.on_mod_installed)
+        
         # Pass both managers to preview panel for dual mode support
-        self.preview = PreviewPanel(self.mod_manager, self.online_manager)
+        self.preview = PreviewPanel(self.mod_manager, self.online_manager, self.download_manager)
         
         self.edit = EditPanel(self.mod_manager, config_manager)
         self.batch = BatchPanel(self.batch_manager)
@@ -90,6 +103,7 @@ class MainMenu(QWidget):
         self.batch.hide()
         self.config.hide()
         self.workspace.hide()
+        self.download_panel.hide()
 
         self.menu = Navigation(
             [
@@ -101,6 +115,7 @@ class MainMenu(QWidget):
                     NavigationMenu(NavigationMenuIcon.PREVIEW.value, self.preview),
                     NavigationMenu(NavigationMenuIcon.EDIT.value, self.edit),
                     NavigationMenu(NavigationMenuIcon.BATCH.value, self.batch),
+                    NavigationMenu(NavigationMenuIcon.DOWNLOAD.value, self.download_panel),
                 ],
                 [
                     NavigationMenu(NavigationMenuIcon.WORKSPACE.value, self.workspace),
@@ -146,7 +161,9 @@ class MainMenu(QWidget):
         hlayout.addWidget(self.edit)
         hlayout.addWidget(self.batch)
         hlayout.addWidget(self.config)
+        hlayout.addWidget(self.config)
         hlayout.addWidget(self.workspace)
+        hlayout.addWidget(self.download_panel)
         
         
         vlayout.addLayout(hlayout)
@@ -185,7 +202,7 @@ class MainMenu(QWidget):
         any_visible = any(p.isVisible() for p in [
             self.filter, self.online_filter, self.sort, 
             self.preview, self.edit, self.batch, 
-            self.config, self.workspace
+            self.config, self.workspace, self.download_panel
         ])
         
         self.separator1.setVisible(any_visible)
@@ -338,3 +355,12 @@ class MainMenu(QWidget):
             progress = 0.1
             
         batch_button.set_progress(progress)
+
+    def on_download_started(self, id, name):
+        """Auto open download panel if not already open"""
+        if self.download_panel.isHidden():
+            self.menu.show_panel(self.download_panel)
+            
+    def on_mod_installed(self, path:str):
+        """Handle new mod installed -> scan it"""
+        self.mod_manager.scan([path])

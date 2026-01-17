@@ -92,7 +92,8 @@ class ModManager(QObject):
         self._current_loader.load_mods(self.on_progress, self.on_complete)
 
     def on_progress(self, mod:Mod):
-        self.mods[str(mod.hash)] = mod
+        if mod:
+            self.mods[str(mod.hash)] = mod
 
     def on_complete(self):
         if self.callback:
