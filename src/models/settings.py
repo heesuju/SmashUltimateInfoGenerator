@@ -22,3 +22,4 @@ class Settings(BaseModel):
     theme:Theme=Theme.DARK
     name_rules:NameRules=NameRules()
     sort_rules:List[SortRule]=[]
+    favorites:List[str]=[]

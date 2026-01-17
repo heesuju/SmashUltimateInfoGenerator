@@ -168,7 +168,7 @@ class TreeList(QWidget):
         """)
         self.tree_widget.setAlternatingRowColors(True)
         self.tree_widget.setColumnCount(7)
-        self.tree_widget.setHeaderLabels(["", "Category", "Mod Name", "Authors", "Slot", "Characters", "Enabled"])
+        self.tree_widget.setHeaderLabels(["", "Category", "Mod Name", "Authors", "Slot", "Characters", "Actions"])
         
         # Prevent the last column from auto-stretching
         self.tree_widget.header().setStretchLastSection(False)
@@ -176,7 +176,7 @@ class TreeList(QWidget):
         # Column 0: Checkbox - Fixed width
         self.tree_widget.setColumnWidth(0, 50)
         self.tree_widget.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        
+
         # Column 1: Category - Fixed width
         self.tree_widget.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
         self.tree_widget.setColumnWidth(1, 80)
@@ -197,9 +197,9 @@ class TreeList(QWidget):
         self.tree_widget.header().setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)
         self.tree_widget.setColumnWidth(5, 140)
         
-        # Column 6: Enabled - Fixed width
+        # Column 6: Actions - Fixed width
         self.tree_widget.header().setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)
-        self.tree_widget.setColumnWidth(6, 50)
+        self.tree_widget.setColumnWidth(6, 80)
         
         # Set minimum section sizes for stretch columns to prevent over-squashing
         self.tree_widget.header().setMinimumSectionSize(50)
@@ -264,6 +264,20 @@ class TreeList(QWidget):
                 checkbox.blockSignals(True)  # Prevent triggering stateChanged
                 checkbox.setChecked(should_select)
                 checkbox.blockSignals(False)
+
+    def update_item_favorite_status(self, mod_id:str, is_favorite:bool):
+        """Update favorite status of a specific item without reloading"""
+        # Iterate through visible items
+        root = self.tree_widget.invisibleRootItem()
+        for i in range(root.childCount()):
+            item = root.child(i)
+            if isinstance(item, TreeItem) and item.mod.id == mod_id:
+                # Update the mod object
+                item.mod.favorited = is_favorite
+                # Update the button state
+                if hasattr(item, 'fav_button'):
+                    item.fav_button.set_state(is_favorite)
+                break
 
     def clear(self):
         """

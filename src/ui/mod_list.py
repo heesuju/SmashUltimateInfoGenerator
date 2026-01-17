@@ -34,6 +34,7 @@ class ModList(QWidget):
         self.batch_manager = batch_manager
         
         self.mod_manager.set_callback(self.on_filter_changed)
+        self.mod_manager.add_favorite_callback(self.on_favorite_changed)
         
         self.filter_manager = filter_manager
         self.filter_manager.add_callback(self.on_filter_changed)
@@ -259,6 +260,7 @@ class ModList(QWidget):
                 version=mod.version,
                 enabled=False,
                 selected=self.mod_manager.is_selected(str(mod.hash)),
+                favorited=str(mod.hash) in self.mod_manager.favorite_ids,
                 character_icons=character_icons
             )
 
@@ -304,6 +306,14 @@ class ModList(QWidget):
 
     def on_mod_saved(self, mod_id:str):
         self.refresh_filtered_data()
+
+    def on_favorite_changed(self, mod_id:str, is_favorite:bool):
+        """Handle favorite change from other components (like PreviewPanel)"""
+        # Pass the update to the active view without reloading
+        if self.mode == ListLayout.LIST:
+            self.tree_list.update_item_favorite_status(mod_id, is_favorite)
+        elif self.mode == ListLayout.GRID:
+            self.grid_list.update_item_favorite_status(mod_id, is_favorite)
     
     def on_header_checkbox_changed(self, state):
         """Handle header checkbox state change - delegates to current view"""

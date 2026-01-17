@@ -160,3 +160,13 @@ class GridList(QListWidget):
         Note: This is called by ModList.update_header_checkbox_state()
         """
         pass  # ModList handles this directly
+
+    def update_item_favorite_status(self, mod_id:str, is_favorite:bool):
+        """Update favorite status of a specific item without reloading"""
+        if mod_id in self.item_widgets:
+            widget = self.item_widgets[mod_id]
+            # Update the mod object
+            widget.mod.favorited = is_favorite
+            # Update the button state
+            if hasattr(widget, 'fav_button'):
+                widget.fav_button.set_state(is_favorite)

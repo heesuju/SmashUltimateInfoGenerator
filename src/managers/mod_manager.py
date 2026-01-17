@@ -14,15 +14,28 @@ class ModManager():
         self.callback = None
         self.focus_callbacks = []
         self.hidden_ids = []
-        self.favorite_ids = []
         self.enabled_ids = []
         self.workspace = "Default"
+
+    @property
+    def favorite_ids(self):
+        return self.config_manager.config.favorites
 
     def set_callback(self, callback:callable):
         self.callback = callback
 
     def add_focus_callback(self, callback:callable):
         self.focus_callbacks.append(callback)
+
+    def add_favorite_callback(self, callback:callable):
+        if not hasattr(self, 'favorite_callbacks'):
+            self.favorite_callbacks = []
+        self.favorite_callbacks.append(callback)
+    
+    def _notify_favorite_changed(self, mod_id:str, is_favorite:bool):
+        if hasattr(self, 'favorite_callbacks'):
+            for callback in self.favorite_callbacks:
+                callback(mod_id, is_favorite)
 
     def scan(self, scan_target:Union[str, List[str]]):
         loader = ModLoader(scan_target)
@@ -58,12 +71,18 @@ class ModManager():
         return self.mods.get(id, None)
     
     def add_favorite(self, id:str):
+        id = str(id) # Ensure ID is string
         if id not in self.favorite_ids:
             self.favorite_ids.append(id)
+            self.config_manager.save()
+            self._notify_favorite_changed(id, True)
 
     def remove_favorite(self, id:str):
+        id = str(id) # Ensure ID is string
         if id in self.favorite_ids:
             self.favorite_ids.remove(id)
+            self.config_manager.save()
+            self._notify_favorite_changed(id, False)
 
     def add_enabled(self, id:str):
         if id not in self.enabled_ids:

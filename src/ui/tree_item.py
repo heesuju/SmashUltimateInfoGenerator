@@ -9,6 +9,8 @@ from PyQt6.QtWidgets import (
 from src.managers.data_manager import ButtonIcons, DataManager
 from src.models.mod import Mod, ModItem
 
+from src.ui.components.toggle_button import ToggleButton
+
 class TreeItem(QTreeWidgetItem):
     def __init__(self, parent, mod:ModItem, on_clicked:callable, on_enabled:callable, tree_list=None):
         self.mod = mod
@@ -16,7 +18,7 @@ class TreeItem(QTreeWidgetItem):
         self.on_enabled = on_enabled
         self.tree_list = tree_list  # Reference to TreeList widget
         self.animations = []
-        super().__init__(["", "", "", "", "", "", ""])
+        super().__init__(["", "", "", "", "", "", ""]) # 7 Columns
 
         parent.addTopLevelItem(self)
 
@@ -50,6 +52,11 @@ class TreeItem(QTreeWidgetItem):
                 self.on_enabled(self.mod)
         
         check_widget.stateChanged.connect(on_checkbox_changed)
+        
+        # Fav Button
+        self.fav_button = ToggleButton(ButtonIcons.FAV_ON.value, ButtonIcons.FAV_OFF.value, self.on_fav_on, self.on_fav_off, 24)
+        self.fav_button.set_state(self.mod.favorited)
+        
         name_widget = QLabel(self.mod.name)
         category_widget = QLabel(self.mod.category)
         authors_widget = QLabel(self.mod.authors)
@@ -79,7 +86,16 @@ class TreeItem(QTreeWidgetItem):
 
         icons_layout.addStretch()
         
-        # # Add button widget to the last column
+        # Actions Widget (Fav + Enable)
+        actions_widget = QWidget()
+        actions_layout = QHBoxLayout(actions_widget)
+        actions_layout.setContentsMargins(0, 0, 0, 0)
+        actions_layout.setSpacing(4)
+        
+        # Add Fav Button
+        actions_layout.addWidget(self.fav_button)
+        
+        # Add Enable Button
         btn = QPushButton()
         btn.setIcon(QIcon(QPixmap(ButtonIcons.ENABLE.value)))
         btn.setStyleSheet(("""QPushButton {
@@ -87,7 +103,11 @@ class TreeItem(QTreeWidgetItem):
             border: none;
         }"""))
         btn.setFixedHeight(32)
+        btn.setFixedWidth(32) # Set fixed width for alignment
         btn.clicked.connect(partial(self.on_item_toggled, self.mod.name, btn))
+        actions_layout.addWidget(btn)
+        
+        actions_layout.addStretch() # Push access to left
             
             
         parent.setItemWidget(self, 0, check_widget)     # Column 0: Checkbox
@@ -96,8 +116,16 @@ class TreeItem(QTreeWidgetItem):
         parent.setItemWidget(self, 3, authors_widget)   # Column 3: Authors
         parent.setItemWidget(self, 4, slot_widget)      # Column 4: Slot
         parent.setItemWidget(self, 5, icons_widget)     # Column 5: Characters
-        parent.setItemWidget(self, 6, btn)              # Column 6: Enabled
-        self.widgets = [check_widget, category_widget, name_widget, authors_widget, slot_widget, icons_widget, btn]
+        parent.setItemWidget(self, 6, actions_widget)   # Column 6: Actions (Fav + Enabled)
+        self.widgets = [check_widget, category_widget, name_widget, authors_widget, slot_widget, icons_widget, actions_widget]
 
     def on_item_toggled(self):
         pass
+
+    def on_fav_on(self):
+        if self.tree_list and hasattr(self.tree_list, 'mod_manager'):
+            self.tree_list.mod_manager.add_favorite(self.mod.id)
+
+    def on_fav_off(self):
+        if self.tree_list and hasattr(self.tree_list, 'mod_manager'):
+            self.tree_list.mod_manager.remove_favorite(self.mod.id)

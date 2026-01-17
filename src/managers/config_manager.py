@@ -24,7 +24,17 @@ class ConfigManager():
                 output_log(f"Failed to load config: {e}")
         
         if not config_loaded_successfully:
-            output_log(f"No config found\nMaking new config...")
+            # Backup corrupted config if it exists
+            if is_valid_file(PATH_CONFIG):
+                try:
+                    import shutil
+                    backup_path = PATH_CONFIG + ".bak"
+                    shutil.copy2(PATH_CONFIG, backup_path)
+                    output_log(f"Backed up corrupted config to {backup_path}")
+                except Exception as e:
+                    output_log(f"Failed to backup corrupted config: {e}")
+
+            output_log(f"No config found or load failed\nMaking new config...")
             self.config = Settings()
         
         # Set default sort rules if empty

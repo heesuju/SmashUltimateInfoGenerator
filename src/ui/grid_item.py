@@ -186,6 +186,8 @@ class GridListItemWidget(QWidget):
         
         self.frame.setGraphicsEffect(shadow)
 
+        self.fav_button.set_state(self.mod.favorited)
+
     def mousePressEvent(self, event):
         from PyQt6.QtCore import Qt
         
@@ -215,10 +217,12 @@ class GridListItemWidget(QWidget):
         super().mouseReleaseEvent(event)
 
     def on_fav_on(self):
-        pass
+        if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
+            self.grid_list.mod_manager.add_favorite(self.mod.id)
     
     def on_fav_off(self):
-        pass
+        if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
+            self.grid_list.mod_manager.remove_favorite(self.mod.id)
 
     def on_vis_on(self):
         pass

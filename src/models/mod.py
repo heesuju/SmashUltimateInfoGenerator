@@ -20,6 +20,7 @@ class ModItem(BaseModel):
     version:str = "1.0.0"
     enabled:bool = False
     selected:bool = False
+    favorited:bool = False
     character_icons:List[str] = []
 
 class Character(BaseModel):    
