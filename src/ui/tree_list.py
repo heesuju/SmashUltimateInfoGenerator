@@ -174,7 +174,7 @@ class TreeList(QWidget):
         self.tree_widget.header().setStretchLastSection(False)
         
         # Column 0: Checkbox - Fixed width
-        self.tree_widget.setColumnWidth(0, 50)
+        self.tree_widget.setColumnWidth(0, 60)
         self.tree_widget.header().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
 
         # Column 1: Category - Fixed width
