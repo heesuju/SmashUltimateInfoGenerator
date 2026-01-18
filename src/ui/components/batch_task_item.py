@@ -181,6 +181,7 @@ class BatchTaskItem(QWidget):
         # Remove button
         remove_btn = QPushButton("✕")
         remove_btn.setFixedSize(24, 24)
+        remove_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         remove_btn.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
@@ -188,6 +189,8 @@ class BatchTaskItem(QWidget):
                 color: #999;
                 font-size: 16px;
                 font-weight: bold;
+                padding: 0px;
+                margin: 0px;
             }
             QPushButton:hover {
                 color: #f44336;
