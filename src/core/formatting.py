@@ -305,21 +305,41 @@ def clean_version(version:str)->str:
     """
     Returns formatted version(e.g. v1.0 -> 1.0.0)
     """
-    parts = version.split('.')
-    if len(parts) <= 0:
+    if not version:
         return "1.0.0"
 
+    # Remove 'v' prefix if present
+    if version.lower().startswith('v'):
+        version = version[1:]
+
+    parts = version.split('.')
     numeric_parts = []
-    for part in parts :
-        if part:
-            numbers = filter(str.isdigit, part)
-            numeric_parts.append(''.join(numbers))
-
-    diff = 3 - len(numeric_parts)
-    for n in range(diff):
+    
+    for part in parts:
+        if not part:
+            continue
+        # Extract digits
+        digits = ''.join(filter(str.isdigit, part))
+        if digits:
+            # removing zero padding by converting to int
+            numeric_parts.append(str(int(digits)))
+    
+    # If no valid parts found, return default
+    if not numeric_parts:
+        return "1.0.0"
+        
+    # Ensure exactly 3 parts
+    while len(numeric_parts) < 3:
         numeric_parts.append('0')
-
+    
+    # Truncate to 3 parts
+    numeric_parts = numeric_parts[:3]
+    
     formatted_version = '.'.join(numeric_parts)
+    
+    if formatted_version == "0.0.0":
+        return "1.0.0"
+
     return formatted_version
 
 def clean_description(description:str)->str:
