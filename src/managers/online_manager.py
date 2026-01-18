@@ -131,11 +131,16 @@ class OnlineManager(QObject):
         self.is_loading = True
         self._notify()
         
+        is_new = False
+        if not query and not author:
+            is_new = True
+
         # Start search thread
         Gamebanana(
             id=query,
             callback=self._on_search_complete,
-            is_search=True,
+            is_search=not is_new,
+            is_new=is_new,
             author_filter=author,
             page=page,
             sort=sort

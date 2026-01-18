@@ -229,6 +229,26 @@ def search_mods_list(mod_name: str, author_name: str = "", page: int = 1, sort: 
         print(f"Error searching mod list: {e}")
         return {"records": [], "total_count": 0, "per_page": 15, "is_complete": True}
 
+def get_new_mods(page: int = 1) -> list:
+    """
+    Get new/updated mods.
+    """
+    try:
+        url = f"https://api.gamebanana.com/Core/List/New?itemtype=Mod&gameid=6498&include_updated=1&page={page}"
+        data = get_request(url)
+        if not data:
+            return []
+        
+        # The API returns a list of [["Mod", id], ...], we need to extract IDs
+        ids = []
+        for item in data:
+            if isinstance(item, list) and len(item) >= 2 and item[0] == "Mod":
+                ids.append(item[1])
+        return ids
+    except Exception as e:
+        print(f"Error getting new mods: {e}")
+        return []
+
 def process_mod_info(data:dict)->tuple[str, dict]:
     profile = data.get("_sProfileUrl", "")
     id = profile.split("/")[-1]
@@ -300,11 +320,12 @@ def process_mod_info(data:dict)->tuple[str, dict]:
     }
 
 class Gamebanana(threading.Thread):
-    def __init__(self, id:Union[str, list], callback:callable, is_search:bool=False, author_filter:str="", page:int=1, sort:str="best_match"):
+    def __init__(self, id:Union[str, list], callback:callable, is_search:bool=False, is_new:bool=False, author_filter:str="", page:int=1, sort:str="best_match"):
         threading.Thread.__init__(self)
         self.id = id
         self.callback = callback
         self.is_search = is_search
+        self.is_new = is_new
         self.author_filter = author_filter
         self.page = page
         self.sort = sort
@@ -314,6 +335,64 @@ class Gamebanana(threading.Thread):
     def run(self):
         results = []
         output_data = {}
+
+        if self.is_new:
+            # Fetch new/updated mods
+            ids = get_new_mods(self.page)
+            if not ids:
+                self.callback({"records": [], "total_count": 0, "per_page": 0, "is_complete": True})
+                return
+
+            fetched_records = []
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                # Submit all tasks
+                futures = [executor.submit(get_mod_info, str(mod_id)) for mod_id in ids]
+                
+                # Iterate in submission order to preserve sort
+                for future in futures:
+                    try:
+                        result = future.result()
+                        if result:
+                            # Adapter: Standardize v4 response to match v11 (Search) structure
+                            
+                            # 1. Ensure _idRow
+                            if "_idRow" not in result:
+                                profile = result.get("_sProfileUrl", "")
+                                if profile:
+                                    try:
+                                        result["_idRow"] = int(profile.split("/")[-1])
+                                    except:
+                                        pass
+                            
+                            # 2. Map Category (_aSuperCategory -> _aRootCategory)
+                            if "_aRootCategory" not in result:
+                                # v4 has _aSuperCategory (e.g. "Skins") and _aCategory (e.g. "Person")
+                                # OnlineManager checks _aRootCategory._sName
+                                result["_aRootCategory"] = result.get("_aSuperCategory") or result.get("_aCategory")
+
+                            # 3. Lift Version
+                            if "_sVersion" not in result and "_aAdditionalInfo" in result:
+                                result["_sVersion"] = result["_aAdditionalInfo"].get("_sVersion", "")
+
+                            # 4. Standardize Preview Media (List -> Dict wrapper)
+                            # v4 returns a list of images directly in _aPreviewMedia
+                            # v11 returns dict with _aImages key
+                            pm = result.get("_aPreviewMedia")
+                            if isinstance(pm, list):
+                                result["_aPreviewMedia"] = {"_aImages": pm}
+
+                            fetched_records.append(result)
+                    except Exception as e:
+                        print(f"Error fetching mod details: {e}")
+            
+            output = {
+                "records": fetched_records,
+                "total_count": 1000, 
+                "per_page": len(ids),
+                "is_complete": False
+            }
+            self.callback(output)
+            return
 
         if self.is_search and isinstance(self.id, str):
             # Treat self.id as search query

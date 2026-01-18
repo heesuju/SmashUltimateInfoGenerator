@@ -247,6 +247,14 @@ class MainMenu(QWidget):
             self.preview.hide()
             self.edit.hide()
             self.batch.hide()
+            
+            # Auto-search if empty
+            if (not self.online_manager.current_query and 
+                not self.online_manager.search_results and 
+                not self.online_manager.is_loading and
+                not self.online_manager.current_author):
+                self.online_manager.search()
+
         else:
             # Installed tab - restore all panels
             if filter_menu:
