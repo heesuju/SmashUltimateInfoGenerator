@@ -1,0 +1,5 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Refresh Arrows Enlarged (Radius ~6.5) -->
+  <path d="M2 8C2 4.68629 4.68629 2 8 2C10.4853 2 12.6176 3.512 13.5607 5.75M14 8C14 11.3137 11.3137 14 8 14C5.51472 14 3.38236 12.488 2.43934 10.25" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M14 2V5.75H10.25M2 14V10.25H5.75" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

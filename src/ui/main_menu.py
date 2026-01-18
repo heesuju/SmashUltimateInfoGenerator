@@ -55,6 +55,9 @@ class MainMenu(QWidget):
         # Refresh mod when thumbnail finishes
         self.download_manager.thumbnail_updated.connect(self.on_mod_installed)
         
+        # Connect total progress
+        self.download_manager.total_progress_updated.connect(self.update_download_progress)
+        
         # Pass both managers to preview panel for dual mode support
         self.preview = PreviewPanel(self.mod_manager, self.online_manager, self.download_manager)
         
@@ -364,3 +367,13 @@ class MainMenu(QWidget):
     def on_mod_installed(self, path:str):
         """Handle new mod installed -> scan it"""
         self.mod_manager.scan([path])
+        
+    def on_download_progress(self, start=True):
+        """Update download progress on nav button"""
+        pass
+
+    def update_download_progress(self, progress: float):
+        """Update download progress indicator on navigation button"""
+        download_btn = self.menu.buttons.get(NavigationMenuIcon.DOWNLOAD.value)
+        if download_btn:
+             download_btn.set_progress(progress)

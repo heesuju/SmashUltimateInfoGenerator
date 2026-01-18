@@ -28,6 +28,7 @@ class DownloadManager(QObject):
     download_started = pyqtSignal(str, str) # id, name
     progress_updated = pyqtSignal(str, int, int) # id, received, total
     download_finished = pyqtSignal(str, bool, str) # id, success, message
+    total_progress_updated = pyqtSignal(float) # 0.0 to 1.0
     install_started = pyqtSignal(str) # id
     install_finished = pyqtSignal(str) # path
     install_failed = pyqtSignal(str, str) # id, error_message
@@ -44,6 +45,7 @@ class DownloadManager(QObject):
         self.download_meta = {} # id -> dict (metadata for post-processing)
         self.download_files = {} # id -> QFile
         self.active_installers = [] # Prevent GC of installers
+        self.progress_map = {} # id -> (received, total)
         
         # Default download path
         self.download_path = os.path.join(os.getcwd(), "downloads")
@@ -164,21 +166,47 @@ class DownloadManager(QObject):
         import time
         current_time = time.time()
         
-        # Initialize tracking if needed
+        # Update internal map (always keep data fresh)
+        if total > 0:
+            self.progress_map[download_id] = (received, total)
+        
+        # Initialize tracking 
         if not hasattr(self, 'last_progress_updates'):
             self.last_progress_updates = {}
             
         last_time = self.last_progress_updates.get(download_id, 0)
         
         # Throttle to ~10fps (100ms) or if complete
+        # We update BOTH the individual signal AND the total signal here to save CPU
         if (current_time - last_time >= 0.1) or (received == total and total > 0):
             self.progress_updated.emit(download_id, received, total)
             self.last_progress_updates[download_id] = current_time
+            
+            # Calculate and emit total progress (throttled)
+            total_received = sum(r for r, t in self.progress_map.values())
+            total_expected = sum(t for r, t in self.progress_map.values())
+            
+            if total_expected > 0:
+                global_progress = total_received / total_expected
+                self.total_progress_updated.emit(global_progress)
         
     def _on_finished(self, download_id):
         reply = self.active_downloads.pop(download_id, None)
         file = self.download_files.pop(download_id, None)
         meta = self.download_meta.pop(download_id, None)
+        
+        # Remove from progress tracking
+        self.progress_map.pop(download_id, None)
+        
+        # Determine if we should reset progress
+        if not self.active_downloads and not self.download_queue:
+            self.total_progress_updated.emit(-1.0)
+        elif self.active_downloads:
+             # Recalculate remaining
+            total_received = sum(r for r, t in self.progress_map.values())
+            total_expected = sum(t for r, t in self.progress_map.values())
+            if total_expected > 0:
+                self.total_progress_updated.emit(total_received / total_expected)
         
         if file:
             file.close()

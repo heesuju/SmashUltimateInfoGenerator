@@ -109,8 +109,8 @@ class TreeItem(QTreeWidgetItem):
             border-radius: 0px;
             border: none;
         }"""))
-        btn.setFixedHeight(32)
-        btn.setFixedWidth(32) # Set fixed width for alignment
+        btn.setFixedHeight(24)
+        btn.setFixedWidth(24)
         btn.clicked.connect(partial(self.on_item_toggled, self.mod.name, btn))
         actions_layout.addWidget(btn)
         

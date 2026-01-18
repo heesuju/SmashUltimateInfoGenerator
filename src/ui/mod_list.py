@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
     QMenu, QFileDialog
 )
 from PyQt6.QtGui import (
-    QPixmap, QIcon, QFont, QDragEnterEvent, QDropEvent
+    QPixmap, QIcon, QFont, QDragEnterEvent, QDropEvent, QColor
 )
 from src.core.formatting import format_slots
 from src.ui.components.layout import VBox
@@ -18,7 +18,7 @@ from src.ui.components.paging import Paging
 from src.ui.search_bar import SearchBar
 from src.ui.components.filter_chips import FilterChips
 from src.managers.mod_manager import ModManager
-
+from src.utils.image_utils import tint_pixmap
 from src.constants.enums import Fighter, ListLayout
 from src.managers.data_manager import ButtonIcons, DataManager
 from src.managers.filter_manager import FilterManager, FilterParameters
@@ -82,7 +82,7 @@ class ModList(QWidget):
         self.frame_layout.addWidget(self.filter_chips)
 
         # init child layouts
-        header_layout = QHBoxLayout(spacing=10)
+        header_layout = QHBoxLayout(spacing=4)
         
         self.frame_layout.addLayout(header_layout)
 
@@ -102,14 +102,22 @@ class ModList(QWidget):
         self.header_checkbox.setTristate(True)  # Allow partial state for visual feedback
         self.header_checkbox.stateChanged.connect(self.on_header_checkbox_changed)
         header_layout.addWidget(self.header_checkbox)
-        
-        header_layout.addStretch(1)
 
-        select_button = QPushButton("Deselect All")
+        # Deselect/Clear Selection Button
+        select_button = QPushButton()
+        select_button.setIcon(QIcon(ButtonIcons.DESELECT.value))
+        select_button.setToolTip("Deselect All")
+        select_button.setFixedWidth(24) # Small button
+        select_button.setFlat(True) # Make it look like an icon
         select_button.clicked.connect(self.on_deselect_all)
         header_layout.addWidget(select_button)
         
-        add_button = QPushButton("+ Add New")
+        header_layout.addStretch(1)
+        
+        add_button = QPushButton("Add")
+        add_button.setIcon(QIcon(ButtonIcons.ADD.value))
+        add_button.setStyleSheet("QPushButton::menu-indicator { width: 0px; }")
+        add_button.setFlat(True)
         
         # Create menu for add button
         add_menu = QMenu(self)
@@ -121,13 +129,44 @@ class ModList(QWidget):
         add_button.setMenu(add_menu)
         header_layout.addWidget(add_button)
         
-        # Enable dropping files
-        self.setAcceptDrops(True)
+        # Helper to create batch button
+        def create_batch_btn(icon_path, text, tooltip, callback, color=None):
+            btn = QPushButton(text)
+            
+            if color:                
+                pixmap = QPixmap(icon_path)
+                tinted_pixmap = tint_pixmap(pixmap, QColor(color))
+                btn.setIcon(QIcon(tinted_pixmap))
+                btn.setStyleSheet(f"color: {color};")
+            else:
+                btn.setIcon(QIcon(icon_path))
+                
+            btn.setToolTip(tooltip)
+            btn.setFlat(True)
+            btn.clicked.connect(callback)
+            return btn
 
-        action_dropdown = QComboBox()
-        action_dropdown.addItems(["Batch Actions", "Enable", "Disable", "Generate Info.toml", "Remove"])
-        action_dropdown.currentIndexChanged.connect(self.on_batch_action)
-        header_layout.addWidget(action_dropdown)
+        btn_generate = create_batch_btn(ButtonIcons.BATCH_GENERATE.value, "Generate", "Generate Info.toml for Selected", lambda: self.on_batch_action_btn("Generate Info.toml"))
+        btn_enable = create_batch_btn(ButtonIcons.BATCH_ENABLE.value, "Enable", "Enable Selected", lambda: self.on_batch_action_btn("Enable"), color="#4CAF50")
+        btn_disable = create_batch_btn(ButtonIcons.BATCH_DISABLE.value, "Disable", "Disable Selected", lambda: self.on_batch_action_btn("Disable"), color="#F44336")
+        
+        # More actions menu
+        btn_more = QPushButton()
+        btn_more.setIcon(QIcon(ButtonIcons.MORE.value))
+        btn_more.setToolTip("More Actions")
+        btn_more.setFixedWidth(30)
+        btn_more.setFlat(True)
+        
+        more_menu = QMenu(self)
+        remove_action = more_menu.addAction(QIcon(ButtonIcons.BATCH_REMOVE.value), "Remove Selected")
+        remove_action.triggered.connect(lambda: self.on_batch_action_btn("Remove"))
+        btn_more.setMenu(more_menu)
+        btn_more.setStyleSheet("QPushButton::menu-indicator { width: 0px; }")
+
+        header_layout.addWidget(btn_generate)
+        header_layout.addWidget(btn_enable)
+        header_layout.addWidget(btn_disable)
+        header_layout.addWidget(btn_more)
         
         self.body_layout.addWidget(self.tree_list)
         
@@ -433,14 +472,8 @@ class ModList(QWidget):
                 self.header_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
             self.header_checkbox.blockSignals(False)
     
-    def on_batch_action(self, index):
-        """Handle batch action dropdown selection"""
-        if index == 0:  # "Batch Actions" placeholder
-            return
-        
-        # Get action name
-        action = ["", "Enable", "Disable", "Generate Info.toml", "Remove"][index]
-        
+    def on_batch_action_btn(self, action: str):
+        """Handle batch action button clicks"""
         if action == "Generate Info.toml":
             # Get selected mods by iterating through all mods and checking is_selected
             selected_mods = []
@@ -478,12 +511,12 @@ class ModList(QWidget):
                 # Emit signal to trigger batch panel display
                 self.batch_tasks_added.emit()
         
-        # Reset dropdown to placeholder
-        sender = self.sender()
-        if sender:
-            sender.blockSignals(True)
-            sender.setCurrentIndex(0)
-            sender.blockSignals(False)
+        elif action == "Remove":
+            pass
+        elif action == "Enable":
+            pass
+        elif action == "Disable":
+            pass
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():
