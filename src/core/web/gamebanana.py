@@ -73,8 +73,6 @@ def search_mod(mod_name: str, author_name: str = "") -> str | None:
         
         # If no author provided, fallback to view count
         if not author_name:
-            # Sort by view count descending
-            records.sort(key=lambda x: x.get("_nViewCount", 0), reverse=True)
             if records:
                 return records[0]
             return None
@@ -100,7 +98,6 @@ def search_mod(mod_name: str, author_name: str = "") -> str | None:
         if best_match and best_ratio > 0.4:
             return best_match
         
-        records.sort(key=lambda x: x.get("_nViewCount", 0), reverse=True)
         if records:
             return records[0]
         return records
