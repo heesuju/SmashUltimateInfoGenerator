@@ -490,7 +490,7 @@ class ModList(QWidget):
             # Check if at least one URL is a valid directory or zip file
             for url in event.mimeData().urls():
                 path = url.toLocalFile()
-                if os.path.isdir(path) or path.lower().endswith(('.zip', '.7z')):
+                if os.path.isdir(path) or path.lower().endswith(('.zip', '.7z', '.rar')):
                     event.accept()
                     return
         event.ignore()
@@ -498,7 +498,7 @@ class ModList(QWidget):
     def dropEvent(self, event: QDropEvent):
         for url in event.mimeData().urls():
             path = url.toLocalFile()
-            if os.path.isdir(path) or path.lower().endswith(('.zip', '.7z')):
+            if os.path.isdir(path) or path.lower().endswith(('.zip', '.7z', '.rar')):
                 self.mod_manager.add_mod_from_path(path)
     
     def on_add_folder_clicked(self):
@@ -511,7 +511,7 @@ class ModList(QWidget):
             self, 
             "Select Mod Archive", 
             "", 
-            "Archive Files (*.zip *.7z);;All Files (*)"
+            "Archive Files (*.zip *.7z *.rar);;All Files (*)"
         )
         if file_path:
             self.mod_manager.add_mod_from_path(file_path)

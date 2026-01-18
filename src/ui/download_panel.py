@@ -12,6 +12,7 @@ class DownloadItem(QFrame):
         super().__init__()
         self.download_id = download_id
         self.on_cancel = on_cancel
+        self.is_finished = False  # Track if download/install is finished (success or failure)
         
         self.setObjectName("download_item")
         self.setFrameShape(QFrame.Shape.StyledPanel)
@@ -101,6 +102,7 @@ class DownloadItem(QFrame):
             self.status_label.setText("Starting...")
             
     def set_finished(self, success, message):
+        self.is_finished = True  # Mark as finished
         if success:
             self.progress_bar.setValue(100)
             self.status_label.setText("Completed")
@@ -126,6 +128,9 @@ class DownloadPanel(SidePanel):
         self.download_manager.download_started.connect(self.on_download_started)
         self.download_manager.progress_updated.connect(self.on_progress_updated)
         self.download_manager.download_finished.connect(self.on_download_finished)
+        self.download_manager.install_started.connect(self.on_install_started)
+        self.download_manager.install_failed.connect(self.on_install_failed)
+        self.download_manager.install_finished.connect(self.on_install_finished)
         
         self.add_footer_button("Clear Completed", self.clear_completed)
         
@@ -163,13 +168,29 @@ class DownloadPanel(SidePanel):
                 item.deleteLater()
                 return
 
+            # Show completion status (success or failure)
             self.items[download_id].set_finished(success, message)
+    
+    def on_install_started(self, download_id):
+        """Handle installation start"""
+        if download_id in self.items:
+            self.items[download_id].status_label.setText("Installing...")
+            self.items[download_id].progress_bar.setValue(100)  # Download is complete
+    
+    def on_install_finished(self, path):
+        """Handle successful installation - path is returned"""
+        pass
+    
+    def on_install_failed(self, download_id, error_message):
+        """Handle installation failures"""
+        if download_id in self.items:
+            self.items[download_id].set_finished(False, error_message)
             
     def clear_completed(self):
-        # Remove finished items (this logic is simple, ideally we track state better)
+        """Remove all finished items (both completed and failed)"""
         to_remove = []
         for id, item in self.items.items():
-            if item.status_label.text() == "Completed":
+            if item.is_finished:
                 to_remove.append(id)
                 
         for id in to_remove:

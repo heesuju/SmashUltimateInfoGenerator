@@ -25,7 +25,8 @@ from src.utils.logger import output_log
 
 ZIP_EXT = [
     ".zip", 
-    ".7z"
+    ".7z",
+    ".rar"
 ]
 
 ROOT_CHILDREN = [

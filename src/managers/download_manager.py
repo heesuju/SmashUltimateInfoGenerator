@@ -28,7 +28,9 @@ class DownloadManager(QObject):
     download_started = pyqtSignal(str, str) # id, name
     progress_updated = pyqtSignal(str, int, int) # id, received, total
     download_finished = pyqtSignal(str, bool, str) # id, success, message
+    install_started = pyqtSignal(str) # id
     install_finished = pyqtSignal(str) # path
+    install_failed = pyqtSignal(str, str) # id, error_message
     thumbnail_updated = pyqtSignal(str) # path
     
     def __init__(self, config_manager: ConfigManager, max_concurrent=3):
@@ -207,6 +209,9 @@ class DownloadManager(QObject):
         
     def _process_install(self, meta: dict, downloaded_path: str):
         """Use ModInstaller to install the downloaded file"""
+        # Emit install started signal
+        self.install_started.emit(meta["id"])
+        
         mod_root = self.config_manager.config.root_dir
         if not mod_root or not os.path.exists(mod_root):
              self.download_finished.emit(meta["id"], False, "Mod root directory not configured")
@@ -238,23 +243,46 @@ class DownloadManager(QObject):
                  self._manual_install_fallback(meta, downloaded_path)
                  return
 
-            # self.download_finished.emit(meta["id"], False, "Installation failed (No mod root found)") # Don't double emit finish
+            # Installation failed - no mod root found
+            error_msg = "Installation failed: No valid mod structure found in archive"
+            self.install_failed.emit(meta["id"], error_msg)
+            self.download_finished.emit(meta["id"], False, error_msg)
+            
+            # Cleanup downloaded file
+            if os.path.exists(downloaded_path):
+                try:
+                    os.remove(downloaded_path)
+                except Exception as e:
+                    print(f"Failed to remove downloaded file: {e}")
             return
 
         # Process paths (usually just one)
-        for path in new_paths:
-            final_path = self._write_metadata(path, meta)
-            self.install_finished.emit(final_path)
+        try:
+            for path in new_paths:
+                final_path = self._write_metadata(path, meta)
+                self.install_finished.emit(final_path)
 
-        # Cleanup downloaded file
-        if os.path.exists(downloaded_path):
-            try:
-                os.remove(downloaded_path)
-                print(f"Removed downloaded file: {downloaded_path}")
-            except Exception as e:
-                print(f"Failed to remove downloaded file: {e}")
+            # Cleanup downloaded file
+            if os.path.exists(downloaded_path):
+                try:
+                    os.remove(downloaded_path)
+                    print(f"Removed downloaded file: {downloaded_path}")
+                except Exception as e:
+                    print(f"Failed to remove downloaded file: {e}")
+                
+            self.download_finished.emit(meta["id"], True, "Installation Complete")
+        except Exception as e:
+            error_msg = f"Installation error: {str(e)}"
+            print(f"Installation failed: {e}")
+            self.install_failed.emit(meta["id"], error_msg)
+            self.download_finished.emit(meta["id"], False, error_msg)
             
-        self.download_finished.emit(meta["id"], True, "Installation Complete")
+            # Cleanup on error
+            if os.path.exists(downloaded_path):
+                try:
+                    os.remove(downloaded_path)
+                except Exception as cleanup_err:
+                    print(f"Failed to remove downloaded file during error cleanup: {cleanup_err}")
 
     def _manual_install_fallback(self, meta, downloaded_path):
         """Fallback for loose files not handled by ModInstaller"""
@@ -280,7 +308,17 @@ class DownloadManager(QObject):
             self.download_finished.emit(meta["id"], True, "Installation Complete")
             
         except Exception as e:
+            error_msg = f"Manual installation error: {str(e)}"
             print(f"Manual fallback error: {e}")
+            self.install_failed.emit(meta["id"], error_msg)
+            self.download_finished.emit(meta["id"], False, error_msg)
+            
+            # Cleanup downloaded file on error
+            if os.path.exists(downloaded_path):
+                try:
+                    os.remove(downloaded_path)
+                except Exception as cleanup_err:
+                    print(f"Failed to remove downloaded file during error cleanup: {cleanup_err}")
 
     def _write_metadata(self, target_dir: str, meta: dict) -> str:
         """Generate info.toml and download thumbnail. Returns final directory path."""
