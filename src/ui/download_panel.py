@@ -8,9 +8,10 @@ from src.managers.download_manager import DownloadManager
 from src.ui.components.layout import HBox, VBox
 
 class DownloadItem(QFrame):
-    def __init__(self, name: str, download_id: str):
+    def __init__(self, name: str, download_id: str, on_cancel=None):
         super().__init__()
         self.download_id = download_id
+        self.on_cancel = on_cancel
         
         self.setObjectName("download_item")
         self.setFrameShape(QFrame.Shape.StyledPanel)
@@ -34,6 +35,31 @@ class DownloadItem(QFrame):
         self.name_label.setWordWrap(True)
         header.addWidget(self.name_label)
         
+        header.addStretch(1) # Push button to right
+        
+        self.cancel_btn = QPushButton("✕")
+        self.cancel_btn.setFixedSize(24, 24)
+        self.cancel_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.cancel_btn.clicked.connect(self._on_cancel_clicked)
+        self.cancel_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: #ef4444;
+                border: none;
+                font-weight: bold;
+                font-size: 16px;
+                padding: 0px;
+                margin: 0px;
+            }
+            QPushButton:hover {
+                background-color: rgba(239, 68, 68, 0.2);
+                border-radius: 12px;
+            }
+        """)
+        header.addWidget(self.cancel_btn)
+        header.addSpacing(5) # Add margin to prevent clipping
+        
+        
         # Progress
         self.progress_bar = QProgressBar()
         self.progress_bar.setFixedHeight(5)
@@ -54,6 +80,12 @@ class DownloadItem(QFrame):
         self.status_label = QLabel("Waiting...")
         self.status_label.setStyleSheet("color: #aaa; font-size: 10px;")
         layout.addWidget(self.status_label)
+
+    def _on_cancel_clicked(self):
+        if self.on_cancel:
+            self.on_cancel()
+        self.status_label.setText("Cancelling...")
+        self.cancel_btn.setEnabled(False)
         
     def update_progress(self, received, total):
         if total > 0:
@@ -79,6 +111,8 @@ class DownloadItem(QFrame):
             """)
             self.status_label.setText(f"Error: {message}")
             self.status_label.setStyleSheet("color: #ef4444; font-size: 10px;") # Red
+            
+        self.cancel_btn.setVisible(False)
 
 class DownloadPanel(SidePanel):
     def __init__(self, download_manager: DownloadManager):
@@ -99,7 +133,7 @@ class DownloadPanel(SidePanel):
         self.body.addStretch(1)
 
     def on_download_queued(self, download_id, name):
-        item = DownloadItem(name, download_id)
+        item = DownloadItem(name, download_id, lambda: self.download_manager.cancel_download(download_id))
         item.status_label.setText("Pending...")
         item.status_label.setStyleSheet("color: #aaa; font-size: 10px;")
         
@@ -112,7 +146,7 @@ class DownloadPanel(SidePanel):
             item = self.items[download_id]
             item.status_label.setText("Starting...")
         else:
-            item = DownloadItem(name, download_id)
+            item = DownloadItem(name, download_id, lambda: self.download_manager.cancel_download(download_id))
             # Insert at top
             self.body.insertWidget(0, item)
             self.items[download_id] = item
@@ -123,6 +157,12 @@ class DownloadPanel(SidePanel):
             
     def on_download_finished(self, download_id, success, message):
         if download_id in self.items:
+            # If cancelled, remove from list
+            if not success and "cancel" in message.lower():
+                item = self.items.pop(download_id)
+                item.deleteLater()
+                return
+
             self.items[download_id].set_finished(success, message)
             
     def clear_completed(self):

@@ -179,16 +179,25 @@ class DownloadManager(QObject):
         
         if file:
             file.close()
+            filename = file.fileName()
             
         if reply:
             err = reply.error()
             if err == QNetworkReply.NetworkError.NoError:
                 # Success - Start Post Processing
                 if meta:
-                   self._process_install(meta, file.fileName())
+                   self._process_install(meta, filename)
                 else: 
                    self.download_finished.emit(download_id, True, "Download Complete")
             else:
+                # Failure or Cancelled - Cleanup partial file
+                if file and os.path.exists(filename):
+                    try:
+                        os.remove(filename)
+                        print(f"Removed partial file: {filename}")
+                    except Exception as e:
+                        print(f"Failed to remove partial file: {e}")
+                        
                 self.download_finished.emit(download_id, False, reply.errorString())
             reply.deleteLater()
             
@@ -437,6 +446,22 @@ class DownloadManager(QObject):
         reply.deleteLater()
             
     def cancel_download(self, download_id):
+        # Check active downloads
         reply = self.active_downloads.get(download_id)
         if reply:
             reply.abort()
+            return
+
+        found = False
+        temp_queue = deque()
+        while self.download_queue:
+            task = self.download_queue.popleft()
+            if task["id"] == download_id:
+                found = True
+            else:
+                temp_queue.append(task)
+        
+        self.download_queue = temp_queue
+        
+        if found:
+            self.download_finished.emit(download_id, False, "Cancelled")
