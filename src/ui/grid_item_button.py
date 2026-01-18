@@ -34,6 +34,8 @@ class Overlay(QGraphicsView):
         self.player.setAudioOutput(self.audio_output)
 
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.graphics_scene = QGraphicsScene()
         self.setScene(self.graphics_scene)
         # self.setStyleSheet("QGraphicsView { border: none; padding: 0px; }")
