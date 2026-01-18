@@ -460,7 +460,7 @@ class DownloadManager(QObject):
             if is_wifi_safe:
                 mod.wifi_safe = Wifi.SAFE
             else:
-                mod.wifi_safe = Wifi.UNSAFE
+                mod.wifi_safe = Wifi.UNCERTAIN
             
             # Additional Elements
             if mod_data.get("is_moveset", False):
