@@ -16,10 +16,11 @@ from src.ui.components.filter_chips import FilterChips
 from src.ui.components.loading_overlay import LoadingOverlay
 
 class OnlineModList(QWidget):
-    def __init__(self, online_manager: OnlineManager, filter_manager=None):
+    def __init__(self, online_manager: OnlineManager, filter_manager=None, download_manager=None):
         super().__init__()
         self.online_manager = online_manager
         self.filter_manager = filter_manager
+        self.download_manager = download_manager
         
         self.online_manager.state_changed.connect(self.update_view)
         self.online_manager.search_complete.connect(self.populate)
@@ -41,7 +42,7 @@ class OnlineModList(QWidget):
         self.frame.setLayout(self.frame_layout)
         layout.addWidget(self.frame)
         
-        self.grid_list = GridList(self.online_manager, item_class=OnlineGridListItem) 
+        self.grid_list = GridList(self.online_manager, item_class=OnlineGridListItem, download_manager=self.download_manager) 
         self.frame_layout.addWidget(self.grid_list)
         
         self.paging = Paging(callback=self.on_page_changed, lock_size=True)

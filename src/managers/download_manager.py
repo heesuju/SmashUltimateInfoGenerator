@@ -58,9 +58,10 @@ class DownloadManager(QObject):
         if mod_data:
             files = mod_data.get("files", [])
             if len(files) > 1:
-                 # Find matching file logic
-                 matching_file = next((f for f in files if f.get("url") == url), None)
-                 if matching_file:
+                matching_file = next((f for f in files if f.get("url") == url), None)
+                file_index = files.index(matching_file) if matching_file in files else -1
+                
+                if matching_file and file_index > 0:
                     desc = matching_file.get("description", "")
                     if desc:
                         import re

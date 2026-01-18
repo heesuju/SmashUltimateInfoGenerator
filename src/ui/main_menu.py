@@ -142,7 +142,7 @@ class MainMenu(QWidget):
         self.tabs.addTab(self.list_widget, "Installed")
         
         # Create dedicated filter manager for online (or reuse the same one)
-        self.online_list = OnlineModList(self.online_manager, self.filter_manager)
+        self.online_list = OnlineModList(self.online_manager, self.filter_manager, self.download_manager)
         self.tabs.addTab(self.online_list, "Online")
         
         # Connect tab change to show/hide appropriate panels

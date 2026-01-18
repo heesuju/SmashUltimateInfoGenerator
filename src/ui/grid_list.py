@@ -16,10 +16,11 @@ from src.managers.data_manager import ButtonIcons, DataManager
 from src.managers.mod_manager import ModManager
 
 class GridList(QListWidget):
-    def __init__(self, mod_manager:ModManager, item_class=GridListItem):
+    def __init__(self, mod_manager:ModManager, item_class=GridListItem, download_manager=None):
         super().__init__()
         self.mod_manager = mod_manager
         self.item_class = item_class
+        self.download_manager = download_manager  # Store for passing to items
         self.current_page_item_ids = []  # Track IDs of items on current page
         self.item_widgets = {}  # Map item ID to GridListItemWidget for visual updates
         self.setStyleSheet("QListWidget"
@@ -116,7 +117,12 @@ class GridList(QListWidget):
         # Update selected state from ModManager
         mod.selected = self.mod_manager.is_selected(mod.id)
         
-        item = self.item_class(self, mod, grid_list=self)
+        # Check if this is an OnlineGridListItem - pass managers
+        from src.ui.online_grid_item import OnlineGridListItem
+        if self.item_class == OnlineGridListItem:
+            item = self.item_class(self, mod, grid_list=self, online_manager=self.mod_manager, download_manager=self.download_manager)
+        else:
+            item = self.item_class(self, mod, grid_list=self)
         
         # Store widget reference for visual updates
         if hasattr(item, 'widget'):

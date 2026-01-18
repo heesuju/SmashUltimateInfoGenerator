@@ -1,9 +1,9 @@
 import os
 from PyQt6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QFrame, QSizePolicy, QGraphicsDropShadowEffect
+    QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QFrame, QSizePolicy, QGraphicsDropShadowEffect, QMenu
 )
-from PyQt6.QtCore import Qt, QSize, QUrl
-from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont, QDesktopServices
+from PyQt6.QtCore import Qt, QSize, QUrl, QPoint
+from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont, QDesktopServices, QAction
 from datetime import datetime
 from src.ui.grid_item import GridListItem, GridListItemWidget
 from src.models.mod import OnlineModItem, ModItem
@@ -14,25 +14,32 @@ from src.managers.data_manager import ButtonIcons
 from src.ui.components.toggle_button import ToggleButton
 
 class OnlineGridListItem(GridListItem):
-    def __init__(self, parent, mod: OnlineModItem, height:int=80, grid_list=None):
+    def __init__(self, parent, mod: OnlineModItem, height:int=80, grid_list=None, online_manager=None, download_manager=None):
         super(GridListItem, self).__init__() 
         
         self.parent = parent
         self.mod = mod
         
-        self.widget = OnlineGridListItemWidget(self.mod, height, grid_list=grid_list)
+        self.widget = OnlineGridListItemWidget(self.mod, height, grid_list=grid_list, online_manager=online_manager, download_manager=download_manager)
         self.setSizeHint(QSize(350, 110))
         
         parent.addItem(self)
         parent.setItemWidget(self, self.widget)
 
 class OnlineGridListItemWidget(GridListItemWidget):
-    def __init__(self, mod: OnlineModItem, height:int=80, grid_list=None):
+    def __init__(self, mod: OnlineModItem, height:int=80, grid_list=None, online_manager=None, download_manager=None):
         QWidget.__init__(self)
         
         self.mod = mod
         self.grid_list = grid_list
+        self.online_manager = online_manager
+        self.download_manager = download_manager
         self.image_path = mod.thumbnail
+        self.mod_details = {}
+        self.pending_download = False
+        
+        if self.online_manager:
+            self.online_manager.mod_details_ready.connect(self.on_mod_details_ready)
         layout = QHBoxLayout()
         self.setLayout(layout)
 
@@ -164,7 +171,7 @@ class OnlineGridListItemWidget(GridListItemWidget):
         self.download_button.setIcon(QIcon(ButtonIcons.DOWNLOAD.value))
         self.download_button.setFlat(True)
         self.download_button.setFixedSize(24, 24)
-        self.download_button.clicked.connect(self.open_url)
+        self.download_button.clicked.connect(self.on_download_clicked)
         self.download_button.setCursor(Qt.CursorShape.PointingHandCursor)
         action_layout.addWidget(self.download_button)
         
@@ -241,4 +248,99 @@ class OnlineGridListItemWidget(GridListItemWidget):
         """Callback for ImageLoader"""
         if local_path and os.path.exists(local_path):
             self.overlay.update_image(local_path)
+    
+    def on_mod_details_ready(self, details: dict):
+        """Cache mod details when received from OnlineManager"""
+        details_mod_id = details.get("_mod_id", "")
+        if details_mod_id != self.mod.id:
+            return
+        
+        if self.online_manager:
+            is_focused = self.online_manager.focused_id == self.mod.id
+            is_pending = self.pending_download
+            
+            if is_focused or is_pending:
+                self.mod_details = details
+        
+                if self.pending_download:
+                    self.pending_download = False
+                    self._execute_download()
+    
+    def on_download_clicked(self):
+        """Handle download button click"""
+        if not self.mod_details:
+            # Request details and queue download
+            if self.online_manager:
+                self.pending_download = True
+                self.online_manager.set_focus(self.mod.id)
+            return
+        
+        self._execute_download()
+    
+    def _execute_download(self):
+        """Execute the download with cached mod details"""
+        if not self.download_manager:
+            # Fallback to opening URL in browser
+            if self.mod.url:
+                QDesktopServices.openUrl(QUrl(self.mod.url))
+            return
+        
+        files = self.mod_details.get("files", [])
+        
+        if not files:
+            print("No files to download")
+            return
+        
+        if len(files) == 1:
+            # Single file - download directly
+            self.download_file(files[0]["url"], files[0].get("name"))
+        else:
+            # Multiple files - show menu
+            menu = QMenu(self)
+            
+            for file_data in files:
+                name = file_data.get("name", "Unknown")
+                desc = file_data.get("description", "")
+                label = f"{name}"
+                if desc:
+                    label += f" - {desc}"
+                
+                action = QAction(label, self)
+                # Use closure to capture loop variable
+                action.triggered.connect(lambda checked, url=file_data["url"], fname=name: self.download_file(url, fname))
+                menu.addAction(action)
+            
+            menu.addSeparator()
+            
+            download_all = QAction("Download All", self)
+            download_all.triggered.connect(lambda: self.download_all_files(files))
+            menu.addAction(download_all)
+            
+            # Show menu below button
+            menu.exec(self.download_button.mapToGlobal(QPoint(0, self.download_button.height())))
+    
+    def download_file(self, url: str, filename: str = None):
+        """Download a single file"""
+        if not self.download_manager:
+            return
+        
+        # Extract filename from URL if not provided
+        if not filename:
+            filename = url.split("/")[-1]
+            if "?" in filename:
+                filename = filename.split("?")[0]
+        if not filename:
+            filename = "download.zip"
+        
+        # Get mod name from details
+        mod_name = self.mod_details.get("mod_name", self.mod.name)
+        
+        self.download_manager.start_download(url, filename, mod_name, self.mod.id, self.mod_details)
+    
+    def download_all_files(self, files: list):
+        """Download all files"""
+        print(f"Downloading {len(files)} files")
+        for f in files:
+            if f.get("url"):
+                self.download_file(f.get("url"), f.get("name"))
 

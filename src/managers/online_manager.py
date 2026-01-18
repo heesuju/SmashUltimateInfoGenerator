@@ -72,8 +72,8 @@ class OnlineManager(QObject):
     def _on_metadata_complete(self, data: Dict):
         """Callback from Gamebanana thread for single item details"""
         # data is keyed by ID: { "12345": { ... } }
-        if self._focused_id in data:
-            details = data[self._focused_id]
+        for mod_id, details in data.items():
+            details["_mod_id"] = mod_id
             self.mod_details_ready.emit(details)
 
     def get_mod(self, mod_id: str) -> OnlineModItem:
