@@ -1,8 +1,10 @@
 import os
 import tempfile
+import zipfile
+import py7zr
+import rarfile
 from PyQt6.QtCore import QThread, pyqtSignal
 from typing import Union
-from pyunpack import Archive
 
 from src.utils.file import (
     is_valid_dir,
@@ -22,6 +24,15 @@ from src.core.formatting import (
 from src.core.scanner import scan_mod
 from src.utils.hash import get_hash
 from src.utils.logger import output_log
+
+# Configure rarfile to use 7-Zip if available
+_7ZIP_PATH = r"C:\Program Files\7-Zip\7z.exe"
+if os.path.exists(_7ZIP_PATH):
+    # Set 7-Zip as the extraction tool
+    rarfile.UNRAR_TOOL = "7z"
+    rarfile.SEVENZIP_TOOL = _7ZIP_PATH
+    rarfile.tool_setup()
+
 
 ZIP_EXT = [
     ".zip", 
@@ -46,6 +57,34 @@ ROOT_CHILDREN = [
     "info.toml",
     "info.ini"
 ]
+
+def extract_archive(archive_path: str, extract_to: str) -> None:
+    """
+    Extract archive using native Python libraries based on file extension.
+    Supports .zip, .7z, and .rar formats.
+    """
+    ext = os.path.splitext(archive_path)[1].lower()
+    
+    try:
+        if ext == ".zip":
+            with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+                zip_ref.extractall(extract_to)
+        elif ext == ".7z":
+            with py7zr.SevenZipFile(archive_path, 'r') as z:
+                z.extractall(extract_to)
+        elif ext == ".rar":
+            with rarfile.RarFile(archive_path, 'r') as rar_ref:
+                rar_ref.extractall(extract_to)
+        else:
+            raise ValueError(f"Unsupported archive format: {ext}")
+    except (zipfile.BadZipFile, py7zr.exceptions.Bad7zFile) as e:
+        raise ValueError(f"Corrupted or invalid archive file: {e}")
+    except rarfile.BadRarFile as e:
+        raise ValueError(f"Corrupted or invalid RAR file. The file may be incomplete or damaged: {e}")
+    except rarfile.NeedFirstVolume:
+        raise ValueError("This is a multi-part RAR archive. Please provide the first volume (.part1.rar)")
+    except Exception as e:
+        raise ValueError(f"Failed to extract archive: {e}")
 
 def scan_for_mod_roots(root_path: str, current_depth: int = 0, max_depth: int = 3) -> list[str]:
     """
@@ -166,7 +205,7 @@ class ModInstaller(QThread):
         
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
-                Archive(path).extractall(temp_dir)
+                extract_archive(path, temp_dir)
                 
                 # Check contents recursively for mods
                 mod_roots = scan_for_mod_roots(temp_dir)
