@@ -1,7 +1,7 @@
 import threading
 from PyQt6.QtCore import QThread, pyqtSignal
 from src.managers.batch_manager import BatchManager, BatchTaskStatus
-from src.core.web.gamebanana import search_mod, get_mod_info, process_mod_info, get_mod_description
+from src.core.gamebanana import search_mod, get_mod_info, process_mod_info, get_mod_description, classify_mod_safety
 from src.managers.data_manager import DataManager
 
 
@@ -110,6 +110,11 @@ class BatchWorker(QThread):
                 description = get_mod_description(mod_id)
                 if description:
                     task.fetched_description = description
+                    
+                    if not task.fetched_is_wifi_safe:
+                        classification = classify_mod_safety(description)
+                        if classification == "Safe":
+                            task.fetched_is_wifi_safe = True
                 
                 task.status = BatchTaskStatus.COMPLETE
                 task.progress_message = "Data fetched successfully"

@@ -1,4 +1,5 @@
 import threading
+import re
 from typing import Union
 import concurrent.futures
 from src.utils.web import get_request
@@ -11,6 +12,71 @@ WIFI_SAFE_TAGS = [
     "wi-fi safe",
     "wifi_safe"
 ]
+
+POSITIVE_PATTERNS = [
+    re.compile(r"wi[-\s]?fi[-\s]?safe", re.IGNORECASE), 
+    re.compile(r"safe\sfor\swifi", re.IGNORECASE), 
+    re.compile(r"compatible\swith\sonline\splay", re.IGNORECASE), 
+    re.compile(r"tested\sfor\smultiplayer", re.IGNORECASE), 
+    re.compile(r"works\swell\sover\sWiFi", re.IGNORECASE)
+]
+
+NEGATIVE_PATTERNS = [
+    re.compile(r"not\s+wi[-\s]?fi[-\s]?safe", re.IGNORECASE), 
+    re.compile(r"may\scause\sdesyncs", re.IGNORECASE), 
+    re.compile(r"not\srecommended\sfor\smultiplayer", re.IGNORECASE), 
+    re.compile(r"can\sget\syou\sbanned", re.IGNORECASE), 
+    re.compile(r"incompatible\swith\sonline", re.IGNORECASE), 
+    re.compile(r"do\snot\suse\sonline", re.IGNORECASE), 
+    re.compile(r"unsafe\sfor\sonline\splay", re.IGNORECASE)
+]
+
+NEGATION_PATTERNS = [
+    re.compile(r"(not|do\snot)\s+\w+\s+wi[-\s]?fi[-\s]?safe", re.IGNORECASE),
+    re.compile(r"(not|do\snot)\s+recommend\sonline\suse", re.IGNORECASE),
+    re.compile(r"(not|do\snot)\s+work\sover\sWiFi", re.IGNORECASE)
+]
+
+# Rule-based classification
+def classify_mod_safety(text)->str:
+    score = 0
+    
+    if find_positive_patterns(text):
+        score += 1
+    
+    if find_negative_patterns(text):
+        score -= 1
+    
+    if find_negations(text):
+        score -= 1
+
+    if score > 0:
+        return "Safe"
+    elif score < 0:
+        return "Not Safe"
+    else:
+        return "Uncertain"
+
+# Function to check for positive patterns
+def find_positive_patterns(text):
+    for pattern in POSITIVE_PATTERNS:
+        if pattern.search(text):
+            return True
+    return False
+
+# Function to check for negative patterns
+def find_negative_patterns(text):
+    for pattern in NEGATIVE_PATTERNS:
+        if pattern.search(text):
+            return True
+    return False
+
+# Function to check for negations near "wifi-safe"
+def find_negations(text):
+    for pattern in NEGATION_PATTERNS:
+        if pattern.search(text):
+            return True
+    return False
 
 def get_mod_info(id:str):
     result = get_request(f"https://gamebanana.com/apiv4/Mod/{id}")
@@ -284,6 +350,12 @@ class Gamebanana(threading.Thread):
                 desc = get_mod_description(key)
                 if desc:
                     value['description'] = desc
+                    
+                    if value.get("is_wifi_safe", False) == False:
+                        classification = classify_mod_safety(desc)
+                        if classification == "Safe":
+                            value['is_wifi_safe'] = True
+
                 # Wrap in dict keyed by ID
                 output_data[key] = value
             else:

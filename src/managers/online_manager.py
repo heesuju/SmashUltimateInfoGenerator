@@ -1,5 +1,5 @@
 from typing import List, Callable, Dict, Optional
-from src.core.web.gamebanana import Gamebanana
+from src.core.gamebanana import Gamebanana
 from src.models.mod import Mod, Character, Category, Wifi, ModItem, OnlineModItem
 from src.constants.enums import Fighter, Element
 

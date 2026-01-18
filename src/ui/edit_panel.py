@@ -21,7 +21,7 @@ from src.managers.cache_manager import CacheManager
 from src.managers.data_manager import DataManager
 from src.ui.components.validators import limit_version
 from src.core.formatting import format_folder_name, format_display_name, format_character_names_for_display, format_character_names_for_folder, format_slots
-from src.core.web.gamebanana import Gamebanana
+from src.core.gamebanana import Gamebanana
 from src.utils.web import open_page
 from src.core.data import generate_toml
 from src.models.mod import Character
