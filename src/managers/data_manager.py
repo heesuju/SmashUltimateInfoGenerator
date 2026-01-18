@@ -15,7 +15,7 @@ class NavigationMenuIcon(Enum):
     EDIT = "assets/icons/menu/edit_32.png"
     BATCH = "assets/icons/menu/batch_32.svg"
     WORKSPACE = "assets/icons/menu/workspace_32.png"
-    DOWNLOAD = "assets/icons/menu/download_32.png" # Placeholder path, will need to handle if missing or use existing
+    DOWNLOAD = "assets/icons/menu/download_32.png"
     NONE = ""
 
 class ButtonIcons(Enum):
@@ -36,7 +36,8 @@ class ButtonIcons(Enum):
     MENU = "assets/icons/buttons/menu_16.png"
     SORT_ASC = "assets/icons/buttons/sort_asc_16.png"
     SORT_DESC = "assets/icons/buttons/sort_desc_16.png"
-    WEB = "assets/icons/buttons/web_16.svg"
+    WEB = "assets/icons/buttons/web_16.png"
+    DOWNLOAD = "assets/icons/buttons/download_16.png"
 
 class DataManager:
     _data_list_cache = None

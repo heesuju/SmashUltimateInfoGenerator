@@ -152,22 +152,21 @@ class OnlineGridListItemWidget(GridListItemWidget):
         info_layout.addStretch(1)
 
         # -- Actions Content --
-        # Browser Button
         self.browser_button = QPushButton()
-        self.browser_button.setIcon(QIcon("assets/icons/buttons/web_16.svg"))
+        self.browser_button.setIcon(QIcon(ButtonIcons.WEB.value))
         self.browser_button.setFlat(True)
         self.browser_button.setFixedSize(24, 24)
         self.browser_button.clicked.connect(self.open_url)
         self.browser_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        
         action_layout.addWidget(self.browser_button)
 
-        # Menu Button
-        menu_button = QPushButton()
-        menu_button.setIcon(QIcon(QPixmap(ButtonIcons.MENU.value)))
-        menu_button.setFlat(True)
-        menu_button.setFixedSize(QSize(24, 24))
-        action_layout.addWidget(menu_button)
+        self.download_button = QPushButton()
+        self.download_button.setIcon(QIcon(ButtonIcons.DOWNLOAD.value))
+        self.download_button.setFlat(True)
+        self.download_button.setFixedSize(24, 24)
+        self.download_button.clicked.connect(self.open_url)
+        self.download_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        action_layout.addWidget(self.download_button)
         
         right_layout.addStretch(1)
         
