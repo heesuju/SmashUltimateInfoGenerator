@@ -19,7 +19,7 @@ from src.core.formatting import (
     clean_version
 )
 from src.utils.string_helper import SPECIAL_CHARS, remove_redundant_spacing
-from src.constants.enums import Fighter
+from src.constants.enums import Fighter, Wifi, Element
 from src.managers.data_manager import DataManager
 
 class DownloadManager(QObject):
@@ -426,6 +426,20 @@ class DownloadManager(QObject):
                 mod.authors = existing_authors
             else:
                 mod.authors = mod_data.get("authors", "")
+
+            # Wifi Safe
+            is_wifi_safe = mod_data.get("is_wifi_safe", False)
+            if is_wifi_safe:
+                mod.wifi_safe = Wifi.SAFE
+            else:
+                mod.wifi_safe = Wifi.UNSAFE
+            
+            # Additional Elements
+            if mod_data.get("is_moveset", False):
+                mod.add_to_included(Element.MOVESET)
+            
+            if mod_data.get("is_final_smash", False):
+                mod.add_to_included(Element.FINAL_SMASH)
 
             # Version
             if existing_version:
