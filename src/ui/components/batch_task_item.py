@@ -938,15 +938,7 @@ class BatchTaskItem(QWidget):
                 new_elements.remove("Select All")
             changed = new_elements != self.orig_elements_set
         elif field_name == "thumbnail":
-            # If pending path is set, it's changed. 
-            # Unless pending path is same as original? unlikely if user browsed.
-            # If mod.thumbnail is different from original?
-            # self.task.original_thumbnail might be None.
             changed = self.pending_thumbnail_path is not None
-            # Update thumbnail container style? 
-            # The thumbnail widget is inside a container.
-            # But we don't have ref to container easily. 
-            # We can set style on thumb_combo?
             self._set_changed_style(self.thumb_combo, changed)
             return
 

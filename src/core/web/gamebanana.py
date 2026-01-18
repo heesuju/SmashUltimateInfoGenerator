@@ -76,7 +76,7 @@ def search_mod(mod_name: str, author_name: str = "") -> str | None:
             # Sort by view count descending
             records.sort(key=lambda x: x.get("_nViewCount", 0), reverse=True)
             if records:
-                return str(records[0].get("_idRow"))
+                return records[0]
             return None
             
         # If author provided, try fuzzy match
