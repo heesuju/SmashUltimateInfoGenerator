@@ -235,6 +235,14 @@ class DownloadManager(QObject):
         for path in new_paths:
             final_path = self._write_metadata(path, meta)
             self.install_finished.emit(final_path)
+
+        # Cleanup downloaded file
+        if os.path.exists(downloaded_path):
+            try:
+                os.remove(downloaded_path)
+                print(f"Removed downloaded file: {downloaded_path}")
+            except Exception as e:
+                print(f"Failed to remove downloaded file: {e}")
             
         self.download_finished.emit(meta["id"], True, "Installation Complete")
 
