@@ -27,7 +27,7 @@ class WorkspacePanel(SidePanel):
         # Cache directory input with browse button
         self.cache_dir = InputButtonWidget(
             "Enter cache directory", 
-            InputButton(text="", img=ButtonIcons.BROWSE, callback=self.choose_cache_dir)
+            InputButton(img=ButtonIcons.BROWSE, callback=self.choose_cache_dir)
         )
         self.body.addWidget(self.cache_dir)
         
@@ -47,7 +47,7 @@ class WorkspacePanel(SidePanel):
         self.body.addWidget(add_workspace_label)
         
         self.workspace_input = InputButtonWidget(
-            "Enter workspace path",
+            "Enter new workspace name",
             InputButton(text="Add", highlight=True, callback=self.add_workspace)
         )
         self.body.addWidget(self.workspace_input)
@@ -104,7 +104,7 @@ class WorkspacePanel(SidePanel):
         
         self.export_dir = InputButtonWidget(
             "Enter export directory",
-            InputButton(text="Browse", img=ButtonIcons.BROWSE, callback=self.choose_export_dir)
+            InputButton(img=ButtonIcons.BROWSE, callback=self.choose_export_dir)
         )
         self.body.addWidget(self.export_dir)
         

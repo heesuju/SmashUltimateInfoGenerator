@@ -45,17 +45,15 @@ python setup.py build
 - [X] Added mod search to get gamebanana url from mod name and authors
 - [X] Scan mod folder for fighter, sound, effect, ui, etc.
 - [X] Download mod preview thumbnails from gamebanana
+- [X] Added mod enable toggle
+- [X] Added workspace management
 
 ## ToDo 
 - [ ] Highlight modified fields in Filter, Edit, Batch panels
-- [X] Re-implement mod enable toggle for selected workspace
 - [ ] Add export feature
 - [ ] Add filters for online mod search
 
 ## BugFix
 - [ ] Select error for multiple pages
 - [ ] Fix hidden mods not appearing ever again and other items are hidden when show hidden is on
-- [X] Fix width update bug when changing from batch to config panel
-- [ ] Fix navigation tabs selection not resetting when changing tabs between installed/online
-- [X] Fix Wifi-safe not being applied when downloading mod
 - [ ] Fix Batch panel layout

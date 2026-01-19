@@ -97,3 +97,15 @@ class Navigation(QWidget):
                     button.setChecked(False)
 
         self.selection_changed.emit()
+
+    def close_all_panels(self):
+        """Close all panels and deselect buttons"""
+        self.selected_menu = NavigationMenuIcon.NONE
+        
+        for item in self.menus:
+            item.widget.hide()
+            button = self.buttons.get(item.icon)
+            if button:
+                button.setChecked(False)
+                
+        self.selection_changed.emit()

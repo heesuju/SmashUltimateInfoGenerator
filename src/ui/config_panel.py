@@ -39,13 +39,13 @@ class Config(SidePanel):
         super().__init__("Config")
         self.config_manager = config_manager
         
-        self.root_dir = InputButtonWidget("Enter mod directory", InputButton(text="Browse", img=ButtonIcons.BROWSE, callback=self.choose_root_dir))
+        self.root_dir = InputButtonWidget("Enter mod directory", InputButton(img=ButtonIcons.BROWSE, callback=self.choose_root_dir))
         self.body.addWidget(self.root_dir)
 
-        self.cache_dir = InputButtonWidget("Enter cache directory", InputButton(text="Browse", img=ButtonIcons.BROWSE, callback=self.choose_cache_dir))
+        self.cache_dir = InputButtonWidget("Enter cache directory", InputButton(img=ButtonIcons.BROWSE, callback=self.choose_cache_dir))
         self.body.addWidget(self.cache_dir)
 
-        self.export_dir = InputButtonWidget("Enter export directory", InputButton(text="Browse", img=ButtonIcons.BROWSE, callback=self.choose_export_dir))
+        self.export_dir = InputButtonWidget("Enter export directory", InputButton(img=ButtonIcons.BROWSE, callback=self.choose_export_dir))
         self.body.addWidget(self.export_dir)
 
         self.theme_drop = QComboBox()

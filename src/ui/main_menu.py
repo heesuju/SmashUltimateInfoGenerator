@@ -213,6 +213,8 @@ class MainMenu(QWidget):
     
     def on_tab_changed(self, index):
         """Handle tab changes to show/hide appropriate panels"""
+        self.menu.close_all_panels()
+        
         is_online = (index == 1)
         
         # Get navigation buttons
