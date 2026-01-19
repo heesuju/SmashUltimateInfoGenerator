@@ -133,6 +133,39 @@ class GridList(QListWidget):
         print(f"Item clicked: {item.mod.name}")
         self.mod_manager.set_selection(item.mod.id)
 
+    def keyPressEvent(self, event):
+        """Handle keyboard shortcuts for grid list"""
+        from PyQt6.QtCore import Qt
+        
+        current_item = self.currentItem()
+        if current_item and hasattr(current_item, 'mod'):
+            if event.key() == Qt.Key.Key_Space:
+                # Space: Toggle selection
+                mod_id = current_item.mod.id
+                should_select = not self.mod_manager.is_selected(mod_id)
+                
+                if should_select:
+                    self.mod_manager.add_selection(mod_id)
+                else:
+                    self.mod_manager.remove_selection(mod_id)
+                
+                # Update visual state of widget
+                if mod_id in self.item_widgets:
+                    widget = self.item_widgets[mod_id]
+                    widget.mod.selected = should_select
+                    widget.update_selection_style()
+                
+                event.accept()
+                return
+            elif event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
+                # Enter: Show preview
+                self.mod_manager.set_selection(current_item.mod.id)
+                event.accept()
+                return
+        
+        # Call parent implementation for other keys
+        super().keyPressEvent(event)
+
     def clear(self):
         """
         Removes all items from the grid widget and cleans up references.

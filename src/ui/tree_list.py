@@ -23,8 +23,9 @@ from src.models.mod import Mod, ModItem
 from src.managers.mod_manager import ModManager
 
 class CustomTreeWidget(QTreeWidget):
-    def __init__(self):
+    def __init__(self, parent_tree_list=None):
         super().__init__()
+        self.parent_tree_list = parent_tree_list  # Reference to parent TreeList
         self.icon_size = 20  # Size of each icon
         self.setItemDelegate(CustomDelegate())
         
@@ -89,6 +90,29 @@ class CustomTreeWidget(QTreeWidget):
         super().wheelEvent(event)
         # Verify overlay updates (usually handled by valueChanged connection)
 
+    def keyPressEvent(self, event):
+        """Handle keyboard shortcuts for tree list"""
+        from PyQt6.QtCore import Qt
+        
+        current_item = self.currentItem()
+        if current_item and hasattr(current_item, 'mod') and self.parent_tree_list:
+            if event.key() == Qt.Key.Key_Space:
+                # Space: Toggle checkbox
+                mod_id = current_item.mod.id
+                if mod_id in self.parent_tree_list.item_checkboxes:
+                    checkbox = self.parent_tree_list.item_checkboxes[mod_id]
+                    checkbox.setChecked(not checkbox.isChecked())
+                event.accept()
+                return
+            elif event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
+                # Enter: Show preview
+                self.parent_tree_list.mod_manager.set_selection(current_item.mod.id)
+                event.accept()
+                return
+        
+        # Call parent implementation for other keys
+        super().keyPressEvent(event)
+
 class CustomDelegate(QStyledItemDelegate):
     def sizeHint(self, option, index):
         size = super().sizeHint(option, index)
@@ -113,7 +137,7 @@ class TreeList(QWidget):
 
         # Top Controls
         
-        self.tree_widget = CustomTreeWidget()
+        self.tree_widget = CustomTreeWidget(parent_tree_list=self)
         self.tree_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.tree_widget.setMinimumWidth(200)
         self.tree_widget.setIconSize(QSize(72, 72)) 
