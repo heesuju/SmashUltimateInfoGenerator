@@ -28,6 +28,7 @@ class PreviewPanel(SidePanel):
         self.mod_manager.add_focus_callback(self.set_data)
         self.mod_manager.add_favorite_callback(self.on_favorite_changed)
         self.mod_manager.add_hidden_callback(self.on_hidden_changed)
+        self.mod_manager.add_enabled_callback(self.on_enabled_changed)
         
         if self.online_manager:
             self.online_manager.add_focus_callback(self.set_online_data)
@@ -93,7 +94,7 @@ class PreviewPanel(SidePanel):
 
         self.open_btn = self.add_footer_button("Open", self.on_open_clicked)
         self.edit_btn = self.add_footer_button("Edit", self.on_edit_clicked)
-        self.enable_btn = self.add_footer_button("Enable", self.on_enabled, primary=True)
+        self.enable_btn = self.add_footer_button("Enable", self.on_enable_toggle, primary=True)
         self.download_btn = self.add_footer_button("Download", self.on_download_clicked, primary=True)
         self.download_btn.hide()
 
@@ -202,6 +203,13 @@ class PreviewPanel(SidePanel):
         else:
              self.web_button.setEnabled(False)
              self.web_button.setToolTip("No URL available")
+        
+        # Update enable button state
+        is_enabled = str(mod.hash) in self.mod_manager.enabled_ids
+        if is_enabled:
+            self.enable_btn.setText("Disable")
+        else:
+            self.enable_btn.setText("Enable")
 
     def on_open_clicked(self):
         id =self.mod_manager.focused_id
@@ -239,6 +247,17 @@ class PreviewPanel(SidePanel):
             # Note: is_hidden=True means Hidden, Button State True = Hidden.
             self.hide_button.set_state(is_hidden)
 
+    def on_enable_toggle(self):
+        """Toggle enabled state for the current mod"""
+        id = self.mod_manager.focused_id
+        if not id:
+            return
+        mod = self.mod_manager.get_mod(id)
+        if str(mod.hash) in self.mod_manager.enabled_ids:
+            self.mod_manager.remove_enabled(mod.hash)
+        else:
+            self.mod_manager.add_enabled(mod.hash)
+    
     def on_enabled(self):
         id =self.mod_manager.focused_id
         mod = self.mod_manager.get_mod(id)
@@ -248,6 +267,14 @@ class PreviewPanel(SidePanel):
         id =self.mod_manager.focused_id
         mod = self.mod_manager.get_mod(id)
         self.mod_manager.remove_enabled(mod.hash)
+    
+    def on_enabled_changed(self, mod_id:str, is_enabled:bool):
+        """Update UI if the changed mod is the currently displayed one"""
+        if self.mod_manager.focused_id and self.mod_manager.get_mod(self.mod_manager.focused_id).hash == mod_id:
+            if is_enabled:
+                self.enable_btn.setText("Disable")
+            else:
+                self.enable_btn.setText("Enable")
     
     def on_edit_clicked(self):
         """Emit signal to request edit mode for current mod"""

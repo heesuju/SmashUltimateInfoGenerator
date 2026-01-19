@@ -103,6 +103,21 @@ def read_json(json_path:str):
 
     return result
 
+def write_json(json_path: str, data: any):
+    """
+    writes data to json file
+    """
+    try:
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(json_path), exist_ok=True)
+        
+        with open(json_path, mode='w', encoding='utf-8') as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+            return True
+    except Exception as e:
+        print(f"Error writing to JSON file '{json_path}': {e}")
+        return False
+
 def copy_directory_contents(source_dir:str, new_dir_parent:str, new_dir_name:str):
     """
     copies all contents to another directory

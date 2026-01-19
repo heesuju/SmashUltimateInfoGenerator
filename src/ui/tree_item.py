@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QLabel
 from functools import partial
-from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtGui import QIcon, QPixmap, QColor
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
 )
 from src.managers.data_manager import ButtonIcons, DataManager
 from src.models.mod import Mod, ModItem
+from src.utils.image_utils import tint_pixmap
 
 from src.ui.components.toggle_button import ToggleButton
 
@@ -102,17 +103,26 @@ class TreeItem(QTreeWidgetItem):
         
         actions_layout.addWidget(self.hide_button)
         
-        # Add Enable Button
-        btn = QPushButton()
-        btn.setIcon(QIcon(QPixmap(ButtonIcons.ENABLE.value)))
-        btn.setStyleSheet(("""QPushButton {
-            border-radius: 0px;
-            border: none;
-        }"""))
-        btn.setFixedHeight(24)
-        btn.setFixedWidth(24)
-        btn.clicked.connect(partial(self.on_item_toggled, self.mod.name, btn))
-        actions_layout.addWidget(btn)
+        # Add Enable Toggle Button with tinted icons
+        # Create tinted icons: Green for Enabled (Active), Dimmed for Disabled (Inactive)
+        # We want the icon to reflect the CURRENT status.
+        self._enabled_pixmap = tint_pixmap(QPixmap(ButtonIcons.ENABLE.value), QColor("#4CAF50"))
+        self._disabled_pixmap = tint_pixmap(QPixmap(ButtonIcons.DISABLE.value), QColor("#9E9E9E"))
+        
+        # ToggleButton needs icon paths, so we'll create a custom button instead
+        self.enable_button = QPushButton()
+        self.enable_button.setFixedSize(24, 24)
+        self.enable_button.setFlat(True)
+        
+        # Set initial icon based on enabled state
+        if self.mod.enabled:
+            self.enable_button.setIcon(QIcon(self._enabled_pixmap))
+        else:
+            self.enable_button.setIcon(QIcon(self._disabled_pixmap))
+        
+        self.enable_button.clicked.connect(self.on_enable_button_clicked)
+        
+        actions_layout.addWidget(self.enable_button)
         
         actions_layout.addStretch() # Push access to left
             
@@ -146,3 +156,30 @@ class TreeItem(QTreeWidgetItem):
         # Called when eye is toggled OFF (Hidden) -> Add to hidden
         if self.tree_list and hasattr(self.tree_list, 'mod_manager'):
             self.tree_list.mod_manager.add_hidden(self.mod.id)
+    
+    def on_enable_button_clicked(self):
+        """Handle enable button click - toggle enabled state"""
+        if self.tree_list and hasattr(self.tree_list, 'mod_manager'):
+            if self.mod.id in self.tree_list.mod_manager.enabled_ids:
+                # Currently enabled, so disable it
+                self.tree_list.mod_manager.remove_enabled(self.mod.id)
+            else:
+                # Currently disabled, so enable it
+                self.tree_list.mod_manager.add_enabled(self.mod.id)
+    
+    def update_enable_button_icon(self, is_enabled:bool):
+        """Update the enable button icon based on enabled state"""
+        if is_enabled:
+            self.enable_button.setIcon(QIcon(self._enabled_pixmap))
+        else:
+            self.enable_button.setIcon(QIcon(self._disabled_pixmap))
+    
+    def on_enable(self):
+        # Called when enabled (toggle ON)
+        if self.tree_list and hasattr(self.tree_list, 'mod_manager'):
+            self.tree_list.mod_manager.add_enabled(self.mod.id)
+    
+    def on_disable(self):
+        # Called when disabled (toggle OFF)
+        if self.tree_list and hasattr(self.tree_list, 'mod_manager'):
+            self.tree_list.mod_manager.remove_enabled(self.mod.id)

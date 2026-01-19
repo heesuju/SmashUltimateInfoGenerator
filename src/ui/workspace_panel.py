@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QTreeWidget,
-    QTreeWidgetItem, QCheckBox, QLineEdit, QHeaderView, QFileDialog
+    QTreeWidgetItem, QCheckBox, QLineEdit, QHeaderView, QFileDialog, QGroupBox, QMessageBox
 )
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont, QIcon, QPixmap
@@ -9,6 +9,8 @@ from src.ui.components.input_button_widget import InputButtonWidget, InputButton
 from src.ui.components.single_combobox import SingleComboBox
 from src.managers.data_manager import ButtonIcons
 from src.managers.config_manager import ConfigManager
+from src.managers.workspace_manager import WorkspaceManager
+from src.managers.mod_manager import ModManager
 
 FONT = "Arial"
 FONT_SIZE = 10
@@ -16,9 +18,11 @@ BODY_FONT_SIZE = 8
 
 
 class WorkspacePanel(SidePanel):
-    def __init__(self, config_manager: ConfigManager):
+    def __init__(self, config_manager: ConfigManager, workspace_manager: WorkspaceManager, mod_manager: ModManager):
         super().__init__("Workspace")
         self.config_manager = config_manager
+        self.workspace_manager = workspace_manager
+        self.mod_manager = mod_manager
         
         # Cache directory input with browse button
         self.cache_dir = InputButtonWidget(
@@ -92,13 +96,28 @@ class WorkspacePanel(SidePanel):
         self.add_workspace_to_tree("Default", is_default=True)
         
         self.body.addStretch(1)
+
+        # Export Directory Input
+        export_label = QLabel("Export Directory:")
+        export_label.setFont(QFont(FONT, BODY_FONT_SIZE))
+        self.body.addWidget(export_label)
+        
+        self.export_dir = InputButtonWidget(
+            "Enter export directory",
+            InputButton(text="Browse", img=ButtonIcons.BROWSE, callback=self.choose_export_dir)
+        )
+        self.body.addWidget(self.export_dir)
+        
+        # Connect inputs to realtime save
+        self.cache_dir.input_box.editingFinished.connect(self.save_config)
+        self.export_dir.input_box.editingFinished.connect(self.save_config)
         
         # Action buttons
-        self.add_footer_button("Restore", self.restore_workspaces)
-        self.add_footer_button("Apply", self.apply, primary=True)
+        self.add_footer_button("Sync Enabled Mods to Export Directory", self.on_sync_clicked, primary=True)
         
-        # Load saved cache directory
+        # Load saved cache directory and export directory
         self.load_cache_dir()
+        self.load_export_dir()
     
     def choose_cache_dir(self):
         """Open file dialog to choose cache directory"""
@@ -109,6 +128,7 @@ class WorkspacePanel(SidePanel):
         )
         if directory:
             self.cache_dir.set_text(directory)
+            self.save_config()
     
     def load_cache_dir(self):
         """Load saved cache directory from config"""
@@ -116,18 +136,76 @@ class WorkspacePanel(SidePanel):
             cache_dir = self.config_manager.config.cache_dir
             if cache_dir:
                 self.cache_dir.set_text(cache_dir)
+                
+    def choose_export_dir(self):
+        """Open file dialog to choose export directory"""
+        directory = QFileDialog.getExistingDirectory(
+            self,
+            "Select Export Directory",
+            self.export_dir.get_text() or ""
+        )
+        if directory:
+            self.export_dir.set_text(directory)
+            self.save_config()
+
+    def load_export_dir(self):
+        """Load saved export directory from config"""
+        if hasattr(self.config_manager.config, 'export_dir'):
+            export_dir = self.config_manager.config.export_dir
+            if export_dir:
+                self.export_dir.set_text(export_dir)
+
+    def save_config(self):
+        """Save config settings (dirs) immediately"""
+        changed = False
+        
+        # Save cache directory to config
+        cache_dir = self.cache_dir.get_text()
+        if cache_dir and cache_dir != self.config_manager.config.cache_dir:
+            self.config_manager.config.cache_dir = cache_dir
+            changed = True
+            
+        # Save export directory to config
+        export_dir = self.export_dir.get_text()
+        if export_dir and export_dir != self.config_manager.config.export_dir:
+            self.config_manager.config.export_dir = export_dir
+            changed = True
+
+        if changed:
+            self.config_manager.save()
+            print("Config settings saved")
+
+    def on_sync_clicked(self):
+        """Trigger sync process"""
+        # Ensure config is saved
+        self.save_config()
+        
+        reply = QMessageBox.question(
+            self, 
+            "Sync Mods", 
+            "This will delete any mods in the export folder that are disabled or removed, and copy all enabled mods.\nThis may take some time.\n\nContinue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            # We will implement sync_mods with a callback or signal for progress later, 
+            # for now just trigger it
+            # TODO: Add progress feedback
+            self.workspace_manager.sync_mods(self.mod_manager.get_mods())
     
     def add_workspace(self):
-        """Add a new workspace to the tree and combobox"""
-        workspace_path = self.workspace_input.get_text().strip()
-        if workspace_path:
-            # Add to combobox
-            self.workspace_selector.addItem(workspace_path)
-            # Add to tree
-            self.add_workspace_to_tree(workspace_path, is_default=False)
-            # Clear input
-            self.workspace_input.set_text("")
-    
+        """Add a new workspace"""
+        workspace_name = self.workspace_input.get_text().strip()
+        if workspace_name:
+            if self.workspace_manager.add_workspace(workspace_name):
+                # Refresh UI
+                self.workspace_selector.addItem(workspace_name)
+                self.add_workspace_to_tree(workspace_name, is_default=False)
+                self.workspace_input.set_text("")
+            else:
+                from PyQt6.QtWidgets import QMessageBox
+                QMessageBox.warning(self, "Error", f"Workspace '{workspace_name}' already exists.")
+
     def create_action_buttons(self, item: QTreeWidgetItem, is_default: bool = False):
         """Create action buttons widget for a tree item"""
         actions_widget = QWidget()
@@ -172,8 +250,9 @@ class WorkspacePanel(SidePanel):
         """Handle workspace selection from combobox"""
         if index >= 0:
             workspace_name = self.workspace_selector.currentText()
-            # Could trigger loading of workspace-specific data here
-            print(f"Selected workspace: {workspace_name}")
+            if workspace_name != self.workspace_manager.current_workspace_name:
+                self.workspace_manager.switch_workspace(workspace_name)
+                print(f"Switched to workspace: {workspace_name}")
     
     def remove_single_workspace(self, item: QTreeWidgetItem):
         """Remove a single workspace item"""
@@ -183,40 +262,58 @@ class WorkspacePanel(SidePanel):
         # Don't remove default workspace
         if is_default:
             return
+            
+        # Confirm deletion
+        reply = QMessageBox.question(
+            self,
+            "Confirm Delete",
+            f"Are you sure you want to delete workspace '{workspace_name}'?\nThis cannot be undone.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
         
-        # Remove from tree
-        root = self.workspace_tree.invisibleRootItem()
-        root.removeChild(item)
-        
-        # Remove from combobox
-        combo_index = self.workspace_selector.findText(workspace_name)
-        if combo_index >= 0:
-            self.workspace_selector.removeItem(combo_index)
+        if reply == QMessageBox.StandardButton.Yes:
+            # Realtime remove
+            self.workspace_manager.remove_workspace(workspace_name)
+            
+            # Remove from tree
+            root = self.workspace_tree.invisibleRootItem()
+            root.removeChild(item)
+            
+            # Remove from combobox
+            combo_index = self.workspace_selector.findText(workspace_name)
+            if combo_index >= 0:
+                self.workspace_selector.removeItem(combo_index)
+                
+            # If we deleted current workspace, Manager switches to Default. UI should reflect that.
+            if self.workspace_manager.current_workspace_name == "Default":
+                default_idx = self.workspace_selector.findText("Default")
+                if default_idx >= 0:
+                    self.workspace_selector.setCurrentIndex(default_idx)
     
     def remove_workspace(self):
         """This method is no longer used but kept for compatibility"""
     
     def restore_workspaces(self):
-        """Restore workspaces to saved state"""
+        """Restore workspaces to saved state (Refresh UI)"""
         # Clear tree
         self.workspace_tree.clear()
         # Clear combobox
+        self.workspace_selector.blockSignals(True)
         self.workspace_selector.clear()
         
-        # Re-add default workspace
-        self.workspace_selector.addItem("Default")
-        self.add_workspace_to_tree("Default", is_default=True)
-        
-        # Load from config if available
-        # TODO: Add workspace list to config and load here
+        # Populate from manager
+        for name in self.workspace_manager.workspace_map.keys():
+            self.workspace_selector.addItem(name)
+            is_default = (name == "Default")
+            self.add_workspace_to_tree(name, is_default)
+            
+        # Select current
+        current_idx = self.workspace_selector.findText(self.workspace_manager.current_workspace_name)
+        if current_idx >= 0:
+            self.workspace_selector.setCurrentIndex(current_idx)
+            
+        self.workspace_selector.blockSignals(False)
     
     def apply(self):
-        """Apply workspace settings"""
-        # Save cache directory to config
-        cache_dir = self.cache_dir.get_text()
-        if cache_dir:
-            self.config_manager.config.cache_dir = cache_dir
-            self.config_manager.save()
-        
-        # TODO: Save workspace list to config
-        print("Workspace settings applied")
+        """Deprecated method"""
+        pass

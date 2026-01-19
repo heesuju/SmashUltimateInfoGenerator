@@ -187,3 +187,13 @@ class GridList(QListWidget):
             # Update the button state (Hidden = True)
             if hasattr(widget, 'hide_button'):
                 widget.hide_button.set_state(is_hidden)
+
+    def update_item_enabled_status(self, mod_id:str, is_enabled:bool):
+        """Update enabled status of a specific item without reloading"""
+        if mod_id in self.item_widgets:
+            widget = self.item_widgets[mod_id]
+            # Update the mod object
+            widget.mod.enabled = is_enabled
+            # Update the overlay cartridge visual state
+            if hasattr(widget, 'overlay'):
+                widget.overlay.set_enabled(is_enabled)

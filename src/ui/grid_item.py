@@ -61,9 +61,9 @@ class GridListItemWidget(QWidget):
         # Set initial border style based on selection state (will be set by update_selection_style)
         # update_selection_style() will be called after frame is built
         
-        overlay = Overlay(self.image_path, self)
+        self.overlay = Overlay(self.image_path, self, initial_enabled=mod.enabled, on_toggle_callback=self.on_overlay_toggle)
 
-        frame_layout.addWidget(overlay)
+        frame_layout.addWidget(self.overlay)
         
         info_layout = QVBoxLayout()
 
@@ -233,3 +233,12 @@ class GridListItemWidget(QWidget):
     def on_vis_off(self):
         if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
             self.grid_list.mod_manager.add_hidden(self.mod.id)
+    
+    def on_overlay_toggle(self):
+        """Called when the overlay cartridge is clicked"""
+        if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
+            # Toggle the enabled state through mod manager
+            if self.mod.id in self.grid_list.mod_manager.enabled_ids:
+                self.grid_list.mod_manager.remove_enabled(self.mod.id)
+            else:
+                self.grid_list.mod_manager.add_enabled(self.mod.id)

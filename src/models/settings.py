@@ -23,3 +23,4 @@ class Settings(BaseModel):
     name_rules:NameRules=NameRules()
     sort_rules:List[SortRule]=[]
     favorites:List[str]=[]
+    export_dir:str=""

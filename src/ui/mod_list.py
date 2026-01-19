@@ -38,6 +38,7 @@ class ModList(QWidget):
         self.mod_manager.set_callback(self.on_filter_changed)
         self.mod_manager.add_favorite_callback(self.on_favorite_changed)
         self.mod_manager.add_hidden_callback(self.on_hidden_changed)
+        self.mod_manager.add_enabled_callback(self.on_enabled_changed)
         
         self.filter_manager = filter_manager
         self.filter_manager.add_callback(self.on_filter_changed)
@@ -311,7 +312,7 @@ class ModList(QWidget):
                 authors=mod.authors,
                 slots=format_slots(mod.get_character_slots(), self.config_manager.config.name_rules.cap_slots_display),
                 version=mod.version,
-                enabled=False,
+                enabled=str(mod.hash) in self.mod_manager.enabled_ids,
                 selected=self.mod_manager.is_selected(str(mod.hash)),
                 favorited=str(mod.hash) in self.mod_manager.favorite_ids,
                 hidden=str(mod.hash) in self.mod_manager.hidden_ids,
@@ -385,6 +386,14 @@ class ModList(QWidget):
             self.tree_list.update_item_hidden_status(mod_id, is_hidden)
         elif self.mode == ListLayout.GRID:
             self.grid_list.update_item_hidden_status(mod_id, is_hidden)
+    
+    def on_enabled_changed(self, mod_id:str, is_enabled:bool):
+        """Handle enabled status change from other components"""
+        # Just update the visual state of the item without reloading
+        if self.mode == ListLayout.LIST:
+            self.tree_list.update_item_enabled_status(mod_id, is_enabled)
+        elif self.mode == ListLayout.GRID:
+            self.grid_list.update_item_enabled_status(mod_id, is_enabled)
     
     def on_header_checkbox_changed(self, state):
         """Handle header checkbox state change - delegates to current view"""
@@ -512,11 +521,34 @@ class ModList(QWidget):
                 self.batch_tasks_added.emit()
         
         elif action == "Remove":
-            pass
+            pass # TODO: Implement Remove
         elif action == "Enable":
-            pass
+            selected_ids = self.mod_manager.get_selected_ids()
+            if not selected_ids:
+                 from PyQt6.QtWidgets import QMessageBox
+                 QMessageBox.warning(self, "No Selection", "Please select mods to process.")
+                 return
+                 
+            for mod_id in selected_ids:
+                self.mod_manager.add_enabled(mod_id)
+            
+            # Deselect all after action
+            self.on_deselect_all()
+            # Note: No refresh needed - enabled callback will update items
+            
         elif action == "Disable":
-            pass
+            selected_ids = self.mod_manager.get_selected_ids()
+            if not selected_ids:
+                 from PyQt6.QtWidgets import QMessageBox
+                 QMessageBox.warning(self, "No Selection", "Please select mods to process.")
+                 return
+
+            for mod_id in selected_ids:
+                self.mod_manager.remove_enabled(mod_id)
+            
+            # Deselect all after action
+            self.on_deselect_all()
+            # Note: No refresh needed - enabled callback will update items
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         if event.mimeData().hasUrls():

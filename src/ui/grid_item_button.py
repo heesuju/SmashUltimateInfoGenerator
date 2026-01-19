@@ -24,10 +24,11 @@ class Overlay(QGraphicsView):
     # Static cache for cartridge icons to avoid repeated loading/scaling
     _cartridge_cache = {}
 
-    def __init__(self, image_path:str, parent=None):
+    def __init__(self, image_path:str, parent=None, initial_enabled=False, on_toggle_callback=None):
         super().__init__(parent)
         self.image_path = image_path
-        self.enabled = False
+        self.enabled = initial_enabled
+        self.on_toggle_callback = on_toggle_callback
 
         self.player = QMediaPlayer()
         self.audio_output = QAudioOutput()
@@ -41,12 +42,13 @@ class Overlay(QGraphicsView):
         # self.setStyleSheet("QGraphicsView { border: none; padding: 0px; }")
         # self.setStyleSheet("background: transparent;")
 
-        # Use cached cartridge icon
-        if ICON_OFF not in Overlay._cartridge_cache:
-             pix = QPixmap(ICON_OFF).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-             Overlay._cartridge_cache[ICON_OFF] = pix
+        # Use the correct cartridge icon based on initial state
+        icon_type = ICON_ON if initial_enabled else ICON_OFF
+        if icon_type not in Overlay._cartridge_cache:
+             pix = QPixmap(icon_type).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+             Overlay._cartridge_cache[icon_type] = pix
         
-        cartridge = Overlay._cartridge_cache[ICON_OFF]
+        cartridge = Overlay._cartridge_cache[icon_type]
 
         preview = QPixmap(image_path)
         preview = preview.scaled(cartridge.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
@@ -101,7 +103,11 @@ class Overlay(QGraphicsView):
         self.cartridge_item.setPos(0, 0)
         self.preview_item.setPos((self.parent_width - self.item_width)/2, (self.parent_height - self.item_height)/2)
         self.text.setPos((self.graphics_scene.width() - self.text.boundingRect().width()) / 2, TEXT_YLOC)
-        self.toggle()
+        # Call the callback instead of directly toggling
+        if self.on_toggle_callback:
+            self.on_toggle_callback()
+        else:
+            self.toggle()  # Fallback to old behavior if no callback
         # super().mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event) -> None: 
@@ -130,6 +136,28 @@ class Overlay(QGraphicsView):
             self.play_audio("assets/sounds/select.wav")
             self.enabled = True
         
+        self.cartridge_item.setPixmap(cartridge)
+        self.preview_item.setPixmap(preview)
+    
+    def set_enabled(self, enabled:bool):
+        """Set enabled state without calling callback (used when syncing from external changes)"""
+        if self.enabled == enabled:
+            return  # Already in the correct state
+        
+        # Update visual state without playing sound or triggering callback
+        cartridge = None
+        if enabled:
+            if ICON_ON not in Overlay._cartridge_cache:
+                Overlay._cartridge_cache[ICON_ON] = QPixmap(ICON_ON).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            cartridge = Overlay._cartridge_cache[ICON_ON]
+            self.enabled = True
+        else:
+            if ICON_OFF not in Overlay._cartridge_cache:
+                Overlay._cartridge_cache[ICON_OFF] = QPixmap(ICON_OFF).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            cartridge = Overlay._cartridge_cache[ICON_OFF]
+            self.enabled = False
+        
+        preview = QPixmap(self.image_path).scaled(cartridge.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.cartridge_item.setPixmap(cartridge)
         self.preview_item.setPixmap(preview)
 

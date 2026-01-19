@@ -45,6 +45,9 @@ class Config(SidePanel):
         self.cache_dir = InputButtonWidget("Enter cache directory", InputButton(text="Browse", img=ButtonIcons.BROWSE, callback=self.choose_cache_dir))
         self.body.addWidget(self.cache_dir)
 
+        self.export_dir = InputButtonWidget("Enter export directory", InputButton(text="Browse", img=ButtonIcons.BROWSE, callback=self.choose_export_dir))
+        self.body.addWidget(self.export_dir)
+
         self.theme_drop = QComboBox()
         self.theme_drop.addItems(Theme.list())
         self.theme_drop.setEditable(False)  # ComboBox itself is not editable
@@ -124,6 +127,7 @@ class Config(SidePanel):
         theme = str(self.config_manager.config.theme)
         self.root_dir.set_text(self.config_manager.config.root_dir)
         self.cache_dir.set_text(self.config_manager.config.cache_dir)
+        self.export_dir.set_text(self.config_manager.config.export_dir)
         self.theme_drop.setCurrentText(theme)
         self.folder_name_format.set_text(self.config_manager.config.name_rules.folder_name_format)
         self.folder_name_format.set_cap_slots(self.config_manager.config.name_rules.cap_slots_folder)
@@ -139,6 +143,7 @@ class Config(SidePanel):
             self.config_manager.config.theme = Theme(new_theme)
             self.config_manager.config.root_dir = self.root_dir.get_text()
             self.config_manager.config.cache_dir = self.cache_dir.get_text()
+            self.config_manager.config.export_dir = self.export_dir.get_text()
             self.config_manager.config.name_rules.folder_name_format = self.folder_name_format.get_text()
             self.config_manager.config.name_rules.cap_slots_folder = self.folder_name_format.get_cap_slots()
             self.config_manager.config.name_rules.display_name_format = self.display_name_format.get_text()
@@ -172,6 +177,11 @@ class Config(SidePanel):
         cache_dir = choose_folder(self, self.config_manager.config.cache_dir)
         if cache_dir:
             self.cache_dir.set_text(cache_dir)
+            
+    def choose_export_dir(self):
+        export_dir = choose_folder(self, self.config_manager.config.export_dir)
+        if export_dir:
+            self.export_dir.set_text(export_dir)
     
     def clear_scan_cache(self):
         """Clear the mod scan cache"""
@@ -195,5 +205,13 @@ class Config(SidePanel):
             is_valid = False
         else:
             self.cache_dir.set_border_color("")
+        
+        # Export directory is optional, but if provided must be valid
+        export_dir = self.export_dir.get_text()
+        if export_dir and not is_valid_dir(export_dir):
+            self.export_dir.set_border_color("red")
+            is_valid = False
+        else:
+            self.export_dir.set_border_color("")
         
         return is_valid

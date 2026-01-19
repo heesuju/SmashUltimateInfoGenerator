@@ -14,6 +14,7 @@ from src.models.mod import Mod
 from src.managers.data_manager import NavigationMenuIcon
 from src.managers.config_manager import ConfigManager
 from src.managers.mod_manager import ModManager
+from src.managers.workspace_manager import WorkspaceManager
 from src.managers.filter_manager import FilterManager
 from src.managers.batch_manager import BatchManager
 from src.managers.online_manager import OnlineManager
@@ -26,7 +27,8 @@ class MainMenu(QWidget):
     def __init__(self, config_manager:ConfigManager):
         super().__init__()
         self.config_manager = config_manager
-        self.mod_manager = ModManager(config_manager)
+        self.workspace_manager = WorkspaceManager(config_manager)
+        self.mod_manager = ModManager(config_manager, self.workspace_manager)
         self.filter_manager = FilterManager()
         self.batch_manager = BatchManager()
         self.setWindowTitle("SmashGen")
@@ -64,7 +66,7 @@ class MainMenu(QWidget):
         self.edit = EditPanel(self.mod_manager, config_manager)
         self.batch = BatchPanel(self.batch_manager)
         self.config = Config(config_manager)
-        self.workspace = WorkspacePanel(config_manager)
+        self.workspace = WorkspacePanel(config_manager, self.workspace_manager, self.mod_manager)
         
         # Connect preview edit button to edit panel
         self.preview.edit_requested.connect(self.on_edit_requested)

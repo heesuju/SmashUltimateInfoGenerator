@@ -293,6 +293,20 @@ class TreeList(QWidget):
                     item.hide_button.set_state(is_hidden)
                 break
 
+    def update_item_enabled_status(self, mod_id:str, is_enabled:bool):
+        """Update enabled status of a specific item without reloading"""
+        # Iterate through visible items
+        root = self.tree_widget.invisibleRootItem()
+        for i in range(root.childCount()):
+            item = root.child(i)
+            if isinstance(item, TreeItem) and item.mod.id == mod_id:
+                # Update the mod object
+                item.mod.enabled = is_enabled
+                # Update the enable button icon
+                if hasattr(item, 'update_enable_button_icon'):
+                    item.update_enable_button_icon(is_enabled)
+                break
+
     def clear(self):
         """
         Removes all items from the tree widget.

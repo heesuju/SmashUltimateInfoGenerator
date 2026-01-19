@@ -4,19 +4,26 @@ from PyQt6.QtCore import QObject, pyqtSignal
 from src.core.mod_loader import ModLoader
 from src.core.mod_installer import ModInstaller
 from src.managers.config_manager import ConfigManager
+from src.managers.workspace_manager import WorkspaceManager
 from src.models.mod import Mod
 from src.utils.logger import output_log
 
 class ModManager(QObject):
-    def __init__(self, config_manager:ConfigManager):
+    def __init__(self, config_manager:ConfigManager, workspace_manager:WorkspaceManager):
         super().__init__()
         self.config_manager = config_manager
+        self.workspace_manager = workspace_manager
         self.mods = {}
         self.focused_id = ""
         self.selected_ids = []
         self.callback = None
         self.focus_callbacks = []
         self._current_loader = None # Prevent GC of active loader
+
+        # Register callback for workspace changes
+        self.workspace_manager.add_enabled_callback(self._on_workspace_enabled_changed)
+        self.workspace_manager.workspace_changed.connect(self._on_workspace_changed)
+
     @property
     def favorite_ids(self):
         return self.config_manager.config.favorites
@@ -24,6 +31,10 @@ class ModManager(QObject):
     @property
     def hidden_ids(self):
         return self.config_manager.config.hidden_folders
+
+    @property
+    def enabled_ids(self):
+        return self.workspace_manager.get_enabled_ids()
 
     def set_callback(self, callback:callable):
         self.callback = callback
@@ -50,6 +61,25 @@ class ModManager(QObject):
         if hasattr(self, 'hidden_callbacks'):
             for callback in self.hidden_callbacks:
                 callback(mod_id, is_hidden)
+
+    def add_enabled_callback(self, callback:callable):
+        if not hasattr(self, 'enabled_callbacks'):
+            self.enabled_callbacks = []
+        self.enabled_callbacks.append(callback)
+
+    def _notify_enabled_changed(self, mod_id:str, is_enabled:bool):
+        if hasattr(self, 'enabled_callbacks'):
+            for callback in self.enabled_callbacks:
+                callback(mod_id, is_enabled)
+    
+    def _on_workspace_enabled_changed(self, mod_id:str, is_enabled:bool):
+        # Propagate to callbacks
+        self._notify_enabled_changed(mod_id, is_enabled)
+
+    def _on_workspace_changed(self):
+        """Called when workspace is switched/reloaded"""
+        if self.callback:
+            self.callback()
 
     def scan(self, scan_target:Union[str, List[str]]):
         # Keep reference to prevent GC
@@ -126,12 +156,13 @@ class ModManager(QObject):
             self._notify_favorite_changed(id, False)
 
     def add_enabled(self, id:str):
-        if id not in self.enabled_ids:
-            self.enabled_ids.append(id)
+        self.workspace_manager.set_enabled(id, True)
 
     def remove_enabled(self, id:str):
-        if id in self.enabled_ids:
-            self.enabled_ids.remove(id)
+        self.workspace_manager.set_enabled(id, False)
+            
+    def toggle_enabled(self, id:str):
+        self.workspace_manager.toggle_enabled(id)
 
     def add_hidden(self, id:str):
         id = str(id)
