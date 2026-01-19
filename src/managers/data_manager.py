@@ -45,6 +45,7 @@ class ButtonIcons(Enum):
     CLEAR = os.path.join(ICON_PATH, "buttons/clear_16.svg")
     SAVE = os.path.join(ICON_PATH, "buttons/save_16.svg")
     RESTORE = os.path.join(ICON_PATH, "buttons/restore_16.svg")
+    EXPORT = os.path.join(ICON_PATH, "buttons/export_16.svg")
 
 class DataManager:
     _data_list_cache = None

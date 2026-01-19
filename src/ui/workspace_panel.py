@@ -113,7 +113,12 @@ class WorkspacePanel(SidePanel):
         self.export_dir.input_box.editingFinished.connect(self.save_config)
         
         # Action buttons
-        self.add_footer_button("Sync Enabled Mods to Export Directory", self.on_sync_clicked, primary=True)
+        self.add_footer_button(
+            "Export Enabled Mods", 
+            self.on_sync_clicked, 
+            primary=True,
+            icon=ButtonIcons.EXPORT.value
+        )
         
         # Load saved cache directory and export directory
         self.load_cache_dir()
