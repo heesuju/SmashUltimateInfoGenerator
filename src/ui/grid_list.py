@@ -133,11 +133,11 @@ class GridList(QListWidget):
         print(f"Item clicked: {item.mod.name}")
         self.mod_manager.set_selection(item.mod.id)
 
-    def clear_items(self):
+    def clear(self):
         """
-        Removes all items from the grid widget.
+        Removes all items from the grid widget and cleans up references.
         """
-        self.clear()
+        super().clear()
         self.current_page_item_ids = []
         self.item_widgets = {}
     

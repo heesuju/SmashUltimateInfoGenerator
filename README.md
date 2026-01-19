@@ -54,6 +54,6 @@ python setup.py build
 - [ ] Add filters for online mod search
 
 ## BugFix
-- [ ] Select error for multiple pages
+- [X] Select error for multiple pages
 - [ ] Fix hidden mods not appearing ever again and other items are hidden when show hidden is on
 - [ ] Fix Batch panel layout

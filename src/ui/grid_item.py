@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QSizePolicy, QListWidget, QListWidgetItem, QFrame, QMenu
 )
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QAction, QDesktopServices
+from PyQt6 import sip
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF, QUrl
 from src.utils.image_utils import create_image_overlay, add_text_to_image
 from src.utils.file import open_folder
@@ -174,6 +175,9 @@ class GridListItemWidget(QWidget):
     
     def update_selection_style(self):
         """Update the frame shadow to show selection state"""
+        if sip.isdeleted(self.frame):
+            return
+            
         from PyQt6.QtWidgets import QGraphicsDropShadowEffect
         from PyQt6.QtGui import QColor
         
