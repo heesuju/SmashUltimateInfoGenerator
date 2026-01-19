@@ -179,26 +179,33 @@ class ModManager(QObject):
             self._notify_hidden_changed(id, False)
     
     # Selection management methods
+    selection_changed = pyqtSignal(list)
+
     def toggle_selection(self, id:str):
         """Toggle selection state of a mod"""
         if id in self.selected_ids:
             self.selected_ids.remove(id)
         else:
             self.selected_ids.append(id)
+        self.selection_changed.emit(self.selected_ids)
     
     def add_selection(self, id:str):
         """Add a mod to selection"""
         if id not in self.selected_ids:
             self.selected_ids.append(id)
+            self.selection_changed.emit(self.selected_ids)
     
     def remove_selection(self, id:str):
         """Remove a mod from selection"""
         if id in self.selected_ids:
             self.selected_ids.remove(id)
+            self.selection_changed.emit(self.selected_ids)
     
     def clear_selection(self):
         """Clear all selections"""
-        self.selected_ids = []
+        if self.selected_ids:
+            self.selected_ids = []
+            self.selection_changed.emit(self.selected_ids)
     
     def is_selected(self, id:str)->bool:
         """Check if a mod is selected"""

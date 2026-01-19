@@ -40,6 +40,7 @@ class ModList(QWidget):
         self.mod_manager.add_favorite_callback(self.on_favorite_changed)
         self.mod_manager.add_hidden_callback(self.on_hidden_changed)
         self.mod_manager.add_enabled_callback(self.on_enabled_changed)
+        self.mod_manager.selection_changed.connect(self.on_selection_changed)
         
         self.filter_manager = filter_manager
         self.filter_manager.add_callback(self.on_filter_changed)
@@ -141,7 +142,10 @@ class ModList(QWidget):
                 pixmap = QPixmap(icon_path)
                 tinted_pixmap = tint_pixmap(pixmap, QColor(color))
                 btn.setIcon(QIcon(tinted_pixmap))
-                btn.setStyleSheet(f"color: {color};")
+                btn.setStyleSheet(f"""
+                    QPushButton {{ color: {color}; text-align: left; padding: 4px; }}
+                    QPushButton:disabled {{ color: #666666; }}
+                """)
             else:
                 btn.setIcon(QIcon(icon_path))
                 
@@ -154,6 +158,11 @@ class ModList(QWidget):
         btn_enable = create_batch_btn(ButtonIcons.BATCH_ENABLE.value, "Enable", "Enable Selected", lambda: self.on_batch_action_btn("Enable"), color=ButtonColor.GREEN.value)
         btn_disable = create_batch_btn(ButtonIcons.BATCH_DISABLE.value, "Disable", "Disable Selected", lambda: self.on_batch_action_btn("Disable"), color=ButtonColor.RED.value)
         
+        # Store buttons to update state
+        self.btn_generate = btn_generate
+        self.btn_enable = btn_enable
+        self.btn_disable = btn_disable
+        
         # More actions menu
         btn_more = QPushButton()
         btn_more.setIcon(QIcon(ButtonIcons.MORE.value))
@@ -162,8 +171,8 @@ class ModList(QWidget):
         btn_more.setFlat(True)
         
         more_menu = QMenu(self)
-        remove_action = more_menu.addAction(QIcon(ButtonIcons.BATCH_REMOVE.value), "Remove Selected")
-        remove_action.triggered.connect(lambda: self.on_batch_action_btn("Remove"))
+        self.remove_action = more_menu.addAction(QIcon(ButtonIcons.BATCH_REMOVE.value), "Remove Selected")
+        self.remove_action.triggered.connect(lambda: self.on_batch_action_btn("Remove"))
         btn_more.setMenu(more_menu)
         btn_more.setStyleSheet("QPushButton::menu-indicator { width: 0px; }")
 
@@ -183,6 +192,26 @@ class ModList(QWidget):
             self.scan()
             
         self.data_changed.connect(self.refresh_filtered_data)
+        
+        # Initialize button states
+        self.update_batch_buttons_state()
+    
+    def on_selection_changed(self, selected_ids: list):
+        """Handle selection change signal"""
+        self.update_batch_buttons_state()
+        
+    def update_batch_buttons_state(self):
+        """Enable/Disable batch buttons based on selection count"""
+        has_selection = len(self.mod_manager.selected_ids) > 0
+        
+        if hasattr(self, 'btn_generate'):
+            self.btn_generate.setEnabled(has_selection)
+        if hasattr(self, 'btn_enable'):
+            self.btn_enable.setEnabled(has_selection)
+        if hasattr(self, 'btn_disable'):
+            self.btn_disable.setEnabled(has_selection)
+        if hasattr(self, 'remove_action'):
+            self.remove_action.setEnabled(has_selection)
     
     def _initialize_caches(self):
         """Initialize caches for icon existence and group data to improve performance"""
