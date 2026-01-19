@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QMessageBox
 )
+import os
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont, QIcon, QPixmap
 from src.ui.components.side_panel import SidePanel
@@ -79,6 +80,14 @@ class WorkspacePanel(SidePanel):
         else:
             self.config_warning.setVisible(False)
             
+        # Validate export dir
+        if export and os.path.isdir(export):
+            self.export_btn.setEnabled(True)
+            self.export_btn.setToolTip("")
+        else:
+            self.export_btn.setEnabled(False)
+            self.export_btn.setToolTip("Export directory is invalid or not set in Config")
+            
     def on_config_link_clicked(self, link):
         if self.on_open_config:
             self.on_open_config()
@@ -108,7 +117,7 @@ class WorkspacePanel(SidePanel):
 
     def on_sync_finish(self):
         """Handle sync finished event"""
-        self.export_btn.setEnabled(True)
+        self.check_config()
         self.update_export_btn_text()
         self.export_btn.repaint() # Force repaint
         

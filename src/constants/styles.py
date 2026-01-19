@@ -10,6 +10,11 @@ QPushButton:hover {
 }
 QPushButton:pressed {
     background-color: #4B4BFF; 
+}
+QPushButton:disabled {
+    background-color: #2E2E32;
+    color: #666;
+    border: 1px solid #444;
 }"""
 
 BORDERLESS_BUTTON = """QPushButton {
@@ -28,6 +33,11 @@ QPushButton:hover {
 }
 QPushButton:pressed {
     background-color: #c62828;
+}
+QPushButton:disabled {
+    background-color: #2E2E32;
+    color: #666;
+    border: 1px solid #444;
 }"""
 
 SECONDARY_BUTTON = """QPushButton {
@@ -44,4 +54,9 @@ QPushButton:hover {
 }
 QPushButton:pressed {
     background-color: #2E2E32;
+}
+QPushButton:disabled {
+    background-color: #2E2E32;
+    color: #666;
+    border: 1px solid #444;
 }"""
