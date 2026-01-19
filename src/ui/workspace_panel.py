@@ -57,6 +57,10 @@ class WorkspacePanel(SidePanel):
             primary=True,
             icon=ButtonIcons.EXPORT.value
         )
+        
+        self.workspace_manager.workspace_changed.connect(self.update_export_btn_text)
+        self.workspace_manager.add_enabled_callback(self.update_export_btn_text)
+        self.update_export_btn_text()
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -79,6 +83,11 @@ class WorkspacePanel(SidePanel):
         if self.on_open_config:
             self.on_open_config()
         
+    def update_export_btn_text(self, *args):
+        """Update export button text with enabled mod count"""
+        count = len(self.workspace_manager.get_enabled_ids())
+        self.export_btn.setText(f"Export Enabled Mods ({count})")
+
     def on_sync_clicked(self):
         """Trigger sync process"""
         reply = QMessageBox.question(
@@ -100,7 +109,7 @@ class WorkspacePanel(SidePanel):
     def on_sync_finish(self):
         """Handle sync finished event"""
         self.export_btn.setEnabled(True)
-        self.export_btn.setText("Export Enabled Mods")
+        self.update_export_btn_text()
         self.export_btn.repaint() # Force repaint
         
     def on_sync_progress(self, message: str, progress: float):
