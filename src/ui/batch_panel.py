@@ -74,7 +74,7 @@ class BatchPanel(SidePanel):
         self.body.addWidget(scroll, 1)
         
         # Footer buttons
-        self.clear_button = self.add_footer_button("Cancel", self.on_clear_queue, icon=ButtonIcons.CLEAR.value)
+        self.clear_button = self.add_footer_button("Clear", self.on_clear_queue, icon=ButtonIcons.CLEAR.value)
         self.fetch_button = self.add_footer_button("Fetch", self.start_processing, icon=ButtonIcons.WEB.value)
         self.apply_button = self.add_footer_button("Apply", self.on_apply, primary=True, icon=ButtonIcons.BATCH_ENABLE.value)
         
