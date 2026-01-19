@@ -411,3 +411,19 @@ class MainMenu(QWidget):
         if ws_btn:
             ws_btn.set_progress(-1)
             ws_btn.setToolTip("Workspace")
+
+    def keyPressEvent(self, event):
+        """Handle global keyboard shortcuts"""
+        from PyQt6.QtCore import Qt
+        
+        if event.key() == Qt.Key.Key_F11:
+            # F11: Toggle fullscreen
+            if self.isFullScreen():
+                self.showNormal()
+            else:
+                self.showFullScreen()
+            event.accept()
+            return
+        
+        # Call parent implementation for other keys
+        super().keyPressEvent(event)
