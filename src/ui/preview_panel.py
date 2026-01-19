@@ -228,8 +228,10 @@ class PreviewPanel(SidePanel):
         
     def on_favorite_changed(self, mod_id:str, is_favorite:bool):
         # Update UI if the changed mod is the currently displayed one
-        if self.mod_manager.focused_id and self.mod_manager.get_mod(self.mod_manager.focused_id).hash == mod_id:
-            self.fav_button.set_state(is_favorite)
+        if self.mod_manager.focused_id:
+            mod = self.mod_manager.get_mod(self.mod_manager.focused_id)
+            if mod and str(mod.hash) == str(mod_id):
+                self.fav_button.set_state(is_favorite)
 
     def on_vis_on(self):
         id =self.mod_manager.focused_id
@@ -243,9 +245,11 @@ class PreviewPanel(SidePanel):
 
     def on_hidden_changed(self, mod_id:str, is_hidden:bool):
         # Update UI if the changed mod is the currently displayed one
-        if self.mod_manager.focused_id and self.mod_manager.get_mod(self.mod_manager.focused_id).hash == mod_id:
-            # Note: is_hidden=True means Hidden, Button State True = Hidden.
-            self.hide_button.set_state(is_hidden)
+        if self.mod_manager.focused_id:
+            mod = self.mod_manager.get_mod(self.mod_manager.focused_id)
+            if mod and str(mod.hash) == str(mod_id):
+                # Note: is_hidden=True means Hidden, Button State True = Hidden.
+                self.hide_button.set_state(is_hidden)
 
     def on_enable_toggle(self):
         """Toggle enabled state for the current mod"""
@@ -270,11 +274,13 @@ class PreviewPanel(SidePanel):
     
     def on_enabled_changed(self, mod_id:str, is_enabled:bool):
         """Update UI if the changed mod is the currently displayed one"""
-        if self.mod_manager.focused_id and self.mod_manager.get_mod(self.mod_manager.focused_id).hash == mod_id:
-            if is_enabled:
-                self.enable_btn.setText("Disable")
-            else:
-                self.enable_btn.setText("Enable")
+        if self.mod_manager.focused_id:
+            mod = self.mod_manager.get_mod(self.mod_manager.focused_id)
+            if mod and str(mod.hash) == str(mod_id):
+                if is_enabled:
+                    self.enable_btn.setText("Disable")
+                else:
+                    self.enable_btn.setText("Enable")
     
     def on_edit_clicked(self):
         """Emit signal to request edit mode for current mod"""

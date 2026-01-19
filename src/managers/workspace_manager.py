@@ -41,13 +41,17 @@ class WorkspaceManager(QObject):
 
         # Load active workspace name
         active_ws_path = os.path.join(self.cache_dir, "workspace")
+        workspace_loaded = False
+        
         if is_valid_file(active_ws_path):
             try:
-                content = read_json(active_ws_path)
-                if isinstance(content, str):
+                # Read as raw text, no JSON quotes
+                with open(active_ws_path, 'r', encoding='utf-8') as f:
+                    content = f.read().strip()
+                
+                if content:
                     self.current_workspace_name = content
-                elif isinstance(content, dict) and "name" in content:
-                    self.current_workspace_name = content["name"]
+                    workspace_loaded = True
             except:
                 output_log("Failed to load active workspace, defaulting to Default")
         
@@ -56,6 +60,11 @@ class WorkspaceManager(QObject):
             self.current_workspace_name = "Default"
             if "Default" not in self.workspace_map:
                 self.workspace_map["Default"] = "presets"
+            workspace_loaded = False # Force save if we reset
+            
+        # Create/Update workspace file if it wasn't loaded correctly
+        if not workspace_loaded:
+            self.save_active_workspace()
         
         self.load_enabled_mods()
 
@@ -64,8 +73,11 @@ class WorkspaceManager(QObject):
         preset_path = os.path.join(self.cache_dir, preset_filename)
         
         if is_valid_file(preset_path):
-            self.enabled_mods = read_json(preset_path)
-            if not isinstance(self.enabled_mods, list):
+            data = read_json(preset_path)
+            if isinstance(data, list):
+                # Ensure all IDs are strings
+                self.enabled_mods = [str(x) for x in data]
+            else:
                 self.enabled_mods = []
         else:
             self.enabled_mods = []
@@ -86,8 +98,11 @@ class WorkspaceManager(QObject):
     def save_active_workspace(self):
         if not self.cache_dir: return
         active_ws_path = os.path.join(self.cache_dir, "workspace")
-        # Saving as string based on assumption, might need adjustment if it expects object
-        write_json(active_ws_path, self.current_workspace_name) 
+        try:
+            with open(active_ws_path, 'w', encoding='utf-8') as f:
+                f.write(self.current_workspace_name)
+        except Exception as e:
+            output_log(f"Failed to save active workspace: {e}") 
 
     def save_enabled_mods(self):
         if not self.cache_dir: return
@@ -101,9 +116,10 @@ class WorkspaceManager(QObject):
         return self.enabled_mods
 
     def is_enabled(self, mod_id: str) -> bool:
-        return mod_id in self.enabled_mods
+        return str(mod_id) in self.enabled_mods
 
     def set_enabled(self, mod_id: str, enabled: bool):
+        mod_id = str(mod_id) # Ensure string type
         changed = False
         if enabled:
             if mod_id not in self.enabled_mods:
