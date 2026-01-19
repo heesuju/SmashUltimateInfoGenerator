@@ -13,6 +13,7 @@ import tempfile
 from src.core.data import generate_toml
 from src.utils.file import get_parent_dir
 from src.managers.cache_manager import CacheManager
+from src.managers.data_manager import ButtonIcons
 from src.ui.components.thumbnail_label import ImageCache
 from src.constants.enums import Wifi, Element
 from src.core.formatting import (
@@ -73,9 +74,9 @@ class BatchPanel(SidePanel):
         self.body.addWidget(scroll, 1)
         
         # Footer buttons
-        self.clear_button = self.add_footer_button("Clear", self.on_clear_queue)
-        self.fetch_button = self.add_footer_button("Fetch All", self.start_processing)
-        self.apply_button = self.add_footer_button("Apply All", self.on_apply, primary=True)
+        self.clear_button = self.add_footer_button("Cancel", self.on_clear_queue, icon=ButtonIcons.CLEAR.value)
+        self.fetch_button = self.add_footer_button("Fetch", self.start_processing, icon=ButtonIcons.WEB.value)
+        self.apply_button = self.add_footer_button("Apply", self.on_apply, primary=True, icon=ButtonIcons.BATCH_ENABLE.value)
         
         # Connect to batch manager updates via Signal to ensure Main Thread execution
         self.queue_updated.connect(self.refresh_task_list)

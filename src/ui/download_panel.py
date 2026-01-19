@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from src.ui.components.side_panel import SidePanel
 from src.managers.download_manager import DownloadManager
+from src.managers.data_manager import ButtonIcons
 from src.ui.components.layout import HBox, VBox
 
 class DownloadItem(QFrame):
@@ -132,7 +133,7 @@ class DownloadPanel(SidePanel):
         self.download_manager.install_failed.connect(self.on_install_failed)
         self.download_manager.install_finished.connect(self.on_install_finished)
         
-        self.add_footer_button("Clear Completed", self.clear_completed)
+        self.add_footer_button(text="Clear Completed", callback=self.clear_completed, icon=ButtonIcons.CLEAR.value)
         
         # Add spacer to push items up
         self.body.addStretch(1)

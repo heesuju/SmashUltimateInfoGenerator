@@ -91,8 +91,8 @@ class SortPanel(SidePanel):
         
         self.body.addStretch(1)
 
-        self.add_footer_button("Reset", self.reset)
-        self.add_footer_button("Apply", self.apply, primary=True)
+        self.add_footer_button("Restore", self.reset, icon=ButtonIcons.RESTORE.value)
+        self.add_footer_button("Save", self.apply, primary=True, icon=ButtonIcons.SAVE.value)
         
         # Load saved sort rules from config
         self.load_sort_rules()

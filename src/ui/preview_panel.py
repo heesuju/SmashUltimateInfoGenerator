@@ -100,7 +100,7 @@ class PreviewPanel(SidePanel):
         
         self.body.addStretch(1)
 
-        self.edit_btn = self.add_footer_button("Edit", self.on_edit_clicked)
+        self.edit_btn = self.add_footer_button("Edit", self.on_edit_clicked, icon=ButtonIcons.EDIT.value)
         self.enable_btn = self.add_footer_button("Enable", self.on_enable_toggle, primary=True)
         self.download_btn = self.add_footer_button("Download", self.on_download_clicked, primary=True)
         self.download_btn.hide()

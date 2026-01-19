@@ -21,7 +21,7 @@ from src.ui.components.checkbox_group import CheckboxGroup
 from src.constants.enums import Category, Element
 from src.constants.styles import MAIN_BUTTON
 from src.managers.filter_manager import FilterManager, FilterParameters
-from src.managers.data_manager import DataManager
+from src.managers.data_manager import DataManager, ButtonIcons
 from src.constants.enums import *
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.multi_combobox import CheckableComboBox
@@ -119,8 +119,8 @@ class FilterPanel(SidePanel):
 
         self.body.addStretch(1)
 
-        self.add_footer_button("Reset", self.reset)
-        self.add_footer_button("Apply", self.apply, primary=True)
+        self.add_footer_button("Reset", self.reset, icon=ButtonIcons.CLEAR.value)
+        self.add_footer_button("Apply", self.apply, primary=True, icon=ButtonIcons.BATCH_ENABLE.value)
     
 
     def reset(self):

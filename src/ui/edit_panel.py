@@ -19,6 +19,7 @@ from src.ui.components.thumbnail_label import ThumbnailLabel, ImageCache
 from src.managers.mod_manager import ModManager
 from src.managers.cache_manager import CacheManager
 from src.managers.data_manager import DataManager
+from src.managers.data_manager import ButtonIcons
 from src.ui.components.validators import limit_version
 from src.core.formatting import format_folder_name, format_display_name, format_character_names_for_display, format_character_names_for_folder, format_slots
 from src.core.gamebanana import Gamebanana
@@ -186,8 +187,8 @@ class EditPanel(SidePanel):
 
         # Footer buttons
         # Footer buttons
-        self.add_footer_button("Cancel", self.on_cancel)
-        self.add_footer_button("Save", self.on_save, primary=True)
+        self.add_footer_button("Cancel", self.on_cancel, icon=ButtonIcons.CLEAR.value)
+        self.add_footer_button("Save", self.on_save, primary=True, icon=ButtonIcons.SAVE.value)
         
         # Connect signal
         self.gb_data_ready.connect(self._populate_mod_info)

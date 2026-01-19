@@ -43,6 +43,8 @@ class ButtonIcons(Enum):
     REFRESH = os.path.join(ICON_PATH, "buttons/refresh_16.svg")
     SEARCH = os.path.join(ICON_PATH, "buttons/search_16.svg")
     CLEAR = os.path.join(ICON_PATH, "buttons/clear_16.svg")
+    SAVE = os.path.join(ICON_PATH, "buttons/save_16.svg")
+    RESTORE = os.path.join(ICON_PATH, "buttons/restore_16.svg")
 
 class DataManager:
     _data_list_cache = None
