@@ -9,7 +9,7 @@ from src.managers.data_manager import ButtonIcons
 from src.managers.config_manager import ConfigManager
 from src.managers.workspace_manager import WorkspaceManager
 from src.managers.mod_manager import ModManager
-
+from src.utils.logger import output_log
 
 class WorkspacePanel(SidePanel):
     from PyQt6.QtCore import pyqtSignal
@@ -101,6 +101,7 @@ class WorkspacePanel(SidePanel):
         """Handle sync finished event"""
         self.export_btn.setEnabled(True)
         self.export_btn.setText("Export Enabled Mods")
+        self.export_btn.repaint() # Force repaint
         
     def on_sync_progress(self, message: str, progress: float):
         """Handle sync progress event"""

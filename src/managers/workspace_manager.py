@@ -204,15 +204,33 @@ class WorkspaceManager(QObject):
         self.sync_worker.moveToThread(self.sync_thread)
         
         self.sync_thread.started.connect(self.sync_worker.run)
-        self.sync_thread.started.connect(self.sync_started.emit)
+        # self.sync_thread.started.connect(self.sync_started.emit) # Removed to prevent race condition
         
         self.sync_worker.progress.connect(self.sync_progress.emit)
-        self.sync_worker.finished.connect(self.sync_finished.emit)
+        self.sync_worker.finished.connect(self._on_sync_finished_internal)
         
-        self.sync_worker.finished.connect(self.sync_thread.quit)
-        self.sync_worker.finished.connect(self.sync_worker.deleteLater)
+        # Connect thread finish for safe cleanup
+        self.sync_thread.finished.connect(self._on_thread_finished)
         self.sync_thread.finished.connect(self.sync_thread.deleteLater)
+        
+        self.sync_started.emit() # Manually emit before start to guarantee order
         self.sync_thread.start()
+
+    def _on_sync_finished_internal(self):
+        """Handle worker finish, emit signal, request thread stop"""
+        self.sync_finished.emit()
+        
+        # Only signal the thread to quit, do NOT delete it here
+        if self.sync_thread:
+            self.sync_thread.quit()
+            
+        if self.sync_worker:
+            self.sync_worker.deleteLater()
+            self.sync_worker = None
+
+    def _on_thread_finished(self):
+        """Safe thread cleanup after it has truly stopped"""
+        self.sync_thread = None
 
     # --- Signals ---
     from PyQt6.QtCore import pyqtSignal
