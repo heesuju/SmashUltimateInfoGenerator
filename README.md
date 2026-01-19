@@ -47,10 +47,10 @@ python setup.py build
 - [X] Download mod preview thumbnails from gamebanana
 - [X] Added mod enable toggle
 - [X] Added workspace management
+- [X] Add export feature
 
 ## ToDo 
 - [ ] Highlight modified fields in Filter, Edit, Batch panels
-- [ ] Add export feature
 - [ ] Add filters for online mod search
 
 ## BugFix

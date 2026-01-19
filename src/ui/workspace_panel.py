@@ -12,12 +12,20 @@ from src.managers.mod_manager import ModManager
 
 
 class WorkspacePanel(SidePanel):
+    from PyQt6.QtCore import pyqtSignal
+    sync_started = pyqtSignal()
+    
     def __init__(self, config_manager: ConfigManager, workspace_manager: WorkspaceManager, mod_manager: ModManager, on_open_config=None):
         super().__init__("Workspace")
         self.config_manager = config_manager
         self.workspace_manager = workspace_manager
         self.mod_manager = mod_manager
         self.on_open_config = on_open_config
+        
+        # Connect to manager signals
+        self.workspace_manager.sync_started.connect(self.on_sync_start)
+        self.workspace_manager.sync_finished.connect(self.on_sync_finish)
+        self.workspace_manager.sync_progress.connect(self.on_sync_progress)
         
         # Config Warning
         self.config_warning = QLabel()
@@ -43,7 +51,7 @@ class WorkspacePanel(SidePanel):
         self.body.addStretch(1)
         
         # Action buttons
-        self.add_footer_button(
+        self.export_btn = self.add_footer_button(
             "Export Enabled Mods", 
             self.on_sync_clicked, 
             primary=True,
@@ -81,7 +89,24 @@ class WorkspacePanel(SidePanel):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            # Implement sync_mods with a callback or signal for progress later, 
-            # for now just trigger it
-            # TODO: Add progress feedback
-            self.workspace_manager.sync_mods(self.mod_manager.get_mods())
+            self.workspace_manager.sync_mods(self.mod_manager.get_mods_dict())
+
+    def on_sync_start(self):
+        """Handle sync started event"""
+        self.export_btn.setEnabled(False)
+        self.export_btn.setText("Exporting...")
+        self.sync_started.emit()
+
+    def on_sync_finish(self):
+        """Handle sync finished event"""
+        self.export_btn.setEnabled(True)
+        self.export_btn.setText("Export Enabled Mods")
+        
+    def on_sync_progress(self, message: str, progress: float):
+        """Handle sync progress event"""
+        percent = int(progress * 100)
+        self.export_btn.setText(f"Exporting... {percent}%")
+        
+        # Failsafe: if 100% is reached, consider it finished
+        if progress >= 1.0:
+            self.on_sync_finish()

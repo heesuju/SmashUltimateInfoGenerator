@@ -137,6 +137,9 @@ class ModManager(QObject):
 
     def get_mods(self)->List[Mod]:
         return self.mods.values()
+
+    def get_mods_dict(self)->dict[str, Mod]:
+        return self.mods
     
     def get_mod(self, id:str)->Mod:
         return self.mods.get(id, None)

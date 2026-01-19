@@ -104,6 +104,10 @@ class MainMenu(QWidget):
             
         # Connect batch manager to update progress on nav button
         self.batch_manager.add_callback(self.update_batch_progress)
+        
+        # Connect workspace sync progress
+        self.workspace_manager.sync_progress.connect(self.update_workspace_progress)
+        self.workspace_manager.sync_finished.connect(self.on_workspace_sync_finished)
 
         self.filter.hide()
         self.online_filter.hide()
@@ -393,3 +397,17 @@ class MainMenu(QWidget):
         download_btn = self.menu.buttons.get(NavigationMenuIcon.DOWNLOAD.value)
         if download_btn:
              download_btn.set_progress(progress)
+
+    def update_workspace_progress(self, message: str, progress: float):
+        """Update workspace export progress on navigation button"""
+        ws_btn = self.menu.buttons.get(NavigationMenuIcon.WORKSPACE.value)
+        if ws_btn:
+            ws_btn.set_progress(progress)
+            ws_btn.setToolTip(f"Exporting: {message}")
+
+    def on_workspace_sync_finished(self):
+        """Reset workspace progress on finish"""
+        ws_btn = self.menu.buttons.get(NavigationMenuIcon.WORKSPACE.value)
+        if ws_btn:
+            ws_btn.set_progress(-1)
+            ws_btn.setToolTip("Workspace")

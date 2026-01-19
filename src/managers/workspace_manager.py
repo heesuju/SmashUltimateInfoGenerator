@@ -184,9 +184,9 @@ class WorkspaceManager(QObject):
         self.load_enabled_mods()
         self.workspace_changed.emit()
 
-    def sync_mods(self, all_mods: list[Mod]):
+    def sync_mods(self, all_mods:dict[str, Mod]):
         """Sync enabled mods to export directory using SyncWorker"""
-        enabled_mods_list = [mod for mod in all_mods if mod.hash in self.enabled_mods]
+        enabled_mods_list = [mod for key, mod in all_mods.items() if key in self.enabled_mods]
         export_dir = self.config_manager.config.export_dir
         
         if not export_dir:
@@ -204,6 +204,11 @@ class WorkspaceManager(QObject):
         self.sync_worker.moveToThread(self.sync_thread)
         
         self.sync_thread.started.connect(self.sync_worker.run)
+        self.sync_thread.started.connect(self.sync_started.emit)
+        
+        self.sync_worker.progress.connect(self.sync_progress.emit)
+        self.sync_worker.finished.connect(self.sync_finished.emit)
+        
         self.sync_worker.finished.connect(self.sync_thread.quit)
         self.sync_worker.finished.connect(self.sync_worker.deleteLater)
         self.sync_thread.finished.connect(self.sync_thread.deleteLater)
@@ -212,6 +217,9 @@ class WorkspaceManager(QObject):
     # --- Signals ---
     from PyQt6.QtCore import pyqtSignal
     workspace_changed = pyqtSignal()
+    sync_started = pyqtSignal()
+    sync_finished = pyqtSignal()
+    sync_progress = pyqtSignal(str, float)
     
     # --- Callbacks ---
 
