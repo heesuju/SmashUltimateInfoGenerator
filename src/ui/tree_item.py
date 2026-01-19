@@ -1,14 +1,13 @@
 from PyQt6.QtWidgets import QLabel
 from functools import partial
-from PyQt6.QtGui import QIcon, QPixmap, QColor
-from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QWidget, QPushButton, QTreeWidgetItem, QCheckBox
 )
 from src.managers.data_manager import ButtonIcons, DataManager
 from src.models.mod import Mod, ModItem
-from src.utils.image_utils import tint_pixmap
+from src.constants.colors import ButtonColor
 
 from src.ui.components.toggle_button import ToggleButton
 
@@ -54,8 +53,15 @@ class TreeItem(QTreeWidgetItem):
         
         check_widget.stateChanged.connect(on_checkbox_changed)
         
-        # Fav Button
-        self.fav_button = ToggleButton(ButtonIcons.FAV_ON.value, ButtonIcons.FAV_OFF.value, self.on_fav_on, self.on_fav_off, 24)
+        self.fav_button = ToggleButton(
+            ButtonIcons.FAV_ON.value, 
+            ButtonIcons.FAV_OFF.value, 
+            self.on_fav_on, 
+            self.on_fav_off, 
+            24,
+            color_a=ButtonColor.YELLOW.value,
+            color_b=ButtonColor.GRAY.value
+        )
         self.fav_button.set_state(self.mod.favorited)
         
         name_widget = QLabel(self.mod.name)
@@ -96,31 +102,29 @@ class TreeItem(QTreeWidgetItem):
         # Add Fav Button
         actions_layout.addWidget(self.fav_button)
 
-        # Add Hide Button
-        self.hide_button = ToggleButton(ButtonIcons.HIDE_ON.value, ButtonIcons.HIDE_OFF.value, self.on_vis_off, self.on_vis_on, 24, initial_state=self.mod.hidden)
-        # ON (True) = Hidden (Eye Closed) -> Calls on_vis_off (add_hidden)
-        # OFF (False) = Visible (Eye Open) -> Calls on_vis_on (remove_hidden)
+        self.hide_button = ToggleButton(
+            ButtonIcons.HIDE_ON.value, 
+            ButtonIcons.HIDE_OFF.value, 
+            self.on_vis_off, 
+            self.on_vis_on, 
+            24, 
+            initial_state=self.mod.hidden,
+            color_a=ButtonColor.GRAY.value,
+            color_b=ButtonColor.CYAN.value
+        )
         
         actions_layout.addWidget(self.hide_button)
         
-        # Add Enable Toggle Button with tinted icons
-        # Create tinted icons: Green for Enabled (Active), Dimmed for Disabled (Inactive)
-        # We want the icon to reflect the CURRENT status.
-        self._enabled_pixmap = tint_pixmap(QPixmap(ButtonIcons.ENABLE.value), QColor("#4CAF50"))
-        self._disabled_pixmap = tint_pixmap(QPixmap(ButtonIcons.DISABLE.value), QColor("#9E9E9E"))
-        
-        # ToggleButton needs icon paths, so we'll create a custom button instead
-        self.enable_button = QPushButton()
-        self.enable_button.setFixedSize(24, 24)
-        self.enable_button.setFlat(True)
-        
-        # Set initial icon based on enabled state
-        if self.mod.enabled:
-            self.enable_button.setIcon(QIcon(self._enabled_pixmap))
-        else:
-            self.enable_button.setIcon(QIcon(self._disabled_pixmap))
-        
-        self.enable_button.clicked.connect(self.on_enable_button_clicked)
+        self.enable_button = ToggleButton(
+            ButtonIcons.ENABLE.value,
+            ButtonIcons.DISABLE.value,
+            self.on_enable,
+            self.on_disable,
+            24,
+            initial_state=self.mod.enabled,
+            color_a=ButtonColor.GREEN.value,
+            color_b=ButtonColor.GRAY.value
+        )
         
         actions_layout.addWidget(self.enable_button)
         
@@ -157,22 +161,9 @@ class TreeItem(QTreeWidgetItem):
         if self.tree_list and hasattr(self.tree_list, 'mod_manager'):
             self.tree_list.mod_manager.add_hidden(self.mod.id)
     
-    def on_enable_button_clicked(self):
-        """Handle enable button click - toggle enabled state"""
-        if self.tree_list and hasattr(self.tree_list, 'mod_manager'):
-            if self.mod.id in self.tree_list.mod_manager.enabled_ids:
-                # Currently enabled, so disable it
-                self.tree_list.mod_manager.remove_enabled(self.mod.id)
-            else:
-                # Currently disabled, so enable it
-                self.tree_list.mod_manager.add_enabled(self.mod.id)
-    
     def update_enable_button_icon(self, is_enabled:bool):
         """Update the enable button icon based on enabled state"""
-        if is_enabled:
-            self.enable_button.setIcon(QIcon(self._enabled_pixmap))
-        else:
-            self.enable_button.setIcon(QIcon(self._disabled_pixmap))
+        self.enable_button.set_state(is_enabled)
     
     def on_enable(self):
         # Called when enabled (toggle ON)

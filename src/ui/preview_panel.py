@@ -12,13 +12,16 @@ from src.ui.components.flow_layout import FlowLayout, ElementTag
 from src.managers.mod_manager import ModManager
 from src.managers.data_manager import DataManager, ButtonIcons
 from src.utils.file import open_folder
+from src.utils.image_utils import tint_pixmap
 from src.constants.ui_params import BODY_FONT, BODY_FONT_SIZE, TITLE_FONT, TITLE_FONT_SIZE
+from src.constants.colors import ButtonColor
 
 class PreviewPanel(SidePanel):
     edit_requested = pyqtSignal(str)  # Emits mod_id when edit is requested
     
     def __init__(self, mod_manager:ModManager, online_manager=None, download_manager=None):
         super().__init__("Preview")
+        self.header.setSpacing(4)
         self.mod_manager = mod_manager
         self.online_manager = online_manager
         self.download_manager = download_manager
@@ -35,24 +38,31 @@ class PreviewPanel(SidePanel):
             self.online_manager.mod_details_ready.connect(self.update_online_details)
 
         self.header.addStretch()
-        self.fav_button = ToggleButton(ButtonIcons.FAV_ON.value, ButtonIcons.FAV_OFF.value, self.on_fav_on, self.on_fav_off, 24)
+        self.fav_button = ToggleButton(
+            ButtonIcons.FAV_ON.value, 
+            ButtonIcons.FAV_OFF.value, 
+            self.on_fav_on, 
+            self.on_fav_off, 
+            24,
+            color_a=ButtonColor.YELLOW.value,
+            color_b=ButtonColor.GRAY.value
+        )
         self.header.addWidget(self.fav_button)
         
-        self.hide_button = ToggleButton(ButtonIcons.HIDE_ON.value, ButtonIcons.HIDE_OFF.value, self.on_vis_off, self.on_vis_on, 24)
+        self.hide_button = ToggleButton(
+            ButtonIcons.HIDE_ON.value, 
+            ButtonIcons.HIDE_OFF.value, 
+            self.on_vis_off, 
+            self.on_vis_on, 
+            24,
+            color_a=ButtonColor.GRAY.value,
+            color_b=ButtonColor.CYAN.value
+        )
         self.header.addWidget(self.hide_button)
 
-        web_button = QPushButton()
-        web_button.setIcon(QIcon(ButtonIcons.WEB.value))
-        web_button.setFlat(True)
-        web_button.setObjectName("obj")
-        web_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        web_button.setFixedSize(QSize(24, 24))
-        web_button.clicked.connect(self.open_web_page)
-        self.header.addWidget(web_button)
-        self.web_button = web_button
 
         menu_button = QPushButton()
-        menu_button.setIcon(QIcon(QPixmap(ButtonIcons.MENU.value)))
+        menu_button.setIcon(QIcon(QPixmap(ButtonIcons.MORE.value)))
         menu_button.setFlat(True)
         menu_button.setObjectName("obj")
         menu_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -60,8 +70,6 @@ class PreviewPanel(SidePanel):
         menu_button.clicked.connect(self.show_context_menu)
         self.header.addWidget(menu_button)
         self.menu_button = menu_button
-        
-        
         
         self.thumbnail = ThumbnailLabel()
         self.body.addWidget(self.thumbnail)
@@ -92,7 +100,6 @@ class PreviewPanel(SidePanel):
         
         self.body.addStretch(1)
 
-        self.open_btn = self.add_footer_button("Open", self.on_open_clicked)
         self.edit_btn = self.add_footer_button("Edit", self.on_edit_clicked)
         self.enable_btn = self.add_footer_button("Enable", self.on_enable_toggle, primary=True)
         self.download_btn = self.add_footer_button("Download", self.on_download_clicked, primary=True)
@@ -104,7 +111,6 @@ class PreviewPanel(SidePanel):
         self.current_online_details = {} # Reset cache
         
         # Toggle buttons
-        self.open_btn.hide()
         self.edit_btn.hide()
         self.enable_btn.hide()
         self.download_btn.show()
@@ -128,12 +134,6 @@ class PreviewPanel(SidePanel):
         self.description_label.setText("Loading details...")
         
         self.elements_container.clear()
-        
-        if mod.url and mod.url.startswith("http"):
-            self.web_button.setEnabled(True)
-            self.web_button.setToolTip(mod.url)
-        else:
-            self.web_button.setEnabled(False)
 
     def update_online_details(self, details:dict):
         """Update preview with full details from API"""
@@ -166,7 +166,7 @@ class PreviewPanel(SidePanel):
         """Handle installed mod selection"""
         self.is_online_mode = False
         # Toggle buttons
-        self.open_btn.show()
+
         self.edit_btn.show()
         self.enable_btn.show()
         self.download_btn.hide()
@@ -195,21 +195,35 @@ class PreviewPanel(SidePanel):
         for element in mod.includes:
             tag = ElementTag(str(element))
             self.elements_container.add_widget(tag)
-
-        # Update Web Button State
-        if mod.url and mod.url.startswith("http"):
-            self.web_button.setEnabled(True)
-            self.web_button.setToolTip(mod.url)
-        else:
-             self.web_button.setEnabled(False)
-             self.web_button.setToolTip("No URL available")
         
         # Update enable button state
         is_enabled = str(mod.hash) in self.mod_manager.enabled_ids
         if is_enabled:
             self.enable_btn.setText("Disable")
+            self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_DISABLE.value))
+            self.enable_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {ButtonColor.RED.value}; 
+                    color: white; 
+                    border-radius: 4px;
+                    border: none;
+                    text-align: center;
+                }}
+                QPushButton:hover {{ background-color: #D32F2F; }}
+            """)
         else:
             self.enable_btn.setText("Enable")
+            self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_ENABLE.value))
+            self.enable_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {ButtonColor.GREEN.value}; 
+                    color: white; 
+                    border-radius: 4px;
+                    border: none;
+                    text-align: center;
+                }}
+                QPushButton:hover {{ background-color: #388E3C; }}
+            """)
 
     def on_open_clicked(self):
         id =self.mod_manager.focused_id
@@ -279,8 +293,30 @@ class PreviewPanel(SidePanel):
             if mod and str(mod.hash) == str(mod_id):
                 if is_enabled:
                     self.enable_btn.setText("Disable")
+                    self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_DISABLE.value))
+                    self.enable_btn.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: {ButtonColor.RED.value}; 
+                            color: white; 
+                            border-radius: 4px;
+                            border: none;
+                            text-align: center;
+                        }}
+                        QPushButton:hover {{ background-color: #D32F2F; }}
+                    """)
                 else:
                     self.enable_btn.setText("Enable")
+                    self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_ENABLE.value))
+                    self.enable_btn.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: {ButtonColor.GREEN.value}; 
+                            color: white; 
+                            border-radius: 4px;
+                            border: none;
+                            text-align: center;
+                        }}
+                        QPushButton:hover {{ background-color: #388E3C; }}
+                    """)
     
     def on_edit_clicked(self):
         """Emit signal to request edit mode for current mod"""
@@ -295,6 +331,28 @@ class PreviewPanel(SidePanel):
         title = QAction("Mod Options", self)
         title.setEnabled(False)
         menu.addAction(title)
+        
+        open_action = QAction("Open Folder", self)
+        open_action.setIcon(QIcon(ButtonIcons.BROWSE.value))
+        open_action.triggered.connect(self.on_open_clicked)
+        menu.addAction(open_action)
+        
+        # Check if URL exists for current mod
+        mod = None
+        if self.is_online_mode and self.online_manager:
+            id = self.online_manager.focused_id
+            if id:
+                mod = self.online_manager.get_mod(id)
+        elif self.mod_manager:
+            id = self.mod_manager.focused_id
+            if id:
+                mod = self.mod_manager.get_mod(id)
+        
+        if mod and mod.url and mod.url.startswith("http"):
+            web_action = QAction("Open Web Page", self)
+            web_action.setIcon(QIcon(ButtonIcons.WEB.value))
+            web_action.triggered.connect(self.open_web_page)
+            menu.addAction(web_action)
         
         menu.exec(self.menu_button.mapToGlobal(QPoint(0, self.menu_button.height())))
 

@@ -48,8 +48,8 @@ python setup.py build
 
 ## ToDo 
 - [ ] Highlight modified fields in Filter, Edit, Batch panels
-- [ ] Re-implement mod enable toggle for selected workspace
-- [ ] Implement mod enable toggle for emulators
+- [X] Re-implement mod enable toggle for selected workspace
+- [ ] Add export feature
 - [ ] Add filters for online mod search
 
 ## BugFix

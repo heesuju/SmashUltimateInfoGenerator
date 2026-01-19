@@ -7,4 +7,6 @@ presets
 .env
 data/cache/log/*
 *.db
+*.db-shm
+*.db-wal
 *.ttf

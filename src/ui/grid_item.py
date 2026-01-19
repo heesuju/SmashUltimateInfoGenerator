@@ -1,9 +1,10 @@
 from PyQt6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QSizePolicy, QListWidget, QListWidgetItem, QFrame
+    QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QSizePolicy, QListWidget, QListWidgetItem, QFrame, QMenu
 )
-from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon
-from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
+from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QAction, QDesktopServices
+from PyQt6.QtCore import Qt, QSize, QPoint, QPointF, QUrl
 from src.utils.image_utils import create_image_overlay, add_text_to_image
+from src.utils.file import open_folder
 from PyQt6.QtWidgets import (
     QGraphicsDropShadowEffect,
     QWidget,
@@ -17,6 +18,7 @@ from src.ui.grid_item_button import Overlay
 from src.models.mod import Mod, ModItem
 from src.managers.data_manager import DataManager, ButtonIcons
 from src.ui.components.toggle_button import ToggleButton
+from src.constants.colors import ButtonColor
 
 ICON_ELLIPSIS = "assets/icons/ui/ellipsis.png"
 ICON_FAVORITE = "assets/icons/menu/favorite.png"
@@ -122,21 +124,39 @@ class GridListItemWidget(QWidget):
             img_label.setPixmap(char_icon)
             icon_layout.addWidget(img_label)
 
-        self.fav_button = ToggleButton(ButtonIcons.FAV_ON.value, ButtonIcons.FAV_OFF.value, self.on_fav_on, self.on_fav_off, 24)
+        self.fav_button = ToggleButton(
+            ButtonIcons.FAV_ON.value, 
+            ButtonIcons.FAV_OFF.value, 
+            self.on_fav_on, 
+            self.on_fav_off, 
+            24,
+            color_a=ButtonColor.YELLOW.value,
+            color_b=ButtonColor.GRAY.value
+        )
         self.fav_button.set_state(self.mod.favorited)
         action_layout.addWidget(self.fav_button)
         
-        self.hide_button = ToggleButton(ButtonIcons.HIDE_ON.value, ButtonIcons.HIDE_OFF.value, self.on_vis_off, self.on_vis_on, 24)
+        self.hide_button = ToggleButton(
+            ButtonIcons.HIDE_ON.value, 
+            ButtonIcons.HIDE_OFF.value, 
+            self.on_vis_off, 
+            self.on_vis_on, 
+            24,
+            color_a=ButtonColor.GRAY.value,
+            color_b=ButtonColor.CYAN.value
+        )
         self.hide_button.set_state(self.mod.hidden)
         action_layout.addWidget(self.hide_button)
 
 
         menu_button = QPushButton()
-        menu_button.setIcon(QIcon(QPixmap(ButtonIcons.MENU.value)))
+        menu_button.setIcon(QIcon(QPixmap(ButtonIcons.MORE.value)))
         menu_button.setFlat(True)
         menu_button.setObjectName("obj")
         menu_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         menu_button.setFixedSize(QSize(24, 24))
+        menu_button.clicked.connect(self.show_context_menu)
+        self.menu_button = menu_button
         action_layout.addWidget(menu_button)
 
         
@@ -242,3 +262,34 @@ class GridListItemWidget(QWidget):
                 self.grid_list.mod_manager.remove_enabled(self.mod.id)
             else:
                 self.grid_list.mod_manager.add_enabled(self.mod.id)
+
+    def show_context_menu(self):
+        """Show context menu for mod options"""
+        menu = QMenu(self)
+        
+        open_action = QAction("Open Folder", self)
+        open_action.setIcon(QIcon(ButtonIcons.BROWSE.value))
+        open_action.triggered.connect(self.on_open_clicked)
+        menu.addAction(open_action)
+        
+        # Check if URL exists for current mod
+        mod = None
+        if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
+            mod = self.grid_list.mod_manager.get_mod(self.mod.id)
+        
+        if mod and mod.url and mod.url.startswith("http"):
+            web_action = QAction("Open Web Page", self)
+            web_action.setIcon(QIcon(ButtonIcons.WEB.value))
+            web_action.triggered.connect(lambda: self.on_web_clicked(mod.url))
+            menu.addAction(web_action)
+        
+        menu.exec(self.menu_button.mapToGlobal(QPoint(0, self.menu_button.height())))
+
+    def on_open_clicked(self):
+        if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
+            mod = self.grid_list.mod_manager.get_mod(self.mod.id)
+            if mod:
+                open_folder(mod.path)
+
+    def on_web_clicked(self, url):
+        QDesktopServices.openUrl(QUrl(url))

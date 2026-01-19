@@ -25,6 +25,7 @@ from src.managers.filter_manager import FilterManager, FilterParameters
 from src.managers.config_manager import ConfigManager
 from src.constants.ui_params import SPACING, GRID_PAGE_SIZE, LIST_PAGE_SIZE
 from PyQt6.QtCore import pyqtSignal
+from src.constants.colors import ButtonColor
 
 class ModList(QWidget):
     batch_tasks_added = pyqtSignal()  # Signal when tasks are added to batch queue
@@ -148,8 +149,8 @@ class ModList(QWidget):
             return btn
 
         btn_generate = create_batch_btn(ButtonIcons.BATCH_GENERATE.value, "Generate", "Generate Info.toml for Selected", lambda: self.on_batch_action_btn("Generate Info.toml"))
-        btn_enable = create_batch_btn(ButtonIcons.BATCH_ENABLE.value, "Enable", "Enable Selected", lambda: self.on_batch_action_btn("Enable"), color="#4CAF50")
-        btn_disable = create_batch_btn(ButtonIcons.BATCH_DISABLE.value, "Disable", "Disable Selected", lambda: self.on_batch_action_btn("Disable"), color="#F44336")
+        btn_enable = create_batch_btn(ButtonIcons.BATCH_ENABLE.value, "Enable", "Enable Selected", lambda: self.on_batch_action_btn("Enable"), color=ButtonColor.GREEN.value)
+        btn_disable = create_batch_btn(ButtonIcons.BATCH_DISABLE.value, "Disable", "Disable Selected", lambda: self.on_batch_action_btn("Disable"), color=ButtonColor.RED.value)
         
         # More actions menu
         btn_more = QPushButton()
