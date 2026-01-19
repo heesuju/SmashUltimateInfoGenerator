@@ -27,6 +27,7 @@ class OnlineModList(QWidget):
         
         layout = VBox()
         self.setLayout(layout)
+        self.setMinimumWidth(200)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         self.search = SearchBar(online_manager=online_manager)

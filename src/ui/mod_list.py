@@ -50,6 +50,7 @@ class ModList(QWidget):
         layout = VBox()
         self.setLayout(layout)
         
+        self.setMinimumWidth(200)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         # Performance optimization: Cache icon existence and group data
@@ -117,8 +118,9 @@ class ModList(QWidget):
         header_layout.addStretch(1)
         
         add_button = QPushButton("Add")
-        add_button.setIcon(QIcon(ButtonIcons.ADD.value))
-        add_button.setStyleSheet("QPushButton::menu-indicator { width: 0px; }")
+        tinted_add = tint_pixmap(QPixmap(ButtonIcons.ADD.value), QColor(ButtonColor.CYAN.value))
+        add_button.setIcon(QIcon(tinted_add))
+        add_button.setStyleSheet(f"QPushButton {{ color: {ButtonColor.CYAN.value}; }} QPushButton::menu-indicator {{ width: 0px; }}")
         add_button.setFlat(True)
         
         # Create menu for add button
@@ -148,7 +150,7 @@ class ModList(QWidget):
             btn.clicked.connect(callback)
             return btn
 
-        btn_generate = create_batch_btn(ButtonIcons.BATCH_GENERATE.value, "Generate", "Generate Info.toml for Selected", lambda: self.on_batch_action_btn("Generate Info.toml"))
+        btn_generate = create_batch_btn(ButtonIcons.BATCH_GENERATE.value, "Generate", "Generate Info.toml for Selected", lambda: self.on_batch_action_btn("Generate Info.toml"), color=ButtonColor.PURPLE.value)
         btn_enable = create_batch_btn(ButtonIcons.BATCH_ENABLE.value, "Enable", "Enable Selected", lambda: self.on_batch_action_btn("Enable"), color=ButtonColor.GREEN.value)
         btn_disable = create_batch_btn(ButtonIcons.BATCH_DISABLE.value, "Disable", "Disable Selected", lambda: self.on_batch_action_btn("Disable"), color=ButtonColor.RED.value)
         

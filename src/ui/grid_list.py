@@ -78,6 +78,7 @@ class GridList(QListWidget):
         self.setGridSize(QSize(350, 110))
         self.setSpacing(0)
         self.setFlow(QListView.Flow.LeftToRight)
+        self.setMinimumWidth(200)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setWrapping(True)
         self.setSelectionMode(QListWidget.SelectionMode.SingleSelection)  # Allows multiple selection

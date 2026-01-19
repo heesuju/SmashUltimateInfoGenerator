@@ -15,3 +15,4 @@ class ButtonColor(Enum):
     CYAN = "#00BCD4"        # Cyan
     GREEN = "#4CAF50"       # Green
     RED = "#F44336"         # Red
+    PURPLE = "#BA68C8"      # Purple

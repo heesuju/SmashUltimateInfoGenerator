@@ -102,6 +102,7 @@ class TreeList(QWidget):
         self.animations = []
         self.current_page_item_ids = []  # Track IDs of items on current page
         self.item_checkboxes = {}  # Map item ID to checkbox widget
+        self.setMinimumWidth(200)  # Allow shrinking
         self.setStyleSheet("QListWidget"
                                   "{"
                                   "border : none;"
@@ -113,6 +114,8 @@ class TreeList(QWidget):
         # Top Controls
         
         self.tree_widget = CustomTreeWidget()
+        self.tree_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.tree_widget.setMinimumWidth(200)
         self.tree_widget.setIconSize(QSize(72, 72)) 
         self.tree_widget.setStyleSheet("""
             QTreeWidget {

@@ -55,7 +55,7 @@ python setup.py build
 ## BugFix
 - [ ] Select error for multiple pages
 - [ ] Fix hidden mods not appearing ever again and other items are hidden when show hidden is on
-- [ ] Fix width update bug when changing from batch to config panel
+- [X] Fix width update bug when changing from batch to config panel
 - [ ] Fix navigation tabs selection not resetting when changing tabs between installed/online
 - [X] Fix Wifi-safe not being applied when downloading mod
 - [ ] Fix Batch panel layout

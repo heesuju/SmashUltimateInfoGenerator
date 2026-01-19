@@ -166,7 +166,6 @@ class MainMenu(QWidget):
         hlayout.addWidget(self.edit)
         hlayout.addWidget(self.batch)
         hlayout.addWidget(self.config)
-        hlayout.addWidget(self.config)
         hlayout.addWidget(self.workspace)
         hlayout.addWidget(self.download_panel)
         
