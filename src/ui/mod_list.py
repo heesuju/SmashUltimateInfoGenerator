@@ -9,7 +9,7 @@ from PyQt6.QtGui import (
     QPixmap, QIcon, QFont, QDragEnterEvent, QDropEvent, QColor
 )
 from src.core.formatting import format_slots
-from src.ui.components.layout import VBox
+from src.ui.components.layout import VBox, HBox
 from src.ui.grid_list import GridList
 from src.ui.tree_list import TreeList
 from src.models.mod import Mod, ModItem
@@ -83,14 +83,16 @@ class ModList(QWidget):
         
         # Filter chips widget
         self.filter_chips = FilterChips(self.filter_manager)
-        self.frame_layout.addWidget(self.filter_chips)
+        chips_container = HBox(margin=(10, 0))
+        chips_container.addWidget(self.filter_chips)
+        self.frame_layout.addLayout(chips_container)
 
         # init child layouts
-        header_layout = QHBoxLayout(spacing=4)
+        header_layout = HBox(spacing=4, margin=(10, 0))
         
         self.frame_layout.addLayout(header_layout)
 
-        self.body_layout = VBox()
+        self.body_layout = VBox(margin=10)
         self.frame_layout.addLayout(self.body_layout)
 
         footer_layout = QHBoxLayout(spacing=10)

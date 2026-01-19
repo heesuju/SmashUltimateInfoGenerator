@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QWidget, QSizePolicy, QFrame
 )
 from PyQt6.QtCore import QTimer
-from src.ui.components.layout import VBox
+from src.ui.components.layout import VBox, HBox
 from src.ui.grid_list import GridList
 from src.models.mod import ModItem
 from src.ui.components.paging import Paging
@@ -35,11 +35,13 @@ class OnlineModList(QWidget):
         
         self.filter_chips = FilterChips(filter_manager) if filter_manager else None
         if self.filter_chips:
-            layout.addWidget(self.filter_chips)
+            chips_container = HBox(margin=(10, 0))
+            chips_container.addWidget(self.filter_chips)
+            layout.addLayout(chips_container)
         
         self.frame = QFrame()
         self.frame.setFrameShape(QFrame.Shape.NoFrame)
-        self.frame_layout = VBox(margin=0, spacing=0)
+        self.frame_layout = VBox(margin=10, spacing=0)
         self.frame.setLayout(self.frame_layout)
         layout.addWidget(self.frame)
         
