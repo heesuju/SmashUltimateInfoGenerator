@@ -66,7 +66,12 @@ class MainMenu(QWidget):
         self.edit = EditPanel(self.mod_manager, config_manager)
         self.batch = BatchPanel(self.batch_manager)
         self.config = Config(config_manager)
-        self.workspace = WorkspacePanel(config_manager, self.workspace_manager, self.mod_manager)
+        self.workspace = WorkspacePanel(
+            config_manager, 
+            self.workspace_manager, 
+            self.mod_manager,
+            on_open_config=lambda: self.menu.show_panel(self.config)
+        )
         
         # Connect preview edit button to edit panel
         self.preview.edit_requested.connect(self.on_edit_requested)
