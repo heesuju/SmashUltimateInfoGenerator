@@ -254,6 +254,9 @@ class ModList(QWidget):
         self.update_view()
     
     def on_page_changed(self, page:int, size:int):
+        # Update paging totals in case page size changed
+        if self.cached_filtered_mods:
+            self.paging.update(len(self.cached_filtered_mods))
         self.update_view()
 
     def on_filter_changed(self):
