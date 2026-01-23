@@ -62,7 +62,18 @@ class OnlineGridListItemWidget(GridListItemWidget):
         
         has_thumbnail = bool(initial_path and os.path.exists(initial_path) and os.path.isfile(initial_path))
         category = mod.category if mod.category else "Misc"
-        overlay = Overlay(initial_path, self, category=category, has_thumbnail=has_thumbnail)
+        
+        download_icon_path = ButtonIcons.DOWNLOAD_OVERLAY.value
+        
+        overlay = Overlay(
+            initial_path, 
+            self, 
+            category=category, 
+            has_thumbnail=has_thumbnail, 
+            overlay_mode="action",
+            hover_icon=download_icon_path,
+            on_toggle_callback=self.on_download_clicked
+        )
         self.overlay = overlay # Scanpy reference
         frame_layout.addWidget(overlay)
         

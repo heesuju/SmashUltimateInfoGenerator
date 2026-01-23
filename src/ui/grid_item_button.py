@@ -36,14 +36,18 @@ def convert_to_grayscale(pixmap:QPixmap):
 class Overlay(QGraphicsView):
     # Static cache for category icons to avoid repeated loading/scaling
     _icon_cache = {}
+    _hover_icon_cache = {}
 
-    def __init__(self, image_path:str, parent=None, initial_enabled=False, on_toggle_callback=None, category:str="Fighter", has_thumbnail:bool=True):
+    def __init__(self, image_path:str, parent=None, initial_enabled=False, on_toggle_callback=None, category:str="Fighter", has_thumbnail:bool=True, overlay_mode="toggle", hover_icon=None):
         super().__init__(parent)
         self.image_path = image_path
         self.enabled = initial_enabled
         self.on_toggle_callback = on_toggle_callback
         self.category = category.lower()  # Normalize to lowercase for file paths
         self.has_thumbnail = has_thumbnail
+        self.overlay_mode = overlay_mode
+        self.hover_icon = hover_icon
+        self.hover_item_graphics = None
 
         self.player = QMediaPlayer()
         self.audio_output = QAudioOutput()
@@ -88,6 +92,14 @@ class Overlay(QGraphicsView):
         self.preview_item = QGraphicsPixmapItem(preview)
         self.preview_item.setParentItem(self.thumbnail_clip_item)
         
+        # Darkening overlay (initially transparent)
+        if self.hover_icon:
+            self.darken_item = QGraphicsRectItem(self.thumbnail_clip_item.rect())
+            self.darken_item.setParentItem(self.thumbnail_clip_item)
+            self.darken_item.setBrush(QBrush(QColor("black")))
+            self.darken_item.setPen(QPen(Qt.PenStyle.NoPen))
+            self.darken_item.setOpacity(0.0)
+        
         # Center preview in clip item
         self.category_icon_item = QGraphicsPixmapItem(category_icon)
         self.graphics_scene.addItem(self.category_icon_item)
@@ -112,6 +124,32 @@ class Overlay(QGraphicsView):
         self.text.setBrush(QBrush(QColor("white")))  # Set the font color
         self.graphics_scene.addItem(self.text)
         self.text.setPos((self.parent_width - self.text.boundingRect().width()) / 2, TEXT_YLOC)
+
+        # Setup Hover Icon if provided
+        if self.hover_icon:
+            pix = None
+            icon_size = 24
+            
+            if isinstance(self.hover_icon, str):
+                if self.hover_icon in Overlay._hover_icon_cache:
+                    pix = Overlay._hover_icon_cache[self.hover_icon]
+                else:
+                    pix = QPixmap(self.hover_icon)
+                    pix = pix.scaled(icon_size, icon_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+                    Overlay._hover_icon_cache[self.hover_icon] = pix
+            else:
+                pix = self.hover_icon
+                pix = pix.scaled(icon_size, icon_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+
+            self.hover_item_graphics = QGraphicsPixmapItem(pix)
+            self.hover_item_graphics.setZValue(100) # Ensure it's on top
+            self.hover_item_graphics.setVisible(False)
+            
+            icon_x = (self.parent_width - pix.width()) / 2
+            icon_y = (self.parent_height - pix.height()) / 2
+            
+            self.hover_item_graphics.setPos(icon_x, icon_y)
+            self.graphics_scene.addItem(self.hover_item_graphics)
 
         # Apply initial enabled state shadow
         self._update_enabled_shadow()
@@ -153,13 +191,27 @@ class Overlay(QGraphicsView):
         self.category_icon_item.setPos(0, PRESS_AMOUNT)
         self.thumbnail_clip_item.setPos(THUMBNAIL_SIDE_OFFSET, THUMBNAIL_TOP_OFFSET + PRESS_AMOUNT)
         self.text.setPos((self.parent_width - self.text.boundingRect().width()) / 2, TEXT_YLOC + PRESS_AMOUNT)
+        if self.hover_item_graphics:
+            x = self.hover_item_graphics.x()
+            y = self.hover_item_graphics.y()
+            self.hover_item_graphics.setPos(x, y + PRESS_AMOUNT)
 
     def mouseReleaseEvent(self, event):
         self.glow_item.setPos(0, 0)
         self.category_icon_item.setPos(0, 0)
         self.thumbnail_clip_item.setPos(THUMBNAIL_SIDE_OFFSET, THUMBNAIL_TOP_OFFSET)
         self.text.setPos((self.parent_width - self.text.boundingRect().width()) / 2, TEXT_YLOC)
+        if self.hover_item_graphics:
+            x = self.hover_item_graphics.x()
+            y = self.hover_item_graphics.y()
+            self.hover_item_graphics.setPos(x, y - PRESS_AMOUNT)
+
         if self.on_toggle_callback:
+            if self.overlay_mode == "action":
+                self.play_audio("assets/sounds/select.wav")
+                self.on_toggle_callback()
+                return
+
             if self.enabled:
                 self.play_audio("assets/sounds/deselect.wav")
             else:
@@ -167,6 +219,18 @@ class Overlay(QGraphicsView):
             self.on_toggle_callback()
         else:
             self.toggle()  # Fallback to old behavior if no callback
+
+    def enterEvent(self, event):
+        if self.hover_item_graphics:
+            self.hover_item_graphics.setVisible(True)
+            self.darken_item.setOpacity(0.5)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        if self.hover_item_graphics:
+            self.hover_item_graphics.setVisible(False)
+            self.darken_item.setOpacity(0.0)
+        super().leaveEvent(event)
 
     def mouseDoubleClickEvent(self, event) -> None: 
         pass
@@ -246,6 +310,9 @@ class Overlay(QGraphicsView):
             rect_height = SIZE - THUMBNAIL_TOP_OFFSET - THUMBNAIL_BOTTOM_OFFSET
             self.thumbnail_clip_item.setRect(0, 0, rect_width, rect_height)
             self.thumbnail_clip_item.setPos(THUMBNAIL_SIDE_OFFSET, THUMBNAIL_TOP_OFFSET)
+            
+            if hasattr(self, 'darken_item'):
+                 self.darken_item.setRect(0, 0, rect_width, rect_height)
 
             preview = QPixmap(image_path)
             # Virtual target size
