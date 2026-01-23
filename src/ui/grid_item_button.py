@@ -1,8 +1,10 @@
 import os
+from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import (QGraphicsView, QGraphicsScene, 
                              QGraphicsSimpleTextItem, QGraphicsPixmapItem,
-                             QGraphicsDropShadowEffect)
-from PyQt6.QtGui import QPixmap, QFont, QBrush, QColor, QImage
+                             QGraphicsDropShadowEffect, QGraphicsRectItem, QGraphicsItem)
+from PyQt6.QtGui import QPixmap, QFont, QBrush, QColor, QImage, QPainterPath, QPen
+
 from PyQt6.QtCore import Qt, QPointF, QUrl
 from PyQt6.QtCore import QVariantAnimation
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
@@ -12,6 +14,9 @@ CATEGORY_ICON_PATH = "assets/icons/categories/{}.png"
 CATEGORY_ICON_BACK_PATH = "assets/icons/categories/{}_b.png"
 
 SIZE = 70
+THUMBNAIL_TOP_OFFSET = 20
+THUMBNAIL_SIDE_OFFSET = 6
+THUMBNAIL_BOTTOM_OFFSET = 20
 TEXT_YLOC = 12.5
 FONT = "Arial"
 FONT_SIZE = 6
@@ -57,22 +62,45 @@ class Overlay(QGraphicsView):
         self.glow_item = QGraphicsPixmapItem(category_icon)
         self.graphics_scene.addItem(self.glow_item)
 
+        # Create a clipping item for the thumbnail
+        self.thumbnail_clip_item = QGraphicsRectItem()
+        self.thumbnail_clip_item.setFlag(QGraphicsItem.GraphicsItemFlag.ItemClipsChildrenToShape)
+        self.thumbnail_clip_item.setPen(QPen(Qt.PenStyle.NoPen)) 
+        
+
+        # We want to clip left, right, bottom, and start from an offset at top.
+        rect_width = category_icon.width() - (2 * THUMBNAIL_SIDE_OFFSET)
+        rect_height = SIZE - THUMBNAIL_TOP_OFFSET - THUMBNAIL_BOTTOM_OFFSET
+        self.thumbnail_clip_item.setRect(0, 0, rect_width, rect_height) 
+        
+        # Position clip item: Centered horizontally, offset vertically
+        self.thumbnail_clip_item.setPos(THUMBNAIL_SIDE_OFFSET, THUMBNAIL_TOP_OFFSET) 
+        
+        self.graphics_scene.addItem(self.thumbnail_clip_item)
+
         preview = QPixmap(image_path)
-        preview = preview.scaled(category_icon.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        
+        # This ensures we fit width layout UNLESS height is too small
+        virtual_height = SIZE - THUMBNAIL_TOP_OFFSET - THUMBNAIL_BOTTOM_OFFSET
+        target_size = QSize(int(rect_width), int(virtual_height))
+        preview = preview.scaled(target_size, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
 
         self.preview_item = QGraphicsPixmapItem(preview)
-        self.graphics_scene.addItem(self.preview_item)
+        self.preview_item.setParentItem(self.thumbnail_clip_item)
         
+        # Center preview in clip item
         self.category_icon_item = QGraphicsPixmapItem(category_icon)
         self.graphics_scene.addItem(self.category_icon_item)
         self.setSceneRect(self.category_icon_item.sceneBoundingRect())
         
-        # center
         self.parent_width = category_icon.width()
         self.parent_height = category_icon.height()
         self.item_width = preview.width()
         self.item_height = preview.height()
-        self.preview_item.setPos((self.parent_width - self.item_width)/2, (self.parent_height - self.item_height)/2)
+        
+        # Position relative to VIRTUAL rect
+        # X is centered, Y is 0 (Top Aligned)
+        self.preview_item.setPos((rect_width - self.item_width)/2, 0)
         
         # Determine category text from parent
         cat_text = category.upper()
@@ -83,7 +111,7 @@ class Overlay(QGraphicsView):
         self.text.setFont(font)
         self.text.setBrush(QBrush(QColor("white")))  # Set the font color
         self.graphics_scene.addItem(self.text)
-        self.text.setPos((self.graphics_scene.width() - self.text.boundingRect().width()) / 2, TEXT_YLOC)
+        self.text.setPos((self.parent_width - self.text.boundingRect().width()) / 2, TEXT_YLOC)
 
         # Apply initial enabled state shadow
         self._update_enabled_shadow()
@@ -123,14 +151,14 @@ class Overlay(QGraphicsView):
     def mousePressEvent(self, event):
         self.glow_item.setPos(0, PRESS_AMOUNT)
         self.category_icon_item.setPos(0, PRESS_AMOUNT)
-        self.preview_item.setPos((self.parent_width - self.item_width)/2, (self.parent_height - self.item_height)/2 + PRESS_AMOUNT)
-        self.text.setPos((self.graphics_scene.width() - self.text.boundingRect().width()) / 2, TEXT_YLOC + PRESS_AMOUNT)
+        self.thumbnail_clip_item.setPos(THUMBNAIL_SIDE_OFFSET, THUMBNAIL_TOP_OFFSET + PRESS_AMOUNT)
+        self.text.setPos((self.parent_width - self.text.boundingRect().width()) / 2, TEXT_YLOC + PRESS_AMOUNT)
 
     def mouseReleaseEvent(self, event):
         self.glow_item.setPos(0, 0)
         self.category_icon_item.setPos(0, 0)
-        self.preview_item.setPos((self.parent_width - self.item_width)/2, (self.parent_height - self.item_height)/2)
-        self.text.setPos((self.graphics_scene.width() - self.text.boundingRect().width()) / 2, TEXT_YLOC)
+        self.thumbnail_clip_item.setPos(THUMBNAIL_SIDE_OFFSET, THUMBNAIL_TOP_OFFSET)
+        self.text.setPos((self.parent_width - self.text.boundingRect().width()) / 2, TEXT_YLOC)
         if self.on_toggle_callback:
             if self.enabled:
                 self.play_audio("assets/sounds/deselect.wav")
@@ -156,8 +184,19 @@ class Overlay(QGraphicsView):
         
         # Reload preview image
         category_icon = self._get_category_icon()
-        preview = QPixmap(self.image_path).scaled(category_icon.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        
+        # Calculate virtual target size
+        rect_width = self.thumbnail_clip_item.rect().width()
+        virtual_height = SIZE - THUMBNAIL_TOP_OFFSET - THUMBNAIL_BOTTOM_OFFSET
+        target_size = QSize(int(rect_width), int(virtual_height))
+        
+        preview = QPixmap(self.image_path).scaled(target_size, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
         self.preview_item.setPixmap(preview)
+        
+        # Center in virtual rect
+        self.item_width = preview.width()
+        self.item_height = preview.height()
+        self.preview_item.setPos((rect_width - self.item_width)/2, 0)
     
     def set_enabled(self, enabled:bool):
         """Set enabled state without calling callback (used when syncing from external changes)"""
@@ -169,8 +208,19 @@ class Overlay(QGraphicsView):
         
         # Reload preview image
         category_icon = self._get_category_icon()
-        preview = QPixmap(self.image_path).scaled(category_icon.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        
+        # Calculate virtual target size
+        rect_width = self.thumbnail_clip_item.rect().width()
+        virtual_height = SIZE - THUMBNAIL_TOP_OFFSET - THUMBNAIL_BOTTOM_OFFSET
+        target_size = QSize(int(rect_width), int(virtual_height))
+        
+        preview = QPixmap(self.image_path).scaled(target_size, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
         self.preview_item.setPixmap(preview)
+        
+        # Center in virtual rect
+        self.item_width = preview.width()
+        self.item_height = preview.height()
+        self.preview_item.setPos((rect_width - self.item_width)/2, 0)
 
     def play_audio(self, path:str):
         audio_file = QUrl.fromLocalFile(path)
@@ -191,15 +241,28 @@ class Overlay(QGraphicsView):
         self.parent_height = category_icon.height()
         
         if image_path and os.path.exists(image_path):
+
+            rect_width = category_icon.width() - (2 * THUMBNAIL_SIDE_OFFSET)
+            rect_height = SIZE - THUMBNAIL_TOP_OFFSET - THUMBNAIL_BOTTOM_OFFSET
+            self.thumbnail_clip_item.setRect(0, 0, rect_width, rect_height)
+            self.thumbnail_clip_item.setPos(THUMBNAIL_SIDE_OFFSET, THUMBNAIL_TOP_OFFSET)
+
             preview = QPixmap(image_path)
-            preview = preview.scaled(category_icon.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            # Virtual target size
+            virtual_height = SIZE - THUMBNAIL_TOP_OFFSET - THUMBNAIL_BOTTOM_OFFSET
+            target_size = QSize(int(rect_width), int(virtual_height))
+            
+            preview = preview.scaled(target_size, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
             self.item_width = preview.width()
             self.item_height = preview.height()
             self.preview_item.setPixmap(preview)
             
-            # Re-center
-            self.preview_item.setPos((self.parent_width - self.item_width)/2, (self.parent_height - self.item_height)/2)
+            # Re-center in virtual rect
+            self.preview_item.setPos((rect_width - self.item_width)/2, 0)
         
-        # Update the category icon as well (in case has_thumbnail changed)
         self.category_icon_item.setPixmap(category_icon)
         self.glow_item.setPixmap(category_icon)
+        self.setSceneRect(self.category_icon_item.sceneBoundingRect())
+        
+        # Update text position
+        self.text.setPos((self.parent_width - self.text.boundingRect().width()) / 2, TEXT_YLOC)
