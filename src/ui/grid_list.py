@@ -231,3 +231,7 @@ class GridList(QListWidget):
             # Update the overlay visual state (shadow highlight)
             if hasattr(widget, 'overlay'):
                 widget.overlay.set_enabled(is_enabled)
+            
+            # Update the toggle button state
+            if hasattr(widget, 'enable_button'):
+                widget.enable_button.set_state(is_enabled)

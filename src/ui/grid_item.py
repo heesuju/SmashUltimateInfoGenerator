@@ -151,15 +151,17 @@ class GridListItemWidget(QWidget):
         action_layout.addWidget(self.hide_button)
 
 
-        menu_button = QPushButton()
-        menu_button.setIcon(QIcon(QPixmap(ButtonIcons.MORE.value)))
-        menu_button.setFlat(True)
-        menu_button.setObjectName("obj")
-        menu_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        menu_button.setFixedSize(QSize(24, 24))
-        menu_button.clicked.connect(self.show_context_menu)
-        self.menu_button = menu_button
-        action_layout.addWidget(menu_button)
+        self.enable_button = ToggleButton(
+            ButtonIcons.ENABLE.value,
+            ButtonIcons.DISABLE.value,
+            self.on_enable,
+            self.on_disable,
+            24,
+            initial_state=self.mod.enabled,
+            color_a=ButtonColor.GREEN.value,
+            color_b=ButtonColor.GRAY.value
+        )
+        action_layout.addWidget(self.enable_button)
 
         
         
@@ -265,10 +267,27 @@ class GridListItemWidget(QWidget):
             # Toggle the enabled state through mod manager
             if self.mod.id in self.grid_list.mod_manager.enabled_ids:
                 self.grid_list.mod_manager.remove_enabled(self.mod.id)
+                self.enable_button.set_state(False)
             else:
                 self.grid_list.mod_manager.add_enabled(self.mod.id)
+                self.enable_button.set_state(True)
+    
+    def on_enable(self):
+        """Called when enable toggle button is switched ON"""
+        if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
+            self.grid_list.mod_manager.add_enabled(self.mod.id)
+            self.overlay.set_enabled(True)
+            
+    def on_disable(self):
+        """Called when enable toggle button is switched OFF"""
+        if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
+            self.grid_list.mod_manager.remove_enabled(self.mod.id)
+            self.overlay.set_enabled(False)
 
-    def show_context_menu(self):
+    def contextMenuEvent(self, event):
+        self.show_context_menu(event.globalPos())
+
+    def show_context_menu(self, pos=None):
         """Show context menu for mod options"""
         menu = QMenu(self)
         
@@ -288,7 +307,12 @@ class GridListItemWidget(QWidget):
             web_action.triggered.connect(lambda: self.on_web_clicked(mod.url))
             menu.addAction(web_action)
         
-        menu.exec(self.menu_button.mapToGlobal(QPoint(0, self.menu_button.height())))
+        if pos:
+            menu.exec(pos)
+        else:
+            # Fallback if called without pos (though unlikely now)
+            from PyQt6.QtGui import QCursor
+            menu.exec(QCursor.pos())
 
     def on_open_clicked(self):
         if self.grid_list and hasattr(self.grid_list, 'mod_manager'):
