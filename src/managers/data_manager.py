@@ -16,6 +16,7 @@ class NavigationMenuIcon(Enum):
     BATCH = os.path.join(ICON_PATH, "menu/batch_32.svg")
     WORKSPACE = os.path.join(ICON_PATH, "menu/workspace_32.svg")
     DOWNLOAD = os.path.join(ICON_PATH, "menu/download_32.svg")
+    FTP = os.path.join(ICON_PATH, "menu/ftp_32.svg")
     NONE = ""
 
 class ButtonIcons(Enum):

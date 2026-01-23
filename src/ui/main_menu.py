@@ -22,6 +22,8 @@ from src.managers.download_manager import DownloadManager
 from src.ui.online_mod_list import OnlineModList
 from src.ui.online_filter_panel import OnlineFilterPanel
 from src.ui.download_panel import DownloadPanel
+from src.managers.ftp_manager import FTPManager
+from src.ui.ftp_panel import FTPPanel
 
 class MainMenu(QWidget):
     def __init__(self, config_manager:ConfigManager):
@@ -49,6 +51,12 @@ class MainMenu(QWidget):
         # Download Manager
         self.download_manager = DownloadManager(config_manager)
         self.download_panel = DownloadPanel(self.download_manager)
+        
+        # FTP Manager
+        self.ftp_manager = FTPManager(config_manager, self.mod_manager)
+        self.ftp_panel = FTPPanel(self.ftp_manager)
+        self.ftp_manager.progress_signal.connect(self.update_ftp_progress)
+        self.ftp_manager.connection_status_changed.connect(self.update_ftp_connection_status)
         
         # Auto-open download panel on start
         self.download_manager.download_started.connect(self.on_download_started)
@@ -118,6 +126,7 @@ class MainMenu(QWidget):
         self.config.hide()
         self.workspace.hide()
         self.download_panel.hide()
+        self.ftp_panel.hide()
 
         self.menu = Navigation(
             [
@@ -130,6 +139,7 @@ class MainMenu(QWidget):
                     NavigationMenu(NavigationMenuIcon.EDIT.value, self.edit),
                     NavigationMenu(NavigationMenuIcon.BATCH.value, self.batch),
                     NavigationMenu(NavigationMenuIcon.DOWNLOAD.value, self.download_panel),
+                    NavigationMenu(NavigationMenuIcon.FTP.value, self.ftp_panel),
                 ],
                 [
                     NavigationMenu(NavigationMenuIcon.WORKSPACE.value, self.workspace),
@@ -177,6 +187,7 @@ class MainMenu(QWidget):
         hlayout.addWidget(self.config)
         hlayout.addWidget(self.workspace)
         hlayout.addWidget(self.download_panel)
+        hlayout.addWidget(self.ftp_panel)
         
         
         vlayout.addLayout(hlayout)
@@ -215,7 +226,8 @@ class MainMenu(QWidget):
         any_visible = any(p.isVisible() for p in [
             self.filter, self.online_filter, self.sort, 
             self.preview, self.edit, self.batch, 
-            self.config, self.workspace, self.download_panel
+            self.config, self.workspace, self.download_panel,
+            self.ftp_panel
         ])
         
         self.separator1.setVisible(any_visible)
@@ -411,6 +423,26 @@ class MainMenu(QWidget):
         if ws_btn:
             ws_btn.set_progress(-1)
             ws_btn.setToolTip("Workspace")
+
+    def update_ftp_progress(self, progress: float):
+        """Update FTP progress indicator on navigation button"""
+        ftp_btn = self.menu.buttons.get(NavigationMenuIcon.FTP.value)
+        if ftp_btn:
+             ftp_btn.set_progress(progress)
+
+    def update_ftp_connection_status(self, connected: bool, msg: str):
+        """Update FTP button status indicator"""
+        from PyQt6.QtGui import QColor
+        ftp_btn = self.menu.buttons.get(NavigationMenuIcon.FTP.value)
+        if not ftp_btn:
+            return
+            
+        if connected:
+            ftp_btn.set_status_color(QColor("#4CAF50")) # Green
+        elif msg == "Searching...":
+            ftp_btn.set_status_color(QColor("#FFC107")) # Amber
+        else:
+            ftp_btn.set_status_color(QColor("#F44336")) # Red
 
     def keyPressEvent(self, event):
         """Handle global keyboard shortcuts"""

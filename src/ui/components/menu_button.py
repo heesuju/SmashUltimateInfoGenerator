@@ -105,9 +105,15 @@ class MenuButton(QPushButton):
             
             self._update_icon_state()
 
+    def set_status_color(self, color: QColor):
+        """Set a status indicator color. Pass None to remove."""
+        self.status_color = color
+        self.update()
+
     def paintEvent(self, event):
         super().paintEvent(event)
         
+        # Draw Progress Overlay if active
         if self.progress >= 0:
             painter = QPainter(self)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -162,4 +168,24 @@ class MenuButton(QPushButton):
             
             painter.setClipRect(x, clip_y, icon_size, clip_h)
             painter.drawPixmap(x, y, colored)
+            painter.end()
+            
+        # Draw Status Indicator Circle if active (and not progressing)
+        elif hasattr(self, 'status_color') and self.status_color:
+            painter = QPainter(self)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            
+            indicator_size = 8
+            rect = self.contentsRect()
+             # Position close to icon bottom right
+            icon_rect_x = rect.x() + (rect.width() - ICON_SIZE) // 2
+            icon_rect_y = rect.y() + (rect.height() - ICON_SIZE) // 2
+            
+            # Draw at bottom right of icon area
+            x = icon_rect_x + ICON_SIZE - indicator_size + 2
+            y = icon_rect_y + ICON_SIZE - indicator_size + 2
+            
+            painter.setBrush(self.status_color)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawEllipse(x, y, indicator_size, indicator_size)
             painter.end()
