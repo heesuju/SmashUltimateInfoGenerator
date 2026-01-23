@@ -59,7 +59,10 @@ class OnlineGridListItemWidget(GridListItemWidget):
         # Thumbnail Handling
         is_url = self.image_path.startswith("http")
         initial_path = self.image_path if not is_url else ""
-        overlay = Overlay(initial_path, self)
+        
+        has_thumbnail = bool(initial_path and os.path.exists(initial_path) and os.path.isfile(initial_path))
+        category = mod.category if mod.category else "Misc"
+        overlay = Overlay(initial_path, self, category=category, has_thumbnail=has_thumbnail)
         self.overlay = overlay # Scanpy reference
         frame_layout.addWidget(overlay)
         

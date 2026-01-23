@@ -1,18 +1,25 @@
 import os
 from PyQt6.QtWidgets import (QGraphicsView, QGraphicsScene, 
-                             QGraphicsSimpleTextItem, QGraphicsPixmapItem )
+                             QGraphicsSimpleTextItem, QGraphicsPixmapItem,
+                             QGraphicsDropShadowEffect)
 from PyQt6.QtGui import QPixmap, QFont, QBrush, QColor, QImage
 from PyQt6.QtCore import Qt, QPointF, QUrl
 from PyQt6.QtCore import QVariantAnimation
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 
-ICON_OFF = "assets/icons/cartridge_off"
-ICON_ON = "assets/icons/cartridge_on"
+# Category icon paths
+CATEGORY_ICON_PATH = "assets/icons/categories/{}.png"
+CATEGORY_ICON_BACK_PATH = "assets/icons/categories/{}_b.png"
+
 SIZE = 70
-TEXT_YLOC = 10.5
+TEXT_YLOC = 12.5
 FONT = "Arial"
 FONT_SIZE = 6
 PRESS_AMOUNT = 5
+
+# Glow color for enabled state
+ENABLED_GLOW_COLOR = QColor(0, 200, 100, 200)  # Green glow
+ENABLED_GLOW_RADIUS = 20
 
 
 def convert_to_grayscale(pixmap:QPixmap):
@@ -20,15 +27,18 @@ def convert_to_grayscale(pixmap:QPixmap):
     grayscale_image = image.convertToFormat(QImage.Format.Format_Grayscale8)
     return QPixmap.fromImage(grayscale_image)
 
-class Overlay(QGraphicsView):
-    # Static cache for cartridge icons to avoid repeated loading/scaling
-    _cartridge_cache = {}
 
-    def __init__(self, image_path:str, parent=None, initial_enabled=False, on_toggle_callback=None):
+class Overlay(QGraphicsView):
+    # Static cache for category icons to avoid repeated loading/scaling
+    _icon_cache = {}
+
+    def __init__(self, image_path:str, parent=None, initial_enabled=False, on_toggle_callback=None, category:str="Fighter", has_thumbnail:bool=True):
         super().__init__(parent)
         self.image_path = image_path
         self.enabled = initial_enabled
         self.on_toggle_callback = on_toggle_callback
+        self.category = category.lower()  # Normalize to lowercase for file paths
+        self.has_thumbnail = has_thumbnail
 
         self.player = QMediaPlayer()
         self.audio_output = QAudioOutput()
@@ -39,104 +49,114 @@ class Overlay(QGraphicsView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.graphics_scene = QGraphicsScene()
         self.setScene(self.graphics_scene)
-        # self.setStyleSheet("QGraphicsView { border: none; padding: 0px; }")
-        # self.setStyleSheet("background: transparent;")
 
-        # Use the correct cartridge icon based on initial state
-        icon_type = ICON_ON if initial_enabled else ICON_OFF
-        if icon_type not in Overlay._cartridge_cache:
-             pix = QPixmap(icon_type).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-             Overlay._cartridge_cache[icon_type] = pix
-        
-        cartridge = Overlay._cartridge_cache[icon_type]
+        # Load category icon based on whether thumbnail exists
+        category_icon = self._get_category_icon()
+
+        # Create glow backing item
+        self.glow_item = QGraphicsPixmapItem(category_icon)
+        self.graphics_scene.addItem(self.glow_item)
 
         preview = QPixmap(image_path)
-        preview = preview.scaled(cartridge.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        preview = preview.scaled(category_icon.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
 
-        self.preview_item= QGraphicsPixmapItem(preview)
+        self.preview_item = QGraphicsPixmapItem(preview)
         self.graphics_scene.addItem(self.preview_item)
         
-        
-        self.cartridge_item= QGraphicsPixmapItem(cartridge)
-        self.graphics_scene.addItem(self.cartridge_item)
-        self.setSceneRect(self.cartridge_item.sceneBoundingRect())
+        self.category_icon_item = QGraphicsPixmapItem(category_icon)
+        self.graphics_scene.addItem(self.category_icon_item)
+        self.setSceneRect(self.category_icon_item.sceneBoundingRect())
         
         # center
-        self.parent_width = cartridge.width()
-        self.parent_height = cartridge.height()
+        self.parent_width = category_icon.width()
+        self.parent_height = category_icon.height()
         self.item_width = preview.width()
         self.item_height = preview.height()
         self.preview_item.setPos((self.parent_width - self.item_width)/2, (self.parent_height - self.item_height)/2)
         
         # Determine category text from parent
-        cat_text = "FIGHTER"
-        if parent and hasattr(parent, "mod") and hasattr(parent.mod, "category"):
-            c = parent.mod.category
-            # Handle Enum or String
-            if hasattr(c, "value"):
-                cat_text = str(c.value).upper()
-            else:
-                cat_text = str(c).upper()
+        cat_text = category.upper()
 
         self.text = QGraphicsSimpleTextItem(cat_text)
         font = QFont(FONT, FONT_SIZE)  # Set the font and font size
         font.setBold(True)
         self.text.setFont(font)
-        self.text.setBrush(QBrush(QColor("white")))  # Set the font color to red
+        self.text.setBrush(QBrush(QColor("white")))  # Set the font color
         self.graphics_scene.addItem(self.text)
         self.text.setPos((self.graphics_scene.width() - self.text.boundingRect().width()) / 2, TEXT_YLOC)
 
-        # self.anim = QVariantAnimation()
-        # self.anim.setStartValue(0.0)
-        # self.anim.setEndValue(1.0)
-        # self.anim.setDuration(2000)
-        # self.anim.valueChanged.connect(self.move)
-        # self.anim.start()
+        # Apply initial enabled state shadow
+        self._update_enabled_shadow()
+
+    def _get_category_icon(self) -> QPixmap:
+        """Get the appropriate category icon based on has_thumbnail flag"""
+        if self.has_thumbnail:
+            icon_path = CATEGORY_ICON_PATH.format(self.category)
+        else:
+            icon_path = CATEGORY_ICON_BACK_PATH.format(self.category)
+        
+        # Check cache first
+        if icon_path not in Overlay._icon_cache:
+            pix = QPixmap(icon_path)
+            if pix.isNull():
+                # Fallback to fighter icon if specific category not found
+                fallback_path = CATEGORY_ICON_PATH.format("fighter") if self.has_thumbnail else CATEGORY_ICON_BACK_PATH.format("fighter")
+                pix = QPixmap(fallback_path)
+            pix = pix.scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            Overlay._icon_cache[icon_path] = pix
+        
+        return Overlay._icon_cache[icon_path]
+
+    def _update_enabled_shadow(self):
+        """Update the shadow/glow effect based on enabled state"""
+        if self.enabled:
+            shadow = QGraphicsDropShadowEffect()
+            shadow.setBlurRadius(ENABLED_GLOW_RADIUS)
+            shadow.setOffset(0, 0)
+            shadow.setColor(ENABLED_GLOW_COLOR)
+
+            # APPLY TO THE GLOW ITEM
+            self.glow_item.setGraphicsEffect(shadow)
+        else:
+            self.glow_item.setGraphicsEffect(None)
     
     def mousePressEvent(self, event):
-        self.cartridge_item.setPos(0, PRESS_AMOUNT)
+        self.glow_item.setPos(0, PRESS_AMOUNT)
+        self.category_icon_item.setPos(0, PRESS_AMOUNT)
         self.preview_item.setPos((self.parent_width - self.item_width)/2, (self.parent_height - self.item_height)/2 + PRESS_AMOUNT)
         self.text.setPos((self.graphics_scene.width() - self.text.boundingRect().width()) / 2, TEXT_YLOC + PRESS_AMOUNT)
-        # super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
-        self.cartridge_item.setPos(0, 0)
+        self.glow_item.setPos(0, 0)
+        self.category_icon_item.setPos(0, 0)
         self.preview_item.setPos((self.parent_width - self.item_width)/2, (self.parent_height - self.item_height)/2)
         self.text.setPos((self.graphics_scene.width() - self.text.boundingRect().width()) / 2, TEXT_YLOC)
-        # Call the callback instead of directly toggling
         if self.on_toggle_callback:
+            if self.enabled:
+                self.play_audio("assets/sounds/deselect.wav")
+            else:
+                self.play_audio("assets/sounds/select.wav")
             self.on_toggle_callback()
         else:
             self.toggle()  # Fallback to old behavior if no callback
-        # super().mouseReleaseEvent(event)
 
     def mouseDoubleClickEvent(self, event) -> None: 
         pass
 
     def toggle(self):
-        cartridge = None
-
         if self.enabled:
-            # Use cached ICON_OFF
-            if ICON_OFF not in Overlay._cartridge_cache:
-                Overlay._cartridge_cache[ICON_OFF] = QPixmap(ICON_OFF).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            cartridge = Overlay._cartridge_cache[ICON_OFF]
-            
-            preview = QPixmap(self.image_path).scaled(cartridge.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            # preview = convert_to_grayscale(preview)  # Optimization: removed expensive grayscale conversion
             self.play_audio("assets/sounds/deselect.wav")
             self.enabled = False
         else:
-            # Use cached ICON_ON
-            if ICON_ON not in Overlay._cartridge_cache:
-                Overlay._cartridge_cache[ICON_ON] = QPixmap(ICON_ON).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            cartridge = Overlay._cartridge_cache[ICON_ON]
-            
-            preview = QPixmap(self.image_path).scaled(cartridge.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.play_audio("assets/sounds/select.wav")
             self.enabled = True
         
-        self.cartridge_item.setPixmap(cartridge)
+        # Update shadow effect for enabled state
+        self._update_enabled_shadow()
+        
+        # Reload preview image
+        category_icon = self._get_category_icon()
+        preview = QPixmap(self.image_path).scaled(category_icon.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.preview_item.setPixmap(preview)
     
     def set_enabled(self, enabled:bool):
@@ -144,26 +164,13 @@ class Overlay(QGraphicsView):
         if self.enabled == enabled:
             return  # Already in the correct state
         
-        # Update visual state without playing sound or triggering callback
-        cartridge = None
-        if enabled:
-            if ICON_ON not in Overlay._cartridge_cache:
-                Overlay._cartridge_cache[ICON_ON] = QPixmap(ICON_ON).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            cartridge = Overlay._cartridge_cache[ICON_ON]
-            self.enabled = True
-        else:
-            if ICON_OFF not in Overlay._cartridge_cache:
-                Overlay._cartridge_cache[ICON_OFF] = QPixmap(ICON_OFF).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            cartridge = Overlay._cartridge_cache[ICON_OFF]
-            self.enabled = False
+        self.enabled = enabled
+        self._update_enabled_shadow()
         
-        preview = QPixmap(self.image_path).scaled(cartridge.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        self.cartridge_item.setPixmap(cartridge)
+        # Reload preview image
+        category_icon = self._get_category_icon()
+        preview = QPixmap(self.image_path).scaled(category_icon.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.preview_item.setPixmap(preview)
-
-    # def move(self, value:float):
-    #     print(value)
-
 
     def play_audio(self, path:str):
         audio_file = QUrl.fromLocalFile(path)
@@ -174,27 +181,25 @@ class Overlay(QGraphicsView):
         """Update the preview image dynamically"""
         self.image_path = image_path
         
-        # Determine current cartridge based on state
-        cartridge = None
-        if self.enabled:
-             if ICON_ON not in Overlay._cartridge_cache:
-                 Overlay._cartridge_cache[ICON_ON] = QPixmap(ICON_ON).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-             cartridge = Overlay._cartridge_cache[ICON_ON]
-        else:
-             if ICON_OFF not in Overlay._cartridge_cache:
-                 Overlay._cartridge_cache[ICON_OFF] = QPixmap(ICON_OFF).scaled(SIZE, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-             cartridge = Overlay._cartridge_cache[ICON_OFF]
+        # Update has_thumbnail based on new image
+        self.has_thumbnail = image_path and os.path.exists(image_path) and os.path.isfile(image_path)
+        
+        category_icon = self._get_category_icon()
         
         # Determine center pos
-        self.parent_width = cartridge.width()
-        self.parent_height = cartridge.height() # Should be roughly SIZE
+        self.parent_width = category_icon.width()
+        self.parent_height = category_icon.height()
         
         if image_path and os.path.exists(image_path):
             preview = QPixmap(image_path)
-            preview = preview.scaled(cartridge.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            preview = preview.scaled(category_icon.width() - 4, SIZE, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.item_width = preview.width()
             self.item_height = preview.height()
             self.preview_item.setPixmap(preview)
             
             # Re-center
             self.preview_item.setPos((self.parent_width - self.item_width)/2, (self.parent_height - self.item_height)/2)
+        
+        # Update the category icon as well (in case has_thumbnail changed)
+        self.category_icon_item.setPixmap(category_icon)
+        self.glow_item.setPixmap(category_icon)

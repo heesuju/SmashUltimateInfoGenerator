@@ -228,6 +228,6 @@ class GridList(QListWidget):
             widget = self.item_widgets[mod_id]
             # Update the mod object
             widget.mod.enabled = is_enabled
-            # Update the overlay cartridge visual state
+            # Update the overlay visual state (shadow highlight)
             if hasattr(widget, 'overlay'):
                 widget.overlay.set_enabled(is_enabled)

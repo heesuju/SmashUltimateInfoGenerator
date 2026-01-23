@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtWidgets import QGraphicsOpacityEffect
 from PyQt6.QtCore import QPropertyAnimation
+import os
 
 from src.ui.components.image_overlay import ImageOverlayWidget
 from src.ui.components.layout import HBox, VBox
@@ -24,8 +25,6 @@ from src.constants.colors import ButtonColor
 ICON_ELLIPSIS = "assets/icons/ui/ellipsis.png"
 ICON_FAVORITE = "assets/icons/menu/favorite.png"
 ICON_HIDE = "assets/icons/menu/visible.png"
-ICON_OFF = "assets/icons/cartridge_off"
-ICON_ON = "assets/icons/cartridge_off"
 
 class GridListItem(QListWidgetItem):
     def __init__(self, parent, mod:ModItem, height:int=80, grid_list=None):
@@ -64,7 +63,9 @@ class GridListItemWidget(QWidget):
         # Set initial border style based on selection state (will be set by update_selection_style)
         # update_selection_style() will be called after frame is built
         
-        self.overlay = Overlay(self.image_path, self, initial_enabled=mod.enabled, on_toggle_callback=self.on_overlay_toggle)
+        has_thumbnail = bool(self.image_path and os.path.exists(self.image_path) and os.path.isfile(self.image_path))
+        category = mod.category if mod.category else "Misc"
+        self.overlay = Overlay(self.image_path, self, initial_enabled=mod.enabled, on_toggle_callback=self.on_overlay_toggle, category=category, has_thumbnail=has_thumbnail)
 
         frame_layout.addWidget(self.overlay)
         
