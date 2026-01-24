@@ -204,6 +204,14 @@ def scan_flags(mod:Mod)->Mod:
     
     return mod
 
+def scan_plugin(mod:Mod)->Mod:
+    plugin_path = os.path.join(mod.path, "plugin.nro")
+
+    if is_valid_file(plugin_path):
+        mod.add_to_included(Element.PLUGIN)
+    
+    return mod
+
 def scan_mod(mod:Mod)->Mod:
     """
     Scans mod directory and auto-fills information
@@ -248,6 +256,7 @@ def scan_mod(mod:Mod)->Mod:
     mod = scan_ui(mod)
     mod = scan_thumbnail(mod)
     mod = scan_flags(mod)
+    mod = scan_plugin(mod)
     
     mod.category = get_category(mod)
     
