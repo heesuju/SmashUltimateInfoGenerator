@@ -1,74 +1,79 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QTextEdit, QPushButton, 
                              QLabel, QProgressBar, QListWidget, QListWidgetItem,
-                             QGroupBox)
+                             QGroupBox, QComboBox)
+from src.ui.components.side_panel import SidePanel
 from src.ui.components.layout import VBox, HBox
 from src.managers.ftp_manager import FTPManager
 import os
 
-class FTPPanel(QWidget):
+class FTPPanel(SidePanel):
     def __init__(self, ftp_manager: FTPManager):
-        super().__init__()
+        super().__init__("FTP Sync")
         self.ftp_manager = ftp_manager
         
-        layout = VBox()
-        
-        # Header / Status
-        self.status_label = QLabel("FTP Sync")
-        self.status_label.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
-        layout.addWidget(self.status_label)
+        # Status Label (Secondary, for connection status)
+        self.status_label = QLabel("Status: Idle")
+        self.status_label.setStyleSheet("font-size: 14px; margin-bottom: 5px; color: #ccc;")
+        self.body.addWidget(self.status_label)
         
         # Controls
         controls = HBox()
         
-        self.preview_button = QPushButton("Preview Sync")
-        self.preview_button.clicked.connect(self.on_preview_clicked)
-        self.preview_button.setStyleSheet("""
-            QPushButton {
-                background-color: #FF9800;
-                color: white;
-                padding: 8px 16px;
+        # Mode Selection
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItems(["Enabled Mods Only", "All Mods"])
+        self.mode_combo.setStyleSheet("""
+            QComboBox {
+                padding: 5px 10px;
                 border-radius: 4px;
-                font-weight: bold;
+                border: 1px solid #444;
+                background-color: #2b2b2b;
+                color: white;
+                min-width: 120px;
             }
-            QPushButton:hover {
-                background-color: #F57C00;
+            QComboBox:hover {
+                border-color: #666;
             }
-            QPushButton:disabled {
-                background-color: #555;
-                color: #aaa;
+            QComboBox::drop-down {
+                border: 0px;
             }
         """)
-        controls.addWidget(self.preview_button)
+        self.mode_combo.currentIndexChanged.connect(self.on_mode_changed)
+        controls.addWidget(self.mode_combo)
+
         
-        self.sync_button = QPushButton("Sync Enabled Mods")
-        self.sync_button.clicked.connect(self.on_sync_clicked)
-        # Style the button a bit
-        self.sync_button.setStyleSheet("""
-            QPushButton {
-                background-color: #2196F3;
+        # Retry Button (initially hidden)
+        self.retry_button = QPushButton("Retry Connection")
+        self.retry_button.clicked.connect(self.on_retry_clicked)
+        self.retry_button.setStyleSheet("""
+             QPushButton {
+                background-color: #607D8B;
                 color: white;
-                padding: 8px 16px;
+                padding: 4px 12px;
                 border-radius: 4px;
-                font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #1976D2;
-            }
-            QPushButton:disabled {
-                background-color: #555;
-                color: #aaa;
+                background-color: #546E7A;
             }
         """)
-        controls.addWidget(self.sync_button)
+        self.retry_button.hide()
+        controls.addWidget(self.retry_button)
         controls.addStretch()
-        layout.addLayout(controls)
+        self.body.addLayout(controls)
+
+        # Sync Button (Footer) - Now defaults to Scan/Preview
+        self.sync_button = self.add_footer_button(
+            text="Scan & Sync Enabled",
+            callback=self.on_scan_clicked,
+            primary=True
+        )
         
         # Progress Bar
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(True)
-        layout.addWidget(self.progress_bar)
+        self.body.addWidget(self.progress_bar)
         
         # Preview Container (initially hidden)
         self.preview_container = QGroupBox("Sync Preview")
@@ -131,32 +136,14 @@ class FTPPanel(QWidget):
         
         self.preview_container.setLayout(preview_layout)
         self.preview_container.hide()
-        layout.addWidget(self.preview_container)
+        self.body.addWidget(self.preview_container)
         
         # Log Output
         self.log_output = QTextEdit()
         self.log_output.setReadOnly(True)
         self.log_output.setStyleSheet("font-family: Consolas, monospace; font-size: 12px;")
-        layout.addWidget(self.log_output)
-        
-        self.setLayout(layout)
-        
-        # Retry Button (initially hidden or visible?)
-        self.retry_button = QPushButton("Retry Connection")
-        self.retry_button.clicked.connect(self.on_retry_clicked)
-        self.retry_button.setStyleSheet("""
-             QPushButton {
-                background-color: #607D8B;
-                color: white;
-                padding: 4px 12px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #546E7A;
-            }
-        """)
-        self.retry_button.hide()
-        controls.addWidget(self.retry_button)
+        self.log_output.setMinimumHeight(200)
+        self.body.addWidget(self.log_output)
         
         # Connect signals
         self.ftp_manager.log_signal.connect(self.append_log)
@@ -169,16 +156,20 @@ class FTPPanel(QWidget):
         # Store diff map for confirmation
         self.current_diff_map = {}
         
+    def on_mode_changed(self, index):
+        is_all = index == 1
+        text = "Scan & Sync All" if is_all else "Scan & Sync Enabled"
+        self.sync_button.setText(text)
+        
     def on_connection_status_changed(self, connected: bool, msg: str):
         self.status_label.setText(f"Status: {msg}")
         self.sync_button.setEnabled(connected)
         
+        # Update text for offline state too if needed, but keeping simple for now
         if not connected and msg != "Searching...":
              self.retry_button.show()
-             self.sync_button.setText("Sync Enabled Mods (Offline)")
         elif connected:
              self.retry_button.hide()
-             self.sync_button.setText("Sync Enabled Mods")
         else: # Searching
              self.retry_button.hide()
              self.sync_button.setEnabled(False)
@@ -186,9 +177,14 @@ class FTPPanel(QWidget):
     def on_retry_clicked(self):
         self.ftp_manager.check_connection()
         
-    def on_sync_clicked(self):
+    def on_scan_clicked(self):
         self.log_output.clear()
-        self.ftp_manager.start_sync()
+        self.append_log("Starting scan...")
+        self.sync_button.setEnabled(False)
+        self.mode_combo.setEnabled(False)
+        
+        sync_all = self.mode_combo.currentIndex() == 1
+        self.ftp_manager.start_scan(sync_all=sync_all)
         
     def append_log(self, msg: str):
         self.log_output.append(msg)
@@ -205,24 +201,20 @@ class FTPPanel(QWidget):
         self.sync_button.setText("Syncing...")
         self.status_label.setText("Syncing with Switch...")
         self.progress_bar.setValue(0)
+        self.mode_combo.setEnabled(False)
         
     def on_sync_finished(self):
         self.sync_button.setEnabled(True)
-        self.preview_button.setEnabled(True)
-        self.sync_button.setText("Sync Enabled Mods")
-        self.status_label.setText("Sync Complete")
         
-    def on_preview_clicked(self):
-        self.log_output.clear()
-        self.append_log("Starting scan...")
-        self.preview_button.setEnabled(False)
-        self.sync_button.setEnabled(False)
-        self.ftp_manager.start_scan()
+        # Restore button text
+        self.on_mode_changed(self.mode_combo.currentIndex())
+        self.status_label.setText("Sync Complete")
+        self.mode_combo.setEnabled(True)
         
     def on_scan_complete(self, diff_map: dict):
         self.current_diff_map = diff_map
-        self.preview_button.setEnabled(True)
         self.sync_button.setEnabled(True)
+        self.mode_combo.setEnabled(True)
         
         if not diff_map:
             self.append_log("Scan failed or no mods found.")
