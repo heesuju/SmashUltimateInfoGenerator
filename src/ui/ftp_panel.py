@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QTextEdit, QPushButton, 
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, 
                              QLabel, QProgressBar, QListWidget, QListWidgetItem,
                              QGroupBox, QComboBox, QLineEdit)
 from PyQt6.QtGui import QIntValidator, QIcon
@@ -9,6 +9,33 @@ from src.managers.ftp_manager import FTPManager
 from src.managers.data_manager import ButtonIcons
 from src.ui.components.collapsible_section import CollapsibleSection
 import os
+from PyQt6.QtGui import QPainter, QColor
+
+class SyncItemWidget(QWidget):
+    def __init__(self, text):
+        super().__init__()
+        layout = QHBoxLayout()
+        layout.setContentsMargins(5, 5, 5, 5)
+        self.label = QLabel(text)
+        self.label.setStyleSheet("background: transparent;") # Allow paintEvent to show through
+        layout.addWidget(self.label)
+        self.setLayout(layout)
+        self.progress = 0.0
+        
+    def set_progress(self, value: float):
+        self.progress = value
+        self.update() # Trigger repaint
+        
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        if self.progress > 0:
+            width = self.width() * self.progress
+            rect = event.rect()
+            rect.setWidth(int(width))
+            # Semi-transparent green
+            painter.fillRect(rect, QColor(76, 175, 80, 100)) # #4CAF50 at ~40% opacity
+        
+        super().paintEvent(event)
 
 class FTPPanel(SidePanel):
     def __init__(self, ftp_manager: FTPManager):
@@ -244,6 +271,7 @@ class FTPPanel(SidePanel):
         self.ftp_manager.sync_finished.connect(self.on_sync_finished)
         self.ftp_manager.connection_status_changed.connect(self.on_connection_status_changed)
         self.ftp_manager.scan_complete.connect(self.on_scan_complete)
+        self.ftp_manager.mod_progress.connect(self.on_mod_progress)
         
         # Store diff map for confirmation
         self.current_diff_map = {}
@@ -341,17 +369,30 @@ class FTPPanel(SidePanel):
         self.missing_list.clear()
         
         # Categorize
+        self.list_items = {} # Map mod_name -> SyncItemWidget
+        
         for folder, status in diff_map.items():
             mod_name = os.path.basename(folder)
+            item = QListWidgetItem()
+            widget = SyncItemWidget(mod_name)
+            
+            # Keep track for updates
+            self.list_items[mod_name] = widget
             
             if status == "MATCH":
-                self.match_list.addItem(mod_name)
+                self.match_list.addItem(item)
+                self.match_list.setItemWidget(item, widget)
             elif status == "REPLACE":
-                self.replace_list.addItem(mod_name)
+                self.replace_list.addItem(item)
+                self.replace_list.setItemWidget(item, widget)
             elif status == "METADATA_ONLY":
-                self.metadata_list.addItem(mod_name)
+                self.metadata_list.addItem(item)
+                self.metadata_list.setItemWidget(item, widget)
             elif status == "MISSING":
-                self.missing_list.addItem(mod_name)
+                self.missing_list.addItem(item)
+                self.missing_list.setItemWidget(item, widget)
+                
+        # Adjust heights based on content
         
         # Adjust heights based on content
         self.resize_list_to_content(self.match_list)
@@ -381,7 +422,7 @@ class FTPPanel(SidePanel):
         # Hide preview controls, show sync button (for status)
         self.confirm_button.setVisible(False)
         self.cancel_preview_button.setVisible(False)
-        self.preview_container.hide()
+        # self.preview_container.hide() # Keep visible for progress
         self.log_output.clear()
         
         # Re-show sync button so on_sync_started can update it
@@ -416,3 +457,7 @@ class FTPPanel(SidePanel):
         total_height = (count * row_height) + (2 * list_widget.frameWidth()) + 5 # + padding
         
         list_widget.setFixedHeight(total_height)
+        
+    def on_mod_progress(self, mod_name: str, progress: float):
+        if mod_name in self.list_items:
+            self.list_items[mod_name].set_progress(progress)

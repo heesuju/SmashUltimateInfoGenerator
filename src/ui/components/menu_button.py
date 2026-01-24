@@ -153,7 +153,7 @@ class MenuButton(QPushButton):
             p.fillRect(colored.rect(), QColor("#4CAF50")) # Green fill for progress
             p.end()
             
-            padding = 4
+            padding = 2
             available_h = icon_size - (padding * 2)
             
             # Clamp progress

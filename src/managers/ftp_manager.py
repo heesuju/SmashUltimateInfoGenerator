@@ -114,6 +114,7 @@ class ScanThread(QThread):
 class SmartSyncThread(QThread):
     progress_log = pyqtSignal(str)
     progress_value = pyqtSignal(float)
+    mod_progress = pyqtSignal(str, float) # mod_name, progress (0-1)
     finished_signal = pyqtSignal()
     
     def __init__(self, diff_map: dict, known_ip=None, port=5000):
@@ -148,22 +149,52 @@ class SmartSyncThread(QThread):
                 
                 if status == "REPLACE":
                     self.progress_log.emit(f"Replacing {mod_name}...")
+                    self.mod_progress.emit(mod_name, 0.0)
+                    
                     # 1. Delete Remote
                     ftp.delete_remote_dir(remote_path)
+                    
                     # 2. Upload Fresh
+                    # Count total files for progress
+                    total_files = 0
+                    for _, _, files in os.walk(folder):
+                        total_files += len(files)
+                    
+                    processed_files = 0
+                    
                     def on_file_prog(msg):
+                        nonlocal processed_files
                         self.progress_log.emit(msg)
+                        if "Syncing" in msg or "Skipped" in msg:
+                            processed_files += 1
+                            if total_files > 0:
+                                self.mod_progress.emit(mod_name, processed_files / total_files)
                         
                     ftp.sync_dir(folder, remote_path, on_file_prog)
+                    self.mod_progress.emit(mod_name, 1.0)
                     
                 elif status in ["METADATA_ONLY", "MISSING"]:
                     action = "Updating metadata" if status == "METADATA_ONLY" else "Uploading"
                     self.progress_log.emit(f"{action} {mod_name}...")
+                    self.mod_progress.emit(mod_name, 0.0)
+                    
+                    # Count total files
+                    total_files = 0
+                    for _, _, files in os.walk(folder):
+                        total_files += len(files)
+                        
+                    processed_files = 0
                     
                     def on_file_prog(msg):
+                        nonlocal processed_files
                         self.progress_log.emit(msg)
+                        if "Syncing" in msg or "Skipped" in msg:
+                            processed_files += 1
+                            if total_files > 0:
+                                self.mod_progress.emit(mod_name, processed_files / total_files)
                         
                     ftp.sync_dir(folder, remote_path, on_file_prog)
+                    self.mod_progress.emit(mod_name, 1.0)
 
                 processed += 1
                 self.progress_value.emit(processed / total_mods)
@@ -212,6 +243,7 @@ class ConnectionThread(QThread):
 class FTPManager(QObject):
     log_signal = pyqtSignal(str)
     progress_signal = pyqtSignal(float)
+    mod_progress = pyqtSignal(str, float)
     sync_started = pyqtSignal()
     sync_finished = pyqtSignal()
     
@@ -341,6 +373,7 @@ class FTPManager(QObject):
         self.thread = SmartSyncThread(diff_map, known_ip=self.current_ip, port=port)
         self.thread.progress_log.connect(self.log_signal.emit)
         self.thread.progress_value.connect(self.progress_signal.emit)
+        self.thread.mod_progress.connect(self.mod_progress.emit)
         self.thread.finished_signal.connect(self.on_sync_finished)
         
         self.sync_started.emit()
