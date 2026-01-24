@@ -285,6 +285,12 @@ class EditPanel(SidePanel):
         if info.get("version"):
             self.version.setText(info["version"])
 
+        # Populate Description (Only if empty)
+        if info.get("description"):
+            current_desc = self.description.toPlainText().strip()
+            if not current_desc:
+                self.description.setText(info["description"])
+
         # Populate Preview Selector
         if info.get("preview_files"):
             files = info["preview_files"]
