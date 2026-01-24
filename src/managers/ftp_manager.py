@@ -261,6 +261,52 @@ class ConnectionThread(QThread):
         except:
             self.failed.emit()
 
+class MonitorThread(QThread):
+    status_changed = pyqtSignal(bool, str) # connected, ip/msg
+    
+    def __init__(self, manager, interval=15):
+        super().__init__()
+        self.manager = manager
+        self.interval = interval
+        self.is_running = True
+        
+    def run(self):
+        import time
+        while self.is_running:
+            try:
+                # Sleep first
+                for _ in range(self.interval):
+                    if not self.is_running: return
+                    time.sleep(1)
+                    
+                if (self.manager.thread and self.manager.thread.isRunning()) or \
+                   (self.manager.conn_thread and self.manager.conn_thread.isRunning()):
+                    continue
+                    
+                # Check connection
+                config = self.manager.config_manager.config
+                target_ip = self.manager.current_ip or config.ftp_ip
+                port = config.ftp_port or 5000
+                
+                if not target_ip:
+                    continue
+                    
+                ftp = SwitchFTP(port=port)
+                try:
+                    ftp.connect(target_ip)
+                    ftp.disconnect()
+                    
+                    self.status_changed.emit(True, target_ip)
+                except Exception:
+                    self.status_changed.emit(False, "Connection Lost")
+                    
+            except Exception:
+                pass
+    
+    def stop(self):
+        self.is_running = False
+        self.wait()
+
 class FTPManager(QObject):
     log_signal = pyqtSignal(str)
     progress_signal = pyqtSignal(float)
@@ -278,9 +324,20 @@ class FTPManager(QObject):
         self.thread = None
         self.conn_thread = None
         self.current_ip = None
+        self.monitor_thread = None
         
         # Auto-connect on startup
         self.check_connection()
+        
+        # Start Monitor
+        self.monitor_thread = MonitorThread(self)
+        self.monitor_thread.status_changed.connect(self.on_monitor_status)
+        self.monitor_thread.start()
+
+    def on_monitor_status(self, connected, msg):
+        if not connected:
+            self.current_ip = None
+        self.connection_status_changed.emit(connected, msg)
 
     def check_connection(self):
         """Start background connection check"""

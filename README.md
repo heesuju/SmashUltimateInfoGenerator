@@ -52,8 +52,11 @@ python setup.py build
 ## ToDo 
 - [ ] Highlight modified fields in Filter, Edit, Batch panels
 - [ ] Add filters for online mod search
+- [X] Add support for FTP server
+- [ ] Add integration with reslotter
 
 ## BugFix
 - [X] Select error for multiple pages
-- [ ] Fix hidden mods not appearing ever again and other items are hidden when show hidden is on
+- [ ] Fix search filter behavior for installed mods
+- [ ] Fix wifi-safe check
 - [ ] Fix Batch panel layout
