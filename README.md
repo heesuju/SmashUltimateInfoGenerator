@@ -48,15 +48,14 @@ python setup.py build
 - [X] Added mod enable toggle
 - [X] Added workspace management
 - [X] Add export feature
+- [X] Sync mods with physical switch through FTP server
 
 ## ToDo 
 - [ ] Highlight modified fields in Filter, Edit, Batch panels
-- [ ] Add filters for online mod search
-- [X] Add support for FTP server
-- [ ] Add integration with reslotter
+- [ ] Better batch panel UI
+- [ ] Better online filter(maybe)
+- [ ] Reslotter integration
+- [ ] Finish implementing filters for installed mods
 
 ## BugFix
-- [X] Select error for multiple pages
-- [ ] Fix search filter behavior for installed mods
 - [ ] Fix wifi-safe check
-- [ ] Fix Batch panel layout

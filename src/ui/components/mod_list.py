@@ -272,7 +272,8 @@ class ModList(QWidget):
         if self.filter_manager:
             hidden_ids = self.mod_manager.hidden_ids
             favorite_ids = self.mod_manager.favorite_ids
-            mods = self.filter_manager.apply_filters(mods, hidden_ids, favorite_ids)
+            enabled_ids = self.mod_manager.enabled_ids
+            mods = self.filter_manager.apply_filters(mods, hidden_ids, favorite_ids, enabled_ids)
         self.cached_filtered_mods = mods
         
         # Reset to page 1 for new results
@@ -428,6 +429,11 @@ class ModList(QWidget):
     
     def on_enabled_changed(self, mod_id:str, is_enabled:bool):
         """Handle enabled status change from other components"""
+        from src.constants.enums import EnabledState
+        if self.filter_manager.params.enabled and len(self.filter_manager.params.enabled) < len(EnabledState.list()):
+            self.refresh_filtered_data()
+            return
+        
         # Just update the visual state of the item without reloading
         if self.mode == ListLayout.LIST:
             self.tree_list.update_item_enabled_status(mod_id, is_enabled)

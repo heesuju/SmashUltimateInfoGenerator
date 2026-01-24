@@ -51,7 +51,7 @@ class FilterManager():
         for callback in self.callbacks:
             callback()
 
-    def apply_filters(self, mods:List[Mod], hidden_ids:List[str]=None, favorite_ids:List[str]=None) -> List[Mod]:
+    def apply_filters(self, mods:List[Mod], hidden_ids:List[str]=None, favorite_ids:List[str]=None, enabled_ids:List[str]=None) -> List[Mod]:
         filtered = []
         for mod in mods:
             # Filter hidden
@@ -120,6 +120,13 @@ class FilterManager():
             if self.params.info:
                 mod_info_state = InfoToml.INCLUDED if mod.contains_info else InfoToml.NOT_INCLUDED
                 if mod_info_state not in self.params.info:
+                    continue
+            
+            # Filter by enabled state (if any enabled states are selected)
+            if self.params.enabled:
+                is_enabled = enabled_ids and str(mod.hash) in enabled_ids
+                mod_enabled_state = EnabledState.ENABLED if is_enabled else EnabledState.DISABLED
+                if mod_enabled_state not in self.params.enabled:
                     continue
 
             filtered.append(mod)
