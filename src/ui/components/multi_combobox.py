@@ -22,7 +22,7 @@ class CheckableComboBox(QComboBox):
             self.add_item("Select All")
         if len(items) > 0:
             self.add_items(items)
-            self.sort_items()  # Sort items alphabetically after adding
+            # self.sort_items()  # Disabled for performance on init
 
         if len(self.defaults) > 0:
             self.reset()
@@ -41,7 +41,7 @@ class CheckableComboBox(QComboBox):
             else:
                 items[n].setCheckState(Qt.CheckState.Unchecked)
 
-        self.sort_items()  # Sort after applying defaults
+        # self.sort_items()  # Disabled for performance
         self.update_display()
 
     def add_items(self, items:List):

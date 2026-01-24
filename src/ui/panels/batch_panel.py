@@ -72,6 +72,13 @@ class BatchPanel(SidePanel):
         # Connect to batch manager updates via Signal to ensure Main Thread execution
         self.queue_updated.connect(self.refresh_task_list)
         self.batch_manager.add_callback(self.queue_updated.emit)
+        
+        # Incremental Loading State
+        from PyQt6.QtCore import QTimer
+        self.pending_tasks_to_add = []
+        self.loading_timer = QTimer()
+        self.loading_timer.setInterval(10) # process every 10ms
+        self.loading_timer.timeout.connect(self._process_loading_queue)
     
     def refresh_task_list(self):
         """Refresh the task list display incrementally to avoid UI freeze"""
@@ -89,8 +96,75 @@ class BatchPanel(SidePanel):
             widget.setParent(None)
             widget.deleteLater()
             del self.task_widgets[h]
+        
+        # 2. Identify new tasks or updates
+        self.pending_tasks_to_add = [] # Clear previous pending queue
+        
+        for task in tasks:
+            mod_hash = str(task.mod.hash)
             
-        # Check for stretch item at the end
+            if mod_hash in self.task_widgets:
+                # Update status of existing widget immediately
+                self.task_widgets[mod_hash].update_status_display()
+            else:
+                # Add to queue for lazy loading
+                self.pending_tasks_to_add.append(task)
+        
+        # 3. Start incremental loading if needed
+        if self.pending_tasks_to_add:
+            if not self.loading_timer.isActive():
+                self.loading_timer.start()
+        
+        # Update stats UI immediately
+        self.update_stats_ui()
+
+    def _process_loading_queue(self):
+        """Process a small chunk of new tasks locally"""
+        if not self.pending_tasks_to_add:
+            self.loading_timer.stop()
+            self._ensure_stretch()
+            return
+            
+        # Process chunk (e.g., 2 items per tick)
+        CHUNK_SIZE = 1
+        
+        # Check if we have stretch constraint
+        has_stretch = False
+        count = self.task_container.count()
+        if count > 0:
+            last_item = self.task_container.itemAt(count - 1)
+            if last_item.spacerItem():
+                has_stretch = True
+                
+        for _ in range(CHUNK_SIZE):
+            if not self.pending_tasks_to_add:
+                break
+                
+            task = self.pending_tasks_to_add.pop(0)
+            mod_hash = str(task.mod.hash)
+            
+            # Double check it wasn't added or removed in interim
+            if mod_hash in self.task_widgets:
+                continue
+                
+            # Create widget (Heavy Operation)
+            task_widget = BatchTaskItem(task)
+            task_widget.remove_requested.connect(self.on_remove_task)
+            
+            if has_stretch:
+                self.task_container.insertWidget(self.task_container.count() - 1, task_widget)
+            else:
+                self.task_container.addWidget(task_widget)
+            
+            self.task_widgets[mod_hash] = task_widget
+            
+        # If done, cleanup
+        if not self.pending_tasks_to_add:
+            self.loading_timer.stop()
+            self._ensure_stretch()
+            
+    def _ensure_stretch(self):
+        """Ensure the layout ends with a stretch"""
         has_stretch = False
         count = self.task_container.count()
         if count > 0:
@@ -98,31 +172,8 @@ class BatchPanel(SidePanel):
             if last_item.spacerItem():
                 has_stretch = True
         
-        # 2. Add widgets for new tasks and valid updates
-        for task in tasks:
-            mod_hash = str(task.mod.hash)
-            
-            if mod_hash in self.task_widgets:
-                # Update status of existing widget
-                self.task_widgets[mod_hash].update_status_display()
-            else:
-                # Add new widget
-                task_widget = BatchTaskItem(task)
-                task_widget.remove_requested.connect(self.on_remove_task)
-                
-                if has_stretch:
-                    self.task_container.insertWidget(self.task_container.count() - 1, task_widget)
-                else:
-                    self.task_container.addWidget(task_widget)
-                
-                self.task_widgets[mod_hash] = task_widget
-        
-        # Ensure stretch item exists at the bottom
         if not has_stretch:
             self.task_container.addStretch()
-            
-        # Update stats UI
-        self.update_stats_ui()
     
     def start_processing(self):
         """Start the batch processing worker"""
