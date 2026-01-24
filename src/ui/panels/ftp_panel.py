@@ -318,6 +318,7 @@ class FTPPanel(SidePanel):
         # Connect signals
         self.ftp_manager.log_signal.connect(self.append_log)
         self.ftp_manager.progress_signal.connect(self.update_progress)
+        self.ftp_manager.transfer_stats.connect(self.update_transfer_stats)
         self.ftp_manager.sync_started.connect(self.on_sync_started)
         self.ftp_manager.sync_finished.connect(self.on_sync_finished)
         self.ftp_manager.connection_status_changed.connect(self.on_connection_status_changed)
@@ -402,6 +403,22 @@ class FTPPanel(SidePanel):
         
     def update_progress(self, value: float):
         self.progress_bar.setValue(int(value * 100))
+        if value < 0:
+             self.progress_bar.setFormat("%p%") # Reset format
+
+    def update_transfer_stats(self, speed: float, eta: int):
+        eta_str = f"{eta//60:02d}:{eta%60:02d}"
+        if eta > 3600:
+             eta_str = f"{eta//3600:02d}:{(eta%3600)//60:02d}:{eta%60:02d}"
+             
+        stats_text = ""
+        if speed > 0:
+            stats_text = f"{speed:.1f} MB/s - "
+        
+        if eta > 0 or speed > 0:
+            self.progress_bar.setFormat(f"%p% - {stats_text}ETA: {eta_str}")
+        else:
+            self.progress_bar.setFormat("%p%")
         
     def on_sync_started(self):
         self.sync_button.setEnabled(False)

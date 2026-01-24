@@ -93,11 +93,11 @@ class SwitchFTP:
             return False
 
     # ---------- File Upload Helpers ----------
-    def upload_file_with_retry(self, local_path: str, remote_path: str, retries: int = 3):
+    def upload_file_with_retry(self, local_path: str, remote_path: str, retries: int = 3, callback: Callable[[bytes], None] = None):
         for attempt in range(1, retries + 1):
             try:
                 with open(local_path, "rb") as f:
-                    self.ftp.storbinary(f"STOR " + remote_path, f)
+                    self.ftp.storbinary(f"STOR " + remote_path, f, callback=callback)
                 return
             except Exception as e:
                 if attempt == retries:
@@ -284,7 +284,7 @@ class SwitchFTP:
             
         return "REPLACE"
 
-    def sync_dir(self, local_dir: str, remote_dir: str, progress_callback: Callable[[str], None] = None):
+    def sync_dir(self, local_dir: str, remote_dir: str, progress_callback: Callable[[str], None] = None, byte_callback: Callable[[bytes], None] = None):
         """
         Sync directory: Upload files if missing or newer on local.
         """
@@ -334,13 +334,14 @@ class SwitchFTP:
                     # 2. Upload file just by filename
                     try:
                         self.ftp.cwd(target_dir)
-                        self.upload_file_with_retry(local_file_path, file)
+                        self.upload_file_with_retry(local_file_path, file, callback=byte_callback)
                     except Exception as e:
                          if progress_callback:
                             progress_callback(f"Error uploading {file}: {e}")
                 else:
                     if progress_callback:
                         progress_callback(f"Skipped {file} ({reason})")
+                    pass
 
     def sync_mod_folders(self, folders: list[str], progress_callback: Callable[[str], None] = None) -> tuple[int, int]:
         """

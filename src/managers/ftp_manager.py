@@ -1,3 +1,4 @@
+import time
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
 from src.core.ftp import SwitchFTP
 import os
@@ -114,10 +115,9 @@ class ScanThread(QThread):
 class SmartSyncThread(QThread):
     progress_log = pyqtSignal(str)
     progress_value = pyqtSignal(float)
-    progress_log = pyqtSignal(str)
-    progress_value = pyqtSignal(float)
     mod_progress = pyqtSignal(str, float) # mod_name, progress (0-1)
     sync_results = pyqtSignal(int, int) # success_count, fail_count
+    transfer_stats = pyqtSignal(float, int) # speed (MB/s), eta (seconds)
     
     def __init__(self, diff_map: dict, known_ip=None, port=5000):
         super().__init__()
@@ -136,19 +136,79 @@ class SmartSyncThread(QThread):
                 
             ftp.connect(ip)
             
+            # --- Pre-calculation of Total Bytes ---
+            total_bytes_to_sync = 0
+            
+            # Helper to count bytes in a folder
+            def get_folder_size(folder_path):
+                size = 0
+                for r, _, f in os.walk(folder_path):
+                    for file in f:
+                        size += os.path.getsize(os.path.join(r, file))
+                return size
+
+            self.progress_log.emit("Calculating total size...")
+            
+            mods_to_process = []
+            for folder, status in self.diff_map.items():
+                if status == "MATCH": continue
+                mods_to_process.append(folder)
+                total_bytes_to_sync += get_folder_size(folder)
+            
+            if total_bytes_to_sync == 0: total_bytes_to_sync = 1 # Avoid div by zero
+
+            self.progress_log.emit(f"Total size to sync: {total_bytes_to_sync / (1024*1024):.2f} MB")
+            
+            # --- Progress Tracking Setup ---
+            total_bytes_transferred = 0
+            start_time = time.time()
+            last_emit_time = start_time
+            last_bytes_at_emit = 0
+            
+            current_speed = 0.0
+            eta = 0
+            
+            def byte_callback(data):
+                nonlocal total_bytes_transferred, last_emit_time, last_bytes_at_emit, current_speed, eta
+                chunk_size = len(data) if isinstance(data, bytes) else 0 # ftplib passes bytes
+                total_bytes_transferred += chunk_size
+                
+                # Throttling: Emit max every 0.1s
+                now = time.time()
+                if now - last_emit_time >= 0.1:
+                    # Calculate Speed
+                    duration = now - start_time
+                    if duration > 0:
+                        current_speed = (total_bytes_transferred / (1024 * 1024)) / duration # MB/s
+                        
+                    # Calculate ETA
+                    if current_speed > 0:
+                        remaining_bytes = total_bytes_to_sync - total_bytes_transferred
+                        if remaining_bytes < 0: remaining_bytes = 0
+                        remaining_mb = remaining_bytes / (1024 * 1024)
+                        eta = int(remaining_mb / current_speed)
+                    else:
+                        eta = 0
+                        
+                    self.transfer_stats.emit(current_speed, eta)
+                    self.progress_value.emit(total_bytes_transferred / total_bytes_to_sync)
+                    
+                    last_emit_time = now
+                    last_bytes_at_emit = total_bytes_transferred
+
+            # --------------------------------------
+
             total_mods = len(self.diff_map)
-            processed = 0
+            processed_mods = 0
             success_count = 0
             fail_count = 0
             
             for folder, status in self.diff_map.items():
                 mod_name = os.path.basename(folder)
-                # ... (Safety checks are here in previous edits, assuming context is preserved) ...
+                
                 if not mod_name:
-                    self.progress_log.emit(f"Skipping invalid folder path: {folder}")
-                    processed += 1
+                    processed_mods += 1
                     fail_count += 1
-                    self.progress_value.emit(processed / total_mods)
                     continue
                     
                 remote_path = f"/ultimate/mods/{mod_name}"
@@ -156,9 +216,8 @@ class SmartSyncThread(QThread):
                 try:
                     if status == "MATCH":
                         self.progress_log.emit(f"Skipping {mod_name} (Up to date)")
-                        processed += 1
+                        processed_mods += 1
                         success_count += 1
-                        self.progress_value.emit(processed / total_mods)
                         continue
                     
                     if status == "REPLACE":
@@ -169,22 +228,19 @@ class SmartSyncThread(QThread):
                         ftp.delete_remote_dir(remote_path)
                         
                         # 2. Upload Fresh
-                        # Count total files
-                        total_files = 0
-                        for _, _, files in os.walk(folder):
-                            total_files += len(files)
+                        mod_total_size = get_folder_size(folder)
+                        mod_transferred = 0
                         
-                        processed_files = 0
-                        
-                        def on_file_prog(msg):
-                            nonlocal processed_files
-                            self.progress_log.emit(msg)
-                            if "Syncing" in msg or "Skipped" in msg:
-                                processed_files += 1
-                                if total_files > 0:
-                                    self.mod_progress.emit(mod_name, processed_files / total_files)
+                        def mod_byte_callback(data):
+                            nonlocal mod_transferred
+                            chunk = len(data)
+                            mod_transferred += chunk
+                            if mod_total_size > 0:
+                                self.mod_progress.emit(mod_name, mod_transferred / mod_total_size)
+                            # Also call main callback
+                            byte_callback(data)
                             
-                        ftp.sync_dir(folder, remote_path, on_file_prog)
+                        ftp.sync_dir(folder, remote_path, lambda msg: self.progress_log.emit(msg), byte_callback=mod_byte_callback)
                         self.mod_progress.emit(mod_name, 1.0)
                         
                     elif status in ["METADATA_ONLY", "MISSING"]:
@@ -192,22 +248,18 @@ class SmartSyncThread(QThread):
                         self.progress_log.emit(f"{action} {mod_name}...")
                         self.mod_progress.emit(mod_name, 0.0)
                         
-                        # Count total files
-                        total_files = 0
-                        for _, _, files in os.walk(folder):
-                            total_files += len(files)
-                            
-                        processed_files = 0
+                        mod_total_size = get_folder_size(folder)
+                        mod_transferred = 0
                         
-                        def on_file_prog(msg):
-                            nonlocal processed_files
-                            self.progress_log.emit(msg)
-                            if "Syncing" in msg or "Skipped" in msg:
-                                processed_files += 1
-                                if total_files > 0:
-                                    self.mod_progress.emit(mod_name, processed_files / total_files)
+                        def mod_byte_callback(data):
+                            nonlocal mod_transferred
+                            chunk = len(data)
+                            mod_transferred += chunk
+                            if mod_total_size > 0:
+                                self.mod_progress.emit(mod_name, mod_transferred / mod_total_size)
+                            byte_callback(data)
                             
-                        ftp.sync_dir(folder, remote_path, on_file_prog)
+                        ftp.sync_dir(folder, remote_path, lambda msg: self.progress_log.emit(msg), byte_callback=mod_byte_callback)
                         self.mod_progress.emit(mod_name, 1.0)
 
                     success_count += 1
@@ -217,12 +269,13 @@ class SmartSyncThread(QThread):
                     self.progress_log.emit(f"Error syncing {mod_name}: {e}")
                     traceback.print_exc()
                     
-                processed += 1
-                self.progress_value.emit(processed / total_mods)
+                processed_mods += 1
+                # self.progress_value.emit(...) -> Handled by byte_callback now
 
             ftp.disconnect()
             self.progress_log.emit("Smart Sync Complete!")
             self.progress_value.emit(1.0)
+            self.transfer_stats.emit(0, 0) # clear stats
             self.sync_results.emit(success_count, fail_count)
             
         except Exception as e:
@@ -335,6 +388,7 @@ class StaleCleanupThread(QThread):
     progress_log = pyqtSignal(str)
     progress_value = pyqtSignal(float)
     cleanup_finished = pyqtSignal(int, int) # success, fail
+    transfer_stats = pyqtSignal(float, int) # speed (0), eta (s)
     
     def __init__(self, folders_to_delete, known_ip=None, port=5000):
         super().__init__()
@@ -351,10 +405,20 @@ class StaleCleanupThread(QThread):
             ftp.connect(self.known_ip)
             
             total = len(self.folders_to_delete)
+            start_time = time.time()
             
             for i, folder_name in enumerate(self.folders_to_delete):
                 self.progress_log.emit(f"Deleting {folder_name} ({i+1}/{total})...")
                 remote_path = f"/ultimate/mods/{folder_name}"
+                
+                # ETA Calculation
+                now = time.time()
+                elapsed = now - start_time
+                if i > 0 and elapsed > 0:
+                    avg_time_per_item = elapsed / i
+                    remaining_items = total - i
+                    eta = int(avg_time_per_item * remaining_items)
+                    self.transfer_stats.emit(0.0, eta)
                 
                 try:
                     ftp.delete_remote_dir(remote_path)
@@ -367,6 +431,7 @@ class StaleCleanupThread(QThread):
                 
             ftp.disconnect()
             self.progress_log.emit("Cleanup complete!")
+            self.transfer_stats.emit(0, 0)
             self.cleanup_finished.emit(success, fail)
             
         except Exception as e:
@@ -463,6 +528,7 @@ class FTPManager(QObject):
     
     # Connection signals
     connection_status_changed = pyqtSignal(bool, str) # connected, ip/msg
+    transfer_stats = pyqtSignal(float, int) # speed (MB/s), eta (seconds)
     
     def __init__(self, config_manager, mod_manager):
         super().__init__()
@@ -669,6 +735,7 @@ class FTPManager(QObject):
         self.thread.progress_value.connect(self.progress_signal.emit)
         self.thread.cleanup_finished.connect(self._store_sync_results) # Reuse sync results (success/fail ints)
         self.thread.finished.connect(self._finalize_sync) # Reuse finalize sync
+        self.thread.transfer_stats.connect(self.transfer_stats.emit)
         
         self.sync_started.emit() # Re-use sync started signal to lock UI
         self.thread.start()
@@ -700,6 +767,7 @@ class FTPManager(QObject):
         self.thread.mod_progress.connect(self.mod_progress.emit)
         self.thread.sync_results.connect(self._store_sync_results)
         self.thread.finished.connect(self._finalize_sync)
+        self.thread.transfer_stats.connect(self.transfer_stats.emit)
         
         self.sync_started.emit()
         self.thread.start()
