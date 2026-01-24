@@ -330,6 +330,8 @@ class FTPPanel(SidePanel):
         # Store diff map for confirmation
         self.current_diff_map = {}
         self.stale_mods_list = [] # List of strings
+        self.list_items = {} # Map mod_name -> SyncItemWidget
+
         
         # Align content to top
         self.body.addStretch()
@@ -523,9 +525,13 @@ class FTPPanel(SidePanel):
         self.stale_list.clear()
         
         # Populate Stale List
+        self.list_items = {}
         for mod_name in stale_mods:
+
             item = QListWidgetItem()
             widget = SyncItemWidget(mod_name)
+            self.list_items[mod_name] = widget
+
             self.stale_list.addItem(item)
             self.stale_list.setItemWidget(item, widget)
             
