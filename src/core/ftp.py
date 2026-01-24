@@ -389,45 +389,49 @@ class SwitchFTP:
             return
             
         try:
-            # Get list of items
             items = []
             try:
                 items = list(self.ftp.mlsd(remote_dir))
             except:
-                # Fallback to nlst if mlsd fails or dir empty
+                # Fallback to NLST if MLSD fails
                 try:
                     names = self.ftp.nlst(remote_dir)
-                    # Fake mlsd structure
                     items = [(n, {'type': 'unknown'}) for n in names]
                 except:
-                     return # Dir likely gone
-             
+                    return
+
             for name, facts in items:
-                if name in [".", ".."]: continue
+                if name in [".", ".."]:
+                    continue
                 
                 full_path = f"{remote_dir}/{name}"
                 is_dir = facts.get('type') == 'dir'
                 
                 if facts.get('type') == 'unknown':
+                    # Heuristic: Try to delete as file first.
+                    # If it fails with 550, it's likely a directory.
                     try:
-                        self.ftp.cwd(full_path)
+                        self.ftp.delete(full_path)
+                        continue
+                    except Exception as e:
                         is_dir = True
-                        self.ftp.cwd("..")
-                    except:
-                        is_dir = False
-                
+
                 if is_dir:
                     self.delete_remote_dir(full_path)
                 else:
                     try:
                         self.ftp.delete(full_path)
-                    except: pass
-             
+                    except Exception as e:
+                        print(f"Failed to delete file {full_path}: {e}")
+
+            # Finally remove the empty directory
             try:
                 self.ftp.rmd(remote_dir)
-            except: pass
-        except:
-            pass
+            except Exception as e:
+                print(f"Failed to remove directory {remote_dir}: {e}")
+                
+        except Exception as e:
+            print(f"Critical error in delete_remote_dir: {e}")
     def find_acropolis_config_dir(self) -> str:
         """Find the first valid numeric-based config directory for ARCropolis."""
         # Try both spellings just to be safe, but prioritize acropolis
