@@ -5,13 +5,16 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QSize, QUrl, QPoint
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont, QDesktopServices, QAction
 from datetime import datetime
-from src.ui.grid_item import GridListItem, GridListItemWidget
+
 from src.models.mod import OnlineModItem, ModItem
-from src.ui.components.layout import HBox, VBox
-from src.ui.grid_item_button import Overlay
-from src.utils.image_loader import ImageLoader
 from src.managers.data_manager import ButtonIcons
+
+from src.ui.components.grid_item import GridListItem, GridListItemWidget
+from src.ui.components.layout import HBox, VBox
+from src.ui.components.grid_item_button import Overlay
 from src.ui.components.toggle_button import ToggleButton
+
+from src.utils.image_loader import ImageLoader
 from src.utils.image_utils import tint_pixmap
 from src.constants.colors import ButtonColor
 

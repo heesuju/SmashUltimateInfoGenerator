@@ -1,10 +1,7 @@
-from PyQt6.QtWidgets import QLabel
-from functools import partial
+from PyQt6.QtWidgets import QLabel, QWidget, QPushButton, QTreeWidgetItem, QCheckBox
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import (
-    QWidget, QPushButton, QTreeWidgetItem, QCheckBox
-)
+
 from src.managers.data_manager import ButtonIcons, DataManager
 from src.models.mod import Mod, ModItem
 from src.constants.colors import ButtonColor

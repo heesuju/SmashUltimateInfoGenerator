@@ -1,6 +1,6 @@
 import os
 from typing import List
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QWidget, QSizePolicy, QLabel, QFrame, QPushButton, QComboBox, QHBoxLayout,
     QMenu, QFileDialog
@@ -8,23 +8,25 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import (
     QPixmap, QIcon, QFont, QDragEnterEvent, QDropEvent, QColor
 )
+
 from src.core.formatting import format_slots
-from src.ui.components.layout import VBox, HBox
-from src.ui.grid_list import GridList
-from src.ui.tree_list import TreeList
 from src.models.mod import Mod, ModItem
-from src.ui.components.toggle_button import ToggleButton
-from src.ui.components.paging import Paging
-from src.ui.search_bar import SearchBar
-from src.ui.components.filter_chips import FilterChips
 from src.managers.mod_manager import ModManager
-from src.utils.image_utils import tint_pixmap
-from src.constants.enums import Fighter, ListLayout
 from src.managers.data_manager import ButtonIcons, DataManager
 from src.managers.filter_manager import FilterManager, FilterParameters
 from src.managers.config_manager import ConfigManager
+
+from src.ui.components.layout import VBox, HBox
+from src.ui.components.grid_list import GridList
+from src.ui.components.tree_list import TreeList
+from src.ui.components.toggle_button import ToggleButton
+from src.ui.components.paging import Paging
+from src.ui.components.search_bar import SearchBar
+from src.ui.components.filter_chips import FilterChips
+
+from src.utils.image_utils import tint_pixmap
+from src.constants.enums import Fighter, ListLayout
 from src.constants.ui_params import SPACING, GRID_PAGE_SIZE, LIST_PAGE_SIZE
-from PyQt6.QtCore import pyqtSignal
 from src.constants.colors import ButtonColor
 
 class ModList(QWidget):

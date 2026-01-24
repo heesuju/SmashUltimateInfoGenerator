@@ -11,9 +11,8 @@ from src.managers.download_manager import DownloadManager
 from src.managers.ftp_manager import FTPManager
 
 from src.models.mod import Mod
-from src.ui.mod_list import ModList
-from src.ui.online_mod_list import OnlineModList
-
+from src.ui.components.mod_list import ModList
+from src.ui.components.online_mod_list import OnlineModList
 from src.ui.components.navigation import Navigation, NavigationMenu
 from src.ui.components.layout import HBox, VBox
 

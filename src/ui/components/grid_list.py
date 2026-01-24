@@ -1,19 +1,15 @@
 from PyQt6.QtWidgets import (
-    QListView, QSizePolicy, QListWidget, QScrollBar
+    QListView, QSizePolicy, QListWidget, QScrollBar,
+    QGraphicsDropShadowEffect, QWidget, QStyle,
+    QStyledItemDelegate, QStyleOptionViewItem
 )
 from PyQt6.QtGui import QIcon, QPixmap, QPainter, QWheelEvent
 from PyQt6.QtCore import Qt, QRect, QSize
-from PyQt6.QtWidgets import (
-    QGraphicsDropShadowEffect,
-    QWidget,
-)
-from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
-from PyQt6.QtGui import QPixmap, QColor, QPalette
-from src.ui.grid_item import GridListItem
-from PyQt6.QtWidgets import QListWidget, QListView, QStyledItemDelegate, QStyleOptionViewItem, QGraphicsDropShadowEffect, QSizePolicy, QStyle
+
 from src.models.mod import Mod, ModItem
-from src.managers.data_manager import ButtonIcons, DataManager
 from src.managers.mod_manager import ModManager
+from src.ui.components.online_grid_item import OnlineGridListItem
+from src.ui.components.grid_item import GridListItem
 
 class GridList(QListWidget):
     def __init__(self, mod_manager:ModManager, item_class=GridListItem, download_manager=None):
@@ -119,7 +115,6 @@ class GridList(QListWidget):
         mod.selected = self.mod_manager.is_selected(mod.id)
         
         # Check if this is an OnlineGridListItem - pass managers
-        from src.ui.online_grid_item import OnlineGridListItem
         if self.item_class == OnlineGridListItem:
             item = self.item_class(self, mod, grid_list=self, online_manager=self.mod_manager, download_manager=self.download_manager)
         else:

@@ -1,20 +1,20 @@
 from PyQt6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QSizePolicy, QListWidget, QListWidgetItem, QFrame, QLineEdit
+    QWidget, QHBoxLayout, QVBoxLayout, 
+    QPushButton, QLabel, QSizePolicy, 
+    QListWidget, QListWidgetItem, QFrame, 
+    QLineEdit
 )
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
-from src.utils.image_utils import create_image_overlay, add_text_to_image
-from PyQt6.QtWidgets import (
-    QGraphicsDropShadowEffect,
-    QWidget,
-)
-
-from src.ui.components.layout import HBox, VBox
-from src.ui.components.input_button_widget import InputButtonWidget, InputButton
 
 from src.managers.data_manager import ButtonIcons
 from src.managers.mod_manager import ModManager
 from src.managers.filter_manager import FilterManager, FilterParameters
+
+from src.ui.components.layout import HBox, VBox
+from src.ui.components.input_button_widget import InputButtonWidget, InputButton
+
+from src.utils.image_utils import create_image_overlay, add_text_to_image
 
 ICON_ELLIPSIS = "assets/img/search.png"
 

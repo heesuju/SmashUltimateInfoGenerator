@@ -1,26 +1,22 @@
-from functools import partial
 from PyQt6.QtCore import Qt, QRect, QSize
 from PyQt6.QtWidgets import (
-    QGraphicsDropShadowEffect,
-    QWidget,
+    QWidget, QListWidget, QStyledItemDelegate, QStyleOptionViewItem, 
+    QSizePolicy, QStyle, QApplication, QVBoxLayout, 
+    QHBoxLayout, QPushButton, QTreeWidget, QTreeWidgetItem, 
+    QCheckBox, QHeaderView, QScrollBar
 )
-from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
-from PyQt6.QtGui import QPixmap, QColor, QPalette
-from PyQt6.QtWidgets import QListWidget, QListView, QStyledItemDelegate, QStyleOptionViewItem, QGraphicsDropShadowEffect, QSizePolicy, QStyle
-from PyQt6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTreeWidget,
-    QTreeWidgetItem, QCheckBox, QHeaderView, QScrollBar
+from PyQt6.QtGui import (
+    QPixmap, QColor, QPalette, QIcon, 
+    QPainter, QPainterPath, QImage, QBrush, 
+    QPen, QWheelEvent
 )
-from PyQt6.QtGui import QIcon, QPixmap, QPainter, QPainterPath, QImage, QBrush, QPen, QColor, QWheelEvent
-from PyQt6.QtWidgets import QGraphicsOpacityEffect
-from PyQt6.QtCore import QPropertyAnimation
 
-from src.ui.components.layout import HBox, VBox
-from src.managers.data_manager import ButtonIcons
-
-from src.ui.tree_item import TreeItem
 from src.models.mod import Mod, ModItem
 from src.managers.mod_manager import ModManager
+from src.managers.data_manager import ButtonIcons
+
+from src.ui.components.layout import HBox, VBox
+from src.ui.components.tree_item import TreeItem
 
 class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent_tree_list=None):

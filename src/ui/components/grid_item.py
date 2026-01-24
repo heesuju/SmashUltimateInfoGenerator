@@ -1,26 +1,23 @@
+import os
 from PyQt6.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QSizePolicy, QListWidget, QListWidgetItem, QFrame, QMenu
+    QWidget, QHBoxLayout, QVBoxLayout, QPushButton, 
+    QLabel, QSizePolicy, QListWidget, QListWidgetItem, 
+    QFrame, QMenu, QGraphicsOpacityEffect, QGraphicsDropShadowEffect
 )
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QAction, QDesktopServices
 from PyQt6 import sip
 from PyQt6.QtCore import Qt, QSize, QPoint, QPointF, QUrl
-from src.utils.image_utils import create_image_overlay, add_text_to_image
-from src.utils.file import open_folder
-from PyQt6.QtWidgets import (
-    QGraphicsDropShadowEffect,
-    QWidget,
-)
-from PyQt6.QtWidgets import QGraphicsOpacityEffect
-from PyQt6.QtCore import QPropertyAnimation
-import os
+
+from src.models.mod import Mod, ModItem
+from src.managers.data_manager import DataManager, ButtonIcons
 
 from src.ui.components.image_overlay import ImageOverlayWidget
 from src.ui.components.layout import HBox, VBox
-from src.ui.grid_item_button import Overlay
-from src.models.mod import Mod, ModItem
-from src.managers.data_manager import DataManager, ButtonIcons
+from src.ui.components.grid_item_button import Overlay
 from src.ui.components.toggle_button import ToggleButton
+
 from src.constants.colors import ButtonColor
+from src.utils.file import open_folder
 
 ICON_ELLIPSIS = "assets/icons/ui/ellipsis.png"
 ICON_FAVORITE = "assets/icons/menu/favorite.png"

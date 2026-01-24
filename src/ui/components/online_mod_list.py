@@ -3,16 +3,16 @@ from PyQt6.QtWidgets import (
     QWidget, QSizePolicy, QFrame
 )
 from PyQt6.QtCore import QTimer
-from src.ui.components.layout import VBox, HBox
-from src.ui.grid_list import GridList
+
 from src.models.mod import ModItem
-from src.ui.components.paging import Paging
 from src.managers.online_manager import OnlineManager
 
-from src.ui.online_grid_item import OnlineGridListItem
-from src.ui.search_bar import SearchBar
+from src.ui.components.layout import VBox, HBox
+from src.ui.components.grid_list import GridList
+from src.ui.components.paging import Paging
+from src.ui.components.online_grid_item import OnlineGridListItem
+from src.ui.components.search_bar import SearchBar
 from src.ui.components.filter_chips import FilterChips
-
 from src.ui.components.loading_overlay import LoadingOverlay
 
 class OnlineModList(QWidget):
