@@ -1,5 +1,7 @@
 
 # Table cell styles
+ROW_CONTENT_HEIGHT = 24
+
 
 # Basic cell border for the QFrame container
 GRID_CELL_STYLE = """
@@ -73,8 +75,10 @@ CELL_INPUT_STYLE = """
     QLineEdit {
         border: none;
         background: transparent;
-        padding: 4px;
+        padding: 0px 4px;
         border-radius: 0;
+        min-height: 24px;
+        max-height: 24px;
     }
     QLineEdit:focus {
         background-color: rgba(255, 255, 255, 0.05);
@@ -96,8 +100,10 @@ CELL_TEXTEDIT_STYLE = """
 CELL_COMBO_STYLE = """
     QComboBox {
         border: none;
-        padding: 2px 4px;
+        padding: 0px 4px;
         background-color: transparent;
+        min-height: 24px;
+        max-height: 24px;
     }
     QComboBox:hover {
         background-color: rgba(255, 255, 255, 0.05);

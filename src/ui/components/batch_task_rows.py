@@ -175,29 +175,53 @@ class BatchTaskRow:
         cell.set_content(label)
         return cell
 
-    def _create_original_value_widget(self, text: str, tooltip: str = None, is_muted: bool = False) -> QWidget:
+    def _create_original_value_widget(self, text: str, tooltip: str = None, is_muted: bool = False, multiline: bool = True) -> QWidget:
         cell = GridCell(GRID_CELL_STYLE)
         
         display_text = text if text else "—"
         
-        text_edit = AutoResizingTextEdit(display_text, read_only=True)
-        text_edit.setFont(self.data_font)
-        
-        color = "#888" if (is_muted or not text) else "#ddd"
-        
-        text_edit.setStyleSheet(f"""
-            QTextEdit {{
-                border: none;
-                background: transparent;
-                padding: 0px; 
-                color: {color};
-            }}
-        """)
-        
-        if tooltip:
-            text_edit.setToolTip(tooltip)
+        if multiline:
+            text_edit = AutoResizingTextEdit(display_text, read_only=True)
+            text_edit.setFont(self.data_font)
             
-        cell.set_content(text_edit)
+            color = "#888" if (is_muted or not text) else "#ddd"
+            
+            text_edit.setStyleSheet(f"""
+                QTextEdit {{
+                    border: none;
+                    background: transparent;
+                    padding: 0px 4px; 
+                    color: {color};
+                }}
+            """)
+            if tooltip:
+                text_edit.setToolTip(tooltip)
+            cell.set_content(text_edit)
+        else:
+            line_edit = QLineEdit(display_text)
+            line_edit.setReadOnly(True)
+            line_edit.setFont(self.data_font)
+            line_edit.setFixedHeight(ROW_CONTENT_HEIGHT)
+            # Make the cursor start at the beginning for long text
+            line_edit.setCursorPosition(0)
+            
+            color = "#888" if (is_muted or not text) else "#ddd"
+            
+            line_edit.setStyleSheet(f"""
+                QLineEdit {{
+                    border: none;
+                    background: transparent;
+                    padding: 0px 4px; 
+                    color: {color};
+                    min-height: {ROW_CONTENT_HEIGHT}px;
+                    max-height: {ROW_CONTENT_HEIGHT}px;
+                }}
+            """)
+            if tooltip:
+                line_edit.setToolTip(tooltip)
+            cell.set_content(line_edit)
+            cell.setFixedHeight(ROW_CONTENT_HEIGHT)
+            
         return cell
 
     def _create_new_value_cell(self) -> GridCell:
@@ -226,15 +250,21 @@ class TextRow(BatchTaskRow):
 
     def create_widgets(self):
         label_widget = self._create_label_widget()
-        orig_widget = self._create_original_value_widget(self.orig_value, self.orig_tooltip)
+        orig_widget = self._create_original_value_widget(self.orig_value, self.orig_tooltip, multiline=False)
         
         cell = self._create_new_value_cell()
         
-        self.input_widget = AutoResizingTextEdit(self.new_value if self.new_value else "")
+        self.input_widget = QLineEdit(self.new_value if self.new_value else "")
         self.input_widget.setFont(self.data_font)
+        self.input_widget.setFixedHeight(ROW_CONTENT_HEIGHT)
+        self.input_widget.setStyleSheet(CELL_INPUT_STYLE)
         self.input_widget.textChanged.connect(lambda text: self.on_change(self.attr_name, text))
         
         cell.set_content(self.input_widget)
+        
+        # Enforce fixed row height for single-line rows
+        label_widget.setFixedHeight(ROW_CONTENT_HEIGHT)
+        cell.setFixedHeight(ROW_CONTENT_HEIGHT)
         
         return label_widget, orig_widget, cell
 
@@ -253,7 +283,7 @@ class DescriptionRow(BatchTaskRow):
         # Original value with max height
         cell_orig = GridCell(GRID_CELL_STYLE)
         display_text = self.orig_desc if self.orig_desc else "—"
-        orig_edit = AutoResizingTextEdit(display_text, read_only=True, max_height=100, min_height=100) # Limit to approx 10 lines
+        orig_edit = AutoResizingTextEdit(display_text, read_only=True, max_height=100, min_height=100)
         orig_edit.setFont(self.data_font)
         is_muted = not self.orig_desc
         color = "#888" if is_muted else "#ddd"
@@ -261,7 +291,7 @@ class DescriptionRow(BatchTaskRow):
             QTextEdit {{
                 border: none;
                 background: transparent;
-                padding: 0px; 
+                padding: 0px 4px; 
                 color: {color};
             }}
         """)
@@ -310,8 +340,13 @@ class ComboRow(BatchTaskRow):
             
         self.input_widget.setStyleSheet(CELL_COMBO_STYLE)
         self.input_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.input_widget.setFixedHeight(ROW_CONTENT_HEIGHT)
         
         cell.set_content(self.input_widget)
+        
+        # Enforce fixed row height
+        label_widget.setFixedHeight(ROW_CONTENT_HEIGHT)
+        cell.setFixedHeight(ROW_CONTENT_HEIGHT)
         
         return label_widget, orig_widget, cell
 
@@ -361,9 +396,14 @@ class MultiComboRow(BatchTaskRow):
         self.input_widget.update_display()
         self.input_widget.model().dataChanged.connect(lambda *args: self.on_model_change())
         self.input_widget.setStyleSheet(CELL_COMBO_STYLE)
+        self.input_widget.setFixedHeight(ROW_CONTENT_HEIGHT)
         self.input_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         
         cell.set_content(self.input_widget)
+        
+        # Enforce fixed row height
+        label_widget.setFixedHeight(ROW_CONTENT_HEIGHT)
+        cell.setFixedHeight(ROW_CONTENT_HEIGHT)
         
         return label_widget, orig_widget, cell
 

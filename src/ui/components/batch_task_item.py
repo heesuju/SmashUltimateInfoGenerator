@@ -365,13 +365,18 @@ class BatchTaskItem(QWidget):
 
             # Connect input widget changes
             if hasattr(row_obj, 'input_widget') and hasattr(row_obj.input_widget, 'textChanged'):
-                row_obj.input_widget.textChanged.connect(resize_row)
+                # Only resize description row on text change, others are fixed height
+                if key == "description":
+                    row_obj.input_widget.textChanged.connect(resize_row)
 
             # Connect sizeChanged signals from ANY widget in the row that supports it
             def connect_recursive(widget):
                 if isinstance(widget, AutoResizingTextEdit) or hasattr(widget, 'sizeChanged'):
                     if hasattr(widget, 'sizeChanged'):
                         widget.sizeChanged.connect(resize_row)
+                    elif isinstance(widget, AutoResizingTextEdit) and key == "description":
+                         # Only connect textChanged/resize for description which is dynamic
+                         widget.textChanged.connect(resize_row)
 
                 # Check children
                 if isinstance(widget, QWidget):
@@ -394,8 +399,11 @@ class BatchTaskItem(QWidget):
             self.table.setCellWidget(i, 1, w2)
             self.table.setCellWidget(i, 2, w3)
 
-            # Initial resize for this row
-            self.table.resizeRowToContents(i)
+            # Initial resize based on type
+            if key in ["description", "thumbnail"]:
+                self.table.resizeRowToContents(i)
+            else:
+                self.table.setRowHeight(i, ROW_CONTENT_HEIGHT)
 
         main_layout.addWidget(self.table)
 
@@ -404,10 +412,18 @@ class BatchTaskItem(QWidget):
         # Schedule thumbnail loading after UI is shown to prevent freezing
         QTimer.singleShot(0, self._load_thumbnails)
         # Also schedule a global resize one tick later to ensure layout is settled
-        QTimer.singleShot(10, self.table.resizeRowsToContents)
+        QTimer.singleShot(10, self._enforce_row_heights)
         
         # Collapse by default
         self.toggle_collapse()
+
+    def _enforce_row_heights(self):
+        """Re-apply row heights to ensure single-line rows are compact"""
+        for key, row_idx in self.row_indices.items():
+            if key in ["description", "thumbnail"]:
+                self.table.resizeRowToContents(row_idx)
+            else:
+                self.table.setRowHeight(row_idx, ROW_CONTENT_HEIGHT)
 
     def toggle_collapse(self):
         """Toggle table visibility, showing only Mod Name and URL when collapsed"""
