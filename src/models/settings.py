@@ -24,3 +24,5 @@ class Settings(BaseModel):
     sort_rules:List[SortRule]=[]
     favorites:List[str]=[]
     export_dir:str=""
+    ftp_ip:str=""
+    ftp_port:int=5000

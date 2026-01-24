@@ -1,15 +1,65 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QTextEdit, QPushButton, 
                              QLabel, QProgressBar, QListWidget, QListWidgetItem,
-                             QGroupBox, QComboBox)
+                             QGroupBox, QComboBox, QLineEdit)
+from PyQt6.QtGui import QIntValidator, QIcon
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.layout import VBox, HBox
 from src.managers.ftp_manager import FTPManager
+from src.managers.data_manager import ButtonIcons
 import os
 
 class FTPPanel(SidePanel):
     def __init__(self, ftp_manager: FTPManager):
         super().__init__("FTP Sync")
         self.ftp_manager = ftp_manager
+        
+        # Connection Settings (IP:Port)
+        conn_layout = HBox()
+        
+        self.ip_input = QLineEdit()
+        self.ip_input.setPlaceholderText("IP Address (Auto-scan if empty)")
+        self.ip_input.setStyleSheet("background-color: #2b2b2b; color: white; border: 1px solid #444; border-radius: 4px; padding: 4px;")
+        conn_layout.addWidget(self.ip_input)
+        
+        conn_layout.addWidget(QLabel(" : "))
+        
+        self.port_input = QLineEdit()
+        self.port_input.setPlaceholderText("Port")
+        self.port_input.setValidator(QIntValidator(1, 65535))
+        self.port_input.setFixedWidth(60)
+        self.port_input.setStyleSheet("background-color: #2b2b2b; color: white; border: 1px solid #444; border-radius: 4px; padding: 4px;")
+        conn_layout.addWidget(self.port_input)
+        
+        # Retry/Refresh Button
+        self.retry_button = QPushButton()
+        self.retry_button.setIcon(QIcon(ButtonIcons.REFRESH.value))
+        self.retry_button.setToolTip("Refresh Connection")
+        self.retry_button.setFixedSize(28, 28)
+        self.retry_button.setFlat(True)
+        self.retry_button.clicked.connect(self.on_retry_clicked)
+        self.retry_button.setStyleSheet("""
+             QPushButton {
+                background-color: transparent;
+                border-radius: 4px;
+                border: none;
+                padding: 4px;
+            }
+            QPushButton:hover {
+                background-color: #546E7A;
+            }
+        """)
+        conn_layout.addWidget(self.retry_button)
+        
+        self.body.addLayout(conn_layout)
+        
+        # Load Config
+        config = self.ftp_manager.config_manager.config
+        self.ip_input.setText(config.ftp_ip)
+        self.port_input.setText(str(config.ftp_port))
+        
+        # Connect signals
+        self.ip_input.editingFinished.connect(self.on_config_changed)
+        self.port_input.editingFinished.connect(self.on_config_changed)
         
         # Status Label (Secondary, for connection status)
         self.status_label = QLabel("Status: Idle")
@@ -40,24 +90,7 @@ class FTPPanel(SidePanel):
         """)
         self.mode_combo.currentIndexChanged.connect(self.on_mode_changed)
         controls.addWidget(self.mode_combo)
-
         
-        # Retry Button (initially hidden)
-        self.retry_button = QPushButton("Retry Connection")
-        self.retry_button.clicked.connect(self.on_retry_clicked)
-        self.retry_button.setStyleSheet("""
-             QPushButton {
-                background-color: #607D8B;
-                color: white;
-                padding: 4px 12px;
-                border-radius: 4px;
-            }
-            QPushButton:hover {
-                background-color: #546E7A;
-            }
-        """)
-        self.retry_button.hide()
-        controls.addWidget(self.retry_button)
         controls.addStretch()
         self.body.addLayout(controls)
 
@@ -156,6 +189,20 @@ class FTPPanel(SidePanel):
         # Store diff map for confirmation
         self.current_diff_map = {}
         
+    def on_config_changed(self):
+        new_ip = self.ip_input.text().strip()
+        port_text = self.port_input.text().strip()
+        new_port = int(port_text) if port_text else 5000
+        
+        config = self.ftp_manager.config_manager.config
+        
+        if config.ftp_ip != new_ip or config.ftp_port != new_port:
+            self.append_log(f"Config changed: IP={new_ip if new_ip else 'Auto Scan'}, Port={new_port}. Reconnecting...")
+            config.ftp_ip = new_ip
+            config.ftp_port = new_port
+            self.ftp_manager.config_manager.save()
+            self.ftp_manager.check_connection()
+        
     def on_mode_changed(self, index):
         is_all = index == 1
         text = "Scan & Sync All" if is_all else "Scan & Sync Enabled"
@@ -165,14 +212,10 @@ class FTPPanel(SidePanel):
         self.status_label.setText(f"Status: {msg}")
         self.sync_button.setEnabled(connected)
         
-        # Update text for offline state too if needed, but keeping simple for now
-        if not connected and msg != "Searching...":
-             self.retry_button.show()
-        elif connected:
-             self.retry_button.hide()
-        else: # Searching
-             self.retry_button.hide()
-             self.sync_button.setEnabled(False)
+        # Determine if we should disable the refresh button during connection attempts?
+        # For now, let's keep it enabled so user can re-scan/retry freely.
+        # self.retry_button.setEnabled(not (msg == "Searching..." or "Connecting" in msg)) 
+        # Actually enabling it always is safer so they aren't locked out.
              
     def on_retry_clicked(self):
         self.ftp_manager.check_connection()

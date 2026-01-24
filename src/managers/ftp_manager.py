@@ -8,10 +8,11 @@ class SyncThread(QThread):
     progress_value = pyqtSignal(float)
     finished_signal = pyqtSignal()
     
-    def __init__(self, folders, known_ip=None):
+    def __init__(self, folders, known_ip=None, port=5000):
         super().__init__()
         self.folders = folders
         self.known_ip = known_ip
+        self.port = port
         self.is_running = True
         
     def run(self):
@@ -32,15 +33,15 @@ class SyncThread(QThread):
 
             self.progress_log.emit(f"Found {total_files} files to check.")
             
-            ftp = SwitchFTP()
+            ftp = SwitchFTP(port=self.port)
             
             switch_ip = self.known_ip
             if not switch_ip:
                 subnet = ftp.get_local_subnet()
-                self.progress_log.emit(f"Scanning subnet: {subnet} for port 5000...")
+                self.progress_log.emit(f"Scanning subnet: {subnet} for port {self.port}...")
                 switch_ip = ftp.find_switch(subnet, lambda msg: self.progress_log.emit(msg))
             
-            self.progress_log.emit(f"Connecting to {switch_ip}...")
+            self.progress_log.emit(f"Connecting to {switch_ip}:{self.port}...")
             
             ftp.connect(switch_ip)
             
@@ -69,16 +70,17 @@ class ScanThread(QThread):
     progress_log = pyqtSignal(str)
     scan_finished = pyqtSignal(dict) # {mod_path: status}
     
-    def __init__(self, folders, known_ip=None):
+    def __init__(self, folders, known_ip=None, port=5000):
         super().__init__()
         self.folders = folders
         self.known_ip = known_ip
+        self.port = port
         
     def run(self):
         results = {}
         try:
             self.progress_log.emit("Connecting for scan...")
-            ftp = SwitchFTP()
+            ftp = SwitchFTP(port=self.port)
             
             # Connect
             ip = self.known_ip
@@ -114,14 +116,15 @@ class SmartSyncThread(QThread):
     progress_value = pyqtSignal(float)
     finished_signal = pyqtSignal()
     
-    def __init__(self, diff_map: dict, known_ip=None):
+    def __init__(self, diff_map: dict, known_ip=None, port=5000):
         super().__init__()
         self.diff_map = diff_map
         self.known_ip = known_ip
+        self.port = port
         
     def run(self):
         try:
-            ftp = SwitchFTP()
+            ftp = SwitchFTP(port=self.port)
             ip = self.known_ip
             if not ip:
                 # Should be known by now, but fallback
@@ -179,16 +182,28 @@ class ConnectionThread(QThread):
     connected = pyqtSignal(str) # ip
     failed = pyqtSignal()
     
-    def __init__(self):
+    def __init__(self, target_ip=None, port=5000):
         super().__init__()
+        self.target_ip = target_ip
+        self.port = port
         
     def run(self):
         try:
-            ftp = SwitchFTP()
-            subnet = ftp.get_local_subnet()
-            switch_ip = ftp.find_switch(subnet)
-            if switch_ip:
-                self.connected.emit(switch_ip)
+            ftp = SwitchFTP(port=self.port)
+            found_ip = None
+            if self.target_ip:
+                try:
+                    ftp.connect(self.target_ip)
+                    ftp.disconnect()
+                    found_ip = self.target_ip
+                except:found_ip = None
+            
+            if not found_ip and not self.target_ip:
+                subnet = ftp.get_local_subnet()
+                found_ip = ftp.find_switch(subnet)
+                
+            if found_ip:
+                self.connected.emit(found_ip)
             else:
                 self.failed.emit()
         except:
@@ -219,8 +234,12 @@ class FTPManager(QObject):
         if self.conn_thread and self.conn_thread.isRunning():
             return
             
-        self.connection_status_changed.emit(False, "Searching...")
-        self.conn_thread = ConnectionThread()
+        config = self.config_manager.config
+        target_ip = config.ftp_ip if config.ftp_ip else None
+        port = config.ftp_port or 5000
+        
+        self.connection_status_changed.emit(False, "Searching..." if not target_ip else f"Connecting to {target_ip}...")
+        self.conn_thread = ConnectionThread(target_ip=target_ip, port=port)
         self.conn_thread.connected.connect(self.on_connected)
         self.conn_thread.failed.connect(self.on_connection_failed)
         self.conn_thread.start()
@@ -257,7 +276,8 @@ class FTPManager(QObject):
             self.log_signal.emit(msg)
             return
 
-        self.thread = SyncThread(folders, known_ip=self.current_ip)
+        port = self.config_manager.config.ftp_port or 5000
+        self.thread = SyncThread(folders, known_ip=self.current_ip, port=port)
         self.thread.progress_log.connect(self.log_signal.emit)
         self.thread.progress_value.connect(self.progress_signal.emit)
         self.thread.finished_signal.connect(self.on_sync_finished)
@@ -298,7 +318,8 @@ class FTPManager(QObject):
             self.scan_complete.emit({})
             return
             
-        self.thread = ScanThread(folders, known_ip=self.current_ip)
+        port = self.config_manager.config.ftp_port or 5000
+        self.thread = ScanThread(folders, known_ip=self.current_ip, port=port)
         self.thread.progress_log.connect(self.log_signal.emit)
         self.thread.scan_finished.connect(self._on_scan_finished)
         self.thread.start()
@@ -316,7 +337,8 @@ class FTPManager(QObject):
             self.log_signal.emit("Nothing to sync.")
             return
             
-        self.thread = SmartSyncThread(diff_map, known_ip=self.current_ip)
+        port = self.config_manager.config.ftp_port or 5000
+        self.thread = SmartSyncThread(diff_map, known_ip=self.current_ip, port=port)
         self.thread.progress_log.connect(self.log_signal.emit)
         self.thread.progress_value.connect(self.progress_signal.emit)
         self.thread.finished_signal.connect(self.on_sync_finished)
