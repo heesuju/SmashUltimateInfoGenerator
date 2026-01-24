@@ -18,10 +18,11 @@ class OnlineFilterPanel(SidePanel):
         self.body.addWidget(self.author)
         
         # Category filter (single selection)
-        self.category = SingleComboBox()
-        self.category.addItem("All Categories")
-        self.category.addItems(Category.list())
-        self.body.addWidget(self.category)
+        # Category filter not supported by API for some reason
+        # self.category = SingleComboBox()
+        # self.category.addItem("All Categories")
+        # self.category.addItems(Category.list())
+        # self.body.addWidget(self.category)
         
         # Sort dropdown
         self.sort = SingleComboBox()
