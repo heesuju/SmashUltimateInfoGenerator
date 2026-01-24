@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QTextEdit, QPushButton,
                              QLabel, QProgressBar, QListWidget, QListWidgetItem,
                              QGroupBox, QComboBox, QLineEdit)
 from PyQt6.QtGui import QIntValidator, QIcon
+from PyQt6.QtCore import Qt
 from src.ui.components.side_panel import SidePanel
 from src.ui.components.layout import VBox, HBox
 from src.managers.ftp_manager import FTPManager
@@ -13,39 +14,73 @@ class FTPPanel(SidePanel):
         super().__init__("FTP Sync")
         self.ftp_manager = ftp_manager
         
+        self.status_text = QLabel("Idle")
+        self.status_text.setStyleSheet("color: #ccc; font-size: 12px;")
+        self.status_text.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.header.addWidget(self.status_text, 0, Qt.AlignmentFlag.AlignVCenter)
+        
+        self.status_indicator = QLabel()
+        self.status_indicator.setFixedSize(12, 12)
+        self.status_indicator.setStyleSheet("background-color: #777; border-radius: 6px;")
+        self.status_indicator.setToolTip("Status: Idle")
+        self.header.addWidget(self.status_indicator, 0, Qt.AlignmentFlag.AlignVCenter)
+
         # Connection Settings (IP:Port)
         conn_layout = HBox()
+        conn_layout.setSpacing(0)
         
         self.ip_input = QLineEdit()
-        self.ip_input.setPlaceholderText("IP Address (Auto-scan if empty)")
-        self.ip_input.setStyleSheet("background-color: #2b2b2b; color: white; border: 1px solid #444; border-radius: 4px; padding: 4px;")
+        self.ip_input.setPlaceholderText("IP Address")
+        self.ip_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #2b2b2b; 
+                color: white; 
+                border: 1px solid #444; 
+                border-top-left-radius: 5px; 
+                border-bottom-left-radius: 5px;
+                border-top-right-radius: 0px; 
+                border-bottom-right-radius: 0px;
+                padding: 4px;
+            }
+        """)
         conn_layout.addWidget(self.ip_input)
-        
-        conn_layout.addWidget(QLabel(" : "))
         
         self.port_input = QLineEdit()
         self.port_input.setPlaceholderText("Port")
         self.port_input.setValidator(QIntValidator(1, 65535))
         self.port_input.setFixedWidth(60)
-        self.port_input.setStyleSheet("background-color: #2b2b2b; color: white; border: 1px solid #444; border-radius: 4px; padding: 4px;")
+        self.port_input.setStyleSheet("""
+            QLineEdit {
+                background-color: #2b2b2b; 
+                color: white; 
+                border: 1px solid #444; 
+                border-left: 0px;
+                border-radius: 0px;
+                padding: 4px;
+            }
+        """)
         conn_layout.addWidget(self.port_input)
         
         # Retry/Refresh Button
         self.retry_button = QPushButton()
         self.retry_button.setIcon(QIcon(ButtonIcons.REFRESH.value))
         self.retry_button.setToolTip("Refresh Connection")
-        self.retry_button.setFixedSize(28, 28)
+        self.retry_button.setFixedSize(28, 28) # Height matches inputs roughly
         self.retry_button.setFlat(True)
         self.retry_button.clicked.connect(self.on_retry_clicked)
         self.retry_button.setStyleSheet("""
              QPushButton {
-                background-color: transparent;
-                border-radius: 4px;
-                border: none;
+                background-color: #2b2b2b;
+                border: 1px solid #444;
+                border-left: 0px;
+                border-top-right-radius: 5px;
+                border-bottom-right-radius: 5px;
+                border-top-left-radius: 0px; 
+                border-bottom-left-radius: 0px;
                 padding: 4px;
             }
             QPushButton:hover {
-                background-color: #546E7A;
+                background-color: #3b3b3b;
             }
         """)
         conn_layout.addWidget(self.retry_button)
@@ -61,21 +96,12 @@ class FTPPanel(SidePanel):
         self.ip_input.editingFinished.connect(self.on_config_changed)
         self.port_input.editingFinished.connect(self.on_config_changed)
         
-        # Status Label (Secondary, for connection status)
-        self.status_label = QLabel("Status: Idle")
-        self.status_label.setStyleSheet("font-size: 14px; margin-bottom: 5px; color: #ccc;")
-        self.body.addWidget(self.status_label)
-        
-        # Controls
-        controls = HBox()
-        
-        # Mode Selection
         self.mode_combo = QComboBox()
-        self.mode_combo.addItems(["Enabled Mods Only", "All Mods"])
+        self.mode_combo.addItems(["Enabled Only", "All"])
         self.mode_combo.setStyleSheet("""
             QComboBox {
-                padding: 5px 10px;
-                border-radius: 4px;
+                padding: 0px 10px;
+                border-radius: 5px;
                 border: 1px solid #444;
                 background-color: #2b2b2b;
                 color: white;
@@ -88,17 +114,18 @@ class FTPPanel(SidePanel):
                 border: 0px;
             }
         """)
-        self.mode_combo.currentIndexChanged.connect(self.on_mode_changed)
-        controls.addWidget(self.mode_combo)
+        self.mode_combo.setFixedHeight(24)
+        self.mode_combo.setFixedWidth(80)
+        # self.mode_combo.currentIndexChanged.connect(self.on_mode_changed)
         
-        controls.addStretch()
-        self.body.addLayout(controls)
+        self.footer.addWidget(self.mode_combo)
 
         # Sync Button (Footer) - Now defaults to Scan/Preview
         self.sync_button = self.add_footer_button(
-            text="Scan & Sync Enabled",
+            text="Start Sync",
             callback=self.on_scan_clicked,
-            primary=True
+            primary=True,
+            icon=ButtonIcons.SYNC.value
         )
         
         # Progress Bar
@@ -203,19 +230,26 @@ class FTPPanel(SidePanel):
             self.ftp_manager.config_manager.save()
             self.ftp_manager.check_connection()
         
-    def on_mode_changed(self, index):
-        is_all = index == 1
-        text = "Scan & Sync All" if is_all else "Scan & Sync Enabled"
-        self.sync_button.setText(text)
-        
     def on_connection_status_changed(self, connected: bool, msg: str):
-        self.status_label.setText(f"Status: {msg}")
         self.sync_button.setEnabled(connected)
         
-        # Determine if we should disable the refresh button during connection attempts?
-        # For now, let's keep it enabled so user can re-scan/retry freely.
-        # self.retry_button.setEnabled(not (msg == "Searching..." or "Connecting" in msg)) 
-        # Actually enabling it always is safer so they aren't locked out.
+        # Update Status Indicator
+        # Green = Connected
+        # Yellow = Searching/Connecting
+        # Red = Error/Not Found
+        # Grey = Idle
+        
+        color = "#9E9E9E" # Grey
+        if connected:
+            color = "#4CAF50" # Green
+        elif msg == "Searching..." or "Connecting" in msg:
+             color = "#FFC107" # Amber
+        elif "Not Found" in msg or "Error" in msg:
+             color = "#F44336" # Red
+             
+        self.status_indicator.setStyleSheet(f"background-color: {color}; border-radius: 6px;")
+        self.status_indicator.setToolTip(f"Status: {msg}")
+        self.status_text.setText(msg)
              
     def on_retry_clicked(self):
         self.ftp_manager.check_connection()
@@ -242,16 +276,11 @@ class FTPPanel(SidePanel):
     def on_sync_started(self):
         self.sync_button.setEnabled(False)
         self.sync_button.setText("Syncing...")
-        self.status_label.setText("Syncing with Switch...")
         self.progress_bar.setValue(0)
         self.mode_combo.setEnabled(False)
         
     def on_sync_finished(self):
         self.sync_button.setEnabled(True)
-        
-        # Restore button text
-        self.on_mode_changed(self.mode_combo.currentIndex())
-        self.status_label.setText("Sync Complete")
         self.mode_combo.setEnabled(True)
         
     def on_scan_complete(self, diff_map: dict):
