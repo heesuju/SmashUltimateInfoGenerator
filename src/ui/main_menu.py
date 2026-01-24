@@ -1,16 +1,5 @@
 from PyQt6.QtWidgets import QWidget, QTabWidget, QFrame
 
-from src.ui.mod_list import ModList
-from src.ui.filter_panel import FilterPanel
-from src.ui.sort_panel import SortPanel
-from src.ui.preview_panel import PreviewPanel
-from src.ui.edit_panel import EditPanel
-from src.ui.batch_panel import BatchPanel
-from src.ui.config_panel import Config
-from src.ui.workspace_panel import WorkspacePanel
-from src.ui.components.navigation import Navigation, NavigationMenu
-from src.ui.components.layout import HBox, VBox
-from src.models.mod import Mod
 from src.managers.data_manager import NavigationMenuIcon
 from src.managers.config_manager import ConfigManager
 from src.managers.mod_manager import ModManager
@@ -19,11 +8,25 @@ from src.managers.filter_manager import FilterManager
 from src.managers.batch_manager import BatchManager
 from src.managers.online_manager import OnlineManager
 from src.managers.download_manager import DownloadManager
-from src.ui.online_mod_list import OnlineModList
-from src.ui.online_filter_panel import OnlineFilterPanel
-from src.ui.download_panel import DownloadPanel
 from src.managers.ftp_manager import FTPManager
-from src.ui.ftp_panel import FTPPanel
+
+from src.models.mod import Mod
+from src.ui.mod_list import ModList
+from src.ui.online_mod_list import OnlineModList
+
+from src.ui.components.navigation import Navigation, NavigationMenu
+from src.ui.components.layout import HBox, VBox
+
+from src.ui.panels.filter_panel import FilterPanel
+from src.ui.panels.sort_panel import SortPanel
+from src.ui.panels.preview_panel import PreviewPanel
+from src.ui.panels.edit_panel import EditPanel
+from src.ui.panels.batch_panel import BatchPanel
+from src.ui.panels.config_panel import Config
+from src.ui.panels.workspace_panel import WorkspacePanel
+from src.ui.panels.online_filter_panel import OnlineFilterPanel
+from src.ui.panels.download_panel import DownloadPanel
+from src.ui.panels.ftp_panel import FTPPanel
 
 class MainMenu(QWidget):
     def __init__(self, config_manager:ConfigManager):
