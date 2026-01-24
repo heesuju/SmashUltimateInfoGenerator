@@ -329,14 +329,11 @@ class MonitorThread(QThread):
                 if not target_ip:
                     continue
                     
-                ftp = SwitchFTP(port=port)
-                try:
-                    ftp.connect(target_ip)
-                    ftp.disconnect()
-                    
-                    self.status_changed.emit(True, target_ip)
-                except Exception:
-                    self.status_changed.emit(False, "Connection Lost")
+                # Efficient check
+                if SwitchFTP.is_reachable(target_ip, port=port, timeout=2.0):
+                     self.status_changed.emit(True, target_ip)
+                else:
+                     self.status_changed.emit(False, "Connection Lost")
                     
             except Exception:
                 pass

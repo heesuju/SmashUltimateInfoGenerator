@@ -7,9 +7,6 @@ from typing import Callable
 
 PORT = 5000
 TIMEOUT = 0.5  # TCP connect timeout in seconds
-MAX_CONCURRENT_UPLOADS = 5  # adjust for Wi-Fi performance
-FILE_COUNT_THRESHOLD = 50   # files
-LARGE_FILE_MB = 50          # MB
 
 class SwitchFTP:
     def __init__(self, port: int = PORT):
@@ -83,21 +80,17 @@ class SwitchFTP:
                 return path
         raise RuntimeError("No TITLEID folder found in export directory.")
 
-    # ---------- Transfer Mode Decision ----------
+
+
+    # ---------- Connection Check ----------
     @staticmethod
-    def decide_transfer_mode(local_dir: str) -> str:
-        total_files = 0
-        max_file_size = 0
-        for root, _, files in os.walk(local_dir):
-            total_files += len(files)
-            for f in files:
-                path = os.path.join(root, f)
-                max_file_size = max(max_file_size, os.path.getsize(path))
-        max_file_mb = max_file_size / (1024*1024)
-        if total_files > FILE_COUNT_THRESHOLD and max_file_mb < LARGE_FILE_MB:
-            return "concurrent"
-        else:
-            return "sequential"
+    def is_reachable(ip: str, port: int = PORT, timeout: float = 1.0) -> bool:
+        """Lightweight TCP connect check."""
+        try:
+            with socket.create_connection((ip, port), timeout=timeout):
+                return True
+        except (socket.timeout, ConnectionRefusedError, OSError):
+            return False
 
     # ---------- File Upload Helpers ----------
     def upload_file_with_retry(self, local_path: str, remote_path: str, retries: int = 3):
@@ -126,35 +119,6 @@ class SwitchFTP:
                 if progress_callback:
                     progress_callback(f"Uploading {local_file} -> {ftp_path}/{file}")
                 self.upload_file_with_retry(local_file, file)
-
-    def upload_dir_parallel(self, local_dir: str, remote_dir: str, progress_callback: Callable[[str], None] = None):
-        tasks = []
-
-        def _enqueue_upload(local_path, remote_path):
-            for root, dirs, files in os.walk(local_path):
-                rel_path = os.path.relpath(root, local_path).replace("\\", "/")
-                ftp_path = f"{remote_path}/{rel_path}" if rel_path != "." else remote_path
-                try:
-                    self.ftp.mkd(ftp_path)
-                except:
-                    pass
-                self.ftp.cwd(ftp_path)
-                for file in files:
-                    full_local = os.path.join(root, file)
-                    tasks.append((full_local, file, ftp_path))
-
-        _enqueue_upload(local_dir, remote_dir)
-
-        def worker(args):
-            local_file, remote_file, ftp_path = args
-            self.upload_file_with_retry(local_file, remote_file)
-            if progress_callback:
-                progress_callback(f"Uploaded {local_file} -> {ftp_path}/{remote_file}")
-
-        with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_UPLOADS) as executor:
-            futures = [executor.submit(worker, task) for task in tasks]
-            for future in as_completed(futures):
-                future.result()
 
     # ---------- Directory Helpers ----------
     def ensure_remote_dir(self, remote_path: str):
