@@ -261,11 +261,6 @@ class MainMenu(QWidget):
                 filter_menu.widget = self.online_filter
             if sort_btn:
                 sort_btn.setVisible(False)
-            # Preview is now supported in online mode, keep it visible
-            if edit_btn:
-                edit_btn.setVisible(False)
-            if batch_btn:
-                batch_btn.setVisible(False)
             
             # Close any open installed panels
             self.filter.hide()
@@ -287,12 +282,6 @@ class MainMenu(QWidget):
                 filter_menu.widget = self.filter
             if sort_btn:
                 sort_btn.setVisible(True)
-            if preview_btn:
-                preview_btn.setVisible(True)
-            if edit_btn:
-                edit_btn.setVisible(True)
-            if batch_btn:
-                batch_btn.setVisible(True)
             
             # Close any open online panels
             self.online_filter.hide()
