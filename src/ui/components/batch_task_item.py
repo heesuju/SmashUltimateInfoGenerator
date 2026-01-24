@@ -82,6 +82,7 @@ class BatchTaskItem(QWidget):
             QWidget {
                 background-color: rgba(128, 128, 128, 0.1);
                 border: 1px solid rgba(128, 128, 128, 0.3);
+                border-radius: 4px;
             }
             QWidget:hover {
                  background-color: rgba(128, 128, 128, 0.2);
@@ -89,6 +90,11 @@ class BatchTaskItem(QWidget):
         """)
         header_layout = QHBoxLayout(header_widget)
         header_layout.setContentsMargins(10, 8, 10, 8)
+        
+        # Arrow indicator
+        self.arrow_label = QLabel("▼") # Starts expanded, but toggle_collapse will fix it
+        self.arrow_label.setStyleSheet("border: none; background: transparent; color: #aaa; font-size: 10px;")
+        header_layout.addWidget(self.arrow_label)
         
         # Mod name - prioritize display_name from TOML if available
         display_name = self.mod.display_name if self.mod.contains_info and self.mod.display_name else self.mod.mod_name
@@ -439,6 +445,9 @@ class BatchTaskItem(QWidget):
         # QTableWidget AdjustToContents should handle it, but we might need to trigger geometry update
         self.table.updateGeometry()
         self.adjustSize() # Optional: help parent layout adjust
+        
+        # Update arrow
+        self.arrow_label.setText("▶" if self.is_collapsed else "▼")
 
     def _on_field_changed(self, attr_name: str, value: str):
         """Handle field value change - update the mod object"""
