@@ -25,6 +25,7 @@ from src.core.formatting import format_folder_name, format_display_name, format_
 from src.core.gamebanana import Gamebanana
 from src.utils.web import open_page
 from src.core.data import generate_toml
+from src.core.scanner import scan_mod
 from src.models.mod import Character
 from src.constants.enums import Fighter, Category, Wifi, Element
 from src.utils.file import get_parent_dir
@@ -69,6 +70,13 @@ class EditPanel(SidePanel):
         self.mod_path = None
         self.mod = None # Current Mod object
         self.preview_map = {} # Maps display text to URL
+
+        # Add Rescan button to header
+        self.rescan_button = QPushButton("Rescan")
+        self.rescan_button.setFixedWidth(60)
+        self.rescan_button.setFixedHeight(26)
+        self.rescan_button.clicked.connect(self.on_rescan)
+        self.header.addWidget(self.rescan_button)
 
         # GameBanana URL section
         self.url = InputButtonWidget(
@@ -684,3 +692,76 @@ class EditPanel(SidePanel):
     def _on_download_complete(self, path):
          self.pending_preview_path = path
          self.thumbnail.set_thumbnail(path)
+
+    def on_rescan(self):
+        """Rescan the mod folder to detect elements and update the elements dropdown"""
+        if not self.mod or not self.mod.path:
+            QMessageBox.warning(self, "No Mod Loaded", "Please load a mod first before rescanning.")
+            return
+        
+        # Create a temporary copy of the mod to scan
+        from src.models.mod import Mod
+        temp_mod = Mod(path=self.mod.path)
+        
+        # Run the scanner
+        temp_mod = scan_mod(temp_mod)
+        
+        # Build set of detected element values for quick lookup
+        detected_elements = {el.value for el in temp_mod.includes}
+        
+        # Update elements checkboxes using text-based matching
+        for i in range(self.elements.get_item_count()):
+            item = self.elements.model().invisibleRootItem().child(i)
+            element_text = item.text()
+            is_checked = element_text in detected_elements
+            item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+        
+        self.elements.update_display()
+        
+        # Also update category if it was detected
+        if temp_mod.category:
+            try:
+                category_index = Category.list().index(temp_mod.category.value)
+                self.category.setCurrentIndex(category_index)
+            except (ValueError, AttributeError):
+                pass
+        
+        # Update characters and slots from scan
+        if temp_mod.characters:
+            # Build set of detected fighter keys
+            detected_fighters = {char.fighter for char in temp_mod.characters}
+            
+            # Update characters using text-based matching
+            for i in range(self.character.get_item_count()):
+                item = self.character.model().invisibleRootItem().child(i)
+                char_text = item.text()
+                fighter_key = DataManager.get_character_by_custom(char_text)
+                is_checked = fighter_key in detected_fighters
+                item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+            
+            self.character.update_display()
+            
+            # Collect all slots from detected characters
+            all_slots = set()
+            for char in temp_mod.characters:
+                all_slots.update(char.slots)
+            
+            # Update slots using text-based matching
+            self.slots.model().blockSignals(True)
+            try:
+                for i in range(self.slots.get_item_count()):
+                    item = self.slots.model().invisibleRootItem().child(i)
+                    slot_text = item.text()
+                    try:
+                        slot_num = int(slot_text[1:])  # "C00" -> 0
+                        is_checked = slot_num in all_slots
+                        item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+                    except (ValueError, IndexError):
+                        pass
+            finally:
+                self.slots.model().blockSignals(False)
+            
+            self.slots.update_display()
+        
+        # Update generated names
+        self._update_generated_names()
