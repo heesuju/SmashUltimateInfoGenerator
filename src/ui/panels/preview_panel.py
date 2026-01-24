@@ -15,6 +15,7 @@ from src.utils.file import open_folder
 from src.utils.image_utils import tint_pixmap
 from src.constants.ui_params import BODY_FONT, BODY_FONT_SIZE, TITLE_FONT, TITLE_FONT_SIZE
 from src.constants.colors import ButtonColor
+from src.ui.components.resizable_text_browser import ResizableTextBrowser
 
 class PreviewPanel(SidePanel):
     edit_requested = pyqtSignal(str)  # Emits mod_id when edit is requested
@@ -93,8 +94,7 @@ class PreviewPanel(SidePanel):
         self.elements_container = FlowLayout(spacing=5)
         self.body.addWidget(self.elements_container)
 
-        self.description_label = QLabel("")
-        self.description_label.setWordWrap(True)
+        self.description_label = ResizableTextBrowser()
         self.description_label.setFont(QFont(BODY_FONT, BODY_FONT_SIZE))
         self.body.addWidget(self.description_label)        
         
@@ -146,7 +146,7 @@ class PreviewPanel(SidePanel):
 
         description = details.get('description', '')
         if description:
-            self.description_label.setText(description)
+            self.description_label.set_html(description)
         
         self.elements_container.clear()
         
