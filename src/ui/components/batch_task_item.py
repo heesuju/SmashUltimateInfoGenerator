@@ -621,7 +621,10 @@ class BatchTaskItem(QWidget):
         elif field_name == "url":
             changed = widget.text() != (self.task.original_url or "")
         elif field_name == "description":
-            changed = widget.toPlainText() != (self.task.original_description or "")
+            # Normalize for comparison: QTextEdit converts non-breaking spaces to regular spaces
+            orig = (self.task.original_description or "").strip().replace('\xa0', ' ')
+            new = widget.toPlainText().strip().replace('\xa0', ' ')
+            changed = orig != new
         elif field_name == "display_name":
             changed = widget.text() != (self.task.original_display_name or "")
         elif field_name == "folder_name":

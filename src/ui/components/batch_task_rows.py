@@ -131,12 +131,6 @@ class AutoResizingTextEdit(QTextEdit):
         super().resizeEvent(e)
         self._adjust_height()
 
-    def keyPressEvent(self, event):
-        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            event.ignore() 
-            return
-        super().keyPressEvent(event)
-        
     def setText(self, text):
         self.setPlainText(text)
         self._adjust_height()
