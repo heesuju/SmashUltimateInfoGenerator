@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QLabel
+from PyQt6.QtWidgets import QLabel, QSizePolicy
 from PyQt6.QtGui import QPixmap, QPainter, QColor, QImage
 from PyQt6.QtCore import Qt, QSize, QRunnable, QThreadPool, QObject, pyqtSignal
 from functools import lru_cache
@@ -84,7 +84,8 @@ class ImageWorker(QRunnable):
 class ThumbnailLabel(QLabel):
     def __init__(self, width=320, height=200, parent=None):
         super().__init__(parent)
-        self.setFixedSize(width, height)
+        self.setFixedHeight(height)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.setStyleSheet("background-color: black;")
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.thread_pool = QThreadPool.globalInstance()

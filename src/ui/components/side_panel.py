@@ -5,9 +5,10 @@ from PyQt6.QtWidgets import (
     QSizePolicy, 
     QFrame,
     QScrollArea,
-    QPushButton
+    QPushButton,
+    QScrollBar
 )
-from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
+from PyQt6.QtCore import Qt, QSize, QPoint, QPointF, QEvent
 from PyQt6.QtGui import QFont, QIcon, QPixmap
 from src.ui.components.layout import VBox, HBox
 from src.constants.styles import MAIN_BUTTON, DANGER_BUTTON, SECONDARY_BUTTON
@@ -49,11 +50,29 @@ class SidePanel(QWidget):
         spacer.setFixedSize(0, 26)
         self.header.addWidget(spacer)
 
-        scroll = QScrollArea()
-        scroll.setStyleSheet("""
+        self.scroll = QScrollArea()
+        self.scroll.setStyleSheet("""
             QScrollArea { 
                 border: none; 
             }
+        """)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
+        self.root.addWidget(self.scroll, stretch=1)
+
+        self.body_frame = QFrame()
+        self.body_frame.setStyleSheet("QFrame { border: 0px; }")
+        self.body_frame.setContentsMargins(0,0,0,0)
+        self.body_frame.setFrameShape(QFrame.Shape.NoFrame)
+        self.body = VBox(margin=(10, 0, 10, 10), spacing=10)
+        self.body_frame.setLayout(self.body)
+        self.scroll.setWidget(self.body_frame)
+        
+        # Custom Overlay ScrollBar
+        self.scroll_bar = QScrollBar(Qt.Orientation.Vertical, self.scroll)
+        self.scroll_bar.setStyleSheet("""
             QScrollBar:vertical {
                 border: none;
                 background: transparent;
@@ -75,17 +94,15 @@ class SidePanel(QWidget):
                 background: none;
             }
         """)
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)  # Disable horizontal scroll
-        self.root.addWidget(scroll, stretch=1)
-
-        self.body_frame = QFrame()
-        self.body_frame.setStyleSheet("QFrame { border: 0px; }")
-        self.body_frame.setContentsMargins(0,0,0,0)
-        self.body_frame.setFrameShape(QFrame.Shape.NoFrame)
-        self.body = VBox(margin=(10, 0, 10, 10), spacing=10)
-        self.body_frame.setLayout(self.body)
-        scroll.setWidget(self.body_frame)
+        self.scroll_bar.hide()
+        
+        # Sync external scrollbar with internal one
+        vbar = self.scroll.verticalScrollBar()
+        vbar.rangeChanged.connect(self.update_scroll_bar)
+        vbar.valueChanged.connect(self.scroll_bar.setValue)
+        self.scroll_bar.valueChanged.connect(vbar.setValue)
+        
+        self.scroll.installEventFilter(self)
 
         self.footer = QHBoxLayout()
         self.footer.setContentsMargins(10, 0, 10, 10)
@@ -93,6 +110,21 @@ class SidePanel(QWidget):
         self.root.addLayout(self.footer)
 
         layout.addWidget(self.frame)
+
+    def eventFilter(self, obj, event):
+        if obj == self.scroll and event.type() == QEvent.Type.Resize:
+            self.update_scroll_layout()
+        return super().eventFilter(obj, event)
+
+    def update_scroll_bar(self, min_val, max_val):
+        self.scroll_bar.setMinimum(min_val)
+        self.scroll_bar.setMaximum(max_val)
+        self.scroll_bar.setPageStep(self.scroll.verticalScrollBar().pageStep())
+        self.scroll_bar.setVisible(max_val > min_val)
+        
+    def update_scroll_layout(self):
+        w = 10 # Width of scrollbar
+        self.scroll_bar.setGeometry(self.scroll.width() - w, 0, w, self.scroll.height())
 
     def add_footer_button(self, text: str, callback, primary: bool = False, danger: bool = False, icon: str = None) -> QPushButton:
         """Add a consistent button to the footer"""
