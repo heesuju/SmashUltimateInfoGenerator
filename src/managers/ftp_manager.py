@@ -1,5 +1,5 @@
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
-from ftp import SwitchFTP
+from src.core.ftp import SwitchFTP
 import os
 import traceback
 
