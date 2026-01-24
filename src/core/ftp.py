@@ -124,36 +124,31 @@ class SwitchFTP:
     def ensure_remote_dir(self, remote_path: str):
         """
         Recursively ensure a directory exists on the remote server.
+        Optimized to check existence first before attempting creation.
         """
-        if remote_path == "/" or remote_path == "":
+        path = remote_path.strip()
+        if not path or path == "/":
             return
 
-        parts = [p for p in remote_path.split("/") if p]
-        
-        # Start from root
+        # 1. Try to enter the directory (Fastest check)
         try:
-            self.ftp.cwd("/")
-        except Exception as e:
-            print(f"DEBUG: Failed to CWD to root: {e}")
-
-        current_build = ""
-        for part in parts:
-            current_build = f"{current_build}/{part}"
-            try:
-                self.ftp.cwd(part)
-            except Exception as cwd_err:
-                print(f"DEBUG: CWD to {part} failed ({cwd_err}), trying MKD...")
-                try:
-                    self.ftp.mkd(part)
-                    print(f"DEBUG: MKD {part} success")
-                    self.ftp.cwd(part)
-                except Exception as mkd_err:
-                    print(f"DEBUG: MKD {part} failed: {mkd_err}")
-                    try:
-                        self.ftp.cwd(current_build)
-                    except Exception as full_cwd_err:
-                        print(f"DEBUG: Full path CWD {current_build} also failed: {full_cwd_err}")
-                        pass
+            self.ftp.cwd(path)
+            return
+        except:
+            pass # DOES NOT EXIST (or permission error)
+            
+        # 2. Ensure parent exists
+        if "/" in path:
+            parent = path.rsplit("/", 1)[0]
+            if parent:
+                self.ensure_remote_dir(parent)
+                
+        # 3. Create this directory
+        try:
+            self.ftp.mkd(path)
+        except Exception:
+            pass
+        pass
 
     # ---------- Sync Logic ----------
     def get_remote_files(self, remote_dir: str) -> dict:
@@ -424,7 +419,6 @@ class SwitchFTP:
                     except Exception as e:
                         print(f"Failed to delete file {full_path}: {e}")
 
-            # Finally remove the empty directory
             try:
                 self.ftp.rmd(remote_dir)
             except Exception as e:
@@ -434,7 +428,6 @@ class SwitchFTP:
             print(f"Critical error in delete_remote_dir: {e}")
     def find_acropolis_config_dir(self) -> str:
         """Find the first valid numeric-based config directory for ARCropolis."""
-        # Try both spellings just to be safe, but prioritize acropolis
         base = "/ultimate/arcropolis/config"
         
         try:
@@ -453,11 +446,9 @@ class SwitchFTP:
             
             if not exists: return None
 
-            # Look for first numeric dir
             items = list(self.ftp.mlsd(base))
             for name, facts in items:
                 if facts.get('type') == 'dir' and name.isdigit():
-                    # Go one level deeper
                     sub_path = f"{base}/{name}"
                     sub_items = list(self.ftp.mlsd(sub_path))
                     for sub_name, sub_facts in sub_items:
@@ -473,7 +464,6 @@ class SwitchFTP:
         if not os.path.exists(local_cache_dir):
             return
 
-        # Also find all preset files
         for f in os.listdir(local_cache_dir):
             if "_preset" in f or f == "presets":
                 files_to_sync.append(f)
