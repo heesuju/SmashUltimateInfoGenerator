@@ -666,6 +666,9 @@ class EditPanel(SidePanel):
 
         # 5. Emit
         self.save_complete.emit(str(self.mod.hash))
+        
+        self.reset()
+        self.close_requested.emit()
 
     def on_browse_image(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select Preview Image", "", "Images (*.png *.jpg *.jpeg *.webp)")
