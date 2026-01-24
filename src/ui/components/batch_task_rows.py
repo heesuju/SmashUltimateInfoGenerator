@@ -71,7 +71,7 @@ class AutoResizingTextEdit(QTextEdit):
     """
     textChanged = pyqtSignal(str)
     
-    def __init__(self, text="", parent=None, read_only=False):
+    def __init__(self, text="", parent=None, read_only=False, max_height=None, min_height=None):
         super().__init__(parent)
         self.setAcceptRichText(False)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -83,6 +83,9 @@ class AutoResizingTextEdit(QTextEdit):
         # Zero margins for the widget, use document margin for text padding
         self.setContentsMargins(0, 0, 0, 0)
         self.document().setDocumentMargin(4)
+        
+        self.max_height_limit = max_height
+        self.min_height_limit = min_height
         
         self.setReadOnly(read_only)
         if not read_only:
@@ -108,9 +111,20 @@ class AutoResizingTextEdit(QTextEdit):
         doc_height = self.document().size().height()
         # Add a small buffer for safety
         h = int(doc_height + 2) 
-        # Ensure minimum height for single line
-        h = max(h, 24)
+        if self.min_height_limit:
+            h = max(h, self.min_height_limit)
+
+        if self.max_height_limit and h > self.max_height_limit:
+            h = self.max_height_limit
+            self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        else:
+            if h == self.max_height_limit:
+                 pass
+            self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         
+        if self.max_height_limit and doc_height + 2 > self.max_height_limit:
+             self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
         self.setMinimumHeight(h)
         self.setMaximumHeight(h) # Force fixed height for table stability
         self.updateGeometry()
@@ -235,11 +249,27 @@ class DescriptionRow(BatchTaskRow):
         
     def create_widgets(self):
         label_widget = self._create_label_widget()
-        orig_widget = self._create_original_value_widget(self.orig_desc)
+        
+        # Original value with max height
+        cell_orig = GridCell(GRID_CELL_STYLE)
+        display_text = self.orig_desc if self.orig_desc else "—"
+        orig_edit = AutoResizingTextEdit(display_text, read_only=True, max_height=100, min_height=100) # Limit to approx 10 lines
+        orig_edit.setFont(self.data_font)
+        is_muted = not self.orig_desc
+        color = "#888" if is_muted else "#ddd"
+        orig_edit.setStyleSheet(f"""
+            QTextEdit {{
+                border: none;
+                background: transparent;
+                padding: 0px; 
+                color: {color};
+            }}
+        """)
+        cell_orig.set_content(orig_edit)
         
         cell = self._create_new_value_cell()
         
-        self.input_widget = AutoResizingTextEdit(self.new_desc if self.new_desc else "")
+        self.input_widget = AutoResizingTextEdit(self.new_desc if self.new_desc else "", max_height=100, min_height=100)
         self.input_widget.setFont(self.data_font)
         self.input_widget.setPlaceholderText("Enter description...")
         self.input_widget.setStyleSheet(CELL_TEXTEDIT_STYLE)
@@ -247,7 +277,7 @@ class DescriptionRow(BatchTaskRow):
         
         cell.set_content(self.input_widget)
         
-        return label_widget, orig_widget, cell
+        return label_widget, cell_orig, cell
 
 
 class ComboRow(BatchTaskRow):

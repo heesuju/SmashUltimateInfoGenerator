@@ -193,7 +193,7 @@ class BatchTaskItem(QWidget):
             "Mod Name", data_font,
             self.mod.mod_name if self.mod.contains_info else "",
             self.mod.mod_name, "mod_name",
-            lambda attr, val: self._on_field_changed(attr, val)
+            lambda attr, val: (self._update_generated_names(), self._on_field_changed(attr, val))
         )
         task_rows.append(("mod_name", mod_name_row))
 
@@ -426,12 +426,7 @@ class BatchTaskItem(QWidget):
 
     def _on_field_changed(self, attr_name: str, value: str):
         """Handle field value change - update the mod object"""
-        if attr_name == "mod_name":
-            self.mod.mod_name = value
-            self._update_generated_names()  # Trigger regeneration
-        elif attr_name == "authors":
-            self.mod.authors = value
-        elif attr_name == "version":
+        if attr_name == "version":
             # First limit input characters, then format to 0.0.0
             limited = limit_version(value)
             formatted = clean_version(limited) if limited else ""
@@ -439,25 +434,6 @@ class BatchTaskItem(QWidget):
                 self.input_fields["version"].blockSignals(True)
                 self.input_fields["version"].setText(formatted)
                 self.input_fields["version"].blockSignals(False)
-            self.mod.version = formatted
-        elif attr_name == "url":
-            self.mod.url = value
-        elif attr_name == "description":
-            self.mod.description = value
-        elif attr_name == "display_name":
-            self.mod.display_name = value
-        elif attr_name == "folder_name":
-            self.mod.folder_name = value
-        elif attr_name == "category":
-            try:
-                self.mod.category = Category(value)
-            except:
-                pass
-        elif attr_name == "wifi_safe":
-            try:
-                self.mod.wifi_safe = Wifi(value)
-            except:
-                pass
         
         self._check_field_changed(attr_name)
 
@@ -492,11 +468,11 @@ class BatchTaskItem(QWidget):
         display_name = format_display_name(characters_str_display, slots_str, mod_name, category_str)
         
         # Update the input fields (block signals to avoid infinite loop)
+        # Update the input fields (block signals to avoid infinite loop)
         if "folder_name" in self.input_fields:
             self.input_fields["folder_name"].blockSignals(True)
             self.input_fields["folder_name"].setText(folder_name)
             self.input_fields["folder_name"].blockSignals(False)
-            self.mod.folder_name = folder_name
             # Re-check field changed status for folder_name
             self._check_field_changed("folder_name")
         
@@ -504,7 +480,6 @@ class BatchTaskItem(QWidget):
             self.input_fields["display_name"].blockSignals(True)
             self.input_fields["display_name"].setText(display_name)
             self.input_fields["display_name"].blockSignals(False)
-            self.mod.display_name = display_name
             # Re-check field changed status for display_name
             self._check_field_changed("display_name")
     
