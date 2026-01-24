@@ -114,8 +114,10 @@ class ScanThread(QThread):
 class SmartSyncThread(QThread):
     progress_log = pyqtSignal(str)
     progress_value = pyqtSignal(float)
+    progress_log = pyqtSignal(str)
+    progress_value = pyqtSignal(float)
     mod_progress = pyqtSignal(str, float) # mod_name, progress (0-1)
-    finished_signal = pyqtSignal()
+    finished_signal = pyqtSignal(int, int) # success_count, fail_count
     
     def __init__(self, diff_map: dict, known_ip=None, port=5000):
         super().__init__()
@@ -136,72 +138,85 @@ class SmartSyncThread(QThread):
             
             total_mods = len(self.diff_map)
             processed = 0
+            success_count = 0
+            fail_count = 0
             
             for folder, status in self.diff_map.items():
                 mod_name = os.path.basename(folder)
+                # ... (Safety checks are here in previous edits, assuming context is preserved) ...
                 if not mod_name:
                     self.progress_log.emit(f"Skipping invalid folder path: {folder}")
                     processed += 1
+                    fail_count += 1
                     self.progress_value.emit(processed / total_mods)
                     continue
                     
                 remote_path = f"/ultimate/mods/{mod_name}"
                 
-                if status == "MATCH":
-                    self.progress_log.emit(f"Skipping {mod_name} (Up to date)")
-                    processed += 1
-                    self.progress_value.emit(processed / total_mods)
-                    continue
-                
-                if status == "REPLACE":
-                    self.progress_log.emit(f"Replacing {mod_name}...")
-                    self.mod_progress.emit(mod_name, 0.0)
+                try:
+                    if status == "MATCH":
+                        self.progress_log.emit(f"Skipping {mod_name} (Up to date)")
+                        processed += 1
+                        success_count += 1
+                        self.progress_value.emit(processed / total_mods)
+                        continue
                     
-                    # 1. Delete Remote
-                    ftp.delete_remote_dir(remote_path)
-                    
-                    # 2. Upload Fresh
-                    # Count total files for progress
-                    total_files = 0
-                    for _, _, files in os.walk(folder):
-                        total_files += len(files)
-                    
-                    processed_files = 0
-                    
-                    def on_file_prog(msg):
-                        nonlocal processed_files
-                        self.progress_log.emit(msg)
-                        if "Syncing" in msg or "Skipped" in msg:
-                            processed_files += 1
-                            if total_files > 0:
-                                self.mod_progress.emit(mod_name, processed_files / total_files)
+                    if status == "REPLACE":
+                        self.progress_log.emit(f"Replacing {mod_name}...")
+                        self.mod_progress.emit(mod_name, 0.0)
                         
-                    ftp.sync_dir(folder, remote_path, on_file_prog)
-                    self.mod_progress.emit(mod_name, 1.0)
-                    
-                elif status in ["METADATA_ONLY", "MISSING"]:
-                    action = "Updating metadata" if status == "METADATA_ONLY" else "Uploading"
-                    self.progress_log.emit(f"{action} {mod_name}...")
-                    self.mod_progress.emit(mod_name, 0.0)
-                    
-                    # Count total files
-                    total_files = 0
-                    for _, _, files in os.walk(folder):
-                        total_files += len(files)
+                        # 1. Delete Remote
+                        ftp.delete_remote_dir(remote_path)
                         
-                    processed_files = 0
-                    
-                    def on_file_prog(msg):
-                        nonlocal processed_files
-                        self.progress_log.emit(msg)
-                        if "Syncing" in msg or "Skipped" in msg:
-                            processed_files += 1
-                            if total_files > 0:
-                                self.mod_progress.emit(mod_name, processed_files / total_files)
+                        # 2. Upload Fresh
+                        # Count total files
+                        total_files = 0
+                        for _, _, files in os.walk(folder):
+                            total_files += len(files)
                         
-                    ftp.sync_dir(folder, remote_path, on_file_prog)
-                    self.mod_progress.emit(mod_name, 1.0)
+                        processed_files = 0
+                        
+                        def on_file_prog(msg):
+                            nonlocal processed_files
+                            self.progress_log.emit(msg)
+                            if "Syncing" in msg or "Skipped" in msg:
+                                processed_files += 1
+                                if total_files > 0:
+                                    self.mod_progress.emit(mod_name, processed_files / total_files)
+                            
+                        ftp.sync_dir(folder, remote_path, on_file_prog)
+                        self.mod_progress.emit(mod_name, 1.0)
+                        
+                    elif status in ["METADATA_ONLY", "MISSING"]:
+                        action = "Updating metadata" if status == "METADATA_ONLY" else "Uploading"
+                        self.progress_log.emit(f"{action} {mod_name}...")
+                        self.mod_progress.emit(mod_name, 0.0)
+                        
+                        # Count total files
+                        total_files = 0
+                        for _, _, files in os.walk(folder):
+                            total_files += len(files)
+                            
+                        processed_files = 0
+                        
+                        def on_file_prog(msg):
+                            nonlocal processed_files
+                            self.progress_log.emit(msg)
+                            if "Syncing" in msg or "Skipped" in msg:
+                                processed_files += 1
+                                if total_files > 0:
+                                    self.mod_progress.emit(mod_name, processed_files / total_files)
+                            
+                        ftp.sync_dir(folder, remote_path, on_file_prog)
+                        self.mod_progress.emit(mod_name, 1.0)
 
+                    success_count += 1
+                    
+                except Exception as e:
+                    fail_count += 1
+                    self.progress_log.emit(f"Error syncing {mod_name}: {e}")
+                    traceback.print_exc()
+                    
                 processed += 1
                 self.progress_value.emit(processed / total_mods)
 
@@ -210,10 +225,10 @@ class SmartSyncThread(QThread):
             self.progress_value.emit(1.0)
             
         except Exception as e:
-            self.progress_log.emit(f"Sync Error: {e}")
+            self.progress_log.emit(f"Critical Sync Error: {e}")
             traceback.print_exc()
         finally:
-            self.finished_signal.emit()
+            self.finished_signal.emit(success_count, fail_count)
 
 class ConnectionThread(QThread):
     connected = pyqtSignal(str) # ip
@@ -251,7 +266,7 @@ class FTPManager(QObject):
     progress_signal = pyqtSignal(float)
     mod_progress = pyqtSignal(str, float)
     sync_started = pyqtSignal()
-    sync_finished = pyqtSignal()
+    sync_finished = pyqtSignal(int, int)
     
     # Connection signals
     connection_status_changed = pyqtSignal(bool, str) # connected, ip/msg
@@ -327,8 +342,8 @@ class FTPManager(QObject):
         self.sync_started.emit()
         self.thread.start()
         
-    def on_sync_finished(self):
-        self.sync_finished.emit()
+    def on_sync_finished(self, success=0, failed=0):
+        self.sync_finished.emit(success, failed)
         self.thread = None
         
     # ---------- Smart Sync API ----------

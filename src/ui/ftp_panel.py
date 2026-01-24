@@ -351,11 +351,18 @@ class FTPPanel(SidePanel):
         self.progress_bar.setValue(0)
         self.mode_combo.setEnabled(False)
         
-    def on_sync_finished(self):
+    def on_sync_finished(self, success=0, failed=0):
         self.done_button.setVisible(True)
         self.sync_button.setVisible(False)
         self.mode_combo.setVisible(False)
         self.progress_bar.setValue(100) # Ensure it shows full
+        
+        # Briefing
+        total = success + failed
+        briefing = f"\n=== Sync Completed ===\nTotal: {total}\nSuccess: {success}\nFailed: {failed}"
+        self.append_log(briefing)
+        if failed > 0:
+            self.append_log("Check log above for error details.")
         
     def on_done_clicked(self):
         # Reset UI
