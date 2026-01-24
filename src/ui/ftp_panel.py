@@ -222,6 +222,15 @@ class FTPPanel(SidePanel):
         """)
         self.confirm_button.hide()
         
+        # Done Button (Footer - Shown after sync)
+        self.done_button = self.add_footer_button(
+            text="Done",
+            callback=self.on_done_clicked,
+            primary=True
+        )
+        self.done_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.done_button.hide()
+        
         # --- Scrollable Body Content (Preview) ---
         
         # Preview Container (initially hidden)
@@ -343,16 +352,41 @@ class FTPPanel(SidePanel):
         self.mode_combo.setEnabled(False)
         
     def on_sync_finished(self):
+        self.done_button.setVisible(True)
+        self.sync_button.setVisible(False)
+        self.mode_combo.setVisible(False)
+        self.progress_bar.setValue(100) # Ensure it shows full
+        
+    def on_done_clicked(self):
+        # Reset UI
+        self.done_button.hide()
+        self.sync_button.setVisible(True)
         self.sync_button.setEnabled(True)
         self.sync_button.setText("Start Sync")
-        self.sync_button.setVisible(True)
-        self.mode_combo.setEnabled(True)
+        
         self.mode_combo.setVisible(True)
+        self.mode_combo.setEnabled(True)
+        
+        # Clear Data
+        self.current_diff_map = {}
+        self.match_list.clear() # This clears items + widgets
+        self.replace_list.clear()
+        self.metadata_list.clear()
+        self.missing_list.clear()
+        self.list_items.clear()
+        
+        self.preview_container.hide()
+        self.progress_bar.setValue(0)
+        self.log_output.clear()
+        
+        # Clear navigation button progress
+        self.ftp_manager.reset_progress()
         
     def on_scan_complete(self, diff_map: dict):
         self.current_diff_map = diff_map
         self.sync_button.setVisible(False)
         self.mode_combo.setVisible(False)
+        self.done_button.hide() # Ensure hidden on new scan
         
         # Show confirm controls
         self.confirm_button.setVisible(True)

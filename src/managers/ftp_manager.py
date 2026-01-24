@@ -286,6 +286,10 @@ class FTPManager(QObject):
         self.connection_status_changed.emit(False, "Not Found")
         self.conn_thread = None
 
+    def reset_progress(self):
+        """Reset progress indicators (e.g. set nav button to -1)"""
+        self.progress_signal.emit(-1.0)
+
     def start_sync(self, sync_all: bool = False):
         if self.thread and self.thread.isRunning():
             return
