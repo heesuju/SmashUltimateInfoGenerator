@@ -65,6 +65,116 @@ class SyncThread(QThread):
         finally:
             self.finished_signal.emit()
 
+class ScanThread(QThread):
+    progress_log = pyqtSignal(str)
+    scan_finished = pyqtSignal(dict) # {mod_path: status}
+    
+    def __init__(self, folders, known_ip=None):
+        super().__init__()
+        self.folders = folders
+        self.known_ip = known_ip
+        
+    def run(self):
+        results = {}
+        try:
+            self.progress_log.emit("Connecting for scan...")
+            ftp = SwitchFTP()
+            
+            # Connect
+            ip = self.known_ip
+            if not ip:
+                subnet = ftp.get_local_subnet()
+                ip = ftp.find_switch(subnet)
+            
+            if not ip:
+                self.progress_log.emit("Could not find Switch.")
+                self.scan_finished.emit({})
+                return
+                
+            ftp.connect(ip)
+            
+            total = len(self.folders)
+            for i, folder in enumerate(self.folders):
+                mod_name = os.path.basename(folder)
+                self.progress_log.emit(f"Scanning {mod_name} ({i+1}/{total})...")
+                
+                status = ftp.scan_mod_diff(folder, "/ultimate/mods")
+                results[folder] = status
+                
+            ftp.disconnect()
+            self.scan_finished.emit(results)
+            
+        except Exception as e:
+            self.progress_log.emit(f"Scan Error: {e}")
+            traceback.print_exc()
+            self.scan_finished.emit({})
+
+class SmartSyncThread(QThread):
+    progress_log = pyqtSignal(str)
+    progress_value = pyqtSignal(float)
+    finished_signal = pyqtSignal()
+    
+    def __init__(self, diff_map: dict, known_ip=None):
+        super().__init__()
+        self.diff_map = diff_map
+        self.known_ip = known_ip
+        
+    def run(self):
+        try:
+            ftp = SwitchFTP()
+            ip = self.known_ip
+            if not ip:
+                # Should be known by now, but fallback
+                subnet = ftp.get_local_subnet()
+                ip = ftp.find_switch(subnet)
+                
+            ftp.connect(ip)
+            
+            total_mods = len(self.diff_map)
+            processed = 0
+            
+            for folder, status in self.diff_map.items():
+                mod_name = os.path.basename(folder)
+                remote_path = f"/ultimate/mods/{mod_name}"
+                
+                if status == "MATCH":
+                    self.progress_log.emit(f"Skipping {mod_name} (Up to date)")
+                    processed += 1
+                    self.progress_value.emit(processed / total_mods)
+                    continue
+                
+                if status == "REPLACE":
+                    self.progress_log.emit(f"Replacing {mod_name}...")
+                    # 1. Delete Remote
+                    ftp.delete_remote_dir(remote_path)
+                    # 2. Upload Fresh
+                    def on_file_prog(msg):
+                        self.progress_log.emit(msg)
+                        
+                    ftp.sync_dir(folder, remote_path, on_file_prog)
+                    
+                elif status in ["METADATA_ONLY", "MISSING"]:
+                    action = "Updating metadata" if status == "METADATA_ONLY" else "Uploading"
+                    self.progress_log.emit(f"{action} {mod_name}...")
+                    
+                    def on_file_prog(msg):
+                        self.progress_log.emit(msg)
+                        
+                    ftp.sync_dir(folder, remote_path, on_file_prog)
+
+                processed += 1
+                self.progress_value.emit(processed / total_mods)
+
+            ftp.disconnect()
+            self.progress_log.emit("Smart Sync Complete!")
+            self.progress_value.emit(1.0)
+            
+        except Exception as e:
+            self.progress_log.emit(f"Sync Error: {e}")
+            traceback.print_exc()
+        finally:
+            self.finished_signal.emit()
+
 class ConnectionThread(QThread):
     connected = pyqtSignal(str) # ip
     failed = pyqtSignal()
@@ -153,3 +263,54 @@ class FTPManager(QObject):
     def on_sync_finished(self):
         self.sync_finished.emit()
         self.thread = None
+        
+    # ---------- Smart Sync API ----------
+    
+    scan_complete = pyqtSignal(dict) # {folder: status}
+    
+    def start_scan(self):
+        """Scan enabled mods and return status for each"""
+        if self.thread and self.thread.isRunning():
+            self.log_signal.emit("Sync in progress, cannot scan.")
+            return
+            
+        # Get enabled mods
+        enabled_ids = self.mod_manager.enabled_ids
+        folders = []
+        
+        for mod_id in enabled_ids:
+            mod = self.mod_manager.get_mod(mod_id)
+            if mod and mod.path and os.path.exists(mod.path):
+                folders.append(mod.path)
+        
+        if not folders:
+            self.log_signal.emit("No enabled mods to scan.")
+            self.scan_complete.emit({})
+            return
+            
+        self.thread = ScanThread(folders, known_ip=self.current_ip)
+        self.thread.progress_log.connect(self.log_signal.emit)
+        self.thread.scan_finished.connect(self._on_scan_finished)
+        self.thread.start()
+        
+    def _on_scan_finished(self, results):
+        self.scan_complete.emit(results)
+        self.thread = None
+        
+    def start_smart_sync(self, diff_map: dict):
+        """Execute smart sync based on pre-calculated diff map"""
+        if self.thread and self.thread.isRunning():
+            return
+            
+        if not diff_map:
+            self.log_signal.emit("Nothing to sync.")
+            return
+            
+        self.thread = SmartSyncThread(diff_map, known_ip=self.current_ip)
+        self.thread.progress_log.connect(self.log_signal.emit)
+        self.thread.progress_value.connect(self.progress_signal.emit)
+        self.thread.finished_signal.connect(self.on_sync_finished)
+        
+        self.sync_started.emit()
+        self.thread.start()
+

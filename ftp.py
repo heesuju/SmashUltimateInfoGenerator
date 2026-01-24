@@ -219,6 +219,112 @@ class SwitchFTP:
         except:
             return 0.0
 
+    # ---------- Smart Sync Analysis ----------
+    
+    def get_all_remote_files_recursive(self, remote_root: str) -> dict:
+        """
+        Recursively map all files in a remote directory.
+        Returns dict: {rel_path: {'size': int, 'modify': str}}
+        """
+        all_files = {}
+        
+        # Helper to walk remote tree
+        def _walk(current_remote, rel_prefix):
+            try:
+                items = list(self.ftp.mlsd(current_remote))
+            except:
+                return # Directory might not exist or verify failed
+                
+            for name, facts in items:
+                if name in [".", ".."]:
+                    continue
+                    
+                rel_path = f"{rel_prefix}/{name}" if rel_prefix else name
+                
+                if facts.get('type') == 'dir':
+                    _walk(f"{current_remote}/{name}", rel_path)
+                elif facts.get('type') == 'file':
+                    all_files[rel_path] = {
+                        'size': int(facts.get('size', 0)),
+                        'modify': facts.get('modify', '')
+                    }
+        
+        _walk(remote_root, "")
+        return all_files
+
+    def scan_mod_diff(self, local_path: str, remote_root: str) -> str:
+        """
+        Compare a local mod folder with its remote counterpart.
+        Returns a status string: 'MATCH', 'REPLACE', 'METADATA_ONLY', 'MISSING'
+        """
+        mod_name = os.path.basename(local_path)
+        remote_mod_dir = f"{remote_root}/{mod_name}"
+        
+        # Check if remote exists
+        try:
+            self.ftp.cwd(remote_mod_dir)
+        except:
+            return "MISSING" # New mod, needs full upload
+            
+        # Get flattened maps of files
+        # Local
+        local_files = {}
+        for root, _, files in os.walk(local_path):
+            rel_root = os.path.relpath(root, local_path).replace("\\", "/")
+            if rel_root == ".": rel_root = ""
+            
+            for f in files:
+                full_local = os.path.join(root, f)
+                rel_path = f"{rel_root}/{f}" if rel_root else f
+                local_files[rel_path] = {
+                    'size': os.path.getsize(full_local),
+                    'mtime': os.path.getmtime(full_local)
+                }
+                
+        # Remote
+        remote_files = self.get_all_remote_files_recursive(remote_mod_dir)
+        
+        # Compare
+        all_keys = set(local_files.keys()) | set(remote_files.keys())
+        diffs = []
+        
+        for key in all_keys:
+            if key not in local_files:
+                diffs.append(key) # Remote has extra file
+            elif key not in remote_files:
+                diffs.append(key) # Remote missing file
+            else:
+                # Compare size/time
+                l = local_files[key]
+                r = remote_files[key]
+                
+                # Size check
+                if l['size'] != r['size']:
+                    diffs.append(key)
+                    continue
+                    
+                # Time check (allow 2s buffer)
+                r_time = self.parse_ftp_time(r.get('modify', ''))
+                if abs(l['mtime'] - r_time) > 2.0:
+                     if l['mtime'] > r_time + 2.0:
+                         diffs.append(key)
+        
+        if not diffs:
+            return "MATCH"
+            
+        # Check if only metadata changed
+        metadata_files = {"preview.webp", "info.toml"}
+        is_only_metadata = True
+        for d in diffs:
+            if d not in metadata_files:
+                is_only_metadata = False
+                break
+        
+        if is_only_metadata:
+            return "METADATA_ONLY"
+            
+        return "REPLACE"
+
     def sync_dir(self, local_dir: str, remote_dir: str, progress_callback: Callable[[str], None] = None):
         """
         Sync directory: Upload files if missing or newer on local.
@@ -289,4 +395,46 @@ class SwitchFTP:
             if progress_callback:
                 progress_callback(f"Syncing {mod_name} -> {remote_dir}")
                 
-            self.sync_dir(folder, remote_dir, progress_callback)
+    
+    def delete_remote_dir(self, remote_dir: str):
+        """Recursively delete a remote directory"""
+        try:
+            # Get list of items
+            items = []
+            try:
+                items = list(self.ftp.mlsd(remote_dir))
+            except:
+                # Fallback to nlst if mlsd fails or dir empty
+                try:
+                    names = self.ftp.nlst(remote_dir)
+                    # Fake mlsd structure
+                    items = [(n, {'type': 'unknown'}) for n in names]
+                except:
+                     return # Dir likely gone
+             
+            for name, facts in items:
+                if name in [".", ".."]: continue
+                
+                full_path = f"{remote_dir}/{name}"
+                is_dir = facts.get('type') == 'dir'
+                
+                if facts.get('type') == 'unknown':
+                    try:
+                        self.ftp.cwd(full_path)
+                        is_dir = True
+                        self.ftp.cwd("..")
+                    except:
+                        is_dir = False
+                
+                if is_dir:
+                    self.delete_remote_dir(full_path)
+                else:
+                    try:
+                        self.ftp.delete(full_path)
+                    except: pass
+             
+            try:
+                self.ftp.rmd(remote_dir)
+            except: pass
+        except:
+            pass
