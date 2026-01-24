@@ -108,7 +108,15 @@ class WorkspaceManager(QObject):
         if not self.cache_dir: return
         preset_filename = self.workspace_map.get(self.current_workspace_name, "presets")
         preset_path = os.path.join(self.cache_dir, preset_filename)
-        write_json(preset_path, self.enabled_mods)
+        
+        to_save = []
+        for mod_id in self.enabled_mods:
+            if mod_id.isdigit():
+                to_save.append(int(mod_id))
+            else:
+                to_save.append(mod_id)
+                
+        write_json(preset_path, to_save)
 
     # --- Public API ---
 
