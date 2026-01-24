@@ -235,21 +235,26 @@ class FTPManager(QObject):
         self.connection_status_changed.emit(False, "Not Found")
         self.conn_thread = None
 
-    def start_sync(self):
+    def start_sync(self, sync_all: bool = False):
         if self.thread and self.thread.isRunning():
             return
             
-        # Get enabled mods from WorkspaceManager via ModManager
-        enabled_ids = self.mod_manager.enabled_ids
+        # Get mods based on sync mode
+        if sync_all:
+            target_ids = list(self.mod_manager.mods.keys())
+        else:
+            target_ids = self.mod_manager.enabled_ids
+            
         folders = []
         
-        for mod_id in enabled_ids:
+        for mod_id in target_ids:
             mod = self.mod_manager.get_mod(mod_id)
             if mod and mod.path and os.path.exists(mod.path):
                 folders.append(mod.path)
         
         if not folders:
-            self.log_signal.emit("No enabled mods to sync.")
+            msg = "No mods found to sync." if sync_all else "No enabled mods to sync."
+            self.log_signal.emit(msg)
             return
 
         self.thread = SyncThread(folders, known_ip=self.current_ip)
@@ -268,23 +273,28 @@ class FTPManager(QObject):
     
     scan_complete = pyqtSignal(dict) # {folder: status}
     
-    def start_scan(self):
-        """Scan enabled mods and return status for each"""
+    def start_scan(self, sync_all: bool = False):
+        """Scan mods and return status for each"""
         if self.thread and self.thread.isRunning():
             self.log_signal.emit("Sync in progress, cannot scan.")
             return
             
-        # Get enabled mods
-        enabled_ids = self.mod_manager.enabled_ids
+        # Get target mods
+        if sync_all:
+            target_ids = list(self.mod_manager.mods.keys())
+        else:
+            target_ids = self.mod_manager.enabled_ids
+            
         folders = []
         
-        for mod_id in enabled_ids:
+        for mod_id in target_ids:
             mod = self.mod_manager.get_mod(mod_id)
             if mod and mod.path and os.path.exists(mod.path):
                 folders.append(mod.path)
         
         if not folders:
-            self.log_signal.emit("No enabled mods to scan.")
+            msg = "No mods found to scan." if sync_all else "No enabled mods to scan."
+            self.log_signal.emit(msg)
             self.scan_complete.emit({})
             return
             
