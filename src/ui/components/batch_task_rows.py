@@ -5,14 +5,10 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QEvent
 from PyQt6.QtGui import QFont
 
-from src.managers.data_manager import DataManager
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.single_combobox import SingleComboBox
-from src.ui.components.thumbnail_label import ThumbnailLabel
 from src.core.formatting import format_slots, format_display_name, format_folder_name, format_character_names_for_display, format_character_names_for_folder, clean_version
 from src.ui.components.batch_task_styles import *
-
-
 
 def truncate_text(text: str, max_length: int = 50) -> str:
     """Truncate text with ellipsis if too long"""
@@ -80,7 +76,6 @@ class AutoResizingTextEdit(QTextEdit):
         self.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Minimum) # Expand vertically
         
-        # Zero margins for the widget, use document margin for text padding
         self.setContentsMargins(0, 0, 0, 0)
         self.document().setDocumentMargin(4)
         
@@ -350,7 +345,6 @@ class ComboRow(BatchTaskRow):
         
         return label_widget, orig_widget, cell
 
-
 class MultiComboRow(BatchTaskRow):
     def __init__(self, label: str, data_font: QFont,
                  orig_text: str, current_items: list, all_items: list, attr_name: str,
@@ -415,66 +409,40 @@ class NonScrollableComboBox(QComboBox):
 
 class ThumbnailRow(BatchTaskRow):
     def __init__(self, data_font: QFont,
-                 parent_widget, on_browse: callable, on_source_change: callable):
+                 orig_path: str,
+                 on_browse: callable, on_source_change: callable):
         super().__init__("Thumbnail", data_font)
-        self.parent_widget = parent_widget 
+        self.orig_path = orig_path
         self.on_browse = on_browse
         self.on_source_change = on_source_change
-        self.orig_thumbnail_widget = None
-        self.new_thumbnail_widget = None
         self.thumb_combo = None
 
     def create_widgets(self):
         label_widget = self._create_label_widget()
         
-        # Original thumbnail cell
-        orig_cell = GridCell(GRID_CELL_STYLE)
-        orig_container = QWidget()
-        orig_layout = QHBoxLayout(orig_container)
-        orig_layout.setContentsMargins(4, 4, 4, 4)
-        
-        self.orig_thumbnail_widget = ThumbnailLabel()
-        self.orig_thumbnail_widget.setFixedSize(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
-        orig_layout.addWidget(self.orig_thumbnail_widget)
-        orig_layout.addStretch()
-        orig_cell.set_content(orig_container)
-        
-        # New thumbnail cell
+        orig_widget = self._create_original_value_widget(self.orig_path, multiline=False)
         cell = self._create_new_value_cell()
-        new_container = QWidget()
-        new_layout = QVBoxLayout(new_container)
-        new_layout.setContentsMargins(4, 4, 4, 4)
-        
-        # Controls
-        controls_layout = QHBoxLayout()
-        controls_layout.setContentsMargins(0, 0, 0, 0)
         
         self.thumb_combo = NonScrollableComboBox()
-        self.thumb_combo.addItems(["Current"])
-        self.thumb_combo.setCurrentIndex(0)
-        self.thumb_combo.currentIndexChanged.connect(self.on_source_change)
         self.thumb_combo.setStyleSheet(CELL_COMBO_STYLE)
-        controls_layout.addWidget(self.thumb_combo, 1)
+        self.thumb_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.thumb_combo.setFixedHeight(ROW_CONTENT_HEIGHT)
         
-        browse_btn = QPushButton("Browse...")
-        browse_btn.setFixedHeight(24)
-        browse_btn.clicked.connect(self.on_browse)
-        browse_btn.setStyleSheet("border: 1px solid rgba(128, 128, 128, 0.3);")
-        controls_layout.addWidget(browse_btn)
+        # Block signals during initialization to prevent premature signal emission
+        self.thumb_combo.blockSignals(True)
+        if self.orig_path:
+            self.thumb_combo.addItems([self.orig_path])
+        else:
+            self.thumb_combo.addItems(["None"])
+        self.thumb_combo.setCurrentIndex(0)
+        self.thumb_combo.blockSignals(False)
         
-        new_layout.addLayout(controls_layout)
+        # Connect signal after initialization
+        self.thumb_combo.currentIndexChanged.connect(self.on_source_change)
         
-        # Preview
-        self.new_thumbnail_widget = ThumbnailLabel()
-        self.new_thumbnail_widget.setFixedSize(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
-        self.new_thumbnail_widget.setScaledContents(False)
+        self.input_widget = self.thumb_combo
+        cell.set_content(self.thumb_combo)
+        cell.setFixedHeight(ROW_CONTENT_HEIGHT)
+        label_widget.setFixedHeight(ROW_CONTENT_HEIGHT)
         
-        thumb_wrapper = QHBoxLayout()
-        thumb_wrapper.addStretch()
-        thumb_wrapper.addWidget(self.new_thumbnail_widget)
-        thumb_wrapper.addStretch()
-        new_layout.addLayout(thumb_wrapper)
-        
-        cell.set_content(new_container)
-        
-        return label_widget, orig_cell, cell
+        return label_widget, orig_widget, cell

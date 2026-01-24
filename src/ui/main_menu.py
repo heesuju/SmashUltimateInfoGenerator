@@ -448,6 +448,9 @@ class MainMenu(QWidget):
             event.accept()
             return
         
+        # Call parent implementation for other keys
+        super().keyPressEvent(event)
+    
     def closeEvent(self, event):
         """Handle application close - stop background threads"""
         try:
@@ -455,6 +458,3 @@ class MainMenu(QWidget):
         except:
             pass
         super().closeEvent(event)
-
-    # Call parent implementation for other keys
-        super().keyPressEvent(event)

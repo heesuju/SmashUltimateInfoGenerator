@@ -11,7 +11,6 @@ from src.managers.data_manager import DataManager
 from src.constants.enums import Category, Element, Wifi
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.single_combobox import SingleComboBox
-from src.ui.components.thumbnail_label import ThumbnailLabel
 from src.ui.components.validators import limit_version
 from src.core.formatting import format_slots, format_display_name, format_folder_name, format_character_names_for_display, format_character_names_for_folder, clean_version
 import os
@@ -136,7 +135,7 @@ class BatchTaskItem(QWidget):
         # Stop propagation to prevent collapsing when clicking remove
         # Note: In Qt, buttons usually consume mouse events so this is implicit,
         # but good to be aware.
-        remove_btn.clicked.connect(lambda: self.remove_requested.emit(self.mod.mod_hash))
+        remove_btn.clicked.connect(lambda: self.remove_requested.emit(str(self.mod.hash)))
         header_layout.addWidget(remove_btn)
 
         main_layout.addWidget(header_widget)
@@ -213,7 +212,7 @@ class BatchTaskItem(QWidget):
         task_rows.append(("url", url_row))
 
         # --- Version ---
-        version_text = self.mod.version if self.mod.version else "1.0.0"
+        version_text = self.mod.version if self.mod.version else ""
         version_row = TextRow(
             "Version", data_font,
             version_text, version_text, "version",
@@ -223,8 +222,7 @@ class BatchTaskItem(QWidget):
 
         # --- Wifi Safe (Single Combo) ---
         current_wifi = self.mod.wifi_safe.value if self.mod.wifi_safe else Wifi.SAFE.value
-        orig_wifi = self.task.original_wifi_safe if self.task.original_wifi_safe else "safe"
-        if not orig_wifi: orig_wifi = "safe" # Fallback
+        orig_wifi = self.task.original_wifi_safe if self.task.original_wifi_safe else ""
 
         wifi_row = ComboRow(
             "Wifi Safe", data_font,
@@ -236,15 +234,15 @@ class BatchTaskItem(QWidget):
         # --- Authors ---
         authors_text = self.mod.authors if self.mod.authors else ""
         authors_row = TextRow(
-             "Authors", data_font,
-             authors_text, authors_text, "authors",
-             lambda attr, val: self._on_field_changed(attr, val)
+            "Authors", data_font,
+            authors_text, authors_text, "authors",
+            lambda attr, val: self._on_field_changed(attr, val)
         )
         task_rows.append(("authors", authors_row))
 
         # --- Category (Single Combo) ---
         current_cat = self.mod.category.value if self.mod.category else Category.SKIN.value
-        orig_cat = self.task.original_category if self.task.original_category else "skin"
+        orig_cat = self.task.original_category if self.task.original_category else ""
 
         category_row = ComboRow(
             "Category", data_font,
@@ -282,25 +280,23 @@ class BatchTaskItem(QWidget):
 
         # --- Playable Character (Slots) ---
         # Multi-select combo for characters and slots
-
-        # Custom logic for character row since it updates slots
-        # Fix: access 'characters' list, not 'character_data'
         current_fighters = []
         if self.mod.characters:
             for c in self.mod.characters:
                 val = c.fighter.value if hasattr(c.fighter, 'value') else str(c.fighter)
-                current_fighters.append(val)
+                name = DataManager.get_character_data(val, "Custom")
+                if name:
+                    current_fighters.append(name)
+                else:
+                    current_fighters.append(val)
         orig_fighters = self.orig_char_names
         orig_fighters_text = ", ".join(orig_fighters) if orig_fighters else "—"
 
         all_fighters = DataManager.get_character_names()
 
-        # Custom logic for character row since it updates slots
         def on_character_changed():
-            # Update slots options based on selected characters
-             self._update_slot_options()
-             self._update_generated_names()
-             self._check_field_changed("playable_character")
+            self._update_generated_names()
+            self._check_field_changed("playable_character")
 
         char_row = MultiComboRow(
             "Fighters", data_font,
@@ -310,15 +306,14 @@ class BatchTaskItem(QWidget):
         task_rows.append(("playable_character", char_row))
 
         # --- Slots ---
-        # --- Slots ---
         current_slots = []
         if self.mod.characters:
             for c in self.mod.characters:
                 current_slots.extend(c.slots)
 
         # Get slot options based on current fighters
-        slot_options = self.get_available_slots(current_fighters)
-        slot_formatter = lambda items: format_slots(sorted([int(x[1:]) for x in items if x.startswith('c') and x[1:].isdigit()]))
+        slot_options = [f"C{i:02d}" for i in range(8)]
+        slot_formatter = lambda items: format_slots(sorted([int(x[1:]) for x in items if x.startswith('C') and x[1:].isdigit()]))
 
         orig_slots = set()
         if self.task.original_characters:
@@ -348,12 +343,10 @@ class BatchTaskItem(QWidget):
         task_rows.append(("elements", elements_row))
 
         # --- Thumbnail ---
-        # Display Only, with browse button
-        # ... logic for thumbnail row ...
         thumb_row = ThumbnailRow(
             data_font, 
-            self,
-            self._on_browse_thumbnail,
+            self.task.original_thumbnail,
+            None,
             self._on_thumbnail_source_changed
         )
         task_rows.append(("thumbnail", thumb_row))
@@ -397,7 +390,9 @@ class BatchTaskItem(QWidget):
             connect_recursive(w3) # New
 
             # Store references
-            self.input_fields[key] = row_obj.input_widget if hasattr(row_obj, 'input_widget') else w3
+            input_w = getattr(row_obj, 'input_widget', None)
+
+            self.input_fields[key] = input_w if input_w else w3
             self.rows[key] = row_obj
             self.row_indices[key] = i
 
@@ -405,8 +400,7 @@ class BatchTaskItem(QWidget):
             self.table.setCellWidget(i, 1, w2)
             self.table.setCellWidget(i, 2, w3)
 
-            # Initial resize based on type
-            if key in ["description", "thumbnail"]:
+            if key == "description":
                 self.table.resizeRowToContents(i)
             else:
                 self.table.setRowHeight(i, ROW_CONTENT_HEIGHT)
@@ -414,19 +408,16 @@ class BatchTaskItem(QWidget):
         main_layout.addWidget(self.table)
 
         self.is_collapsed = False
-
-        # Schedule thumbnail loading after UI is shown to prevent freezing
-        QTimer.singleShot(0, self._load_thumbnails)
-        # Also schedule a global resize one tick later to ensure layout is settled
-        QTimer.singleShot(10, self._enforce_row_heights)
+        self._update_generated_names()
+        self._initial_check_all_fields()
         
-        # Collapse by default
+        QTimer.singleShot(10, self._enforce_row_heights)
         self.toggle_collapse()
 
     def _enforce_row_heights(self):
         """Re-apply row heights to ensure single-line rows are compact"""
         for key, row_idx in self.row_indices.items():
-            if key in ["description", "thumbnail"]:
+            if key == "description":
                 self.table.resizeRowToContents(row_idx)
             else:
                 self.table.setRowHeight(row_idx, ROW_CONTENT_HEIGHT)
@@ -468,7 +459,7 @@ class BatchTaskItem(QWidget):
             if hasattr(self.input_fields["mod_name"], 'text'):
                 mod_name = self.input_fields["mod_name"].text()
             else: # Fallback if widget type changed not to have text()
-                 mod_name = self.mod.mod_name
+                mod_name = self.mod.mod_name
         else:
             mod_name = self.mod.mod_name
         if not mod_name:
@@ -493,66 +484,40 @@ class BatchTaskItem(QWidget):
         display_name = format_display_name(characters_str_display, slots_str, mod_name, category_str)
         
         # Update the input fields (block signals to avoid infinite loop)
-        # Update the input fields (block signals to avoid infinite loop)
         if "folder_name" in self.input_fields:
             self.input_fields["folder_name"].blockSignals(True)
             self.input_fields["folder_name"].setText(folder_name)
             self.input_fields["folder_name"].blockSignals(False)
-            # Re-check field changed status for folder_name
             self._check_field_changed("folder_name")
         
         if "display_name" in self.input_fields:
             self.input_fields["display_name"].blockSignals(True)
             self.input_fields["display_name"].setText(display_name)
             self.input_fields["display_name"].blockSignals(False)
-            # Re-check field changed status for display_name
             self._check_field_changed("display_name")
-    
-    def _on_browse_thumbnail(self):
-        """Open file dialog to select new thumbnail"""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Preview Image", "", 
-            "Images (*.png *.jpg *.jpeg *.webp)"
-        )
-        if file_path:
-            self.pending_thumbnail_path = file_path
-            
-            # Update combobox
-            combo = self.input_fields["thumbnail"]
-            
-            # Check if "Custom" already exists
-            found = False
-            for i in range(combo.count()):
-                if combo.itemText(i) == "Custom":
-                    # Update data
-                    combo.setItemData(i, file_path)
-                    combo.setCurrentIndex(i)
-                    found = True
-                    break
-            
-            if not found:
-                combo.addItem("Custom", file_path)
-                combo.setCurrentIndex(combo.count() - 1)
-            
-            if "thumbnail" in self.rows and self.rows["thumbnail"].new_thumbnail_widget:
-                self.rows["thumbnail"].new_thumbnail_widget.set_thumbnail(file_path)
+
+    def _initial_check_all_fields(self):
+        """Check all fields for differences from original values on initialization"""
+        fields_to_check = [
+            "mod_name", "url", "version", "wifi_safe", "authors", 
+            "category", "display_name", "folder_name", "description",
+            "playable_character", "slots", "elements", "thumbnail"
+        ]
+        
+        for field_name in fields_to_check:
+            if field_name in self.input_fields:
+                self._check_field_changed(field_name)
 
     def _on_thumbnail_source_changed(self, index):
         """Handle thumbnail source selection change"""
         combo = self.input_fields["thumbnail"]
-        data = combo.itemData(index)
+        text = combo.itemText(index)
         
-        row = self.rows.get("thumbnail")
-        if row and row.new_thumbnail_widget:
-            if data:
-                # It's a path or URL
-                self.pending_thumbnail_path = str(data)
-                row.new_thumbnail_widget.set_thumbnail(str(data))
-            else:
-                # It's likely "Current" (index 0 usually), using self.mod.thumbnail
-                if index == 0:
-                    self.pending_thumbnail_path = None
-                    row.new_thumbnail_widget.set_thumbnail(self.mod.thumbnail)
+        if text:
+            self.pending_thumbnail_path = text
+        else:
+            self.pending_thumbnail_path = None
+             
         self._check_field_changed("thumbnail")
 
     def get_pending_thumbnail(self) -> str:
@@ -624,7 +589,7 @@ class BatchTaskItem(QWidget):
             added_count = 0
             for i, link in enumerate(preview_links):
                 if link not in existing_urls:
-                    combo.addItem(f"Fetched {i+1}", link)
+                    combo.addItem(link) # Add URL directly as text
                     added_count += 1
             
             if added_count > 0 and combo.currentIndex() == 0:
@@ -633,9 +598,9 @@ class BatchTaskItem(QWidget):
                     has_original = True
                 
                 if not has_original:
-                    idx = combo.findText("Fetched 1")
-                    if idx >= 0:
-                        combo.setCurrentIndex(idx)
+                    first_new_idx = combo.count() - added_count
+                    if first_new_idx >= 0:
+                        combo.setCurrentIndex(first_new_idx)
 
     def _check_field_changed(self, field_name: str):
         """Check if field value differs from original and update highlight"""
@@ -665,7 +630,7 @@ class BatchTaskItem(QWidget):
             changed = widget.currentText() != (self.task.original_category or "")
         elif field_name == "wifi_safe":
             changed = widget.currentText() != (self.task.original_wifi_safe or "")
-        elif field_name == "characters":
+        elif field_name == "playable_character":
             new_chars = self.get_selected_characters()
             new_chars.sort()
             changed = new_chars != self.orig_char_names
@@ -685,8 +650,8 @@ class BatchTaskItem(QWidget):
 
     def get_selected_characters(self) -> list:
         """Get list of selected character names"""
-        if "characters" in self.input_fields:
-            chars = self.input_fields["characters"].get_checked()
+        if "playable_character" in self.input_fields:
+            chars = self.input_fields["playable_character"].get_checked()
             return [c for c in chars if c != "Select All"]
         return []
     
@@ -735,59 +700,3 @@ class BatchTaskItem(QWidget):
         self.task.error_message = error_message
         
         self.update_status_display()
-    
-    def _load_thumbnails(self):
-        """Load thumbnails asynchronously to avoid UI blocking during creation"""
-        row = self.rows.get('thumbnail')
-        if row:
-            if row.orig_thumbnail_widget:
-                row.orig_thumbnail_widget.set_thumbnail(self.task.original_thumbnail)
-    
-    def get_available_slots(self, fighters: list) -> list:
-        """Get list of available slots for selected fighters (common slots)"""
-        # If no fighters selected, return all slots 0-7 (standard) + extra
-        if not fighters:
-            return [f"c{i:02d}" for i in range(8)]
-            
-        # In a real scenario, we might check DataManager for specific slots for each fighter.
-        # For now, we'll assume all fighters support c00-c07. 
-        # More advanced logic would intersect the available slots of all selected fighters.
-        display_slots = set(range(8))
-        
-        # Add slots from current selection if they exist (to preserve existing values even if atypical)
-        current_slots = []
-        if self.mod.characters:
-            for c in self.mod.characters:
-                current_slots.extend(c.slots)
-        display_slots.update(current_slots)
-        
-        return [f"c{i:02d}" for i in sorted(display_slots)]
-
-    def _update_slot_options(self):
-        """Update the slot options in the slots combo box based on selected fighters"""
-        if "slots" not in self.rows:
-            return
-            
-        fighters = self.get_selected_characters()
-        new_options = self.get_available_slots(fighters)
-        
-        # Update the MultiComboRow's options
-        # We need to access the helper method on the row or widget 
-        # MultiComboRow stores options but the widget is the CheckableComboBox
-        slots_row = self.rows["slots"]
-        if hasattr(slots_row, "input_widget"):
-            # Assuming CheckableComboBox has verify_items or we can set items
-            # CheckableComboBox usually doesn't expose easy item replacement efficiently without clearing
-            # For now, let's just ensure the options list is updated if needed by logic
-            # But CheckableComboBox doesn't support dynamic option changing easily in this codebase yet?
-            # Checking CheckableComboBox... it inherits QComboBox but uses a model.
-            
-            # Actually, simpler approach:
-            # Just leave it be or implement if strictly needed.
-            # The user code calls this, so it expects it to happen.
-            pass
-
-            
-            if row.new_thumbnail_widget:
-                path = self.pending_thumbnail_path if self.pending_thumbnail_path else self.mod.thumbnail
-                row.new_thumbnail_widget.set_thumbnail(path)

@@ -2,7 +2,7 @@ import os
 from typing import List
 from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
-    QWidget, QSizePolicy, QLabel, QFrame, QPushButton, QComboBox, QHBoxLayout,
+    QWidget, QSizePolicy, QLabel, QFrame, QPushButton, QHBoxLayout,
     QMenu, QFileDialog
 )
 from PyQt6.QtGui import (
