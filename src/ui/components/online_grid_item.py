@@ -82,7 +82,7 @@ class OnlineGridListItemWidget(GridListItemWidget):
         
         # Async download
         if is_url:
-            ImageLoader().load_image(self.image_path, self.access_overlay_image)
+            ImageLoader().load_image(self.image_path, self.access_overlay_image, widget=self)
         
         # Info Column
         info_layout = QVBoxLayout()

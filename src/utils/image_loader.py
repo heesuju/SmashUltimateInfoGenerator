@@ -1,6 +1,7 @@
 import os
 import requests
 import hashlib
+import weakref
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
 from PyQt6.QtGui import QPixmap
 
@@ -65,10 +66,11 @@ class ImageLoader(QObject):
         self.download_queue = []  # Queue of URLs waiting to download
         self.max_concurrent_downloads = 3  # Limit concurrent downloads
         
-    def load_image(self, url: str, callback):
+    def load_image(self, url: str, callback, widget=None):
         """
         Load an image from URL. 
         callback(local_path) will be called when ready.
+        widget: Optional QWidget to track - if destroyed, callback is skipped.
         """
         if not url:
             callback("")
@@ -82,11 +84,43 @@ class ImageLoader(QObject):
 
         if url not in self.pending_callbacks:
             self.pending_callbacks[url] = []
-        self.pending_callbacks[url].append(callback)
+        
+        # Store weak reference to widget if provided, for validity check later
+        if widget is not None:
+            widget_ref = weakref.ref(widget)
+        else:
+            widget_ref = None
+        self.pending_callbacks[url].append((callback, widget_ref))
         
         if url not in self.active_downloads and url not in self.download_queue:
             self.download_queue.append(url)
             self._process_queue()
+    
+    def cancel_callback(self, url: str, callback):
+        """
+        Cancel a pending callback for a specific URL.
+        Called when a widget is being destroyed to prevent callbacks to dead objects.
+        """
+        if url in self.pending_callbacks:
+            self.pending_callbacks[url] = [
+                (cb, ref) for cb, ref in self.pending_callbacks[url] 
+                if cb != callback
+            ]
+            # Clean up empty entries
+            if not self.pending_callbacks[url]:
+                del self.pending_callbacks[url]
+    
+    def cancel_all_for_widget(self, widget):
+        """
+        Cancel all pending callbacks for a specific widget.
+        """
+        for url in list(self.pending_callbacks.keys()):
+            self.pending_callbacks[url] = [
+                (cb, ref) for cb, ref in self.pending_callbacks[url]
+                if ref is None or (ref() is not None and ref() is not widget)
+            ]
+            if not self.pending_callbacks[url]:
+                del self.pending_callbacks[url]
             
     def _process_queue(self):
         """Start downloads from queue up to max concurrent limit"""
@@ -104,7 +138,17 @@ class ImageLoader(QObject):
             
         if url in self.pending_callbacks:
             callbacks = self.pending_callbacks.pop(url)
-            for cb in callbacks:
-                cb(local_path)
+            for cb, widget_ref in callbacks:
+                # Check if widget is still valid before calling callback
+                if widget_ref is not None:
+                    widget = widget_ref()
+                    if widget is None:
+                        # Widget was destroyed, skip this callback
+                        continue
+                try:
+                    cb(local_path)
+                except RuntimeError:
+                    # Widget was deleted, ignore
+                    pass
         
         self._process_queue()
