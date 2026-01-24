@@ -7,6 +7,7 @@ from src.ui.components.side_panel import SidePanel
 from src.ui.components.layout import VBox, HBox
 from src.managers.ftp_manager import FTPManager
 from src.managers.data_manager import ButtonIcons
+from src.ui.components.collapsible_section import CollapsibleSection
 import os
 
 class FTPPanel(SidePanel):
@@ -25,6 +26,11 @@ class FTPPanel(SidePanel):
         self.status_indicator.setToolTip("Status: Idle")
         self.header.addWidget(self.status_indicator, 0, Qt.AlignmentFlag.AlignVCenter)
 
+        # --- Fixed Top Section (Inputs, Progress, Log) ---
+        self.top_widget = QWidget()
+        top_layout = VBox(margin=(10, 0, 10, 0), spacing=10)
+        self.top_widget.setLayout(top_layout)
+        
         # Connection Settings (IP:Port)
         conn_layout = HBox()
         conn_layout.setSpacing(0)
@@ -85,7 +91,27 @@ class FTPPanel(SidePanel):
         """)
         conn_layout.addWidget(self.retry_button)
         
-        self.body.addLayout(conn_layout)
+        top_layout.addLayout(conn_layout)
+        
+        # Progress Bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setTextVisible(True)
+        top_layout.addWidget(self.progress_bar)
+        
+        # Log Output (Collapsible)
+        self.log_section = CollapsibleSection("Activity Log", expanded=True)
+        self.log_output = QTextEdit()
+        self.log_output.setReadOnly(True)
+        self.log_output.setStyleSheet("font-family: Consolas, monospace; font-size: 12px;")
+        self.log_output.setMinimumHeight(150)
+        self.log_output.setMaximumHeight(1000)
+        self.log_section.add_widget(self.log_output)
+        top_layout.addWidget(self.log_section)
+        
+        self.root.insertWidget(1, self.top_widget)
+        
         
         # Load Config
         config = self.ftp_manager.config_manager.config
@@ -96,6 +122,8 @@ class FTPPanel(SidePanel):
         self.ip_input.editingFinished.connect(self.on_config_changed)
         self.port_input.editingFinished.connect(self.on_config_changed)
         
+        
+        # Sync Button (Footer)
         self.mode_combo = QComboBox()
         self.mode_combo.addItems(["Enabled Only", "All"])
         self.mode_combo.setStyleSheet("""
@@ -127,83 +155,87 @@ class FTPPanel(SidePanel):
             primary=True,
             icon=ButtonIcons.SYNC.value
         )
+
+        # Confirm & Cancel Buttons (Footer - Initially Hidden)
+        self.cancel_preview_button = self.add_footer_button(
+            text="Cancel",
+            callback=self.on_cancel_preview_clicked,
+            danger=True
+        )
+        self.cancel_preview_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.cancel_preview_button.hide()
+
+        self.confirm_button = self.add_footer_button(
+            text="Confirm",
+            callback=self.on_confirm_sync_clicked,
+            primary=True,
+            icon=ButtonIcons.SYNC.value
+        )
+        self.confirm_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        # Override to Green for confirmation distinction
+        self.confirm_button.setStyleSheet("""
+            QPushButton {
+                 background-color: #4CAF50;
+                 color: white;
+                 font-weight: bold;
+                 border-radius: 5px;
+                 padding: 5px 10px;
+            }
+            QPushButton:hover {
+                 background-color: #45a049;
+            }
+             QPushButton:pressed {
+                background-color: #388E3C; 
+            }
+            QPushButton:disabled {
+                background-color: #2E2E32;
+                color: #666;
+                border: 1px solid #444;
+            }
+        """)
+        self.confirm_button.hide()
         
-        # Progress Bar
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setRange(0, 100)
-        self.progress_bar.setValue(0)
-        self.progress_bar.setTextVisible(True)
-        self.body.addWidget(self.progress_bar)
+        # --- Scrollable Body Content (Preview) ---
         
         # Preview Container (initially hidden)
-        self.preview_container = QGroupBox("Sync Preview")
+        self.preview_container = QWidget()
         preview_layout = VBox()
+        preview_layout.setContentsMargins(0, 0, 0, 0)
         
         # Categories
         self.match_list = QListWidget()
+        self.match_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
         self.replace_list = QListWidget()
+        self.replace_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
         self.metadata_list = QListWidget()
+        self.metadata_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
         self.missing_list = QListWidget()
+        self.missing_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         
-        # Add lists with labels
-        match_box = QGroupBox("✓ Up to Date")
-        match_box_layout = VBox()
-        match_box_layout.addWidget(self.match_list)
-        match_box.setLayout(match_box_layout)
-        preview_layout.addWidget(match_box)
+        # Add lists with Collapsible Sections
+        self.match_box = CollapsibleSection("✓ Up to Date", expanded=False)
+        self.match_box.add_widget(self.match_list)
+        preview_layout.addWidget(self.match_box)
         
-        replace_box = QGroupBox("🔄 Replace (Full Re-upload)")
-        replace_box_layout = VBox()
-        replace_box_layout.addWidget(self.replace_list)
-        replace_box.setLayout(replace_box_layout)
-        preview_layout.addWidget(replace_box)
+        self.replace_box = CollapsibleSection("🔄 Replace (Full Re-upload)", expanded=True)
+        self.replace_box.add_widget(self.replace_list)
+        preview_layout.addWidget(self.replace_box)
         
-        metadata_box = QGroupBox("📝 Update Metadata Only")
-        metadata_box_layout = VBox()
-        metadata_box_layout.addWidget(self.metadata_list)
-        metadata_box.setLayout(metadata_box_layout)
-        preview_layout.addWidget(metadata_box)
+        self.metadata_box = CollapsibleSection("📝 Update Metadata Only", expanded=True)
+        self.metadata_box.add_widget(self.metadata_list)
+        preview_layout.addWidget(self.metadata_box)
         
-        missing_box = QGroupBox("➕ New Mods")
-        missing_box_layout = VBox()
-        missing_box_layout.addWidget(self.missing_list)
-        missing_box.setLayout(missing_box_layout)
-        preview_layout.addWidget(missing_box)
+        self.missing_box = CollapsibleSection("➕ New Mods", expanded=True)
+        self.missing_box.add_widget(self.missing_list)
+        preview_layout.addWidget(self.missing_box)
         
-        # Confirm button
-        confirm_controls = HBox()
-        self.confirm_button = QPushButton("Confirm & Start Sync")
-        self.confirm_button.clicked.connect(self.on_confirm_sync_clicked)
-        self.confirm_button.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                padding: 8px 16px;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-        """)
-        confirm_controls.addWidget(self.confirm_button)
-        
-        self.cancel_preview_button = QPushButton("Cancel")
-        self.cancel_preview_button.clicked.connect(self.on_cancel_preview_clicked)
-        confirm_controls.addWidget(self.cancel_preview_button)
-        confirm_controls.addStretch()
-        preview_layout.addLayout(confirm_controls)
         
         self.preview_container.setLayout(preview_layout)
         self.preview_container.hide()
         self.body.addWidget(self.preview_container)
-        
-        # Log Output
-        self.log_output = QTextEdit()
-        self.log_output.setReadOnly(True)
-        self.log_output.setStyleSheet("font-family: Consolas, monospace; font-size: 12px;")
-        self.log_output.setMinimumHeight(200)
-        self.body.addWidget(self.log_output)
         
         # Connect signals
         self.ftp_manager.log_signal.connect(self.append_log)
@@ -215,6 +247,9 @@ class FTPPanel(SidePanel):
         
         # Store diff map for confirmation
         self.current_diff_map = {}
+        
+        # Align content to top
+        self.body.addStretch()
         
     def on_config_changed(self):
         new_ip = self.ip_input.text().strip()
@@ -281,12 +316,19 @@ class FTPPanel(SidePanel):
         
     def on_sync_finished(self):
         self.sync_button.setEnabled(True)
+        self.sync_button.setText("Start Sync")
+        self.sync_button.setVisible(True)
         self.mode_combo.setEnabled(True)
+        self.mode_combo.setVisible(True)
         
     def on_scan_complete(self, diff_map: dict):
         self.current_diff_map = diff_map
-        self.sync_button.setEnabled(True)
-        self.mode_combo.setEnabled(True)
+        self.sync_button.setVisible(False)
+        self.mode_combo.setVisible(False)
+        
+        # Show confirm controls
+        self.confirm_button.setVisible(True)
+        self.cancel_preview_button.setVisible(True)
         
         if not diff_map:
             self.append_log("Scan failed or no mods found.")
@@ -310,17 +352,67 @@ class FTPPanel(SidePanel):
                 self.metadata_list.addItem(mod_name)
             elif status == "MISSING":
                 self.missing_list.addItem(mod_name)
+        
+        # Adjust heights based on content
+        self.resize_list_to_content(self.match_list)
+        self.resize_list_to_content(self.replace_list)
+        self.resize_list_to_content(self.metadata_list)
+        self.resize_list_to_content(self.missing_list)
                 
         # Show preview
         self.preview_container.show()
+        
+        # Update Collapsible States
+        self.match_box.set_expanded(self.match_list.count() > 0)
+        self.match_box.set_status(f"{self.match_list.count()} mods")
+        
+        self.replace_box.set_expanded(self.replace_list.count() > 0)
+        self.replace_box.set_status(f"{self.replace_list.count()} mods")
+        
+        self.metadata_box.set_expanded(self.metadata_list.count() > 0)
+        self.metadata_box.set_status(f"{self.metadata_list.count()} mods")
+        
+        self.missing_box.set_expanded(self.missing_list.count() > 0)
+        self.missing_box.set_status(f"{self.missing_list.count()} mods")
+        
         self.append_log(f"Scan complete. {len(diff_map)} mods analyzed.")
         
     def on_confirm_sync_clicked(self):
-        # Hide preview, start sync
+        # Hide preview controls, show sync button (for status)
+        self.confirm_button.setVisible(False)
+        self.cancel_preview_button.setVisible(False)
         self.preview_container.hide()
         self.log_output.clear()
+        
+        # Re-show sync button so on_sync_started can update it
+        self.sync_button.setVisible(True)
+        self.mode_combo.setVisible(True)
+        self.mode_combo.setEnabled(False) 
+        
         self.ftp_manager.start_smart_sync(self.current_diff_map)
         
     def on_cancel_preview_clicked(self):
         self.preview_container.hide()
+        self.confirm_button.setVisible(False)
+        self.cancel_preview_button.setVisible(False)
+        
+        self.sync_button.setVisible(True)
+        self.mode_combo.setVisible(True)
+        self.sync_button.setEnabled(True)
+        self.mode_combo.setEnabled(True)
+        
         self.append_log("Preview canceled.")
+
+    def resize_list_to_content(self, list_widget: QListWidget):
+        # Calculate total height
+        count = list_widget.count()
+        if count == 0:
+            list_widget.setFixedHeight(0)
+            return
+
+        row_height = list_widget.sizeHintForRow(0)
+        if row_height < 0: row_height = 20 # Fallback
+            
+        total_height = (count * row_height) + (2 * list_widget.frameWidth()) + 5 # + padding
+        
+        list_widget.setFixedHeight(total_height)
