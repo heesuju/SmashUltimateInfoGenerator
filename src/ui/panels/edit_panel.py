@@ -328,8 +328,7 @@ class EditPanel(SidePanel):
                 else:
                     target = Wifi.UNCERTAIN.value # Default to uncertain
                 
-                if target in Wifi.list():
-                    self.wifi.setCurrentIndex(Wifi.list().index(target))
+                self.wifi.setCurrentText(target)
             except:
                 pass
 
@@ -418,6 +417,9 @@ class EditPanel(SidePanel):
     
     def load_mod(self, mod_id: str):
         """Load mod data into edit panel"""
+        # Reset panel first to clear any previous state
+        self.reset()
+        
         mod = self.mod_manager.get_mod(mod_id)
         self.mod = mod # Store ref
         self.mod_path = mod.path # Store path for saving
@@ -484,10 +486,9 @@ class EditPanel(SidePanel):
         
         # Set category
         try:
-            category_index = Category.list().index(mod.category.value)
-            self.category.setCurrentIndex(category_index)
-        except (ValueError, AttributeError):
-            self.category.setCurrentIndex(0)
+            self.category.setCurrentText(mod.category.value)
+        except AttributeError:
+            self.category.setCurrentText(Category.MISC.value)
         
         # Set author
         self.author.setText(mod.authors)
@@ -515,10 +516,9 @@ class EditPanel(SidePanel):
         
         # Set wifi safe
         try:
-            wifi_index = Wifi.list().index(mod.wifi_safe.value)
-            self.wifi.setCurrentIndex(wifi_index)
-        except (ValueError, AttributeError):
-            self.wifi.setCurrentIndex(0)
+            self.wifi.setCurrentText(mod.wifi_safe.value)
+        except AttributeError:
+            self.wifi.setCurrentText(Wifi.UNCERTAIN.value)
         
         # Set display name
         self.display.setText(mod.display_name)
@@ -535,12 +535,12 @@ class EditPanel(SidePanel):
         self.mod_name.clear()
         self.character.reset()
         self.slots.reset()
-        self.category.setCurrentIndex(0)
+        self.category.setCurrentText(Category.MISC.value)
         self.author.clear()
         self.version.clear()
         self.description.clear()
         self.elements.reset()
-        self.wifi.setCurrentIndex(0)
+        self.wifi.setCurrentText(Wifi.UNCERTAIN.value)
         self.display.clear()
         self.folder.clear()
         # Clear preview selector and map
@@ -721,9 +721,8 @@ class EditPanel(SidePanel):
         # Also update category if it was detected
         if temp_mod.category:
             try:
-                category_index = Category.list().index(temp_mod.category.value)
-                self.category.setCurrentIndex(category_index)
-            except (ValueError, AttributeError):
+                self.category.setCurrentText(temp_mod.category.value)
+            except AttributeError:
                 pass
         
         # Update characters and slots from scan
