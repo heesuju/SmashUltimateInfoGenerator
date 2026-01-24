@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QTextEdit, QApplication
 from PyQt6.QtCore import Qt, QSize, QUrl
-from PyQt6.QtGui import QDesktopServices, QCursor, QTextCharFormat
+from PyQt6.QtGui import QDesktopServices, QCursor, QTextCharFormat, QTextOption
 
 class ResizableTextBrowser(QTextEdit):
     def __init__(self, parent=None):
@@ -11,7 +11,8 @@ class ResizableTextBrowser(QTextEdit):
         self.setFrameShape(QTextEdit.Shape.NoFrame)
         # Mouse tracking needed for changing cursor over links
         self.setMouseTracking(True)
-        self.setStyleSheet("background: transparent;") 
+        self.setStyleSheet("background: transparent;")
+        self.setWordWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere) 
     
     def fit_content(self):
         """Adjust height to fit content"""
