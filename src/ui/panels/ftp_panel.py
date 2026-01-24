@@ -209,6 +209,14 @@ class FTPPanel(SidePanel):
             primary=True,
             icon=ButtonIcons.SYNC.value
         )
+        
+        # Clean Stale Mods Button (Footer)
+        self.stale_button = self.add_footer_button(
+            text="Clean Stale",
+            callback=self.on_stale_clicked,
+            icon=ButtonIcons.BATCH_REMOVE.value
+        )
+        self.stale_button.setStyleSheet("color: #ff6666;") # Red text hint
 
         # Confirm & Cancel Buttons (Footer - Initially Hidden)
         self.cancel_preview_button = self.add_footer_button(
@@ -278,6 +286,9 @@ class FTPPanel(SidePanel):
         self.missing_list = QListWidget()
         self.missing_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         
+        self.stale_list = QListWidget()
+        self.stale_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        
         # Add lists with Collapsible Sections
         self.match_box = CollapsibleSection("✓ Up to Date", expanded=False)
         self.match_box.add_widget(self.match_list)
@@ -295,6 +306,10 @@ class FTPPanel(SidePanel):
         self.missing_box.add_widget(self.missing_list)
         preview_layout.addWidget(self.missing_box)
         
+        self.stale_box = CollapsibleSection("🗑️ Stale / To Delete", expanded=True)
+        self.stale_box.add_widget(self.stale_list)
+        self.stale_box.hide() # Hidden by default
+        preview_layout.addWidget(self.stale_box)
         
         self.preview_container.setLayout(preview_layout)
         self.preview_container.hide()
@@ -309,9 +324,11 @@ class FTPPanel(SidePanel):
         self.ftp_manager.scan_complete.connect(self.on_scan_complete)
         self.ftp_manager.mod_progress.connect(self.on_mod_progress)
         self.ftp_manager.config_sync_finished.connect(self.on_config_sync_finished)
+        self.ftp_manager.stale_scan_complete.connect(self.on_stale_scan_complete)
         
         # Store diff map for confirmation
         self.current_diff_map = {}
+        self.stale_mods_list = [] # List of strings
         
         # Align content to top
         self.body.addStretch()
@@ -332,6 +349,7 @@ class FTPPanel(SidePanel):
         
     def on_connection_status_changed(self, connected: bool, msg: str):
         self.sync_button.setEnabled(connected)
+        self.stale_button.setEnabled(connected)
         
         # Update Status Indicator
         # Green = Connected
@@ -358,10 +376,21 @@ class FTPPanel(SidePanel):
         self.log_output.clear()
         self.append_log("Starting scan...")
         self.sync_button.setEnabled(False)
+        self.stale_button.setEnabled(False)
         self.mode_combo.setEnabled(False)
         
         sync_all = self.mode_combo.currentIndex() == 1
         self.ftp_manager.start_scan(sync_all=sync_all)
+        self.options_group.hide()
+
+    def on_stale_clicked(self):
+        self.log_output.clear()
+        self.append_log("Scanning for stale mods...")
+        self.sync_button.setEnabled(False)
+        self.stale_button.setEnabled(False)
+        self.mode_combo.setEnabled(False)
+        
+        self.ftp_manager.start_stale_scan()
         self.options_group.hide()
         
     def append_log(self, msg: str):
@@ -376,6 +405,7 @@ class FTPPanel(SidePanel):
         
     def on_sync_started(self):
         self.sync_button.setEnabled(False)
+        self.stale_button.setEnabled(False)
         self.sync_button.setText("Syncing...")
         self.progress_bar.setValue(0)
         self.mode_combo.setEnabled(False)
@@ -386,16 +416,30 @@ class FTPPanel(SidePanel):
             self.append_log("Proceeding to config sync...")
             self.ftp_manager.start_config_sync()
             return
+
+        if hasattr(self, 'is_stale_cleanup') and self.is_stale_cleanup:
+            self.is_stale_cleanup = False
+            # Special message for cleanup
+            total = success + failed
+            briefing = f"\n=== Cleanup Completed ===\nDeleted: {success}\nFailed: {failed}"
+            self.append_log(briefing)
+        else: 
+            self.done_button.setVisible(True)
+            self.sync_button.setVisible(False)
+            self.mode_combo.setVisible(False)
+            self.stale_button.setVisible(False)
+            self.progress_bar.setValue(100) # Ensure it shows full
+            
+            # Briefing
+            total = success + failed
+            briefing = f"\n=== Sync Completed ===\nTotal: {total}\nSuccess: {success}\nFailed: {failed}"
+            self.append_log(briefing)
             
         self.done_button.setVisible(True)
         self.sync_button.setVisible(False)
+        self.stale_button.setVisible(False)
         self.mode_combo.setVisible(False)
-        self.progress_bar.setValue(100) # Ensure it shows full
         
-        # Briefing
-        total = success + failed
-        briefing = f"\n=== Sync Completed ===\nTotal: {total}\nSuccess: {success}\nFailed: {failed}"
-        self.append_log(briefing)
         if failed > 0:
             self.append_log("Check log above for error details.")
         
@@ -406,6 +450,9 @@ class FTPPanel(SidePanel):
         self.sync_button.setEnabled(True)
         self.sync_button.setText("Start Sync")
         
+        self.stale_button.setVisible(True)
+        self.stale_button.setEnabled(True)
+        
         self.options_group.show()
         
         self.mode_combo.setVisible(True)
@@ -413,10 +460,12 @@ class FTPPanel(SidePanel):
         
         # Clear Data
         self.current_diff_map = {}
+        self.stale_mods_list = []
         self.match_list.clear() # This clears items + widgets
         self.replace_list.clear()
         self.metadata_list.clear()
         self.missing_list.clear()
+        self.stale_list.clear()
         self.list_items.clear()
         
         self.preview_container.hide()
@@ -425,12 +474,88 @@ class FTPPanel(SidePanel):
         
         # Clear navigation button progress
         self.ftp_manager.reset_progress()
+    
+    def on_stale_scan_complete(self, stale_mods: list):
+        self.stale_mods_list = stale_mods
+        self.sync_button.setVisible(False)
+        self.stale_button.setVisible(False)
+        self.mode_combo.setVisible(False)
         
+        self.confirm_button.setVisible(True)
+        self.confirm_button.setText("Delete All") # Change text for clarity
+        self.confirm_button.setStyleSheet("""
+             QPushButton {
+                  background-color: #F44336;
+                  color: white;
+                  font-weight: bold;
+                  border-radius: 5px;
+                  padding: 5px 10px;
+             }
+             QPushButton:hover {
+                  background-color: #D32F2F;
+             }
+        """)
+        
+        self.cancel_preview_button.setVisible(True)
+        
+        # Clear other lists
+        self.match_list.clear()
+        self.replace_list.clear()
+        self.metadata_list.clear()
+        self.missing_list.clear()
+        self.stale_list.clear()
+        
+        # Populate Stale List
+        for mod_name in stale_mods:
+            item = QListWidgetItem()
+            widget = SyncItemWidget(mod_name)
+            self.stale_list.addItem(item)
+            self.stale_list.setItemWidget(item, widget)
+            
+        self.resize_list_to_content(self.stale_list)
+        
+        # Hide standard boxes, show stale box
+        self.match_box.hide()
+        self.replace_box.hide()
+        self.metadata_box.hide()
+        self.missing_box.hide()
+        self.stale_box.show()
+        
+        self.stale_box.set_expanded(True)
+        self.stale_box.set_status(f"{len(stale_mods)} mods")
+        
+        self.preview_container.show()
+        
+        if not stale_mods:
+            self.append_log("No stale mods found.")
+            # Auto-done or let user see log?
+            self.confirm_button.setEnabled(False) # Nothing to delete
+
     def on_scan_complete(self, diff_map: dict):
         self.current_diff_map = diff_map
         self.sync_button.setVisible(False)
+        self.stale_button.setVisible(False)
         self.mode_combo.setVisible(False)
         self.done_button.hide() # Ensure hidden on new scan
+        
+        # Reset confirm button style
+        self.confirm_button.setText("Confirm")
+        self.confirm_button.setStyleSheet("""
+            QPushButton {
+                 background-color: #4CAF50;
+                 color: white;
+                 font-weight: bold;
+                 border-radius: 5px;
+                 padding: 5px 10px;
+            }
+            QPushButton:hover {
+                 background-color: #45a049;
+            }
+             QPushButton:pressed {
+                background-color: #388E3C; 
+            }
+        """)
+        self.confirm_button.setEnabled(True)
         
         # Show confirm controls
         self.confirm_button.setVisible(True)
@@ -445,6 +570,7 @@ class FTPPanel(SidePanel):
         self.replace_list.clear()
         self.metadata_list.clear()
         self.missing_list.clear()
+        self.stale_list.clear()
         
         # Categorize
         self.list_items = {} # Map mod_name -> SyncItemWidget
@@ -480,6 +606,11 @@ class FTPPanel(SidePanel):
                 
         # Show preview
         self.preview_container.show()
+        self.match_box.show()
+        self.replace_box.show()
+        self.metadata_box.show()
+        self.missing_box.show()
+        self.stale_box.hide()
         
         # Update Collapsible States
         self.match_box.set_expanded(self.match_list.count() > 0)
@@ -509,8 +640,15 @@ class FTPPanel(SidePanel):
         self.mode_combo.setEnabled(False) 
         self.sync_configs_check.setEnabled(False)
         
-        self.sync_configs_pending = self.sync_configs_check.isChecked()
-        self.ftp_manager.start_smart_sync(self.current_diff_map)
+        if self.stale_mods_list:
+            # Stale Cleanup Mode
+            self.is_stale_cleanup = True
+            self.ftp_manager.start_stale_cleanup(self.stale_mods_list)
+        else:
+            # Normal Sync Mode
+            self.is_stale_cleanup = False
+            self.sync_configs_pending = self.sync_configs_check.isChecked()
+            self.ftp_manager.start_smart_sync(self.current_diff_map)
 
     def on_config_sync_finished(self, success: bool):
         self.on_sync_finished(success=1 if success else 0, failed=0 if success else 1)
@@ -522,12 +660,16 @@ class FTPPanel(SidePanel):
         self.cancel_preview_button.setVisible(False)
         
         self.sync_button.setVisible(True)
+        self.stale_button.setVisible(True)
         self.mode_combo.setVisible(True)
         self.sync_button.setEnabled(True)
+        self.stale_button.setEnabled(True)
         self.mode_combo.setEnabled(True)
         
         self.options_group.show()
         self.append_log("Preview canceled.")
+        self.stale_mods_list = [] # clear stale list
+        self.current_diff_map = {}
 
     def resize_list_to_content(self, list_widget: QListWidget):
         # Calculate total height

@@ -399,12 +399,14 @@ class SwitchFTP:
                 if name in [".", ".."]:
                     continue
                 
-                full_path = f"{remote_dir}/{name}"
+                # Check if name is already an absolute path (common with NLST on some servers)
+                if name.startswith("/"):
+                    full_path = name
+                else:
+                    full_path = f"{remote_dir}/{name}"
                 is_dir = facts.get('type') == 'dir'
                 
                 if facts.get('type') == 'unknown':
-                    # Heuristic: Try to delete as file first.
-                    # If it fails with 550, it's likely a directory.
                     try:
                         self.ftp.delete(full_path)
                         continue

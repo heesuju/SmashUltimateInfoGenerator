@@ -267,6 +267,112 @@ class ConfigSyncThread(QThread):
             traceback.print_exc()
             self.sync_result.emit(False)
 
+class StaleScanThread(QThread):
+    progress_log = pyqtSignal(str)
+    scan_finished = pyqtSignal(list) # list of stale folder names
+    
+    def __init__(self, known_mod_names, known_ip=None, port=5000):
+        super().__init__()
+        self.known_mod_names = set(known_mod_names) # Set for faster lookup
+        self.known_ip = known_ip
+        self.port = port
+        
+    def run(self):
+        stale_mods = []
+        try:
+            self.progress_log.emit("Connecting to check for stale mods...")
+            ftp = SwitchFTP(port=self.port)
+            
+            ip = self.known_ip
+            if not ip:
+                subnet = ftp.get_local_subnet()
+                ip = ftp.find_switch(subnet)
+            
+            if not ip:
+                self.progress_log.emit("Could not find Switch.")
+                self.scan_finished.emit([])
+                return
+
+            ftp.connect(ip)
+            
+            self.progress_log.emit("Listing remote mods in /ultimate/mods/...")
+            
+            try:
+                # 1. List all folders in /ultimate/mods
+                remote_items = []
+                try:
+                    remote_items = list(ftp.ftp.mlsd("/ultimate/mods"))
+                except:
+                    # Fallback
+                    names = ftp.ftp.nlst("/ultimate/mods")
+                    remote_items = [(n, {'type': 'unknown'}) for n in names]
+
+                for name, facts in remote_items:
+                    if name in [".", ".."]: continue
+                    
+                    # Heuristic: If unknown type, treat as potential mod folder
+                    is_dir = facts.get('type') == 'dir' or facts.get('type') == 'unknown'
+                    
+                    if is_dir:
+                        # 2. Check if in known list
+                        if name not in self.known_mod_names:
+                            stale_mods.append(name)
+                            
+            except Exception as e:
+                self.progress_log.emit(f"Error listing remote directory: {e}")
+
+            ftp.disconnect()
+            self.progress_log.emit(f"Scan complete. Found {len(stale_mods)} stale mods.")
+            self.scan_finished.emit(stale_mods)
+            
+        except Exception as e:
+            self.progress_log.emit(f"Stale Scan Error: {e}")
+            import traceback
+            traceback.print_exc()
+            self.scan_finished.emit([])
+
+class StaleCleanupThread(QThread):
+    progress_log = pyqtSignal(str)
+    progress_value = pyqtSignal(float)
+    cleanup_finished = pyqtSignal(int, int) # success, fail
+    
+    def __init__(self, folders_to_delete, known_ip=None, port=5000):
+        super().__init__()
+        self.folders_to_delete = folders_to_delete
+        self.known_ip = known_ip
+        self.port = port
+        
+    def run(self):
+        success = 0
+        fail = 0
+        try:
+            self.progress_log.emit("Connecting for cleanup...")
+            ftp = SwitchFTP(port=self.port)
+            ftp.connect(self.known_ip)
+            
+            total = len(self.folders_to_delete)
+            
+            for i, folder_name in enumerate(self.folders_to_delete):
+                self.progress_log.emit(f"Deleting {folder_name} ({i+1}/{total})...")
+                remote_path = f"/ultimate/mods/{folder_name}"
+                
+                try:
+                    ftp.delete_remote_dir(remote_path)
+                    success += 1
+                except Exception as e:
+                    self.progress_log.emit(f"Failed to delete {folder_name}: {e}")
+                    fail += 1
+                
+                self.progress_value.emit((i + 1) / total)
+                
+            ftp.disconnect()
+            self.progress_log.emit("Cleanup complete!")
+            self.cleanup_finished.emit(success, fail)
+            
+        except Exception as e:
+            self.progress_log.emit(f"Cleanup Error: {e}")
+            self.cleanup_finished.emit(success, len(self.folders_to_delete) - success)
+
 class ConnectionThread(QThread):
     connected = pyqtSignal(str) # ip
     failed = pyqtSignal()
@@ -494,6 +600,7 @@ class FTPManager(QObject):
     # ---------- Smart Sync API ----------
     
     scan_complete = pyqtSignal(dict) # {folder: status}
+    stale_scan_complete = pyqtSignal(list) # [folder_names]
     
     def start_scan(self, sync_all: bool = False):
         """Scan mods and return status for each"""
@@ -526,6 +633,56 @@ class FTPManager(QObject):
         self.thread.scan_finished.connect(self._store_scan_results)
         self.thread.finished.connect(self._finalize_scan)
         self.thread.start()
+
+    def start_stale_scan(self):
+        """Start scanning for stale mods (remote folders not in local enabled list)"""
+        if self.thread and self.thread.isRunning():
+            self.log_signal.emit("Another operation in progress.")
+            return
+
+        # 1. Gather all local mod folder names
+        all_mod_ids = self.mod_manager.mods.keys()
+        known_names = []
+        for mod_id in all_mod_ids:
+            mod = self.mod_manager.get_mod(mod_id)
+            if mod:
+                if mod.path:
+                    known_names.append(os.path.basename(mod.path))
+
+        port = self.config_manager.config.ftp_port or 5000
+        self.thread = StaleScanThread(known_names, known_ip=self.current_ip, port=port)
+        self.thread.progress_log.connect(self.log_signal.emit)
+        
+        self.thread.scan_finished.connect(self._store_stale_results)
+        self.thread.finished.connect(self._finalize_stale_scan)
+        self.thread.start()
+
+    def start_stale_cleanup(self, folders_to_delete: list):
+        """Start deleting specified stale folders"""
+        if self.thread and self.thread.isRunning():
+            self.log_signal.emit("Another operation in progress.")
+            return
+            
+        port = self.config_manager.config.ftp_port or 5000
+        self.thread = StaleCleanupThread(folders_to_delete, known_ip=self.current_ip, port=port)
+        self.thread.progress_log.connect(self.log_signal.emit)
+        self.thread.progress_value.connect(self.progress_signal.emit)
+        self.thread.cleanup_finished.connect(self._store_sync_results) # Reuse sync results (success/fail ints)
+        self.thread.finished.connect(self._finalize_sync) # Reuse finalize sync
+        
+        self.sync_started.emit() # Re-use sync started signal to lock UI
+        self.thread.start()
+
+    def _store_stale_results(self, r):
+        self._temp_result = r
+        
+    def _finalize_stale_scan(self):
+        self._cleanup_thread()
+        if self._temp_result is not None:
+            self.stale_scan_complete.emit(self._temp_result)
+        else:
+            self.stale_scan_complete.emit([])
+        self._temp_result = None
         
     def start_smart_sync(self, diff_map: dict):
         """Execute smart sync based on pre-calculated diff map"""
