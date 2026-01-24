@@ -448,5 +448,13 @@ class MainMenu(QWidget):
             event.accept()
             return
         
-        # Call parent implementation for other keys
+    def closeEvent(self, event):
+        """Handle application close - stop background threads"""
+        try:
+            self.ftp_manager.stop()
+        except:
+            pass
+        super().closeEvent(event)
+
+    # Call parent implementation for other keys
         super().keyPressEvent(event)

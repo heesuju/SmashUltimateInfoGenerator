@@ -6,7 +6,7 @@ import traceback
 class SyncThread(QThread):
     progress_log = pyqtSignal(str)
     progress_value = pyqtSignal(float)
-    finished_signal = pyqtSignal()
+    sync_results = pyqtSignal(int, int) # success, fail
     
     def __init__(self, folders, known_ip=None, port=5000):
         super().__init__()
@@ -54,17 +54,17 @@ class SyncThread(QThread):
                     processed_files += 1
                     self.progress_value.emit(processed_files / total_files)
             
-            ftp.sync_mod_folders(self.folders, on_progress)
+            success_count, fail_count = ftp.sync_mod_folders(self.folders, on_progress)
             
             ftp.disconnect()
             self.progress_log.emit("Sync complete!")
             self.progress_value.emit(1.0) # Ensure 100%
+            self.sync_results.emit(success_count, fail_count)
             
         except Exception as e:
             self.progress_log.emit(f"Error: {e}")
             traceback.print_exc()
-        finally:
-            self.finished_signal.emit()
+            self.sync_results.emit(0, len(self.folders)) # Assume all failed if exception
 
 class ScanThread(QThread):
     progress_log = pyqtSignal(str)
@@ -117,7 +117,7 @@ class SmartSyncThread(QThread):
     progress_log = pyqtSignal(str)
     progress_value = pyqtSignal(float)
     mod_progress = pyqtSignal(str, float) # mod_name, progress (0-1)
-    finished_signal = pyqtSignal(int, int) # success_count, fail_count
+    sync_results = pyqtSignal(int, int) # success_count, fail_count
     
     def __init__(self, diff_map: dict, known_ip=None, port=5000):
         super().__init__()
@@ -223,12 +223,49 @@ class SmartSyncThread(QThread):
             ftp.disconnect()
             self.progress_log.emit("Smart Sync Complete!")
             self.progress_value.emit(1.0)
+            self.sync_results.emit(success_count, fail_count)
             
         except Exception as e:
             self.progress_log.emit(f"Critical Sync Error: {e}")
             traceback.print_exc()
-        finally:
-            self.finished_signal.emit(success_count, fail_count)
+            self.sync_results.emit(success_count, fail_count)
+
+class ConfigSyncThread(QThread):
+    progress_log = pyqtSignal(str)
+    sync_result = pyqtSignal(bool)
+    
+    def __init__(self, cache_dir, known_ip=None, port=5000):
+        super().__init__()
+        self.cache_dir = cache_dir
+        self.known_ip = known_ip
+        self.port = port
+        
+    def run(self):
+        try:
+            from src.core.ftp import SwitchFTP
+            self.progress_log.emit("Starting config sync...")
+            ftp = SwitchFTP(port=self.port)
+            ftp.connect(self.known_ip)
+            
+            self.progress_log.emit("Searching for remote config directory...")
+            remote_config_dir = ftp.find_acropolis_config_dir()
+            
+            if not remote_config_dir:
+                self.progress_log.emit("Could not find ARCropolis config directory on Switch.")
+                self.finished_signal.emit(False)
+                return
+                
+            self.progress_log.emit(f"Found config dir: {remote_config_dir}")
+            ftp.sync_config_files(self.cache_dir, remote_config_dir, lambda msg: self.progress_log.emit(msg))
+            
+            ftp.disconnect()
+            self.progress_log.emit("Config sync complete!")
+            self.sync_result.emit(True)
+        except Exception as e:
+            self.progress_log.emit(f"Config sync error: {e}")
+            import traceback
+            traceback.print_exc()
+            self.sync_result.emit(False)
 
 class ConnectionThread(QThread):
     connected = pyqtSignal(str) # ip
@@ -248,7 +285,8 @@ class ConnectionThread(QThread):
                     ftp.connect(self.target_ip)
                     ftp.disconnect()
                     found_ip = self.target_ip
-                except:found_ip = None
+                except:
+                    found_ip = None
             
             if not found_ip and not self.target_ip:
                 subnet = ftp.get_local_subnet()
@@ -307,12 +345,18 @@ class MonitorThread(QThread):
         self.is_running = False
         self.wait()
 
+    def __del__(self):
+        self.wait()
+
 class FTPManager(QObject):
     log_signal = pyqtSignal(str)
     progress_signal = pyqtSignal(float)
     mod_progress = pyqtSignal(str, float)
     sync_started = pyqtSignal()
     sync_finished = pyqtSignal(int, int)
+    
+    config_sync_started = pyqtSignal()
+    config_sync_finished = pyqtSignal(bool)
     
     # Connection signals
     connection_status_changed = pyqtSignal(bool, str) # connected, ip/msg
@@ -325,6 +369,7 @@ class FTPManager(QObject):
         self.conn_thread = None
         self.current_ip = None
         self.monitor_thread = None
+        self._temp_result = None
         
         # Auto-connect on startup
         self.check_connection()
@@ -338,6 +383,14 @@ class FTPManager(QObject):
         if not connected:
             self.current_ip = None
         self.connection_status_changed.emit(connected, msg)
+
+    def stop(self):
+        """Stop all background operations"""
+        if self.monitor_thread:
+            self.monitor_thread.stop()
+        if self.thread and self.thread.isRunning():
+            self.thread.terminate() # Risky but needed on hard exit
+            self.thread.wait()
 
     def check_connection(self):
         """Start background connection check"""
@@ -362,6 +415,46 @@ class FTPManager(QObject):
     def on_connection_failed(self):
         self.current_ip = None
         self.connection_status_changed.emit(False, "Not Found")
+        
+    def _cleanup_thread(self):
+        """Generic cleanup for main worker thread"""
+        if self.thread:
+            self.thread = None
+            
+    def _store_sync_results(self, s, f):
+        self._temp_result = (s, f)
+        
+    def _finalize_sync(self):
+        self._cleanup_thread()
+        if self._temp_result:
+            self.sync_finished.emit(*self._temp_result)
+        else:
+            self.sync_finished.emit(0, 0)
+        self._temp_result = None
+
+    def _store_scan_results(self, r):
+        self._temp_result = r
+
+    def _finalize_scan(self):
+        self._cleanup_thread()
+        if self._temp_result is not None:
+            self.scan_complete.emit(self._temp_result)
+        else:
+            self.scan_complete.emit({})
+        self._temp_result = None
+
+    def _store_config_result(self, s):
+        self._temp_result = s
+        
+    def _finalize_config_sync(self):
+        self._cleanup_thread()
+        if self._temp_result is not None:
+            self.config_sync_finished.emit(self._temp_result)
+        else:
+            self.config_sync_finished.emit(False)
+        self._temp_result = None
+
+    def _cleanup_conn_thread(self):
         self.conn_thread = None
 
     def reset_progress(self):
@@ -394,14 +487,12 @@ class FTPManager(QObject):
         self.thread = SyncThread(folders, known_ip=self.current_ip, port=port)
         self.thread.progress_log.connect(self.log_signal.emit)
         self.thread.progress_value.connect(self.progress_signal.emit)
-        self.thread.finished_signal.connect(self.on_sync_finished)
+        # Use built-in finished for cleanup, custom signal for result
+        self.thread.sync_results.connect(self._store_sync_results)
+        self.thread.finished.connect(self._finalize_sync)
         
         self.sync_started.emit()
         self.thread.start()
-        
-    def on_sync_finished(self, success=0, failed=0):
-        self.sync_finished.emit(success, failed)
-        self.thread = None
         
     # ---------- Smart Sync API ----------
     
@@ -435,12 +526,9 @@ class FTPManager(QObject):
         port = self.config_manager.config.ftp_port or 5000
         self.thread = ScanThread(folders, known_ip=self.current_ip, port=port)
         self.thread.progress_log.connect(self.log_signal.emit)
-        self.thread.scan_finished.connect(self._on_scan_finished)
+        self.thread.scan_finished.connect(self._store_scan_results)
+        self.thread.finished.connect(self._finalize_scan)
         self.thread.start()
-        
-    def _on_scan_finished(self, results):
-        self.scan_complete.emit(results)
-        self.thread = None
         
     def start_smart_sync(self, diff_map: dict):
         """Execute smart sync based on pre-calculated diff map"""
@@ -456,8 +544,28 @@ class FTPManager(QObject):
         self.thread.progress_log.connect(self.log_signal.emit)
         self.thread.progress_value.connect(self.progress_signal.emit)
         self.thread.mod_progress.connect(self.mod_progress.emit)
-        self.thread.finished_signal.connect(self.on_sync_finished)
+        self.thread.sync_results.connect(self._store_sync_results)
+        self.thread.finished.connect(self._finalize_sync)
         
         self.sync_started.emit()
         self.thread.start()
 
+    def start_config_sync(self):
+        """Sync configuration files (presets, workspaces)"""
+        if self.thread and self.thread.isRunning():
+            self.log_signal.emit("Another operation in progress.")
+            return
+
+        cache_dir = self.config_manager.config.cache_dir
+        if not cache_dir:
+            self.log_signal.emit("Cache directory not set.")
+            return
+
+        port = self.config_manager.config.ftp_port or 5000
+        self.thread = ConfigSyncThread(cache_dir, known_ip=self.current_ip, port=port)
+        self.thread.progress_log.connect(self.log_signal.emit)
+        self.thread.sync_result.connect(self._store_config_result)
+        self.thread.finished.connect(self._finalize_config_sync)
+        
+        self.config_sync_started.emit()
+        self.thread.start()

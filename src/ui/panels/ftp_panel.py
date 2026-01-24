@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QPushButton, 
                              QLabel, QProgressBar, QListWidget, QListWidgetItem,
-                             QGroupBox, QComboBox, QLineEdit)
+                             QGroupBox, QComboBox, QLineEdit, QCheckBox)
 from PyQt6.QtGui import QIntValidator, QIcon
 from PyQt6.QtCore import Qt
 from src.ui.components.side_panel import SidePanel
@@ -120,6 +120,58 @@ class FTPPanel(SidePanel):
         
         top_layout.addLayout(conn_layout)
         
+        # --- Sync Options Group ---
+        self.options_group = QGroupBox("Sync Options")
+        self.options_group.setStyleSheet("""
+            QGroupBox {
+                color: #ccc;
+                font-weight: bold;
+                border: 1px solid #444;
+                border-radius: 5px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 3px 0 3px;
+            }
+        """)
+        options_layout = HBox(margin=(5, 5, 5, 5), spacing=15)
+        
+        # Mode Combo
+        mode_layout = VBox(spacing=2)
+        mode_label = QLabel("Sync Mode:")
+        mode_label.setStyleSheet("color: #888; font-size: 11px;")
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItems(["Enabled Only", "All"])
+        self.mode_combo.setStyleSheet("""
+            QComboBox {
+                padding: 0px 10px;
+                border-radius: 5px;
+                border: 1px solid #444;
+                background-color: #2b2b2b;
+                color: white;
+                min-height: 24px;
+            }
+            QComboBox:hover {
+                border-color: #666;
+            }
+        """)
+        mode_layout.addWidget(mode_label)
+        mode_layout.addWidget(self.mode_combo)
+        options_layout.addLayout(mode_layout)
+        
+        # Config Check
+        self.sync_configs_check = QCheckBox("Sync Configs")
+        self.sync_configs_check.setStyleSheet("color: white;")
+        self.sync_configs_check.setChecked(True)
+        options_layout.addWidget(self.sync_configs_check, 0, Qt.AlignmentFlag.AlignBottom)
+        
+        options_layout.addStretch()
+        self.options_group.setLayout(options_layout)
+        top_layout.addWidget(self.options_group)
+        
         # Progress Bar
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
@@ -150,31 +202,6 @@ class FTPPanel(SidePanel):
         self.port_input.editingFinished.connect(self.on_config_changed)
         
         
-        # Sync Button (Footer)
-        self.mode_combo = QComboBox()
-        self.mode_combo.addItems(["Enabled Only", "All"])
-        self.mode_combo.setStyleSheet("""
-            QComboBox {
-                padding: 0px 10px;
-                border-radius: 5px;
-                border: 1px solid #444;
-                background-color: #2b2b2b;
-                color: white;
-                min-width: 120px;
-            }
-            QComboBox:hover {
-                border-color: #666;
-            }
-            QComboBox::drop-down {
-                border: 0px;
-            }
-        """)
-        self.mode_combo.setFixedHeight(24)
-        self.mode_combo.setFixedWidth(80)
-        # self.mode_combo.currentIndexChanged.connect(self.on_mode_changed)
-        
-        self.footer.addWidget(self.mode_combo)
-
         # Sync Button (Footer) - Now defaults to Scan/Preview
         self.sync_button = self.add_footer_button(
             text="Start Sync",
@@ -281,6 +308,7 @@ class FTPPanel(SidePanel):
         self.ftp_manager.connection_status_changed.connect(self.on_connection_status_changed)
         self.ftp_manager.scan_complete.connect(self.on_scan_complete)
         self.ftp_manager.mod_progress.connect(self.on_mod_progress)
+        self.ftp_manager.config_sync_finished.connect(self.on_config_sync_finished)
         
         # Store diff map for confirmation
         self.current_diff_map = {}
@@ -334,6 +362,7 @@ class FTPPanel(SidePanel):
         
         sync_all = self.mode_combo.currentIndex() == 1
         self.ftp_manager.start_scan(sync_all=sync_all)
+        self.options_group.hide()
         
     def append_log(self, msg: str):
         self.log_output.append(msg)
@@ -352,6 +381,12 @@ class FTPPanel(SidePanel):
         self.mode_combo.setEnabled(False)
         
     def on_sync_finished(self, success=0, failed=0):
+        if hasattr(self, 'sync_configs_pending') and self.sync_configs_pending:
+            self.sync_configs_pending = False
+            self.append_log("Proceeding to config sync...")
+            self.ftp_manager.start_config_sync()
+            return
+            
         self.done_button.setVisible(True)
         self.sync_button.setVisible(False)
         self.mode_combo.setVisible(False)
@@ -370,6 +405,8 @@ class FTPPanel(SidePanel):
         self.sync_button.setVisible(True)
         self.sync_button.setEnabled(True)
         self.sync_button.setText("Start Sync")
+        
+        self.options_group.show()
         
         self.mode_combo.setVisible(True)
         self.mode_combo.setEnabled(True)
@@ -470,8 +507,14 @@ class FTPPanel(SidePanel):
         self.sync_button.setVisible(True)
         self.mode_combo.setVisible(True)
         self.mode_combo.setEnabled(False) 
+        self.sync_configs_check.setEnabled(False)
         
+        self.sync_configs_pending = self.sync_configs_check.isChecked()
         self.ftp_manager.start_smart_sync(self.current_diff_map)
+
+    def on_config_sync_finished(self, success: bool):
+        self.on_sync_finished(success=1 if success else 0, failed=0 if success else 1)
+        self.sync_configs_check.setEnabled(True)
         
     def on_cancel_preview_clicked(self):
         self.preview_container.hide()
@@ -483,6 +526,7 @@ class FTPPanel(SidePanel):
         self.sync_button.setEnabled(True)
         self.mode_combo.setEnabled(True)
         
+        self.options_group.show()
         self.append_log("Preview canceled.")
 
     def resize_list_to_content(self, list_widget: QListWidget):

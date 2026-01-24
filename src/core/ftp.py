@@ -383,17 +383,29 @@ class SwitchFTP:
                     if progress_callback:
                         progress_callback(f"Skipped {file} ({reason})")
 
-    def sync_mod_folders(self, folders: list[str], progress_callback: Callable[[str], None] = None):
+    def sync_mod_folders(self, folders: list[str], progress_callback: Callable[[str], None] = None) -> tuple[int, int]:
         """
         Sync multiple mod folders to the Switch.
         Uploads to /ultimate/mods/ directory (ARCropolis).
+        Returns (success_count, fail_count)
         """
+        success = 0
+        fail = 0
         for folder in folders:
-            mod_name = os.path.basename(folder)
-            remote_dir = f"/ultimate/mods/{mod_name}"
-            
-            if progress_callback:
-                progress_callback(f"Syncing {mod_name} -> {remote_dir}")
+            try:
+                mod_name = os.path.basename(folder)
+                remote_dir = f"/ultimate/mods/{mod_name}"
+                
+                if progress_callback:
+                    progress_callback(f"Syncing folder: {mod_name}")
+                
+                self.sync_dir(folder, remote_dir, progress_callback)
+                success += 1
+            except Exception as e:
+                if progress_callback:
+                    progress_callback(f"Failed to sync {folder}: {e}")
+                fail += 1
+        return success, fail
                 
     
     def delete_remote_dir(self, remote_dir: str):
@@ -452,3 +464,61 @@ class SwitchFTP:
             except: pass
         except:
             pass
+    def find_acropolis_config_dir(self) -> str:
+        """Find the first valid numeric-based config directory for ARCropolis."""
+        # Try both spellings just to be safe, but prioritize acropolis
+        base = "/ultimate/arcropolis/config"
+        
+        try:
+            parent = os.path.dirname(base)
+            base_name = os.path.basename(base)
+            try:
+                items = list(self.ftp.mlsd(parent))
+            except:
+                return None
+
+            exists = False
+            for name, facts in items:
+                if name == base_name:
+                    exists = True
+                    break
+            
+            if not exists: return None
+
+            # Look for first numeric dir
+            items = list(self.ftp.mlsd(base))
+            for name, facts in items:
+                if facts.get('type') == 'dir' and name.isdigit():
+                    # Go one level deeper
+                    sub_path = f"{base}/{name}"
+                    sub_items = list(self.ftp.mlsd(sub_path))
+                    for sub_name, sub_facts in sub_items:
+                        if sub_facts.get('type') == 'dir' and sub_name.isdigit():
+                            return f"{sub_path}/{sub_name}"
+        except:
+            return None
+
+    def sync_config_files(self, local_cache_dir: str, remote_config_dir: str, progress_callback: Callable[[str], None] = None):
+        """Upload workspace, workspace_list and preset files to remote config dir."""
+        files_to_sync = ["workspace", "workspace_list"]
+        
+        if not os.path.exists(local_cache_dir):
+            return
+
+        # Also find all preset files
+        for f in os.listdir(local_cache_dir):
+            if "_preset" in f or f == "presets":
+                files_to_sync.append(f)
+        
+        try:
+            self.ftp.cwd(remote_config_dir)
+            for filename in files_to_sync:
+                local_path = os.path.join(local_cache_dir, filename)
+                if os.path.exists(local_path) and os.path.isfile(local_path):
+                    if progress_callback:
+                        progress_callback(f"Syncing config: {filename}")
+                    self.upload_file_with_retry(local_path, filename)
+        except Exception as e:
+            if progress_callback:
+                progress_callback(f"Error syncing configs: {e}")
+            raise e

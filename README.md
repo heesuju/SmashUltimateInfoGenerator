@@ -55,7 +55,6 @@ python setup.py build
 - [ ] Better batch panel UI
 - [ ] Better online filter(maybe)
 - [ ] Reslotter integration
-- [ ] Finish implementing filters for installed mods
 
 ## BugFix
-- [ ] Fix wifi-safe check
+- [ ] Fix preview description width resize bug
