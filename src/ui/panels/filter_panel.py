@@ -213,20 +213,31 @@ class FilterPanel(SidePanel):
         checked_chars = self.character.get_checked()
         # Filter out "Select All" if present
         checked_chars = [c for c in checked_chars if c != "Select All"]
-        self.filter_manager.params.character = [DataManager.get_character_by_custom(c) for c in checked_chars]
+        total_characters = len(DataManager.get_character_names())
+        # Use empty list when all are selected (no filter)
+        if len(checked_chars) >= total_characters:
+            self.filter_manager.params.character = []
+        else:
+            self.filter_manager.params.character = [DataManager.get_character_by_custom(c) for c in checked_chars]
         
         # Set author filter
         self.filter_manager.params.authors = self.author.text()
         
-        # Get all checked categories
+        # Get all checked categories - use empty list when all are selected
         checked_categories = self.category.get_checked()
         checked_categories = [c for c in checked_categories if c != "Select All"]
-        self.filter_manager.params.category = [Category(c) for c in checked_categories]
+        if len(checked_categories) >= len(Category.list()):
+            self.filter_manager.params.category = []
+        else:
+            self.filter_manager.params.category = [Category(c) for c in checked_categories]
         
-        # Get all checked elements
+        # Get all checked elements - use empty list when all are selected
         checked_elements = self.elements.get_checked()
         checked_elements = [e for e in checked_elements if e != "Select All"]
-        self.filter_manager.params.elements = [Element(e) for e in checked_elements]
+        if len(checked_elements) >= len(Element.list()):
+            self.filter_manager.params.elements = []
+        else:
+            self.filter_manager.params.elements = [Element(e) for e in checked_elements]
         
         # Set slot range
         # In single mode, both min and max should be the same value
@@ -237,20 +248,29 @@ class FilterPanel(SidePanel):
             self.filter_manager.params.slot_min = self.min_value.value()
             self.filter_manager.params.slot_max = self.max_value.value()
         
-        # Get all checked wifi states
+        # Get all checked wifi states - use empty list when all are selected
         checked_wifi = self.wifi.get_checked()
         checked_wifi = [w for w in checked_wifi if w != "Select All"]
-        self.filter_manager.params.wifi = [Wifi(w) for w in checked_wifi]
+        if len(checked_wifi) >= len(Wifi.list()):
+            self.filter_manager.params.wifi = []
+        else:
+            self.filter_manager.params.wifi = [Wifi(w) for w in checked_wifi]
         
-        # Get all checked info states
+        # Get all checked info states - use empty list when all are selected
         checked_info = self.info.get_checked()
         checked_info = [i for i in checked_info if i != "Select All"]
-        self.filter_manager.params.info = [InfoToml(i) for i in checked_info]
+        if len(checked_info) >= len(InfoToml.list()):
+            self.filter_manager.params.info = []
+        else:
+            self.filter_manager.params.info = [InfoToml(i) for i in checked_info]
         
-        # Get all checked enabled states
+        # Get all checked enabled states - use empty list when all are selected
         checked_enabled = self.enabled.get_checked()
         checked_enabled = [e for e in checked_enabled if e != "Select All"]
-        self.filter_manager.params.enabled = [EnabledState(e) for e in checked_enabled]
+        if len(checked_enabled) >= len(EnabledState.list()):
+            self.filter_manager.params.enabled = []
+        else:
+            self.filter_manager.params.enabled = [EnabledState(e) for e in checked_enabled]
         
         # Set include_hidden flag
         self.filter_manager.params.include_hidden = self.include_hidden.isChecked()
