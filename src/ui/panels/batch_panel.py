@@ -15,7 +15,7 @@ from src.utils.file import get_parent_dir
 from src.managers.cache_manager import CacheManager
 from src.managers.data_manager import ButtonIcons
 from src.ui.components.thumbnail_label import ImageCache
-from src.constants.enums import Wifi, Element
+from src.constants.enums import Wifi, Element, Category
 from src.core.formatting import (
     format_display_name, 
     format_character_names_for_display, 
@@ -341,30 +341,30 @@ class BatchPanel(SidePanel):
                             pass
                     
                     # Handle pending thumbnail from widget
-                pending_thumb = widget.get_pending_thumbnail()
-                if pending_thumb:
-                    try:
-                        dest = os.path.join(mod.path, "preview.webp")
-                        
-                        if pending_thumb.startswith("http"):
-                            # It's a URL (fetched preview), download it
-                            with requests.Session() as session:
-                                session.trust_env = False
-                                response = session.get(pending_thumb, stream=True)
+                    pending_thumb = widget.get_pending_thumbnail()
+                    if pending_thumb:
+                        try:
+                            dest = os.path.join(mod.path, "preview.webp")
                             
-                            if response.status_code == 200:
-                                with open(dest, 'wb') as f:
-                                    for chunk in response.iter_content(chunk_size=8192):
-                                        f.write(chunk)
+                            if pending_thumb.startswith("http"):
+                                # It's a URL (fetched preview), download it
+                                with requests.Session() as session:
+                                    session.trust_env = False
+                                    response = session.get(pending_thumb, stream=True)
+                                
+                                if response.status_code == 200:
+                                    with open(dest, 'wb') as f:
+                                        for chunk in response.iter_content(chunk_size=8192):
+                                            f.write(chunk)
+                                    ImageCache().remove(dest)
+                                    mod.thumbnail = dest
+                            else:
+                                # It's a local file
+                                shutil.copy2(pending_thumb, dest)
                                 ImageCache().remove(dest)
                                 mod.thumbnail = dest
-                        else:
-                            # It's a local file
-                            shutil.copy2(pending_thumb, dest)
-                            ImageCache().remove(dest)
-                            mod.thumbnail = dest
-                    except Exception as e:
-                        print(f"Error copying/downloading thumbnail: {e}")
+                        except Exception as e:
+                            print(f"Error copying/downloading thumbnail: {e}")
                 
                 # Download preview image if fetched (and no pending thumbnail)
                 if not (widget and widget.get_pending_thumbnail()):
@@ -388,10 +388,17 @@ class BatchPanel(SidePanel):
                 generate_toml(mod)
                 
                 # Rename folder if needed
+                old_path = mod.path
                 new_dir = os.path.join(get_parent_dir(mod.path), mod.folder_name)
-                if os.path.exists(new_dir):
-                    mod.path = new_dir
-                    mod.thumbnail = os.path.join(new_dir, "preview.webp")
+                if old_path != new_dir and not os.path.exists(new_dir):
+                    try:
+                        os.rename(old_path, new_dir)
+                        mod.path = new_dir
+                        mod.thumbnail = os.path.join(new_dir, "preview.webp")
+                    except Exception as e:
+                        print(f"Error renaming folder: {e}")
+                elif os.path.exists(new_dir) and old_path != new_dir:
+                    print(f"Could not rename {old_path} to {new_dir}: destination already exists")
                 
                 # Update cache
                 cache_data = mod.model_dump(mode='json', exclude={'is_selected', 'path', 'hash'})
