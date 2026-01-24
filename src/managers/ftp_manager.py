@@ -139,6 +139,12 @@ class SmartSyncThread(QThread):
             
             for folder, status in self.diff_map.items():
                 mod_name = os.path.basename(folder)
+                if not mod_name:
+                    self.progress_log.emit(f"Skipping invalid folder path: {folder}")
+                    processed += 1
+                    self.progress_value.emit(processed / total_mods)
+                    continue
+                    
                 remote_path = f"/ultimate/mods/{mod_name}"
                 
                 if status == "MATCH":

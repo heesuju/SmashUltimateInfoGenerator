@@ -398,6 +398,20 @@ class SwitchFTP:
     
     def delete_remote_dir(self, remote_dir: str):
         """Recursively delete a remote directory"""
+        # CRITICAL SAFETY CHECK
+        path = remote_dir.strip()
+        
+        # 1. Scope Constraint: Must be inside /ultimate
+        if not path.startswith("/ultimate"):
+            print(f"SAFETY ERROR: Attempted to delete outside /ultimate: {path}")
+            return
+
+        # 2. Protected Paths
+        protected = ["/", "/ultimate", "/ultimate/mods", "/ultimate/mods/", ""]
+        if path in protected:
+            print(f"SAFETY ERROR: Attempted to delete protected path: {path}")
+            return
+            
         try:
             # Get list of items
             items = []
