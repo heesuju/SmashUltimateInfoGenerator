@@ -143,9 +143,35 @@ class WorkspaceManager(QObject):
         if name in self.workspace_map:
             return False
             
-        # Generate filename from name (sanitize)
+        # Generate clean name (sanitized)
         clean_name = re.sub(r'[<>:"/\\|?*]', '', name).replace(' ', '_')
-        filename = f"preset_{clean_name}"
+        
+        base_filename = f"{clean_name}_preset"
+        
+        existing_filenames = list(self.workspace_map.values())
+        
+        if self.cache_dir and os.path.exists(self.cache_dir):
+            try:
+                existing_filenames.extend(os.listdir(self.cache_dir))
+            except:
+                pass
+        
+        max_num = 1
+        pattern = re.compile(rf"^{re.escape(clean_name)}_preset(\d*)$")
+        
+        found_any = False
+        for fname in set(existing_filenames):
+            match = pattern.match(fname)
+            if match:
+                found_any = True
+                num_str = match.group(1)
+                if num_str:
+                    max_num = max(max_num, int(num_str))
+        
+        if not found_any:
+            filename = f"{clean_name}_preset2"
+        else:
+            filename = f"{clean_name}_preset{max_num + 1}"
         
         self.workspace_map[name] = filename
         self.save_workspace_list()
