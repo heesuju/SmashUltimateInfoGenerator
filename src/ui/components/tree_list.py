@@ -1,15 +1,17 @@
-from PyQt6.QtCore import Qt, QRect, QSize
 from PyQt6.QtWidgets import (
     QWidget, QListWidget, QStyledItemDelegate, QStyleOptionViewItem, 
     QSizePolicy, QStyle, QApplication, QVBoxLayout, 
     QHBoxLayout, QPushButton, QTreeWidget, QTreeWidgetItem, 
-    QCheckBox, QHeaderView, QScrollBar
+    QCheckBox, QHeaderView, QScrollBar, QMenu
 )
 from PyQt6.QtGui import (
-    QPixmap, QColor, QPalette, QIcon, 
+    QPixmap, QColor, QPalette, QIcon, QAction, QDesktopServices,
     QPainter, QPainterPath, QImage, QBrush, 
-    QPen, QWheelEvent
+    QPen, QWheelEvent, QCursor
 )
+from PyQt6.QtCore import Qt, QRect, QSize, QUrl
+
+from src.utils.file import open_folder
 
 from src.models.mod import Mod, ModItem
 from src.managers.mod_manager import ModManager
@@ -108,6 +110,45 @@ class CustomTreeWidget(QTreeWidget):
         
         # Call parent implementation for other keys
         super().keyPressEvent(event)
+
+    def contextMenuEvent(self, event):
+        self.show_context_menu(event.globalPos())
+
+    def show_context_menu(self, pos):
+        """Show context menu for mod options"""
+        item = self.itemAt(self.viewport().mapFromGlobal(pos))
+        if not item or not hasattr(item, 'mod'):
+            return
+
+        # Get full mod object
+        mod = None
+        if self.parent_tree_list and hasattr(self.parent_tree_list, 'mod_manager'):
+            mod = self.parent_tree_list.mod_manager.get_mod(item.mod.id)
+            
+        if not mod:
+            return
+
+        menu = QMenu(self)
+        
+        open_action = QAction("Open Folder", self)
+        open_action.setIcon(QIcon(ButtonIcons.BROWSE.value))
+        open_action.triggered.connect(lambda: self.on_open_clicked(mod))
+        menu.addAction(open_action)
+        
+        if mod.url and mod.url.startswith("http"):
+            web_action = QAction("Open Web Page", self)
+            web_action.setIcon(QIcon(ButtonIcons.WEB.value))
+            web_action.triggered.connect(lambda: self.on_web_clicked(mod.url))
+            menu.addAction(web_action)
+        
+        menu.exec(pos)
+
+    def on_open_clicked(self, mod):
+        if mod:
+            open_folder(mod.path)
+
+    def on_web_clicked(self, url):
+        QDesktopServices.openUrl(QUrl(url))
 
 class CustomDelegate(QStyledItemDelegate):
     def sizeHint(self, option, index):
