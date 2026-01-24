@@ -566,7 +566,25 @@ class ModList(QWidget):
                 self.batch_tasks_added.emit()
         
         elif action == "Remove":
-            pass # TODO: Implement Remove
+            selected_ids = self.mod_manager.get_selected_ids()
+            if not selected_ids:
+                from PyQt6.QtWidgets import QMessageBox
+                QMessageBox.warning(self, "No Selection", "Please select mods to process.")
+                return
+            
+            from PyQt6.QtWidgets import QMessageBox
+            reply = QMessageBox.question(
+                self, 
+                "Confirm Deletion", 
+                f"Are you sure you want to permanently delete {len(selected_ids)} selected mod(s)?\nThis action cannot be undone.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
+                QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                self.mod_manager.delete_mods(selected_ids)
+                self.on_deselect_all()
+
         elif action == "Enable":
             selected_ids = self.mod_manager.get_selected_ids()
             if not selected_ids:

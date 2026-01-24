@@ -1,4 +1,5 @@
 import os
+import shutil
 from typing import Union, List
 from PyQt6.QtCore import QObject, pyqtSignal
 from src.core.mod_loader import ModLoader
@@ -7,6 +8,7 @@ from src.managers.config_manager import ConfigManager
 from src.managers.workspace_manager import WorkspaceManager
 from src.models.mod import Mod
 from src.utils.logger import output_log
+from src.managers.cache_manager import CacheManager
 
 class ModManager(QObject):
     def __init__(self, config_manager:ConfigManager, workspace_manager:WorkspaceManager):
@@ -221,3 +223,29 @@ class ModManager(QObject):
     def get_selected_ids(self)->List[str]:
         """Get all selected mod IDs"""
         return self.selected_ids
+
+    def delete_mods(self, ids: List[str]):
+        """Delete mods from file system and cache"""
+        cache_manager = CacheManager()
+        deleted_count = 0
+        
+        for id in ids:
+            mod = self.mods.get(id)
+            if mod:
+                path = mod.path
+                if os.path.exists(path) and os.path.isdir(path):
+                    try:
+                        shutil.rmtree(path)
+                        cache_manager.remove_mod(path)
+                        del self.mods[id]
+                        deleted_count += 1
+                        output_log(f"Deleted mod: {mod.mod_name} at {path}")
+                    except Exception as e:
+                        output_log(f"Failed to delete mod {mod.mod_name}: {e}")
+        
+        cache_manager.close()
+        
+        if deleted_count > 0:
+            self.clear_selection()
+            if self.callback:
+                self.callback()

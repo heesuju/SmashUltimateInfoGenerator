@@ -118,6 +118,15 @@ class CacheManager:
             
         except Exception as e:
             output_log(f"Error caching mod data: {e}")
+
+    def remove_mod(self, mod_path: str):
+        """Remove a specific mod from cache"""
+        try:
+            self.conn.execute("DELETE FROM mod_cache WHERE mod_path = ?", (mod_path,))
+            self.conn.commit()
+            output_log(f"Removed cache entry for: {mod_path}")
+        except Exception as e:
+            output_log(f"Error removing cached mod: {e}")
     
     def cleanup(self):
         """Remove cache entries for mods that no longer exist"""
