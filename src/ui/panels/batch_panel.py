@@ -55,25 +55,16 @@ class BatchPanel(SidePanel):
         self.stats_label.setStyleSheet("padding: 5px;")
         self.body.addWidget(self.stats_label)
         
-        # Scrollable task list
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        
-        # Create container widget for the layout
         from PyQt6.QtWidgets import QWidget as QWidgetContainer, QSizePolicy
         task_list_widget = QWidgetContainer()
         self.task_container = VBox(spacing=5)
         self.task_container.setAlignment(Qt.AlignmentFlag.AlignTop)  # Anchor items to top
         task_list_widget.setLayout(self.task_container)
         
-        # Prevent container from expanding vertically and centering content
         task_list_widget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        self.body.addWidget(task_list_widget)
+        self.body.addStretch()
         
-        scroll.setWidget(task_list_widget)
-        self.body.addWidget(scroll, 1)
-        
-        # Footer buttons
         self.clear_button = self.add_footer_button("Clear", self.on_clear_queue, icon=ButtonIcons.CLEAR.value)
         self.fetch_button = self.add_footer_button("Fetch", self.start_processing, icon=ButtonIcons.WEB.value)
         self.apply_button = self.add_footer_button("Apply", self.on_apply, primary=True, icon=ButtonIcons.BATCH_ENABLE.value)
