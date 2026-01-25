@@ -138,6 +138,20 @@ class EditPanel(SidePanel):
         self.slots.model().dataChanged.connect(self._update_generated_names)
         self.body.addWidget(self.slots)
 
+        # Stages
+        self._add_label("Stages")
+        stage_names = DataManager.get_stage_names()
+        self.stages = CheckableComboBox(stage_names, [False] * (len(stage_names) + 1), False, "Select Stages")
+        self.body.addWidget(self.stages)
+        
+        # Stage Slots
+        self._add_label("Stage Slots")
+        # StageSlot enum values: "normal", "battle"
+        from src.constants.enums import StageSlot
+        stage_slots = StageSlot.list()
+        self.stage_slots = CheckableComboBox(stage_slots, [False] * (len(stage_slots) + 1), False, "Select Stage Slots")
+        self.body.addWidget(self.stage_slots)
+
         # Category
         self._add_label("Category")
         self.category = SingleComboBox()
@@ -510,15 +524,38 @@ class EditPanel(SidePanel):
             item = self.elements.model().invisibleRootItem().child(i)
             element_text = item.text()
             
-            # Skip "Select All" item
-            if i == 0 and element_text == "Select All":
-                continue
-            
             # Match element from mod's includes list
             is_checked = any(el.value == element_text for el in mod.includes)
             item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
         
         self.elements.update_display()
+
+        # Set stages
+        for i in range(self.stages.get_item_count()):
+            item = self.stages.model().invisibleRootItem().child(i)
+            stage_text = item.text()
+            
+            # Find stage key
+            stage_key = DataManager.get_stage_by_name(stage_text)
+            
+            is_checked = any(s.stage == stage_key for s in mod.stages)
+            item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+        self.stages.update_display()
+        
+        # Set stage slots
+        # Collect all unique stage slots
+        all_stage_slots = set()
+        for stage in mod.stages:
+            for slot in stage.slots:
+                all_stage_slots.add(slot.value)
+                
+        for i in range(self.stage_slots.get_item_count()):
+            item = self.stage_slots.model().invisibleRootItem().child(i)
+            slot_text = item.text()
+            
+            is_checked = slot_text in all_stage_slots
+            item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+        self.stage_slots.update_display()
         
         # Set wifi safe
         try:
@@ -541,6 +578,8 @@ class EditPanel(SidePanel):
         self.mod_name.clear()
         self.character.reset()
         self.slots.reset()
+        self.stages.reset()
+        self.stage_slots.reset()
         self.category.setCurrentText(Category.MISC.value)
         self.author.clear()
         self.version.clear()
@@ -633,6 +672,36 @@ class EditPanel(SidePanel):
                 pass
         
         self.mod.characters = new_chars
+
+        # Stages
+        from src.models.mod import StageModel
+        from src.constants.enums import Stage, StageSlot
+        
+        new_stages = []
+        selected_stages = self.stages.get_checked()
+        if "Select All" in selected_stages:
+            selected_stages.remove("Select All")
+            
+        selected_stage_slots_text = self.stage_slots.get_checked()
+        if "Select All" in selected_stage_slots_text:
+            selected_stage_slots_text.remove("Select All")
+        
+        stage_slots = []
+        for text in selected_stage_slots_text:
+            try:
+                stage_slots.append(StageSlot(text))
+            except:
+                pass
+                
+        for stage_text in selected_stages:
+            try:
+                stage_key = DataManager.get_stage_by_name(stage_text)
+                if stage_key:
+                    new_stages.append(StageModel(stage=Stage(stage_key), slots=stage_slots))
+            except:
+                pass
+        
+        self.mod.stages = new_stages
 
         # 2. Save Preview (Deferred)
         if self.pending_preview_path and self.mod_path:
@@ -771,5 +840,30 @@ class EditPanel(SidePanel):
             
             self.slots.update_display()
         
+        # Update stages and stage slots from scan
+        if temp_mod.stages:
+            # Stages
+            detected_stages = {s.stage for s in temp_mod.stages}
+            for i in range(self.stages.get_item_count()):
+                item = self.stages.model().invisibleRootItem().child(i)
+                stage_text = item.text()
+                stage_key = DataManager.get_stage_by_name(stage_text)
+                is_checked = stage_key in detected_stages
+                item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+            self.stages.update_display()
+            
+            # Stage Slots
+            all_stage_slots = set()
+            for s in temp_mod.stages:
+                for slot in s.slots:
+                    all_stage_slots.add(slot.value)
+            
+            for i in range(self.stage_slots.get_item_count()):
+                item = self.stage_slots.model().invisibleRootItem().child(i)
+                slot_text = item.text()
+                is_checked = slot_text in all_stage_slots
+                item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+            self.stage_slots.update_display()
+            
         # Update generated names
         self._update_generated_names()
