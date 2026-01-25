@@ -224,6 +224,13 @@ class ModList(QWidget):
         for fighter in Fighter:
             icon_path = DataManager.get_character_icon(str(fighter.value))
             self._icon_cache[str(fighter.value)] = os.path.exists(icon_path)
+            
+        # Pre-cache stage icons
+        self._stage_icon_cache = {}
+        stage_keys = DataManager.get_stage_keys()
+        for key in stage_keys:
+            icon_path = DataManager.get_stage_icon(key)
+            self._stage_icon_cache[key] = os.path.exists(icon_path)
         
         # Pre-cache group character data
         character_data = DataManager.get_character_data()
@@ -322,27 +329,44 @@ class ModList(QWidget):
         self._populate_active = True
 
         def process(mod:Mod)->ModItem:
-            keys = mod.get_grouped_character_keys()
+            from src.constants.enums import Category
             
-            # Check if group icons exist, if not ungroup them (using cache)
-            final_keys = []
-            for key in keys:
-                # Use cached icon existence check
-                icon_exists = self._icon_cache.get(key, False)
-                if icon_exists:
-                    # Icon exists, use the key as-is
-                    final_keys.append(key)
-                else:
-                    # Icon doesn't exist, check if it's a group and ungroup it (using cache)
-                    group_chars = self._group_cache.get(key, [])
-                    if group_chars:
-                        # This is a group without an icon, add all individual characters
-                        final_keys.extend(group_chars)
-                    else:
-                        # Not a group, keep the key anyway (fallback)
+            icon_urls = []
+            
+            if mod.category == Category.STAGE:
+                # Handle Stage Icons
+                keys = [str(s.stage) for s in mod.stages]
+                final_keys = []
+                for key in keys:
+                    # Use cached stage icon existence check
+                    if self._stage_icon_cache.get(key, False):
                         final_keys.append(key)
-            
-            character_icons = DataManager.get_character_icons([character for character in final_keys])
+                
+                icon_urls = DataManager.get_stage_icons(final_keys)
+                
+            else:
+                # Handle Character Icons
+                keys = mod.get_grouped_character_keys()
+                
+                # Check if group icons exist, if not ungroup them (using cache)
+                final_keys = []
+                for key in keys:
+                    # Use cached icon existence check
+                    icon_exists = self._icon_cache.get(key, False)
+                    if icon_exists:
+                        # Icon exists, use the key as-is
+                        final_keys.append(key)
+                    else:
+                        # Icon doesn't exist, check if it's a group and ungroup it (using cache)
+                        group_chars = self._group_cache.get(key, [])
+                        if group_chars:
+                            # This is a group without an icon, add all individual characters
+                            final_keys.extend(group_chars)
+                        else:
+                            # Not a group, keep the key anyway (fallback)
+                            final_keys.append(key)
+                
+                icon_urls = DataManager.get_character_icons([character for character in final_keys])
 
             return ModItem(
                 id=str(mod.hash),
@@ -356,7 +380,7 @@ class ModList(QWidget):
                 selected=self.mod_manager.is_selected(str(mod.hash)),
                 favorited=str(mod.hash) in self.mod_manager.favorite_ids,
                 hidden=str(mod.hash) in self.mod_manager.hidden_ids,
-                character_icons=character_icons
+                character_icons=icon_urls
             )
 
 

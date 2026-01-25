@@ -128,6 +128,7 @@ from src.models.mod import StageModel
 
 def scan_stage(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "stage")
+    mod.stages = [] # Initialize list
 
     if is_valid_dir(root_dir):  
         mod.add_to_included(Element.STAGE)
@@ -135,8 +136,8 @@ def scan_stage(mod:Mod)->Mod:
         stages = get_children(root_dir)
         for stage_folder_name in stages:
             try:
-                # Try to match folder name to Stage enum
-                stage_enum = Stage(stage_folder_name)
+                # Try to match folder name to Stage enum (case-insensitive)
+                stage_enum = Stage(stage_folder_name.lower())
                 
                 stage_path = os.path.join(root_dir, stage_folder_name)
                 slots = []

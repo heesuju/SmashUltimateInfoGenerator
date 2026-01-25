@@ -233,3 +233,11 @@ class DataManager:
             if d.get("Series") == series_name:
                 output.append(d.get("Value"))
         return output
+
+    @staticmethod
+    def get_stage_icon(stage:str) -> str:
+        return os.path.join(ICON_PATH, "stages", f"{str(stage)}.jpg")
+
+    @staticmethod
+    def get_stage_icons(stage_keys: list[str]) -> list[str]:
+        return [DataManager.get_stage_icon(key) for key in stage_keys]
