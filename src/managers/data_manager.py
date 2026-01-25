@@ -152,6 +152,29 @@ class DataManager:
         return [DataManager.get_character_icon(name) for name in character_names]
 
 
+    @classmethod
+    def get_character_dict(cls) -> dict:
+        """
+        Returns a dictionary mapping Character ID/Key -> Display Name
+        """
+        data = cls.get_character_data()
+        result = {}
+        for item in data:
+            key = item['Key']
+            # Use Custom Name if available, else Name
+            name = item['Custom'] if item['Custom'] else item['Value']
+            result[key] = name
+        return result
+
+    @classmethod
+    def get_character_Name(cls, key:str)->str:
+         """Returns display name for a key"""
+         data = cls.get_character_data()
+         for item in data:
+             if item['Key'] == key:
+                 return item['Custom'] if item['Custom'] else item['Value']
+         return key
+
     # -------------------------------------------------------------------------
     # STAGE DATA SUPPORT
     # -------------------------------------------------------------------------

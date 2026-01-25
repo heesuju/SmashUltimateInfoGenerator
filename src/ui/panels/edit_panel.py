@@ -29,6 +29,7 @@ from src.core.gamebanana import Gamebanana
 from src.utils.web import open_page
 from src.core.data import generate_toml
 from src.core.scanner import scan_mod
+from src.ui.components.assignment_list import AssignmentListWidget
 from src.models.mod import Character
 from src.constants.enums import Fighter, Category, Wifi, Element
 from src.utils.file import get_parent_dir
@@ -115,16 +116,18 @@ class EditPanel(SidePanel):
         self.mod_name.textChanged.connect(self._update_generated_names)
         self.body.addWidget(self.mod_name)
 
-        # Character
+        # Character Inputs
         self._add_label("Character")
         characters = DataManager.get_character_names()
+        # Simple Mode Container
+        self.char_simple_container = QWidget()
+        char_simple_layout = QHBoxLayout(self.char_simple_container)
+        char_simple_layout.setContentsMargins(0, 0, 0, 0)
+        
         self.character = CheckableComboBox(characters, [False] * (len(characters) + 1), False, "Select Characters")
         self.character.model().dataChanged.connect(self._update_generated_names)
-        self.body.addWidget(self.character)
-
-        # Slots
-        self._add_label("Slots")
         
+        # Slots (Simple Mode)
         def slot_formatter(items):
             if not items: return ""
             # Convert "C00" -> 0
@@ -136,24 +139,65 @@ class EditPanel(SidePanel):
                 except:
                     pass
             return format_slots(sorted(slots_int))
+        self._slot_formatter = slot_formatter # Store for reuse
 
         self.slots = CheckableComboBox([f"C{i:02d}" for i in range(256)], [False] * 257, False, "Select Slots", formatter=slot_formatter)
         self.slots.model().dataChanged.connect(self._update_generated_names)
-        self.body.addWidget(self.slots)
+        
+        char_simple_layout.addWidget(self.character, 1) # Stretch character
+        char_simple_layout.addWidget(self.slots)
+        
+        self.body.addWidget(self.char_simple_container)
+
+        # Advanced Mode Widget
+        self.char_assignments = AssignmentListWidget("Character", "Slots")
+        self.char_assignments.set_entities(DataManager.get_character_dict()) # {ID: Name}
+        self.char_assignments.set_slot_options([f"C{i:02d}" for i in range(256)], formatter=slot_formatter)
+        self.char_assignments.assignments_changed.connect(self._update_generated_names)
+        self.char_assignments.hide()
+        self.body.addWidget(self.char_assignments)
+
 
         # Stages
         self._add_label("Stages")
         stage_names = DataManager.get_stage_names()
-        self.stages = CheckableComboBox(stage_names, [False] * (len(stage_names) + 1), False, "Select Stages")
-        self.body.addWidget(self.stages)
         
-        # Stage Slots
-        self._add_label("Stage Slots")
+        # Simple Mode Container
+        self.stage_simple_container = QWidget()
+        stage_simple_layout = QHBoxLayout(self.stage_simple_container)
+        stage_simple_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.stages = CheckableComboBox(stage_names, [False] * (len(stage_names) + 1), False, "Select Stages")
+        self.stages.model().dataChanged.connect(self._update_generated_names)
+        
+        # Stage Slots (Simple Mode)
         # StageSlot enum values: "normal", "battle"
         from src.constants.enums import StageSlot
-        stage_slots = StageSlot.list()
-        self.stage_slots = CheckableComboBox(stage_slots, [False] * (len(stage_slots) + 1), False, "Select Stage Slots")
-        self.body.addWidget(self.stage_slots)
+        stage_slots_list = StageSlot.list()
+        self.stage_slots = CheckableComboBox(stage_slots_list, [False] * (len(stage_slots_list) + 1), False, "Select Stage Slots", formatter=format_stage_slots)
+        self.stage_slots.model().dataChanged.connect(self._update_generated_names)
+        
+        stage_simple_layout.addWidget(self.stages, 1)
+        stage_simple_layout.addWidget(self.stage_slots)
+        
+        self.body.addWidget(self.stage_simple_container)
+
+        # Advanced Mode Widget
+        self.stage_assignments = AssignmentListWidget("Stage", "Slots")
+        
+        # Create stage dict {Key: Name}
+        stage_dict = {}
+        for s_key in DataManager.get_stage_keys():
+            name = DataManager.get_stage_data(s_key, "Value")
+            if name:
+                stage_dict[s_key] = name
+        
+        self.stage_assignments.set_entities(stage_dict)
+        self.stage_assignments.set_slot_options(StageSlot.list(), formatter=format_stage_slots)
+        self.stage_assignments.assignments_changed.connect(self._update_generated_names)
+        self.stage_assignments.hide()
+        self.body.addWidget(self.stage_assignments)
+        
 
         # Category
         self._add_label("Category")
@@ -406,23 +450,38 @@ class EditPanel(SidePanel):
         
         if category_str == Category.STAGE.value:
             # Use Stage Name and Slot fields for generation
-            # Stages
-            checked_stages = []
-            for i in range(self.stages.get_item_count()):
-                item = self.stages.model().invisibleRootItem().child(i)
-                if item.checkState() == Qt.CheckState.Checked:
-                    stage_text = item.text()
-                    if stage_text != "Select All":
-                        checked_stages.append(stage_text)
+            if self.stage_assignments.isVisible():
+                # Advanced Mode
+                assignments = self.stage_assignments.get_assignments()
+                checked_stages = []
+                checked_stage_slots = []
+                
+                for item in assignments:
+                    stage_key = item["id"]
+                    stage_name = DataManager.get_stage_data(stage_key, "Value")
+                    if stage_name:
+                        checked_stages.append(stage_name)
+                    checked_stage_slots.extend(item["slots"])
+                
+                # Unique slots
+                checked_stage_slots = sorted(list(set(checked_stage_slots)))
             
-            # Stage Slots
-            checked_stage_slots = []
-            for i in range(self.stage_slots.get_item_count()):
-               item = self.stage_slots.model().invisibleRootItem().child(i)
-               if item.checkState() == Qt.CheckState.Checked:
-                   slot_text = item.text()
-                   if slot_text != "Select All":
-                       checked_stage_slots.append(slot_text)
+            else:
+                # Simple Mode
+                checked_stages = []
+                for i in range(self.stages.get_item_count()):
+                    item = self.stages.model().invisibleRootItem().child(i)
+                    if item.checkState() == Qt.CheckState.Checked:
+                        stage_text = item.text()
+                        checked_stages.append(stage_text)
+                
+                # Stage Slots
+                checked_stage_slots = []
+                for i in range(self.stage_slots.get_item_count()):
+                    item = self.stage_slots.model().invisibleRootItem().child(i)
+                    if item.checkState() == Qt.CheckState.Checked:
+                        slot_text = item.text()
+                        checked_stage_slots.append(slot_text)
             
             characters_str_display = format_stage_names_for_display(checked_stages)
             characters_str_folder = format_stage_names_for_folder(checked_stages)
@@ -431,23 +490,49 @@ class EditPanel(SidePanel):
             slots_str_folder = format_stage_slots_for_folder(checked_stage_slots)
 
         else:
-            # Use Character and Slot fields (Existing logic)
-            checked_chars = self.character.get_checked()
-            checked_chars = [c for c in checked_chars if c != "Select All"]
+            # Characters
+            if self.char_assignments.isVisible():
+                # Advanced Mode
+                assignments = self.char_assignments.get_assignments()
+                checked_chars = []
+                checked_slots = []
+                
+                for item in assignments:
+                    char_key = item["id"]
+                    char_name = DataManager.get_character_Name(char_key) # Helper needed or direct dict access
+                    char_data = DataManager.get_character_by_key().get(char_key)
+                    if char_data:
+                        name = char_data[1] if char_data[1] else char_data[0]
+                        checked_chars.append(name)
+                    
+                    # Parse slots C00 -> 0
+                    for s_text in item["slots"]:
+                        try:
+                            if s_text.startswith("C"):
+                                checked_slots.append(int(s_text[1:]))
+                        except:
+                            pass
+                
+                checked_slots = sorted(list(set(checked_slots)))
+                
+            else:
+                # Simple Mode
+                checked_chars = self.character.get_checked()
+                checked_chars = [c for c in checked_chars]
+                
+                checked_slots = []
+                for i in range(self.slots.get_item_count()):
+                    item = self.slots.model().invisibleRootItem().child(i)
+                    if item.checkState() == Qt.CheckState.Checked:
+                        slot_text = item.text()
+                        try:
+                            slot_num = int(slot_text[1:])  # Remove 'C' prefix
+                            checked_slots.append(slot_num)
+                        except (ValueError, IndexError):
+                            pass
             
             characters_str_display = format_character_names_for_display(checked_chars)
             characters_str_folder = format_character_names_for_folder(checked_chars)
-            
-            checked_slots = []
-            for i in range(self.slots.get_item_count()):
-                item = self.slots.model().invisibleRootItem().child(i)
-                if item.checkState() == Qt.CheckState.Checked:
-                    slot_text = item.text()
-                    try:
-                        slot_num = int(slot_text[1:])  # Remove 'C' prefix
-                        checked_slots.append(slot_num)
-                    except (ValueError, IndexError):
-                        pass
             
             slots_str_folder = ""
             slots_str_display = ""
@@ -485,55 +570,70 @@ class EditPanel(SidePanel):
         # Set mod name
         self.mod_name.setText(mod.mod_name)
         
-        # Set characters - check all matching fighters
-        for i in range(self.character.get_item_count()):
-            item = self.character.model().invisibleRootItem().child(i)
-            char_text = item.text()
-            
-            # Skip "Select All" item
-            if i == 0 and char_text == "Select All":
-                continue
-            
-            # Convert custom name back to Fighter key for comparison
-            fighter_key = DataManager.get_character_by_custom(char_text)
-            
-            # Match character from mod's character list
-            is_checked = any(char.fighter == fighter_key for char in mod.characters)
-            item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+        # Set characters
+        # Check if we need advanced mode (mixed slots)
+        mixed_slots = False
+        first_slots = None
+        if len(mod.characters) > 0:
+            first_slots = set(mod.characters[0].slots)
+            for char in mod.characters[1:]:
+                if set(char.slots) != first_slots:
+                    mixed_slots = True
+                    break
         
-        self.character.update_display()
-        
-        # Set slots - collect all unique slots from all characters
-        all_slots = set()
-        for char in mod.characters:
-            all_slots.update(char.slots)
-        
-        print(f"DEBUG: Loading slots for {mod.mod_name}: {all_slots}")
+        if mixed_slots:
+            # Switch to Advanced Mode
+            self.char_simple_container.setVisible(False)
+            self.char_assignments.setVisible(True)
+            
+            # Populate Assignment List
+            data = []
+            if mod.characters:
+                for char in mod.characters:
+                     slots_text = [f"C{s:02d}" for s in char.slots]
+                     data.append({"id": char.fighter, "slots": slots_text})
+            self.char_assignments.set_assignments(data)
+            
+            # Clear simple view to avoid confusion? Or just leave it.
+            self.character.reset()
+            self.slots.reset()
+            
+        else:
+            # Simple Mode
+            self.char_simple_container.setVisible(True)
+            self.char_assignments.setVisible(False)
 
-        # Block signals to prevent _update_generated_names from running for every item
-        self.slots.model().blockSignals(True)
-        try:
-            for i in range(self.slots.get_item_count()):
-                item = self.slots.model().invisibleRootItem().child(i)
-                slot_text = item.text()
+            # Standard loading logic (check all matching fighters)
+            for i in range(self.character.get_item_count()):
+                item = self.character.model().invisibleRootItem().child(i)
+                char_text = item.text()
                 
-                # Skip "Select All" item
-                if i == 0 and slot_text == "Select All":
-                    continue
+                # Convert custom name back to Fighter key for comparison
+                fighter_key = DataManager.get_character_by_custom(char_text)
                 
-                # Extract slot number from "C00" format
-                try:
-                    slot_num = int(slot_text[1:])  # Remove 'C' prefix
-                    is_checked = slot_num in all_slots
-                    item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
-                except (ValueError, IndexError):
-                    item.setCheckState(Qt.CheckState.Unchecked)
-        finally:
-             self.slots.model().blockSignals(False)
-        
-        self.slots.update_display()
-        # Manually trigger update
-        self._update_generated_names()
+                # Match character from mod's character list
+                is_checked = any(char.fighter == fighter_key for char in mod.characters)
+                item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+            
+            self.character.update_display()
+            
+            # Set slots (common slots)
+            common_slots = first_slots if first_slots else set()
+            self.slots.model().blockSignals(True)
+            try:
+                for i in range(self.slots.get_item_count()):
+                    item = self.slots.model().invisibleRootItem().child(i)
+                    slot_text = item.text()
+
+                    try:
+                        slot_num = int(slot_text[1:])
+                        is_checked = slot_num in common_slots
+                        item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+                    except: pass
+            finally:
+                self.slots.model().blockSignals(False)
+            self.slots.update_display()
+
         
         # Set category
         try:
@@ -561,32 +661,53 @@ class EditPanel(SidePanel):
         
         self.elements.update_display()
 
-        # Set stages
-        for i in range(self.stages.get_item_count()):
-            item = self.stages.model().invisibleRootItem().child(i)
-            stage_text = item.text()
-            
-            # Find stage key
-            stage_key = DataManager.get_stage_by_name(stage_text)
-            
-            is_checked = any(s.stage == stage_key for s in mod.stages)
-            item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
-        self.stages.update_display()
+        # Set Stages
+        # Check for mixed stage slots
+        mixed_stage_slots = False
+        first_stage_slots = None
+        if len(mod.stages) > 0:
+            first_stage_slots = set([s.value for s in mod.stages[0].slots])
+            for stage in mod.stages[1:]:
+                current_slots = set([s.value for s in stage.slots])
+                if current_slots != first_stage_slots:
+                    mixed_stage_slots = True
+                    break
         
-        # Set stage slots
-        # Collect all unique stage slots
-        all_stage_slots = set()
-        for stage in mod.stages:
-            for slot in stage.slots:
-                all_stage_slots.add(slot.value)
-                
-        for i in range(self.stage_slots.get_item_count()):
-            item = self.stage_slots.model().invisibleRootItem().child(i)
-            slot_text = item.text()
+        if mixed_stage_slots:
+             # Advanced Stage Mode
+            self.stage_simple_container.setVisible(False)
+            self.stage_assignments.setVisible(True)
             
-            is_checked = slot_text in all_stage_slots
-            item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
-        self.stage_slots.update_display()
+            data = []
+            if mod.stages:
+                for stage in mod.stages:
+                    slots_text = [s.value for s in stage.slots]
+                    val = stage.stage.value if hasattr(stage.stage, 'value') else str(stage.stage)
+                    data.append({"id": val, "slots": slots_text})
+            self.stage_assignments.set_assignments(data)
+            
+            self.stages.reset()
+            self.stage_slots.reset()
+        else:
+            # Simple Stage Mode
+            self.stage_simple_container.setVisible(True)
+            self.stage_assignments.setVisible(False)
+
+            for i in range(self.stages.get_item_count()):
+                item = self.stages.model().invisibleRootItem().child(i)
+                stage_text = item.text()
+                stage_key = DataManager.get_stage_by_name(stage_text)
+                is_checked = any(s.stage == stage_key for s in mod.stages)
+                item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+            self.stages.update_display()
+            
+            common_s_slots = first_stage_slots if first_stage_slots else set()
+            for i in range(self.stage_slots.get_item_count()):
+                item = self.stage_slots.model().invisibleRootItem().child(i)
+                slot_text = item.text()
+                is_checked = slot_text in common_s_slots
+                item.setCheckState(Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+            self.stage_slots.update_display()
         
         # Set wifi safe
         try:
@@ -669,38 +790,44 @@ class EditPanel(SidePanel):
         checked_elements = self.elements.get_checked()
         for text in checked_elements:
             try:
-                if text != "Select All":
-                    self.mod.add_to_included(Element(text))
+                self.mod.add_to_included(Element(text))
             except:
                 pass
 
         # Characters
-        # Flatten logic: Apply all selected slots to all selected characters
         new_chars = []
-        selected_chars = self.character.get_checked()
-        if "Select All" in selected_chars:
-            selected_chars.remove("Select All")
-
-        selected_slots_text = self.slots.get_checked()
-        if "Select All" in selected_slots_text:
-            selected_slots_text.remove("Select All")
+        if self.char_assignments.isVisible():
+            # Advanced Mode
+            assignments = self.char_assignments.get_assignments()
+            for item in assignments:
+                fighter = item["id"]
+                slots = []
+                for s_text in item["slots"]:
+                    try:
+                         if s_text.startswith("C"):
+                             slots.append(int(s_text[1:]))
+                    except: pass
+                slots.sort()
+                new_chars.append(Character(fighter=fighter, slots=slots))
+        else:
+            # Simple Mode
+            selected_chars = self.character.get_checked()
+            selected_slots_text = self.slots.get_checked()
+            slots = []
+            for text in selected_slots_text:
+                try:
+                    slots.append(int(text[1:]))
+                except:
+                    pass
             
-        slots = []
-        for text in selected_slots_text:
-            try:
-                # "C00" -> 0
-                slots.append(int(text[1:]))
-            except:
-                pass
-        
-        for char_text in selected_chars:
-            try:
-                # Convert display name ("Mario") to Fighter key value ("mario")
-                fighter = DataManager.get_character_by_custom(char_text)
-                if fighter:
-                    new_chars.append(Character(fighter=fighter, slots=slots))
-            except:
-                pass
+            for char_text in selected_chars:
+                try:
+                    # Convert display name ("Mario") to Fighter key value ("mario")
+                    fighter = DataManager.get_character_by_custom(char_text)
+                    if fighter:
+                        new_chars.append(Character(fighter=fighter, slots=slots))
+                except:
+                    pass
         
         self.mod.characters = new_chars
 
@@ -709,28 +836,36 @@ class EditPanel(SidePanel):
         from src.constants.enums import Stage, StageSlot
         
         new_stages = []
-        selected_stages = self.stages.get_checked()
-        if "Select All" in selected_stages:
-            selected_stages.remove("Select All")
+        if self.stage_assignments.isVisible():
+             # Advanced Mode
+             assignments = self.stage_assignments.get_assignments()
+             for item in assignments:
+                stage_key = item["id"]
+                stage_slots = []
+                for s_text in item["slots"]:
+                    try:
+                        stage_slots.append(StageSlot(s_text))
+                    except: pass
+                new_stages.append(StageModel(stage=Stage(stage_key), slots=stage_slots))
+        else:
+            # Simple Mode
+            selected_stages = self.stages.get_checked()
+            selected_stage_slots_text = self.stage_slots.get_checked()
             
-        selected_stage_slots_text = self.stage_slots.get_checked()
-        if "Select All" in selected_stage_slots_text:
-            selected_stage_slots_text.remove("Select All")
-        
-        stage_slots = []
-        for text in selected_stage_slots_text:
-            try:
-                stage_slots.append(StageSlot(text))
-            except:
-                pass
-                
-        for stage_text in selected_stages:
-            try:
-                stage_key = DataManager.get_stage_by_name(stage_text)
-                if stage_key:
-                    new_stages.append(StageModel(stage=Stage(stage_key), slots=stage_slots))
-            except:
-                pass
+            stage_slots = []
+            for text in selected_stage_slots_text:
+                try:
+                    stage_slots.append(StageSlot(text))
+                except:
+                    pass
+                    
+            for stage_text in selected_stages:
+                try:
+                    stage_key = DataManager.get_stage_by_name(stage_text)
+                    if stage_key:
+                        new_stages.append(StageModel(stage=Stage(stage_key), slots=stage_slots))
+                except:
+                    pass
         
         self.mod.stages = new_stages
 
