@@ -151,3 +151,85 @@ class DataManager:
     def get_character_icons(character_names: list[Fighter]) -> list[str]:
         return [DataManager.get_character_icon(name) for name in character_names]
 
+
+    # -------------------------------------------------------------------------
+    # STAGE DATA SUPPORT
+    # -------------------------------------------------------------------------
+    
+    STAGE_DATA_PATH = "data/stage_data.csv"
+    _stage_list_cache = None
+    _stage_key_map_cache = None
+
+    @staticmethod
+    def _init_stage_cache():
+        if DataManager._stage_list_cache is None:
+            DataManager._stage_list_cache = csv_to_dict(DataManager.STAGE_DATA_PATH)
+        if DataManager._stage_key_map_cache is None:
+            DataManager._stage_key_map_cache = get_columns_by_key(DataManager.STAGE_DATA_PATH)
+
+    @staticmethod
+    def get_stage_data(stage=None, column:str = ""):
+        DataManager._init_stage_cache()
+        if stage is not None:
+            stage_key = str(stage)
+            target_row = None
+            for row in DataManager._stage_list_cache:
+                if row.get("Key") == stage_key:
+                    target_row = row
+                    break
+            
+            if not target_row:
+                return "" if column else {}
+                
+            if column:
+                return target_row.get(column, "")
+            else:
+                return {k: v for k, v in target_row.items() if k != "Key"}
+        else:
+            if column:
+                values = []
+                seen = set()
+                for row in DataManager._stage_list_cache:
+                    val = row.get(column, "")
+                    if val and val not in seen:
+                        values.append(val)
+                        seen.add(val)
+                return values
+            return DataManager._stage_list_cache
+
+    @staticmethod
+    def get_stage_keys() -> list[str]:
+        """Returns all stage keys (IDs)"""
+        DataManager._init_stage_cache()
+        # Return keys from the map cache
+        if hasattr(DataManager._stage_key_map_cache, 'keys'):
+            return list(DataManager._stage_key_map_cache.keys())
+        return list(DataManager._stage_key_map_cache.keys())
+
+    @staticmethod
+    def get_stage_names(stage=None) -> list[str]:
+        """Returns display names of stages"""
+        return DataManager.get_stage_data(stage, "Value")
+
+    @staticmethod
+    def get_stage_series(stage=None) -> list[str]:
+        return DataManager.get_stage_data(stage, "Series")
+
+    @staticmethod
+    def get_stage_by_name(name: str):
+        """Find stage key by its display name"""
+        data = DataManager.get_stage_data()
+        for d in data:
+            if d.get("Value") == name:
+                return d.get("Key")
+        return None
+
+    @staticmethod
+    def get_stages_by_series(series_name: str) -> list[str]:
+        """Get list of stage names (Values) that belong to a specific series"""
+        output = []
+        data = DataManager.get_stage_data()
+        for d in data:
+            if d.get("Series") == series_name:
+                output.append(d.get("Value"))
+        return output
