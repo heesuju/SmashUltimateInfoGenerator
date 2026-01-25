@@ -105,6 +105,7 @@ class AssignmentListWidget(QWidget):
     Host for AssignmentRowWidgets.
     """
     assignments_changed = pyqtSignal()
+    sizeChanged = pyqtSignal()
     
     def __init__(self, entity_label="Entity", slot_label="Slots", parent=None):
         super().__init__(parent)
@@ -215,6 +216,7 @@ class AssignmentListWidget(QWidget):
         
         self.tree.setFixedHeight(total)
         self.setFixedHeight(total)
+        self.sizeChanged.emit()
 
     def set_entities(self, entities: dict):
         self.entity_data = entities

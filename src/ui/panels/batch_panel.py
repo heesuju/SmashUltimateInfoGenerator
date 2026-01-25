@@ -372,38 +372,11 @@ class BatchPanel(SidePanel):
                         except:
                             pass
 
-                    # Read Characters and Slots from widget multi-selects
-                    selected_chars = widget.get_selected_characters()
-                    selected_slots = widget.get_selected_slots()
+                    # Read Characters and Slots using helper
+                    mod.characters = widget.get_final_characters()
                     
-                    # Build new characters list
-                    new_chars = []
-                    for char_name in selected_chars:
-                        fighter_key = DataManager.get_character_by_custom(char_name)
-                        if fighter_key:
-                            new_chars.append(Character(fighter=fighter_key, slots=selected_slots))
-                    mod.characters = new_chars
-                    
-                    # Read Stages from widget
-                    selected_stages = widget.get_selected_stages()
-                    selected_stage_slots = widget.get_selected_stage_slots()
-
-                    if selected_stages:
-                        new_stages = []
-                        stage_slots_enums = []
-                        for s_text in selected_stage_slots:
-                            try:
-                                stage_slots_enums.append(StageSlot(s_text))
-                            except: 
-                                pass
-
-                        for stage_name in selected_stages:
-                            stage_key = DataManager.get_stage_by_name(stage_name)
-                            if stage_key:
-                                new_stages.append(StageModel(stage=Stage(stage_key), slots=stage_slots_enums))
-                        mod.stages = new_stages
-                    elif mod.stages:
-                        mod.stages = []
+                    # Read Stages using helper
+                    mod.stages = widget.get_final_stages()
 
                     # Read Elements from widget
                     selected_elements = widget.get_selected_elements()

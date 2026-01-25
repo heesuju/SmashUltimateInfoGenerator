@@ -7,6 +7,7 @@ from PyQt6.QtGui import QFont
 
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.single_combobox import SingleComboBox
+from src.ui.components.assignment_list import AssignmentListWidget
 from src.core.formatting import format_slots, format_display_name, format_folder_name, format_character_names_for_display, format_character_names_for_folder, clean_version
 from src.ui.components.batch_task_styles import *
 
@@ -438,5 +439,52 @@ class ThumbnailRow(BatchTaskRow):
         cell.set_content(self.thumb_combo)
         cell.setFixedHeight(ROW_CONTENT_HEIGHT)
         label_widget.setFixedHeight(ROW_CONTENT_HEIGHT)
+        
+        return label_widget, orig_widget, cell
+
+
+class AssignmentRow(BatchTaskRow):
+    """Row with a toggleable AssignmentListWidget for advanced configuration"""
+    def __init__(self, label: str, data_font: QFont, 
+                 orig_value_text: str,
+                 initial_assignments: list, entities_dict, slot_options, slot_formatter,
+                 field_key, on_changed=None):
+        super().__init__(label, data_font)
+        self.orig_value_text = orig_value_text
+        self.initial_assignments = initial_assignments # List of {id: key, slots: []}
+        self.entities_dict = entities_dict
+        self.slot_options = slot_options
+        self.slot_formatter = slot_formatter
+        self.field_key = field_key
+        self.on_changed = on_changed
+        
+    def create_widgets(self):
+        # Label
+        label_widget = self._create_label_widget()
+        # Original (Text representation)
+        orig_widget = self._create_original_value_widget(self.orig_value_text)
+        
+        # New (Container with Widget)
+        # We need a custom cell container that can expand
+        cell = self._create_new_value_cell()
+        cell.setMinimumHeight(0) # Allow expansion
+        cell.setMaximumHeight(16777215)
+        
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        self.input_widget = AssignmentListWidget("Entity", "Slots")
+        self.input_widget.set_entities(self.entities_dict)
+        self.input_widget.set_slot_options(self.slot_options, formatter=self.slot_formatter)
+        
+        if self.initial_assignments:
+            self.input_widget.set_assignments(self.initial_assignments)
+            
+        self.input_widget.assignments_changed.connect(lambda: self.on_changed() if self.on_changed else None)
+
+        layout.addWidget(self.input_widget)
+        
+        cell.set_content(container)
         
         return label_widget, orig_widget, cell

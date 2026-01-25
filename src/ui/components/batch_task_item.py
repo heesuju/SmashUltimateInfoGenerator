@@ -12,6 +12,8 @@ from src.constants.enums import Category, Element, Wifi
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.single_combobox import SingleComboBox
 from src.ui.components.validators import limit_version
+from src.models.mod import Character, StageModel
+from src.constants.enums import Stage, StageSlot
 from src.core.formatting import (
     format_slots, format_display_name, format_folder_name, 
     format_character_names_for_display, format_character_names_for_folder, clean_version, 
@@ -24,7 +26,7 @@ import os
 from src.ui.components.batch_task_styles import *
 from src.ui.components.batch_task_rows import (
     truncate_text, truncate_to_lines, BatchTaskRow, TextRow, DescriptionRow, 
-    ComboRow, MultiComboRow, ThumbnailRow, GridCell, AutoResizingTextEdit
+    ComboRow, MultiComboRow, ThumbnailRow, GridCell, AutoResizingTextEdit, AssignmentRow
 )
 
 
@@ -319,37 +321,65 @@ class BatchTaskItem(QWidget):
             self._update_generated_names()
             self._check_field_changed("playable_character")
 
+        mixed_slots = False
+        initial_assignments = []
+        if self.mod.characters:
+            first_slots = set(self.mod.characters[0].slots)
+            for c in self.mod.characters:
+                if set(c.slots) != first_slots:
+                    mixed_slots = True
+                
+                # Prepare assignment data
+                c_slots = [f"C{s:02d}" for s in c.slots]
+                val = c.fighter.value if hasattr(c.fighter, 'value') else str(c.fighter)
+                initial_assignments.append({"id": val, "slots": c_slots})
         char_row = MultiComboRow(
             "Fighters", data_font,
             orig_fighters_text, current_fighters, all_fighters, "playable_character",
             on_character_changed
         )
-        task_rows.append(("playable_character", char_row))
+        if mixed_slots:
+            slot_options_char = [f"C{i:02d}" for i in range(256)]
+            def slot_formatter_adv(items):
+                return format_slots(sorted([int(x[1:]) for x in items if x.startswith('C')]))
+                
+            adv_char_row = AssignmentRow(
+                "Fighters", data_font,
+                "Different slots per character",
+                initial_assignments,
+                DataManager.get_character_dict(),
+                slot_options_char,
+                slot_formatter_adv,
+                "playable_character_advanced",
+                lambda: (self._update_generated_names(), self._check_field_changed("playable_character_advanced"))
+            )
+            task_rows.append(("playable_character_advanced", adv_char_row))
+        else:
+            task_rows.append(("playable_character", char_row))
+            
+            # --- Slots (Only in simple mode) ---
+            current_slots = []
+            if self.mod.characters:
+                for c in self.mod.characters:
+                    current_slots.extend(c.slots)
 
-        # --- Slots ---
-        current_slots = []
-        if self.mod.characters:
-            for c in self.mod.characters:
-                current_slots.extend(c.slots)
+            slot_options = [f"C{i:02d}" for i in range(256)] # Standard 256 limit
+            slot_formatter = lambda items: format_slots(sorted([int(x[1:]) for x in items if x.startswith('C') and x[1:].isdigit()]))
 
-        # Get slot options based on current fighters
-        slot_options = [f"C{i:02d}" for i in range(8)]
-        slot_formatter = lambda items: format_slots(sorted([int(x[1:]) for x in items if x.startswith('C') and x[1:].isdigit()]))
+            orig_slots = set()
+            if self.task.original_characters:
+                for c in self.task.original_characters:
+                    slots = c.get("slots", [])
+                    orig_slots.update(slots)
+            orig_slots_text = format_slots(sorted(orig_slots)) if orig_slots else "—"
 
-        orig_slots = set()
-        if self.task.original_characters:
-            for c in self.task.original_characters:
-                slots = c.get("slots", [])
-                orig_slots.update(slots)
-        orig_slots_text = format_slots(sorted(orig_slots)) if orig_slots else "—"
-
-        slots_row = MultiComboRow(
-            "Slots", data_font,
-            orig_slots_text, current_slots, slot_options, "slots",
-            lambda: (self._update_generated_names(), self._check_field_changed("slots")),
-            formatter=slot_formatter
-        )
-        task_rows.append(("slots", slots_row))
+            slots_row = MultiComboRow(
+                "Slots", data_font,
+                orig_slots_text, current_slots, slot_options, "slots",
+                lambda: (self._update_generated_names(), self._check_field_changed("slots")),
+                formatter=slot_formatter
+            )
+            task_rows.append(("slots", slots_row))
 
         # --- Elements ---
         current_elements = [el.value for el in self.mod.includes] if self.mod.includes else []
@@ -365,12 +395,34 @@ class BatchTaskItem(QWidget):
 
         # --- Stages ---
         current_stages = []
+        mixed_stage_slots = False
+        initial_stage_assignments = []
+        
         if self.mod.stages:
+            first_slots = set([s.value for s in self.mod.stages[0].slots])
             for s in self.mod.stages:
+                # Check mixed
+                current_stage_slots = set([slot.value for slot in s.slots])
+                if current_stage_slots != first_slots:
+                    mixed_stage_slots = True
+                
+                # Validation / Name lookup
                 val = s.stage.value if hasattr(s.stage, 'value') else str(s.stage)
                 name = DataManager.get_stage_data(val, "Value")
                 if name:
                     current_stages.append(name)
+                
+                # assignment data
+                s_slots = [slot.value for slot in s.slots]
+                initial_stage_assignments.append({"id": val, "slots": s_slots}) # "slots" key needed
+
+        # Create stage dict for AssignmentRow
+        stage_dict = {}
+        stage_keys = DataManager.get_stage_keys() if hasattr(DataManager, "get_stage_keys") else []
+        for key in DataManager.get_stage_keys():
+            name = DataManager.get_stage_data(key, "Value")
+            if name:
+                stage_dict[key] = name
         
         orig_stages_text = ", ".join(self.orig_stages) if self.orig_stages else "—"
         all_stages = DataManager.get_stage_names()
@@ -380,26 +432,42 @@ class BatchTaskItem(QWidget):
             orig_stages_text, current_stages, all_stages, "stages",
             lambda: self._check_field_changed("stages")
         )
-        task_rows.append(("stages", stages_row))
-
-        # --- Stage Slots ---
-        from src.constants.enums import StageSlot
-        current_stage_slots = []
-        if self.mod.stages:
-            for s in self.mod.stages:
-                for slot in s.slots:
-                    current_stage_slots.append(slot.value if hasattr(slot, 'value') else str(slot))
-        # Unique
-        current_stage_slots = sorted(list(set(current_stage_slots)))
-        
-        orig_stage_slots_text = ", ".join(sorted(self.orig_stage_slots_set)) if self.orig_stage_slots_set else "—"
-        
-        stage_slots_row = MultiComboRow(
-            "Stage Slots", data_font,
-            orig_stage_slots_text, current_stage_slots, StageSlot.list(), "stage_slots",
-            lambda: self._check_field_changed("stage_slots")
-        )
-        task_rows.append(("stage_slots", stage_slots_row))
+        if mixed_stage_slots:
+            adv_stage_row = AssignmentRow(
+                "Stages", data_font,
+                "Different slots per stage",
+                initial_stage_assignments,
+                stage_dict,
+                StageSlot.list(),
+                format_stage_slots,
+                "stages_advanced",
+                lambda: (self._update_generated_names(), self._check_field_changed("stages_advanced"))
+            )
+            task_rows.append(("stages_advanced", adv_stage_row))
+        else:
+            task_rows.append(("stages", stages_row))
+            
+            # --- Stage Slots (Only in simple mode) ---
+            current_stage_slots = []
+            if self.mod.stages:
+                # Flatten slots from all stages
+                for s in self.mod.stages:
+                    for slot in s.slots:
+                        current_stage_slots.append(slot.value)
+            
+            orig_stage_slots_text = ", ".join(self.task.original_stages_slots) if hasattr(self.task, 'original_stages_slots') and self.task.original_stages_slots else "—"
+            # Fallback if original_stages_slots not in task (it should be)
+            if not hasattr(self.task, 'original_stages_slots'):
+                # Try to reconstruct from orig objects? or just empty
+                orig_stage_slots_text = "—"
+            
+            stage_slots_row = MultiComboRow(
+                "Stage Slots", data_font,
+                orig_stage_slots_text, current_stage_slots, StageSlot.list(), "stage_slots",
+                lambda: (self._update_generated_names(), self._check_field_changed("stage_slots")),
+                formatter=format_stage_slots
+            )
+            task_rows.append(("stage_slots", stage_slots_row))
 
         # --- Thumbnail ---
         thumb_row = ThumbnailRow(
@@ -418,8 +486,8 @@ class BatchTaskItem(QWidget):
         for i, (key, row_obj) in enumerate(task_rows):
             w1, w2, w3 = row_obj.create_widgets()
 
-            # Helper to resize row
-            resize_row = lambda _, row_idx=i: self.table.resizeRowToContents(row_idx)
+            # Helper to resize row allows optional arg for signals that emit nothing
+            resize_row = lambda _=None, row_idx=i: self.table.resizeRowToContents(row_idx)
 
             # Connect input widget changes
             if hasattr(row_obj, 'input_widget') and hasattr(row_obj.input_widget, 'textChanged'):
@@ -529,8 +597,23 @@ class BatchTaskItem(QWidget):
         
         if category_str == Category.STAGE.value:
             # Use Stages and Stage Slots
-            checked_stages = self.get_selected_stages()
-            checked_stage_slots = self.get_selected_stage_slots()
+            is_advanced = False
+            if "stages_advanced" in self.rows:
+                 is_advanced = True
+            
+            if is_advanced:
+                assignments = self.rows["stages_advanced"].input_widget.get_assignments()
+                checked_stages = []
+                checked_stage_slots = []
+                for item in assignments:
+                    stage_key = item["id"]
+                    name = DataManager.get_stage_data(stage_key, "Value")
+                    if name: checked_stages.append(name)
+                    checked_stage_slots.extend(item["slots"])
+                checked_stage_slots = sorted(list(set(checked_stage_slots)))
+            else:
+                checked_stages = self.get_selected_stages()
+                checked_stage_slots = self.get_selected_stage_slots()
             
             characters_str_display = format_stage_names_for_display(checked_stages)
             characters_str_folder = format_stage_names_for_folder(checked_stages)
@@ -539,13 +622,33 @@ class BatchTaskItem(QWidget):
             slots_str_folder = format_stage_slots_for_folder(checked_stage_slots)
             
         else:
-            checked_chars = self.get_selected_characters()
+            is_advanced = False
+            if "playable_character_advanced" in self.rows:
+                is_advanced = True
+
+            if is_advanced:
+                assignments = self.rows["playable_character_advanced"].input_widget.get_assignments()
+                checked_chars = []
+                checked_slots = []
+                for item in assignments:
+                    char_key = item["id"]
+                    char_data = DataManager.get_character_by_key().get(char_key)
+                    if char_data:
+                        name = char_data[1] if char_data[1] else char_data[0]
+                        checked_chars.append(name)
+                    for s in item["slots"]:
+                        try: checked_slots.append(int(s[1:]))
+                        except: pass
+                checked_slots = sorted(list(set(checked_slots)))
+            else:
+                checked_chars = self.get_selected_characters()
+                checked_slots = self.get_selected_slots()
+
             characters_str_display = format_character_names_for_display(checked_chars)
             characters_str_folder = format_character_names_for_folder(checked_chars)
             
-            checked_slots = self.get_selected_slots()
             slots_str = format_slots(sorted(checked_slots)) if checked_slots else ""
-            slots_str_folder = slots_str # Standard slots format for folder is same as display usually, or cap settings handled inside format_slots
+            slots_str_folder = slots_str 
 
         # Generate new names
         folder_name = format_folder_name(characters_str_folder, slots_str_folder, mod_name, category_str)
@@ -723,6 +826,16 @@ class BatchTaskItem(QWidget):
             changed = new_val != self.orig_stage_slots_set
         elif field_name == "thumbnail":
             changed = self.pending_thumbnail_path is not None
+        elif field_name == "playable_character_advanced":
+            row = self.rows.get(field_name)
+            if row and row.input_widget:
+                data = row.input_widget.get_assignments()
+                changed = len(data) > 0 # Simplification
+        elif field_name == "stages_advanced":
+            row = self.rows.get(field_name)
+            if row and row.input_widget:
+                data = row.input_widget.get_assignments()
+                changed = len(data) > 0
         
         # Apply highlight to the row/cell
         row.set_highlight(changed)
@@ -768,6 +881,73 @@ class BatchTaskItem(QWidget):
             slots = self.input_fields["stage_slots"].get_checked()
             return [s for s in slots if s != "Select All"]
         return []
+
+    def get_final_characters(self) -> list:
+        """Return list of Character objects based on current UI state (Simple or Advanced)"""
+        # Advanced Mode
+        if "playable_character_advanced" in self.rows:
+            row = self.rows["playable_character_advanced"]
+            if row.input_widget:
+                assignments = row.input_widget.get_assignments() # [{"id": "mario", "slots": ["c00"]}]
+                new_chars = []
+                for item in assignments:
+                    fighter_key = item["id"]
+                    slots = []
+                    for s_text in item["slots"]:
+                        try:
+                            if s_text.startswith("C"):
+                                slots.append(int(s_text[1:]))
+                        except: pass
+                    new_chars.append(Character(fighter=fighter_key, slots=sorted(slots)))
+                return new_chars
+        
+        # Simple Mode
+        selected_chars = self.get_selected_characters()
+        selected_slots = self.get_selected_slots()
+        new_chars = []
+        for char_name in selected_chars:
+            fighter_key = DataManager.get_character_by_custom(char_name)
+            if fighter_key:
+                new_chars.append(Character(fighter=fighter_key, slots=selected_slots))
+        return new_chars
+
+    def get_final_stages(self) -> list:
+        """Return list of StageModel objects based on current UI state (Simple or Advanced)"""
+        # Advanced Mode
+        if "stages_advanced" in self.rows:
+            row = self.rows["stages_advanced"]
+            if row.input_widget:
+                assignments = row.input_widget.get_assignments() # [{"id": "battlefield", "slots": ["normal"]}]
+                new_stages = []
+                for item in assignments:
+                    stage_key = item["id"]
+                    stage_slots = []
+                    for s_text in item["slots"]:
+                        try:
+                            stage_slots.append(StageSlot(s_text))
+                        except: pass
+                    new_stages.append(StageModel(stage=Stage(stage_key), slots=stage_slots))
+                return new_stages
+
+        # Simple Mode
+        selected_stages = self.get_selected_stages()
+        selected_stage_slots = self.get_selected_stage_slots()
+        
+        if not selected_stages:
+            return []
+            
+        stage_slots_enums = []
+        for s_text in selected_stage_slots:
+            try:
+                stage_slots_enums.append(StageSlot(s_text))
+            except: pass
+            
+        new_stages = []
+        for stage_name in selected_stages:
+            stage_key = DataManager.get_stage_by_name(stage_name)
+            if stage_key:
+                new_stages.append(StageModel(stage=Stage(stage_key), slots=stage_slots_enums))
+        return new_stages
     
     def update_status_display(self):
         """Update the status label based on current task status"""
