@@ -82,7 +82,10 @@ class OnlineGridListItemWidget(GridListItemWidget):
         
         # Async download
         if is_url:
-            ImageLoader().load_image(self.image_path, self.access_overlay_image, widget=self)
+            try:
+                ImageLoader.instance().load_image(self.image_path, self.access_overlay_image, widget=self)
+            except Exception as e:
+                print(f"Failed to load image: {e}")
         
         # Info Column
         info_layout = QVBoxLayout()

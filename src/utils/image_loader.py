@@ -53,16 +53,17 @@ class ImageLoader(QObject):
     _instance = None
     image_ready = pyqtSignal(str, str) # url, local_path
     
-    def __new__(cls):
+    @classmethod
+    def instance(cls):
         if cls._instance is None:
-            cls._instance = super(ImageLoader, cls).__new__(cls)
-            cls._instance._initialized = False
+            cls._instance = ImageLoader()
         return cls._instance
     
     def __init__(self):
-        if self._initialized:
-            return
         super().__init__()
+        if getattr(self, '_initialized', False):
+            return
+            
         self._initialized = True
         self.active_downloads = {} # url -> worker
         self.pending_callbacks = {} # url -> list[callbacks]
@@ -76,13 +77,15 @@ class ImageLoader(QObject):
         widget: Optional QWidget to track - if destroyed, callback is skipped.
         """
         if not url:
-            callback("")
+            if callable(callback):
+                callback("")
             return
 
         filename = hashlib.md5(url.encode()).hexdigest() + ".jpg"
         local_path = os.path.join(CACHE_DIR, filename)
         if os.path.exists(local_path):
-            callback(local_path)
+            if callable(callback):
+                callback(local_path)
             return
 
         if url not in self.pending_callbacks:
@@ -149,7 +152,8 @@ class ImageLoader(QObject):
                         # Widget was destroyed, skip this callback
                         continue
                 try:
-                    cb(local_path)
+                    if callable(cb):
+                        cb(local_path)
                 except RuntimeError:
                     # Widget was deleted, ignore
                     pass
