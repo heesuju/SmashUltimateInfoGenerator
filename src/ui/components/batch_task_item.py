@@ -12,7 +12,12 @@ from src.constants.enums import Category, Element, Wifi
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.single_combobox import SingleComboBox
 from src.ui.components.validators import limit_version
-from src.core.formatting import format_slots, format_display_name, format_folder_name, format_character_names_for_display, format_character_names_for_folder, clean_version
+from src.core.formatting import (
+    format_slots, format_display_name, format_folder_name, 
+    format_character_names_for_display, format_character_names_for_folder, clean_version, 
+    format_stage_names_for_display, format_stage_names_for_folder,
+    format_stage_slots, format_stage_slots_for_folder
+)
 import os
 
 # Import styles and rows
@@ -519,22 +524,31 @@ class BatchTaskItem(QWidget):
         if not mod_name:
             return
         
-        # Get selected characters
-        checked_chars = self.get_selected_characters()
-        characters_str_display = format_character_names_for_display(checked_chars)
-        characters_str_folder = format_character_names_for_folder(checked_chars)
-        
-        # Get selected slots  
-        checked_slots = self.get_selected_slots()
-        slots_str = format_slots(sorted(checked_slots)) if checked_slots else ""
-        
-        # Get category
-        category_str = ""
         if "category" in self.input_fields:
             category_str = self.input_fields["category"].currentText()
         
+        if category_str == Category.STAGE.value:
+            # Use Stages and Stage Slots
+            checked_stages = self.get_selected_stages()
+            checked_stage_slots = self.get_selected_stage_slots()
+            
+            characters_str_display = format_stage_names_for_display(checked_stages)
+            characters_str_folder = format_stage_names_for_folder(checked_stages)
+            
+            slots_str = format_stage_slots(checked_stage_slots)
+            slots_str_folder = format_stage_slots_for_folder(checked_stage_slots)
+            
+        else:
+            checked_chars = self.get_selected_characters()
+            characters_str_display = format_character_names_for_display(checked_chars)
+            characters_str_folder = format_character_names_for_folder(checked_chars)
+            
+            checked_slots = self.get_selected_slots()
+            slots_str = format_slots(sorted(checked_slots)) if checked_slots else ""
+            slots_str_folder = slots_str # Standard slots format for folder is same as display usually, or cap settings handled inside format_slots
+
         # Generate new names
-        folder_name = format_folder_name(characters_str_folder, slots_str, mod_name, category_str)
+        folder_name = format_folder_name(characters_str_folder, slots_str_folder, mod_name, category_str)
         display_name = format_display_name(characters_str_display, slots_str, mod_name, category_str)
         
         # Update the input fields (block signals to avoid infinite loop)

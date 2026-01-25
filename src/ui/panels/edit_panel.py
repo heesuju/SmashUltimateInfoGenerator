@@ -21,7 +21,10 @@ from src.managers.cache_manager import CacheManager
 from src.managers.data_manager import DataManager
 from src.managers.data_manager import ButtonIcons
 from src.ui.components.validators import limit_version
-from src.core.formatting import format_folder_name, format_display_name, format_character_names_for_display, format_character_names_for_folder, format_slots
+from src.core.formatting import (
+    format_folder_name, format_display_name, format_character_names_for_display, format_character_names_for_folder, format_slots,
+    format_stage_names_for_display, format_stage_names_for_folder, format_stage_slots, format_stage_slots_for_folder
+)
 from src.core.gamebanana import Gamebanana
 from src.utils.web import open_page
 from src.core.data import generate_toml
@@ -399,34 +402,62 @@ class EditPanel(SidePanel):
         if not mod_name:
             return
         
-        checked_chars = self.character.get_checked()
-        checked_chars = [c for c in checked_chars if c != "Select All"]
-        
-        characters_str_display = format_character_names_for_display(checked_chars)
-        characters_str_folder = format_character_names_for_folder(checked_chars)
-        
-        checked_slots = []
-        for i in range(self.slots.get_item_count()):
-            item = self.slots.model().invisibleRootItem().child(i)
-            if item.checkState() == Qt.CheckState.Checked:
-                slot_text = item.text()
-                try:
-                    slot_num = int(slot_text[1:])  # Remove 'C' prefix
-                    checked_slots.append(slot_num)
-                except (ValueError, IndexError):
-                    pass
-        
-        slots_str_folder = ""
-        slots_str_display = ""
-        if checked_slots:
-            sorted_slots = sorted(checked_slots)
-            # Get cap_slots settings from config
-            cap_slots_folder = self.config_manager.config.name_rules.cap_slots_folder
-            cap_slots_display = self.config_manager.config.name_rules.cap_slots_display
-            slots_str_folder = format_slots(sorted_slots, cap_slots_folder)
-            slots_str_display = format_slots(sorted_slots, cap_slots_display)
-        
         category_str = self.category.currentText()
+        
+        if category_str == Category.STAGE.value:
+            # Use Stage Name and Slot fields for generation
+            # Stages
+            checked_stages = []
+            for i in range(self.stages.get_item_count()):
+                item = self.stages.model().invisibleRootItem().child(i)
+                if item.checkState() == Qt.CheckState.Checked:
+                    stage_text = item.text()
+                    if stage_text != "Select All":
+                        checked_stages.append(stage_text)
+            
+            # Stage Slots
+            checked_stage_slots = []
+            for i in range(self.stage_slots.get_item_count()):
+               item = self.stage_slots.model().invisibleRootItem().child(i)
+               if item.checkState() == Qt.CheckState.Checked:
+                   slot_text = item.text()
+                   if slot_text != "Select All":
+                       checked_stage_slots.append(slot_text)
+            
+            characters_str_display = format_stage_names_for_display(checked_stages)
+            characters_str_folder = format_stage_names_for_folder(checked_stages)
+            
+            slots_str_display = format_stage_slots(checked_stage_slots)
+            slots_str_folder = format_stage_slots_for_folder(checked_stage_slots)
+
+        else:
+            # Use Character and Slot fields (Existing logic)
+            checked_chars = self.character.get_checked()
+            checked_chars = [c for c in checked_chars if c != "Select All"]
+            
+            characters_str_display = format_character_names_for_display(checked_chars)
+            characters_str_folder = format_character_names_for_folder(checked_chars)
+            
+            checked_slots = []
+            for i in range(self.slots.get_item_count()):
+                item = self.slots.model().invisibleRootItem().child(i)
+                if item.checkState() == Qt.CheckState.Checked:
+                    slot_text = item.text()
+                    try:
+                        slot_num = int(slot_text[1:])  # Remove 'C' prefix
+                        checked_slots.append(slot_num)
+                    except (ValueError, IndexError):
+                        pass
+            
+            slots_str_folder = ""
+            slots_str_display = ""
+            if checked_slots:
+                sorted_slots = sorted(checked_slots)
+                # Get cap_slots settings from config
+                cap_slots_folder = self.config_manager.config.name_rules.cap_slots_folder
+                cap_slots_display = self.config_manager.config.name_rules.cap_slots_display
+                slots_str_folder = format_slots(sorted_slots, cap_slots_folder)
+                slots_str_display = format_slots(sorted_slots, cap_slots_display)
         
         folder_name = format_folder_name(characters_str_folder, slots_str_folder, mod_name, category_str)
         

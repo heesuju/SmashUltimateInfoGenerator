@@ -121,11 +121,29 @@ def format_stage_slots(slots:list[str]):
     if not slots:
         return ""
     
-    # Capitalize first letter of each slot
-    formatted = [s.capitalize() for s in slots]
+    formatted = [s[0].upper() for s in slots if s]
     formatted.sort()
     
     return ", ".join(formatted)
+
+def format_stage_slots_for_folder(slots:list[str]):
+    if not slots:
+        return ""
+    
+    formatted = [s[0].upper() for s in slots if s]
+    formatted.sort()
+    return "".join(formatted)
+
+def format_stage_names_for_display(stage_names:list[str]):
+    if not stage_names:
+        return ""
+    return ", ".join(sorted(stage_names))
+
+def format_stage_names_for_folder(stage_names:list[str]):
+    if not stage_names:
+        return ""
+    formatted = [name.replace(" ", "") for name in stage_names]
+    return "".join(sorted(formatted))
 
 def remove_characters(text:str, characters:list[str]):
     text = text.replace("&", " ")
