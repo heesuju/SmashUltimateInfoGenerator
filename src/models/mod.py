@@ -35,7 +35,7 @@ class Character(BaseModel):
     fighter:Fighter = None
     slots:list[int] = []
 
-class Stage(BaseModel):    
+class StageModel(BaseModel):    
     stage:Stage = None
     slots:list[StageSlot] = []
 
@@ -53,7 +53,7 @@ class Mod(BaseModel):
     thumbnail:str = ""
     hash:str = ""
     characters:list[Character] = []
-    stages:list[Stage] = []
+    stages:list[StageModel] = []
     includes:list[Element] = []
     contains_info:bool = False
     is_selected:bool = False

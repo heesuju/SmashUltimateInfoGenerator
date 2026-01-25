@@ -12,7 +12,7 @@ from src.utils.file import (
 from src.utils.csv_helper import csv_to_dict
 from src.utils.string_helper import str_to_int
 from src.models.mod import Mod, Character
-from src.constants.enums import Category, Element, Fighter
+from src.constants.enums import Category, Element, Fighter, Stage, StageSlot
 from .formatting import (
     format_slots,
     get_mod_name,
@@ -123,11 +123,40 @@ def scan_effect(mod:Mod)->Mod:
 
     return mod
 
+
+from src.models.mod import StageModel
+
 def scan_stage(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "stage")
 
     if is_valid_dir(root_dir):  
         mod.add_to_included(Element.STAGE)
+        
+        stages = get_children(root_dir)
+        for stage_folder_name in stages:
+            try:
+                # Try to match folder name to Stage enum
+                stage_enum = Stage(stage_folder_name)
+                
+                stage_path = os.path.join(root_dir, stage_folder_name)
+                slots = []
+                
+                # Check for "normal" and "battle" subfolders
+                normal_path = os.path.join(stage_path, "normal")
+                battle_path = os.path.join(stage_path, "battle")
+                
+                if is_valid_dir(normal_path):
+                    slots.append(StageSlot.NORMAL)
+                
+                if is_valid_dir(battle_path):
+                    slots.append(StageSlot.BATTLE)
+                
+                if slots:
+                    mod.stages.append(StageModel(stage=stage_enum, slots=slots))
+                    
+            except ValueError:
+                # Folder name does not match any Stage enum value
+                continue
     
     return mod
 
