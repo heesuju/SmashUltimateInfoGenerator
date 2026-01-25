@@ -5,7 +5,7 @@ mod.py: model class for each mod
 from pydantic import BaseModel
 from typing import List
 from enum import Enum
-from src.constants.enums import Fighter, Category, Wifi, Element
+from src.constants.enums import Fighter, Category, Wifi, Element, Stage, StageSlot
 from src.managers.data_manager import DataManager
 
 EXCLUDED_KEYS = {"folder_name", "path", "thumbnail", "hash", "contains_info", "is_selected"}
@@ -35,6 +35,10 @@ class Character(BaseModel):
     fighter:Fighter = None
     slots:list[int] = []
 
+class Stage(BaseModel):    
+    stage:Stage = None
+    slots:list[StageSlot] = []
+
 class Mod(BaseModel):
     display_name:str = ""
     description:str = ""
@@ -49,6 +53,7 @@ class Mod(BaseModel):
     thumbnail:str = ""
     hash:str = ""
     characters:list[Character] = []
+    stages:list[Stage] = []
     includes:list[Element] = []
     contains_info:bool = False
     is_selected:bool = False
