@@ -16,6 +16,8 @@ from src.managers.cache_manager import CacheManager
 from src.managers.data_manager import ButtonIcons
 from src.ui.components.thumbnail_label import ImageCache
 from src.constants.enums import Wifi, Element, Category
+from src.models.mod import StageModel
+from src.constants.enums import Stage, StageSlot
 from src.core.formatting import (
     format_display_name, 
     format_character_names_for_display, 
@@ -382,6 +384,27 @@ class BatchPanel(SidePanel):
                             new_chars.append(Character(fighter=fighter_key, slots=selected_slots))
                     mod.characters = new_chars
                     
+                    # Read Stages from widget
+                    selected_stages = widget.get_selected_stages()
+                    selected_stage_slots = widget.get_selected_stage_slots()
+
+                    if selected_stages:
+                        new_stages = []
+                        stage_slots_enums = []
+                        for s_text in selected_stage_slots:
+                            try:
+                                stage_slots_enums.append(StageSlot(s_text))
+                            except: 
+                                pass
+
+                        for stage_name in selected_stages:
+                            stage_key = DataManager.get_stage_by_name(stage_name)
+                            if stage_key:
+                                new_stages.append(StageModel(stage=Stage(stage_key), slots=stage_slots_enums))
+                        mod.stages = new_stages
+                    elif mod.stages:
+                        mod.stages = []
+
                     # Read Elements from widget
                     selected_elements = widget.get_selected_elements()
                     mod.includes = []

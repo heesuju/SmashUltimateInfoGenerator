@@ -68,6 +68,22 @@ class BatchTaskItem(QWidget):
         
         self.orig_elements_set = set(self.task.original_elements or [])
         
+        self.orig_stages = []
+        if self.task.original_stages:
+            for s in self.task.original_stages:
+                stage_key = s.get("stage")
+                if stage_key:
+                    name = DataManager.get_stage_data(stage_key, "Value")
+                    if name:
+                        self.orig_stages.append(name)
+        self.orig_stages.sort()
+
+        self.orig_stage_slots_set = set()
+        if self.task.original_stages:
+            for s in self.task.original_stages:
+                slots = s.get("slots", [])
+                self.orig_stage_slots_set.update(slots)
+        
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 10)
         main_layout.setSpacing(0)
@@ -342,6 +358,44 @@ class BatchTaskItem(QWidget):
         )
         task_rows.append(("elements", elements_row))
 
+        # --- Stages ---
+        current_stages = []
+        if self.mod.stages:
+            for s in self.mod.stages:
+                val = s.stage.value if hasattr(s.stage, 'value') else str(s.stage)
+                name = DataManager.get_stage_data(val, "Value")
+                if name:
+                    current_stages.append(name)
+        
+        orig_stages_text = ", ".join(self.orig_stages) if self.orig_stages else "—"
+        all_stages = DataManager.get_stage_names()
+
+        stages_row = MultiComboRow(
+            "Stages", data_font,
+            orig_stages_text, current_stages, all_stages, "stages",
+            lambda: self._check_field_changed("stages")
+        )
+        task_rows.append(("stages", stages_row))
+
+        # --- Stage Slots ---
+        from src.constants.enums import StageSlot
+        current_stage_slots = []
+        if self.mod.stages:
+            for s in self.mod.stages:
+                for slot in s.slots:
+                    current_stage_slots.append(slot.value if hasattr(slot, 'value') else str(slot))
+        # Unique
+        current_stage_slots = sorted(list(set(current_stage_slots)))
+        
+        orig_stage_slots_text = ", ".join(sorted(self.orig_stage_slots_set)) if self.orig_stage_slots_set else "—"
+        
+        stage_slots_row = MultiComboRow(
+            "Stage Slots", data_font,
+            orig_stage_slots_text, current_stage_slots, StageSlot.list(), "stage_slots",
+            lambda: self._check_field_changed("stage_slots")
+        )
+        task_rows.append(("stage_slots", stage_slots_row))
+
         # --- Thumbnail ---
         thumb_row = ThumbnailRow(
             data_font, 
@@ -501,7 +555,8 @@ class BatchTaskItem(QWidget):
         fields_to_check = [
             "mod_name", "url", "version", "wifi_safe", "authors", 
             "category", "display_name", "folder_name", "description",
-            "playable_character", "slots", "elements", "thumbnail"
+            "playable_character", "slots", "elements", "thumbnail",
+            "stages", "stage_slots"
         ]
         
         for field_name in fields_to_check:
@@ -645,6 +700,13 @@ class BatchTaskItem(QWidget):
             if "Select All" in new_elements: 
                 new_elements.remove("Select All")
             changed = new_elements != self.orig_elements_set
+        elif field_name == "stages":
+            new_val = self.get_selected_stages()
+            new_val.sort()
+            changed = new_val != self.orig_stages
+        elif field_name == "stage_slots":
+            new_val = set(self.get_selected_stage_slots())
+            changed = new_val != self.orig_stage_slots_set
         elif field_name == "thumbnail":
             changed = self.pending_thumbnail_path is not None
         
@@ -677,6 +739,20 @@ class BatchTaskItem(QWidget):
         if "elements" in self.input_fields:
             elements = self.input_fields["elements"].get_checked()
             return [e for e in elements if e != "Select All"]
+        return []
+
+    def get_selected_stages(self) -> list:
+        """Get list of selected stage names"""
+        if "stages" in self.input_fields:
+            stages = self.input_fields["stages"].get_checked()
+            return [s for s in stages if s != "Select All"]
+        return []
+    
+    def get_selected_stage_slots(self) -> list:
+        """Get list of selected stage slot names"""
+        if "stage_slots" in self.input_fields:
+            slots = self.input_fields["stage_slots"].get_checked()
+            return [s for s in slots if s != "Select All"]
         return []
     
     def update_status_display(self):

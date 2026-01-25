@@ -28,6 +28,7 @@ class BatchTask(BaseModel):
     original_description: Optional[str] = None
     original_elements: Optional[list[str]] = None
     original_characters: Optional[list[dict]] = None  # [{fighter: str, slots: [int]}]
+    original_stages: Optional[list[dict]] = None # [{stage: str, slots: [str]}]
     original_thumbnail: Optional[str] = None
     original_display_name: Optional[str] = None
     original_folder_name: Optional[str] = None
@@ -76,6 +77,13 @@ class BatchManager:
             if mod.category:
                 original_category = mod.category.value if hasattr(mod.category, 'value') else str(mod.category)
         
+        original_stages = None
+        if mod.stages:
+            original_stages = [
+                {"stage": s.stage.value if hasattr(s.stage, 'value') else str(s.stage),
+                 "slots": [slot.value for slot in s.slots]} for s in mod.stages
+            ]
+
         task = BatchTask(
             mod=mod,
             original_mod_name=mod.mod_name if mod.contains_info else None,
@@ -86,6 +94,7 @@ class BatchManager:
             original_description=mod.description if mod.contains_info else None,
             original_elements=original_elements,
             original_characters=original_characters,
+            original_stages=original_stages,
             original_thumbnail=mod.thumbnail if mod.contains_info else None,
             original_display_name=mod.display_name if mod.contains_info else None,
             original_folder_name=mod.folder_name if mod.contains_info else None,
@@ -117,6 +126,13 @@ class BatchManager:
                 if mod.category:
                     original_category = mod.category.value if hasattr(mod.category, 'value') else str(mod.category)
             
+            original_stages = None
+            if mod.stages:
+                original_stages = [
+                    {"stage": s.stage.value if hasattr(s.stage, 'value') else str(s.stage),
+                     "slots": [slot.value for slot in s.slots]} for s in mod.stages
+                ]
+
             task = BatchTask(
                 mod=mod,
                 original_mod_name=mod.mod_name if mod.contains_info else None,
@@ -127,6 +143,7 @@ class BatchManager:
                 original_description=mod.description if mod.contains_info else None,
                 original_elements=original_elements,
                 original_characters=original_characters,
+                original_stages=original_stages,
                 original_thumbnail=mod.thumbnail if mod.contains_info else None,
                 original_display_name=mod.display_name if mod.contains_info else None,
                 original_folder_name=mod.folder_name if mod.contains_info else None,
