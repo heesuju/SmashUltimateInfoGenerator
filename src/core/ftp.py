@@ -369,66 +369,76 @@ class SwitchFTP:
                 
     
     def delete_remote_dir(self, remote_dir: str):
-        """Recursively delete a remote directory"""
+        """Recursively delete a remote directory. raises Exception on failure."""
         # CRITICAL SAFETY CHECK
-        path = remote_dir.strip()
-        
+        path = remote_dir.strip().rstrip("/") # Strip trailing slash to avoid //
+        if not path: return
+
         # 1. Scope Constraint: Must be inside /ultimate
         if not path.startswith("/ultimate"):
-            print(f"SAFETY ERROR: Attempted to delete outside /ultimate: {path}")
-            return
+            raise ValueError(f"SAFETY ERROR: Attempted to delete outside /ultimate: {path}")
 
         # 2. Protected Paths
-        protected = ["/", "/ultimate", "/ultimate/mods", "/ultimate/mods/", ""]
+        protected = ["/", "/ultimate", "/ultimate/mods", "/ultimate/mods"]
         if path in protected:
-            print(f"SAFETY ERROR: Attempted to delete protected path: {path}")
-            return
-            
+             raise ValueError(f"SAFETY ERROR: Attempted to delete protected path: {path}")
+
+        items = []
+        
         try:
-            items = []
+            for name, facts in self.ftp.mlsd(path):
+                if name in [".", ".."]: continue
+                items.append((name, facts.get("type", "unknown")))
+        except Exception:
             try:
-                items = list(self.ftp.mlsd(remote_dir))
-            except:
-                # Fallback to NLST if MLSD fails
+                names = self.ftp.nlst(path)
+                for n in names:
+                    base_n = n.split("/")[-1]
+                    if base_n in [".", ".."]: continue
+                    items.append((base_n, "unknown"))
+            except Exception as e:
                 try:
-                    names = self.ftp.nlst(remote_dir)
-                    items = [(n, {'type': 'unknown'}) for n in names]
+                    self.ftp.cwd(path)
+                    raise e
                 except:
                     return
 
-            for name, facts in items:
-                if name in [".", ".."]:
-                    continue
-                
-                # Check if name is already an absolute path (common with NLST on some servers)
-                if name.startswith("/"):
-                    full_path = name
-                else:
-                    full_path = f"{remote_dir}/{name}"
-                is_dir = facts.get('type') == 'dir'
-                
-                if facts.get('type') == 'unknown':
-                    try:
-                        self.ftp.delete(full_path)
-                        continue
-                    except Exception as e:
-                        is_dir = True
+        for name, item_type in items:
+            if name in [".", ".."]: continue
+            
+            full_path = f"{path}/{name}"
+            
+            # Determine if Directory
+            is_dir = (item_type == 'dir')
+            
+            if item_type == 'unknown':
+                try:
+                    self.ftp.cwd(full_path)
+                    is_dir = True
+                    self.ftp.cwd("..") 
+                except:
+                    is_dir = False
 
-                if is_dir:
-                    self.delete_remote_dir(full_path)
-                else:
-                    try:
-                        self.ftp.delete(full_path)
-                    except Exception as e:
+            if is_dir:
+                self.delete_remote_dir(full_path)
+            else:
+                try:
+                    self.ftp.delete(full_path)
+                except Exception as e:
+                    msg = str(e)
+                    if "550" in msg or "553" in msg:
+                        pass
+                    else:
                         print(f"Failed to delete file {full_path}: {e}")
 
-            try:
-                self.ftp.rmd(remote_dir)
-            except Exception as e:
-                print(f"Failed to remove directory {remote_dir}: {e}")
-                
+        try:
+            self.ftp.rmd(path)
         except Exception as e:
-            print(f"Critical error in delete_remote_dir: {e}")
+            msg = str(e)
+            if "550" in msg or "553" in msg:
+                return # Already gone
+            raise e
+        
     def find_acropolis_config_dir(self) -> str:
         """Find the first valid numeric-based config directory for ARCropolis."""
         base = "/ultimate/arcropolis/config"
