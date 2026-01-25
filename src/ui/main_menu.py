@@ -89,11 +89,11 @@ class MainMenu(QWidget):
         # Connect edit panel cancel to close edit
         self.edit.close_requested.connect(self.on_edit_close)
         
-        # Connect edit panel save to update list
-        self.edit.save_complete.connect(self.list_widget.on_mod_saved)
+        # Connect edit panel save to update list (trigger scan to handle renames reliably)
+        self.edit.save_complete.connect(lambda: self.mod_manager.scan_all())
         
-        # Connect batch panel apply to refresh list (use lambda since on_mod_saved expects mod_id)
-        self.batch.apply_requested.connect(lambda: self.list_widget.on_mod_saved(""))
+        # Connect batch panel apply to refresh list (trigger full scan to handle renames)
+        self.batch.apply_requested.connect(self.mod_manager.scan_all)
         
         # Connect list widget batch signal to show batch panel
         self.list_widget.batch_tasks_added.connect(self.on_batch_tasks_added)

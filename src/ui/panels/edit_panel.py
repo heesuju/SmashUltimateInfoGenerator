@@ -891,9 +891,17 @@ class EditPanel(SidePanel):
             if os.path.exists(new_dir):
                 self.mod.path = new_dir
                 self.mod_path = new_dir # Update local ref too
-                 
-                # If renamed, update thumbnail path too
-                self.mod.thumbnail = os.path.join(new_dir, "preview.webp")
+                
+                if self.mod.thumbnail and not os.path.exists(self.mod.thumbnail):
+                    base_name = os.path.basename(self.mod.thumbnail)
+                    possible_new = os.path.join(new_dir, base_name)
+                    if os.path.exists(possible_new):
+                        self.mod.thumbnail = possible_new
+                    else:
+                        self.mod.thumbnail = os.path.join(new_dir, "preview.webp")
+            else:
+                pass
+                
         except Exception as e:
             print(f"Save error: {e}")
              
