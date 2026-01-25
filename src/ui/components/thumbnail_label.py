@@ -81,7 +81,7 @@ class ImageWorker(QRunnable):
         painter.drawImage(x, y, scaled)
         painter.end()
 
-        self.signals.result.emit(QPixmap.fromImage(canvas))
+        self.signals.result.emit(canvas)
 
 class ThumbnailLabel(QLabel):
     def __init__(self, width=320, height=200, parent=None):
@@ -112,16 +112,17 @@ class ThumbnailLabel(QLabel):
         self.clear_thumbnail()
         
         worker = ImageWorker(path, self.size())
-        worker.signals.result.connect(lambda pixmap: self.on_image_loaded(pixmap, path))
+        worker.signals.result.connect(lambda img: self.on_image_loaded(img, path))
         self.thread_pool.start(worker)
 
-    def on_image_loaded(self, pixmap, path):
+    def on_image_loaded(self, image, path):
         # Only update if the path matches the currently requested path
         # This prevents race conditions where a newer request finishes after an older one
         if path != self.current_path:
             return
 
-        if pixmap:
+        if image and not image.isNull():
+            pixmap = QPixmap.fromImage(image)
             cache_key = (path, self.width(), self.height())
             self.cache.set(cache_key, pixmap)
             self.setPixmap(pixmap)
