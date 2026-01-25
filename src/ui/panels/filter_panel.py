@@ -61,6 +61,7 @@ class FilterPanel(SidePanel):
         self.character = CheckableComboBox(characters, defaults, True, "All Characters")
         char_layout.addWidget(self.character)
 
+        self.body.addLayout(char_layout)
         
         # Stage Filter Section
         stage_layout = QHBoxLayout()
@@ -80,8 +81,6 @@ class FilterPanel(SidePanel):
         stage_layout.addWidget(self.stage)
         
         self.body.addLayout(stage_layout)
-        
-        self.body.addLayout(char_layout)
         
         # Connect event handlers for series-character synchronization
         self.series.currentIndexChanged.connect(self.on_series_changed)
