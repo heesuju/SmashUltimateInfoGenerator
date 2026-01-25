@@ -74,9 +74,10 @@ class TreeItem(QTreeWidgetItem):
         
         # Show maximum 4 icons
         max_icons = 4
-        total_icons = len(self.mod.character_icons)
+        sorted_icons = sorted(self.mod.character_icons)
+        total_icons = len(sorted_icons)
         
-        for i, path in enumerate(self.mod.character_icons[:max_icons]):
+        for i, path in enumerate(sorted_icons[:max_icons]):
             icon_label = QLabel()
             icon_label.setPixmap(QPixmap(path).scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
             icons_layout.addWidget(icon_label)

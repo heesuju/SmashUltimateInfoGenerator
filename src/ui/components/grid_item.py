@@ -111,9 +111,10 @@ class GridListItemWidget(QWidget):
         
         # Show maximum 5 icons
         max_icons = 5
-        total_icons = len(mod.character_icons)
+        sorted_icons = sorted(mod.character_icons)
+        total_icons = len(sorted_icons)
 
-        for char_img in mod.character_icons[:max_icons]:
+        for char_img in sorted_icons[:max_icons]:
             img_label = QLabel()
             
             # Use cached icon if available
