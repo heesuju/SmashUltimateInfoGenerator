@@ -154,6 +154,15 @@ class FilterChips(QWidget):
             self.chips_layout.insertWidget(chip_count, chip)
             chip_count += 1
         
+        # Stage filter
+        total_stages = len(DataManager.get_stage_names())
+        if params.stages and len(params.stages) < total_stages:
+            chip = FilterChip(f"Stages ({len(params.stages)})", "stages")
+            chip.clicked.connect(self.chip_clicked.emit)
+            chip.closed.connect(self.on_chip_closed)
+            self.chips_layout.insertWidget(chip_count, chip)
+            chip_count += 1
+
         # Elements filter
         if params.elements and len(params.elements) < len(Element.list()):
             chip = FilterChip(f"Elements ({len(params.elements)})", "elements")
@@ -229,6 +238,8 @@ class FilterChips(QWidget):
             params.category = []
         elif filter_type == "character":
             params.character = []
+        elif filter_type == "stages":
+            params.stages = []
         elif filter_type == "elements":
             params.elements = []
         elif filter_type == "slots":

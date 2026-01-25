@@ -18,6 +18,7 @@ class FilterParameters(BaseModel):
     authors: str = ""
     category: List[Category] = []
     character: List[Fighter] = []
+    stages: List[Stage] = []
     elements: List[Element] = []
     slot_min: int = 0
     slot_max: int = 255
@@ -85,6 +86,12 @@ class FilterManager():
             if self.params.character:
                 mod_fighters = [Fighter(c.fighter) for c in mod.characters]
                 if not any(char in mod_fighters for char in self.params.character):
+                    continue
+            
+            # Filter by stage (if any stages are selected)
+            if self.params.stages:
+                mod_stages = [s.stage for s in mod.stages]
+                if not any(stage in mod_stages for stage in self.params.stages):
                     continue
             
             # Filter by elements (if any elements are selected)

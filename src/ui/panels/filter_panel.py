@@ -60,6 +60,26 @@ class FilterPanel(SidePanel):
         defaults = ([True] * (len(characters) + 1))
         self.character = CheckableComboBox(characters, defaults, True, "All Characters")
         char_layout.addWidget(self.character)
+
+        
+        # Stage Filter Section
+        stage_layout = QHBoxLayout()
+        
+        self.stage_series = SingleComboBox()
+        self.stage_series.addItem("All Series")
+        self.stage_series.addItems(StageSeries.list())
+        self.stage_series.currentIndexChanged.connect(self.on_stage_series_changed)
+        stage_layout.addWidget(self.stage_series)
+
+        # Stage filter
+        stage_names = DataManager.get_stage_names()
+        stage_defaults = ([True] * (len(stage_names) + 1))
+        self.stage = CheckableComboBox(stage_names, stage_defaults, True, "All Stages")
+        # Connect event handler for stage series synchronization
+        self.stage.model().dataChanged.connect(self.on_stage_changed)
+        stage_layout.addWidget(self.stage)
+        
+        self.body.addLayout(stage_layout)
         
         self.body.addLayout(char_layout)
         
@@ -131,6 +151,8 @@ class FilterPanel(SidePanel):
         self.category.reset()
         self.series.setCurrentIndex(0)
         self.character.reset()
+        self.stage_series.setCurrentIndex(0)
+        self.stage.reset()
         self.elements.reset()
         self.slot_mode.setCurrentIndex(0)  # Reset to "Range"
         self.min_value.setValue(0)
@@ -208,6 +230,59 @@ class FilterPanel(SidePanel):
             self.series.setCurrentText("Custom")
         self.series.blockSignals(False)
     
+    
+    def on_stage_series_changed(self, index:int):
+        """When stage series is changed, update stage selection to match the series"""
+        # Block stage model signals to prevent triggering on_stage_changed
+        self.stage.model().blockSignals(True)
+        
+        if index == 0:  # "All Series" selected
+            # Select all stages
+            for i in range(self.stage.get_item_count()):
+                item = self.stage.model().invisibleRootItem().child(i)
+                item.setCheckState(Qt.CheckState.Checked)
+        else:
+            # Get series name and find matching stages
+            series_name = self.stage_series.currentText()
+            
+            # Ignore if it's "Custom" text (not an actual series)
+            if series_name == "Custom":
+                self.stage.model().blockSignals(False)
+                return
+            
+            series_stages = DataManager.get_stages_by_series(series_name)
+            
+            # Update stage checkboxes
+            for i in range(self.stage.get_item_count()):
+                item = self.stage.model().invisibleRootItem().child(i)
+                stage_name = item.text()
+                
+                # Skip "Select All" item (first item)
+                if i == 0 and stage_name == "Select All":
+                    item.setCheckState(Qt.CheckState.Unchecked)
+                    continue
+                
+                # Check if stage belongs to selected series
+                if stage_name in series_stages:
+                    item.setCheckState(Qt.CheckState.Checked)
+                else:
+                    item.setCheckState(Qt.CheckState.Unchecked)
+        
+        # Unblock signals and update display
+        self.stage.model().blockSignals(False)
+        self.stage.update_display()
+    
+    def on_stage_changed(self):
+        """When stage selection changes manually, set stage series text to 'Custom'"""
+        # Only change if a specific series is currently selected (index > 0)
+        self.stage_series.blockSignals(True)
+            
+        if len(self.stage.get_checked()) == self.stage.get_item_count():
+            self.stage_series.setCurrentIndex(0)
+        else:
+            self.stage_series.setCurrentText("Custom")
+        self.stage_series.blockSignals(False)
+
     def apply(self):
         # Get all checked characters and convert to Fighter enums
         checked_chars = self.character.get_checked()
@@ -220,6 +295,15 @@ class FilterPanel(SidePanel):
         else:
             self.filter_manager.params.character = [DataManager.get_character_by_custom(c) for c in checked_chars]
         
+        # Get all checked stages and convert to Stage enums
+        checked_stages = self.stage.get_checked()
+        checked_stages = [s for s in checked_stages if s != "Select All"]
+        total_stages = len(DataManager.get_stage_names())
+        if len(checked_stages) >= total_stages:
+            self.filter_manager.params.stages = []
+        else:
+            self.filter_manager.params.stages = [DataManager.get_stage_by_name(s) for s in checked_stages]
+
         # Set author filter
         self.filter_manager.params.authors = self.author.text()
         
@@ -292,6 +376,9 @@ class FilterPanel(SidePanel):
         elif filter_type == "character":
             self.character.setFocus()
             self.character.showPopup()
+        elif filter_type == "stages":
+            self.stage.setFocus()
+            self.stage.showPopup()
         elif filter_type == "elements":
             self.elements.setFocus()
             self.elements.showPopup()
@@ -321,6 +408,9 @@ class FilterPanel(SidePanel):
         elif filter_type == "character":
             self.character.reset()
             self.series.setCurrentIndex(0)  # Also reset series
+        elif filter_type == "stages":
+            self.stage.reset()
+            self.stage_series.setCurrentIndex(0) # Also reset stage series
         elif filter_type == "elements":
             self.elements.reset()
         elif filter_type == "slots":
