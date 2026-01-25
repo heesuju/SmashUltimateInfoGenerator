@@ -46,11 +46,13 @@ class ImageWorker(QRunnable):
 
         if self.path.startswith("http"):
             try:
-                response = requests.get(self.path, timeout=10)
-                if response.status_code == 200:
-                    image = QImage.fromData(response.content)
-                else:
-                    image = QImage()
+                with requests.Session() as session:
+                    session.trust_env = False
+                    response = session.get(self.path, timeout=10)
+                    if response.status_code == 200:
+                        image = QImage.fromData(response.content)
+                    else:
+                        image = QImage()
             except Exception as e:
                 # print(f"Error downloading image: {e}")
                 image = QImage()

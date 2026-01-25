@@ -34,14 +34,17 @@ class ImageWorker(QThread):
                 return
                 
             # Download
-            response = requests.get(self.url, stream=True)
-            if response.status_code == 200:
-                with open(local_path, 'wb') as f:
-                    for chunk in response.iter_content(1024):
-                        f.write(chunk)
-                self.finished.emit(self.url, local_path)
-            else:
-                self.finished.emit(self.url, "")
+            with requests.Session() as session:
+                session.trust_env = False
+                response = session.get(self.url, stream=True, timeout=10)
+                
+                if response.status_code == 200:
+                    with open(local_path, 'wb') as f:
+                        for chunk in response.iter_content(1024):
+                            f.write(chunk)
+                    self.finished.emit(self.url, local_path)
+                else:
+                    self.finished.emit(self.url, "")
         except Exception as e:
             print(f"Error downloading image {self.url}: {e}")
             self.finished.emit(self.url, "")
