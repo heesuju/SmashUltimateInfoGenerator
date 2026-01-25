@@ -51,8 +51,8 @@ class OnlineFilterPanel(SidePanel):
         author = self.author.text()
         
         # Get selected category (single selection, 0 = All Categories)
-        category_index = self.category.currentIndex()
-        category_filter = None if category_index == 0 else [Category.list()[category_index - 1]]
+        # category_index = self.category.currentIndex()
+        # category_filter = None if category_index == 0 else [Category.list()[category_index - 1]]
         
         # Get sort option (correct API values)
         sort_map = {

@@ -9,7 +9,7 @@ from PyQt6.QtGui import (
     QPixmap, QIcon, QFont, QDragEnterEvent, QDropEvent, QColor
 )
 
-from src.core.formatting import format_slots
+from src.core.formatting import format_slots, format_stage_slots
 from src.models.mod import Mod, ModItem
 from src.managers.mod_manager import ModManager
 from src.managers.data_manager import ButtonIcons, DataManager
@@ -343,8 +343,10 @@ class ModList(QWidget):
                         final_keys.append(key)
                 
                 icon_urls = DataManager.get_stage_icons(final_keys)
+                slots_display = format_stage_slots(mod.get_stage_slots())
                 
             else:
+                slots_display = format_slots(mod.get_character_slots(), self.config_manager.config.name_rules.cap_slots_display)
                 # Handle Character Icons
                 keys = mod.get_grouped_character_keys()
                 
@@ -374,7 +376,7 @@ class ModList(QWidget):
                 thumbnail=mod.thumbnail,
                 category=str(mod.category),
                 authors=mod.authors,
-                slots=format_slots(mod.get_character_slots(), self.config_manager.config.name_rules.cap_slots_display),
+                slots=slots_display,
                 version=mod.version,
                 enabled=str(mod.hash) in self.mod_manager.enabled_ids,
                 selected=self.mod_manager.is_selected(str(mod.hash)),

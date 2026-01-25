@@ -117,6 +117,16 @@ def format_slots(slots:list[int], is_cap:bool=True):
         
     return slot_prefix + out_str
 
+def format_stage_slots(slots:list[str]):
+    if not slots:
+        return ""
+    
+    # Capitalize first letter of each slot
+    formatted = [s.capitalize() for s in slots]
+    formatted.sort()
+    
+    return ", ".join(formatted)
+
 def remove_characters(text:str, characters:list[str]):
     text = text.replace("&", " ")
     arr_to_remove = []

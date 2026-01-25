@@ -85,6 +85,14 @@ class Mod(BaseModel):
         slots = list(set(slots))
         return slots
 
+    def get_stage_slots(self)->list[str]:
+        slots = []
+        for stage in self.stages:
+            for slot in stage.slots:
+                slots.append(slot.value)
+        slots = list(set(slots))
+        return slots
+
     def get_grouped_character_keys(self)->list[str]:
         keys = self.get_character_keys()
         
