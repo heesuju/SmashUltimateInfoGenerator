@@ -1,11 +1,30 @@
+import concurrent.futures
+from threading import Thread, Event
+
 import json
 import os
-
 import sys
 import shutil
 
-from data.cache import PATH_CONFIG
-from data import PATH_CHAR_NAMES
+# Dynamic path resolution
+if getattr(sys, 'frozen', False):
+    # Running as compiled executable
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    # Running from source
+    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+DATA_DIR = os.path.join(BASE_DIR, "data")
+CACHE_DIR = os.path.join(DATA_DIR, "cache")
+
+PATH_CHAR_NAMES = os.path.join(DATA_DIR, "character_names.csv")
+PATH_CONFIG = os.path.join(CACHE_DIR, "config.json")
+PATH_HIDDEN = os.path.join(CACHE_DIR, "hidden.json")
+LOG_PATH = os.path.join(CACHE_DIR, "log")
+
+# Create directories if they don't exist
+os.makedirs(CACHE_DIR, exist_ok=True)
+
 from pathlib import Path
 from os import listdir
 from src.utils.file import is_valid_path, is_valid_file
@@ -15,12 +34,10 @@ from src.models.settings import Settings
 from src.models.mod import Mod
 from src.utils.file import (
     get_parent_dir,
-    get_direct_child_by_extension,
+    get_direct_child_by_extension, 
     rename_folder,
     copy_file
 )
-from threading import Thread, Event
-import concurrent.futures
 
 def load_config()->Settings:
     if(is_valid_file(PATH_CONFIG)):

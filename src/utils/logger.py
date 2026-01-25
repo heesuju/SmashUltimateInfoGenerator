@@ -1,6 +1,6 @@
 import os
 from datetime import datetime as dt
-from data.cache import LOG_PATH
+from src.core.data import LOG_PATH
 
 def output_log(*args)->None:
     messages = [arg for arg in args if isinstance(arg, str)]

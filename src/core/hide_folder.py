@@ -1,4 +1,4 @@
-from data.cache import PATH_HIDDEN
+from src.core.data import PATH_HIDDEN
 from src.models.mod import Mod
 from src.utils.file import read_json, get_base_name
 import json

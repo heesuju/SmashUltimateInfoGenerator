@@ -6,7 +6,7 @@ from src.managers.config_manager import ConfigManager
 from src.models.mod import Mod
 from src.utils.logger import output_log
 from src.models.mod import Mod
-from data import PATH_CHAR_NAMES
+from src.core.data import PATH_CHAR_NAMES
 from src.utils.csv_helper import csv_to_dict
 from src.utils.edit_distance import get_completion
 from src.core.data import load_config

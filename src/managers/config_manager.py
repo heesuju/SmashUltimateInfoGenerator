@@ -1,5 +1,5 @@
 import json
-from data.cache import PATH_CONFIG
+from src.core.data import PATH_CONFIG
 from src.utils.file import is_valid_path, is_valid_file
 from src.models.settings import Settings
 from src.utils.logger import output_log
