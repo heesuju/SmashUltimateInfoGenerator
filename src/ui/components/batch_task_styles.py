@@ -111,6 +111,12 @@ CELL_COMBO_STYLE = """
     QComboBox::drop-down {
         border: none;
     }
+    QComboBox QAbstractItemView {
+        background-color: #2b2b2b;
+        border: 1px solid rgba(128, 128, 128, 0.3);
+        selection-background-color: rgba(33, 150, 243, 0.3);
+        color: #ddd;
+    }
 """
 
 THUMBNAIL_SIZE = 60

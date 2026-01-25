@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, pyqtSignal, QEvent, QSize, QTimer
 from PyQt6.QtGui import QFont, QIcon
 from src.ui.components.multi_combobox import CheckableComboBox
+from src.ui.components.batch_task_styles import CELL_COMBO_STYLE
 
 class AssignmentRowWidget(QWidget):
     """
@@ -21,6 +22,7 @@ class AssignmentRowWidget(QWidget):
         self.layout.setContentsMargins(4, 2, 4, 2)
         self.layout.setSpacing(5)
         self.entity_combo = CheckableComboBox(include_all=False, placeholder_text="Select Entity")
+        self.entity_combo.setStyleSheet(CELL_COMBO_STYLE)
         self.entity_map = {}
         
         items = []
@@ -55,6 +57,7 @@ class AssignmentRowWidget(QWidget):
 
         # Slots Selector
         self.slots_combo = CheckableComboBox(include_all=False, placeholder_text="Select Slots", formatter=slot_formatter)
+        self.slots_combo.setStyleSheet(CELL_COMBO_STYLE)
         self.slots_combo.add_items(slot_options)
         if default_slots:
             default_set = set(default_slots)
