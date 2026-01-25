@@ -31,9 +31,10 @@ class BatchPanel(SidePanel):
     apply_requested = pyqtSignal()
     queue_updated = pyqtSignal() # Signal to bridge background thread updates to main UI thread
     
-    def __init__(self, batch_manager: BatchManager):
+    def __init__(self, batch_manager: BatchManager, mod_manager=None):
         super().__init__("Batch Processing")
         self.batch_manager = batch_manager
+        self.mod_manager = mod_manager
         self.worker = None
         self.task_widgets = {}  # Map mod_hash -> BatchTaskItem widget
         
@@ -434,18 +435,18 @@ class BatchPanel(SidePanel):
                 # Generate TOML with current mod data
                 generate_toml(mod)
                 
-                # Rename folder if needed
+                # Update path reference (generate_toml handles the physical rename)
                 old_path = mod.path
                 new_dir = os.path.join(get_parent_dir(mod.path), mod.folder_name)
-                if old_path != new_dir and not os.path.exists(new_dir):
-                    try:
-                        os.rename(old_path, new_dir)
+                
+                if old_path != new_dir:
+                    if os.path.exists(new_dir):
+                        # Rename succeeded in generate_toml
                         mod.path = new_dir
                         mod.thumbnail = os.path.join(new_dir, "preview.webp")
-                    except Exception as e:
-                        print(f"Error renaming folder: {e}")
-                elif os.path.exists(new_dir) and old_path != new_dir:
-                    print(f"Could not rename {old_path} to {new_dir}: destination already exists")
+                    else:
+                        # Rename failed or didn't happen
+                        print(f"Directory rename verification failed for {new_dir}")
                 
                 # Update cache
                 cache_data = mod.model_dump(mode='json', exclude={'is_selected', 'path', 'hash'})
@@ -457,7 +458,6 @@ class BatchPanel(SidePanel):
                 print(f"Error applying task for {task.mod.mod_name}: {e}")
                 error_count += 1
         
-        # Show result
         if applied_count > 0:
             QMessageBox.information(
                 self,
@@ -465,6 +465,18 @@ class BatchPanel(SidePanel):
                 f"Successfully applied {applied_count} tasks.\n"
                 f"Errors: {error_count}"
             )
+            
+            # Targeted Refresh
+            if self.mod_manager and tasks:
+                files_to_scan = []
+                ids_to_unload = []
+                for task in tasks:
+                    # Collect old hash (key) and new path
+                    ids_to_unload.append(str(task.mod.hash))
+                    files_to_scan.append(task.mod.path)
+                
+                self.mod_manager.unload_mods(ids_to_unload)
+                self.mod_manager.scan(files_to_scan)
         
         # Clear queue and refresh
         self.batch_manager.clear_queue()

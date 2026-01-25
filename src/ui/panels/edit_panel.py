@@ -913,8 +913,17 @@ class EditPanel(SidePanel):
         except Exception as e:
             print(f"Cache update error: {e}")
 
-        # 5. Emit
-        self.save_complete.emit(str(self.mod.hash))
+        # 5. Targeted Refresh (Optimize: Unload old, scan new)
+        old_hash = str(self.mod.hash)
+        
+        # Remove old entry from manager
+        self.mod_manager.unload_mods([old_hash])
+        
+        # Scan only the new path to re-add with correct hash
+        self.mod_manager.scan([self.mod.path])
+
+        # 6. Emit completion (List will refresh via scan callbacks)
+        self.save_complete.emit(old_hash)
         
         self.reset()
         self.close_requested.emit()

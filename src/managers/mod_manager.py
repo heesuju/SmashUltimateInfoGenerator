@@ -249,3 +249,16 @@ class ModManager(QObject):
             self.clear_selection()
             if self.callback:
                 self.callback()
+
+    def unload_mods(self, ids: List[str]):
+        """Remove mods from memory (ModManager) without deleting files. Used for refreshing."""
+        removed = False
+        for id in ids:
+            if id in self.mods:
+                del self.mods[id]
+                removed = True
+        
+        self.selected_ids = [s for s in self.selected_ids if s in self.mods]
+        
+        if removed and self.callback:
+            self.callback()
