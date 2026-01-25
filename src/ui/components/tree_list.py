@@ -232,7 +232,7 @@ class TreeList(QWidget):
         """)
         self.tree_widget.setAlternatingRowColors(True)
         self.tree_widget.setColumnCount(7)
-        self.tree_widget.setHeaderLabels(["", "Category", "Mod Name", "Authors", "Slot", "Characters", "Actions"])
+        self.tree_widget.setHeaderLabels(["", "Category", "Mod Name", "Authors", "Slots", "Targets", "Actions"])
         
         # Prevent the last column from auto-stretching
         self.tree_widget.header().setStretchLastSection(False)
