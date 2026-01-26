@@ -16,6 +16,7 @@ class WorkspaceList(QWidget):
         self.workspace_manager = workspace_manager
         self.editing_item = None
         self.editor = None
+        self._is_committing = False
         
         self.init_ui()
         self.workspace_manager.workspace_changed.connect(self.refresh)
@@ -228,30 +229,49 @@ class WorkspaceList(QWidget):
 
     def cancel_add(self):
         if self.editing_item:
+            self.tree.blockSignals(True)
             root = self.tree.invisibleRootItem()
-            root.removeChild(self.editing_item)
+            if root.indexOfChild(self.editing_item) != -1:
+                root.removeChild(self.editing_item)
             self.editing_item = None
             self.editor = None
+            self.tree.blockSignals(False)
+            self.adjust_height()
 
     def commit_add(self):
-        if not self.editor: 
+        if self._is_committing or not self.editor: 
             return
             
         name = self.editor.text().strip()
         if not name:
             self.cancel_add()
             return
-            
+
+        self._is_committing = True
+        
+        try:
+            self.editor.returnPressed.disconnect(self.commit_add)
+            self.editor.editingFinished.disconnect(self.cancel_add_on_blur)
+        except: pass
+
         success = self.workspace_manager.add_workspace(name)
         if success:
-            self.editing_item = None # modifications done by refresh
+            self.editing_item = None
             self.editor = None
             self.refresh()
+            self._is_committing = False
         else:
             QMessageBox.warning(self, "Error", f"Workspace '{name}' already exists.")
-            self.editor.selectAll() # Let them try again
+            self.editor.returnPressed.connect(self.commit_add)
+            self.editor.editingFinished.connect(self.cancel_add_on_blur)
+            self.editor.selectAll()
+            self.editor.setFocus()
+            self._is_committing = False
 
     def on_selection_changed(self):
+        if self.editing_item:
+            return
+            
         selected = self.tree.selectedItems()
         if not selected:
             return
