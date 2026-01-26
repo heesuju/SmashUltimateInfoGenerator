@@ -1,7 +1,7 @@
 import os
 import re
 import json
-from PyQt6.QtCore import QObject, QThread
+from PyQt6.QtCore import QObject, QThread, pyqtSignal
 from src.utils.file import read_json, write_json, is_valid_file
 from src.managers.config_manager import ConfigManager
 from src.utils.logger import output_log
@@ -9,6 +9,11 @@ from src.core.sync_worker import SyncWorker
 from src.models.mod import Mod
 
 class WorkspaceManager(QObject):
+    workspace_changed = pyqtSignal()
+    sync_started = pyqtSignal()
+    sync_finished = pyqtSignal()
+    sync_progress = pyqtSignal(str, float)
+
     def __init__(self, config_manager: ConfigManager):
         super().__init__()
         self.config_manager = config_manager
@@ -64,6 +69,9 @@ class WorkspaceManager(QObject):
             
         # Create/Update workspace file if it wasn't loaded correctly
         if not workspace_loaded:
+            # Try to get from config_manager if file didn't exist
+            if self.config_manager.config.workspace and self.config_manager.config.workspace in self.workspace_map:
+                self.current_workspace_name = self.config_manager.config.workspace
             self.save_active_workspace()
         
         self.load_enabled_mods()
@@ -215,6 +223,10 @@ class WorkspaceManager(QObject):
             return
             
         self.current_workspace_name = name
+        
+        self.config_manager.config.workspace = name
+        self.config_manager.save()
+        
         self.save_active_workspace()
         self.load_enabled_mods()
         self.workspace_changed.emit()
@@ -267,13 +279,6 @@ class WorkspaceManager(QObject):
         """Safe thread cleanup after it has truly stopped"""
         self.sync_thread = None
 
-    # --- Signals ---
-    from PyQt6.QtCore import pyqtSignal
-    workspace_changed = pyqtSignal()
-    sync_started = pyqtSignal()
-    sync_finished = pyqtSignal()
-    sync_progress = pyqtSignal(str, float)
-    
     # --- Callbacks ---
 
     def add_enabled_callback(self, callback: callable):

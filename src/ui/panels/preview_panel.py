@@ -30,6 +30,9 @@ class PreviewPanel(SidePanel):
         self.is_online_mode = False
         self.current_online_details = {} # Cache for online mod details
         
+        self.workspace_manager = mod_manager.workspace_manager
+        self.workspace_manager.workspace_changed.connect(self.on_workspace_changed)
+        
         self.mod_manager.add_focus_callback(self.set_data)
         self.mod_manager.add_favorite_callback(self.on_favorite_changed)
         self.mod_manager.add_hidden_callback(self.on_hidden_changed)
@@ -437,3 +440,8 @@ class PreviewPanel(SidePanel):
         for f in files:
              if f.get("url"):
                 self.download_file(f.get("url"), f.get("name"))
+
+    def on_workspace_changed(self):
+        """Refresh current mod view when workspace changes (status may have changed)"""
+        if self.mod_manager.focused_id and not self.is_online_mode:
+            self.set_data(self.mod_manager.focused_id)
