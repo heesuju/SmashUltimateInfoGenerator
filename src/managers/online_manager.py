@@ -168,9 +168,9 @@ class OnlineManager(QObject):
             views = item.get("_nViewCount", 0)
             date = item.get("_tsDateModified", 0)
             ver = item.get("_sVersion", "")
-            
+            root_cat = item.get("_aRootCategory", {})
             # Category Mapping
-            cat_name = item.get("_aRootCategory", {}).get("_sName", "").lower()
+            cat_name = root_cat.get("_sName", "").lower() if root_cat else ""
             category = "Misc" # Default
             
             if cat_name == "skins":
