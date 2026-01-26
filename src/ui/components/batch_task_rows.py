@@ -343,7 +343,7 @@ class ComboRow(BatchTaskRow):
 class MultiComboRow(BatchTaskRow):
     def __init__(self, label: str, data_font: QFont,
                  orig_text: str, current_items: list, all_items: list, attr_name: str,
-                 on_model_change: callable, formatter: callable = None):
+                 on_model_change: callable, formatter: callable = None, sorter: callable = None):
         super().__init__(label, data_font)
         self.orig_text = orig_text
         self.current_items = current_items
@@ -351,6 +351,7 @@ class MultiComboRow(BatchTaskRow):
         self.attr_name = attr_name
         self.on_model_change = on_model_change 
         self.formatter = formatter
+        self.sorter = sorter
 
     def create_widgets(self):
         label_widget = self._create_label_widget()
@@ -358,7 +359,7 @@ class MultiComboRow(BatchTaskRow):
         
         cell = self._create_new_value_cell()
         
-        self.input_widget = CheckableComboBox(self.all_items, [], False, f"Select {self.label_text}", formatter=self.formatter)
+        self.input_widget = CheckableComboBox(self.all_items, [], False, f"Select {self.label_text}", formatter=self.formatter, sorter=self.sorter)
         
         # Manually set check states
         current_set = set(str(x) for x in self.current_items)
@@ -448,7 +449,7 @@ class AssignmentRow(BatchTaskRow):
     def __init__(self, label: str, data_font: QFont, 
                  orig_value_text: str,
                  initial_assignments: list, entities_dict, slot_options, slot_formatter,
-                 field_key, on_changed=None):
+                 field_key, on_changed=None, slot_sorter=None):
         super().__init__(label, data_font)
         self.orig_value_text = orig_value_text
         self.initial_assignments = initial_assignments # List of {id: key, slots: []}
@@ -457,6 +458,7 @@ class AssignmentRow(BatchTaskRow):
         self.slot_formatter = slot_formatter
         self.field_key = field_key
         self.on_changed = on_changed
+        self.slot_sorter = slot_sorter
         
     def create_widgets(self):
         # Label
@@ -476,7 +478,7 @@ class AssignmentRow(BatchTaskRow):
         
         self.input_widget = AssignmentListWidget("Entity", "Slots")
         self.input_widget.set_entities(self.entities_dict)
-        self.input_widget.set_slot_options(self.slot_options, formatter=self.slot_formatter)
+        self.input_widget.set_slot_options(self.slot_options, formatter=self.slot_formatter, sorter=self.slot_sorter)
         
         if self.initial_assignments:
             self.input_widget.set_assignments(self.initial_assignments)

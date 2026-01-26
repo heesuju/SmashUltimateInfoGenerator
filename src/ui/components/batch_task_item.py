@@ -351,7 +351,8 @@ class BatchTaskItem(QWidget):
                 slot_options_char,
                 slot_formatter_adv,
                 "playable_character_advanced",
-                lambda: (self._update_generated_names(), self._check_field_changed("playable_character_advanced"))
+                lambda: (self._update_generated_names(), self._check_field_changed("playable_character_advanced")),
+                slot_sorter=lambda x: int(x[1:]) if x.startswith('c') or x.startswith('C') and x[1:].isdigit() else x
             )
             task_rows.append(("playable_character_advanced", adv_char_row))
         else:
@@ -377,7 +378,8 @@ class BatchTaskItem(QWidget):
                 "Slots", data_font,
                 orig_slots_text, current_slots, slot_options, "slots",
                 lambda: (self._update_generated_names(), self._check_field_changed("slots")),
-                formatter=slot_formatter
+                formatter=slot_formatter,
+                sorter=lambda x: int(x[1:]) if x.startswith('c') or x.startswith('C') and x[1:].isdigit() else x
             )
             task_rows.append(("slots", slots_row))
 

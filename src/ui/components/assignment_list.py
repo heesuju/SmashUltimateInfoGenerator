@@ -15,7 +15,7 @@ class AssignmentRowWidget(QWidget):
     - Slot Selector (CheckableComboBox)
     - Remove Button
     """
-    def __init__(self, entities: dict, slot_options: list, default_entity=None, default_slots=None, slot_formatter=None, parent=None):
+    def __init__(self, entities: dict, slot_options: list, default_entity=None, default_slots=None, slot_formatter=None, slot_sorter=None, parent=None):
         super().__init__(parent)
         
         self.layout = QHBoxLayout(self)
@@ -56,7 +56,7 @@ class AssignmentRowWidget(QWidget):
             self.entity_combo.update_display()
 
         # Slots Selector
-        self.slots_combo = CheckableComboBox(include_all=False, placeholder_text="Select Slots", formatter=slot_formatter)
+        self.slots_combo = CheckableComboBox(include_all=False, placeholder_text="Select Slots", formatter=slot_formatter, sorter=slot_sorter)
         self.slots_combo.setStyleSheet(CELL_COMBO_STYLE)
         self.slots_combo.add_items(slot_options)
         if default_slots:
@@ -118,6 +118,7 @@ class AssignmentListWidget(QWidget):
         self.entity_data = {} # Store for new rows
         self.slot_options = [] # Store for new rows
         self.slot_formatter = None
+        self.slot_sorter = None
         
         self.rows = []
         
@@ -225,9 +226,10 @@ class AssignmentListWidget(QWidget):
         self.entity_data = entities
         self.tree.setHeaderLabels([f"{self.entity_label} Assignments"])
         
-    def set_slot_options(self, slots: list, formatter=None):
+    def set_slot_options(self, slots: list, formatter=None, sorter=None):
         self.slot_options = slots
         self.slot_formatter = formatter
+        self.slot_sorter = sorter
 
     def add_row(self, default_entity=None, default_slots=None):
         item = QTreeWidgetItem(self.tree)
@@ -237,7 +239,8 @@ class AssignmentListWidget(QWidget):
             self.slot_options, 
             default_entity, 
             default_slots,
-            self.slot_formatter
+            self.slot_formatter,
+            self.slot_sorter
         )
         
         row_widget.entity_combo.model().dataChanged.connect(self.on_changed)

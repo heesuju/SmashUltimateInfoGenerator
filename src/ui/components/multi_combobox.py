@@ -4,12 +4,13 @@ from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtCore import Qt
 
 class CheckableComboBox(QComboBox):
-    def __init__(self, items:List=[], defaults:List[bool]=[], include_all:bool=False, placeholder_text:str="All", formatter=None):
+    def __init__(self, items:List=[], defaults:List[bool]=[], include_all:bool=False, placeholder_text:str="All", formatter=None, sorter=None):
         super().__init__()
         self.include_all = include_all
         self.defaults = defaults
         self.placeholder_text = placeholder_text
         self.formatter = formatter
+        self.sorter = sorter
         self.setModel(QStandardItemModel(self))
         # self.setEditable(False)  # prevent typing
         self.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
@@ -101,8 +102,9 @@ class CheckableComboBox(QComboBox):
                 'item': item
             })
         
-        # Sort by: 1. checked status (checked first), 2. alphabetically
-        items_data.sort(key=lambda x: (not x['checked'], x['text'].lower()))
+        # Sort by: 1. checked status (checked first), 2. sorter or alphabetically
+        sort_func = self.sorter if self.sorter else lambda x: x.lower()
+        items_data.sort(key=lambda x: (not x['checked'], sort_func(x['text'])))
         
         # Remove all items except "Select All"
         for _ in range(len(items_data)):

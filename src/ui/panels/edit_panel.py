@@ -141,7 +141,7 @@ class EditPanel(SidePanel):
             return format_slots(sorted(slots_int))
         self._slot_formatter = slot_formatter # Store for reuse
 
-        self.slots = CheckableComboBox([f"C{i:02d}" for i in range(256)], [False] * 257, False, "Select Slots", formatter=slot_formatter)
+        self.slots = CheckableComboBox([f"C{i:02d}" for i in range(256)], [False] * 257, False, "Select Slots", formatter=slot_formatter, sorter=lambda x: int(x[1:]) if x.startswith('c') or x.startswith('C') and x[1:].isdigit() else x)
         self.slots.model().dataChanged.connect(self._update_generated_names)
         
         char_simple_layout.addWidget(self.character, 1) # Stretch character
@@ -152,7 +152,7 @@ class EditPanel(SidePanel):
         # Advanced Mode Widget
         self.char_assignments = AssignmentListWidget("Character", "Slots")
         self.char_assignments.set_entities(DataManager.get_character_dict()) # {ID: Name}
-        self.char_assignments.set_slot_options([f"C{i:02d}" for i in range(256)], formatter=slot_formatter)
+        self.char_assignments.set_slot_options([f"C{i:02d}" for i in range(256)], formatter=slot_formatter, sorter=lambda x: int(x[1:]) if x.startswith('c') or x.startswith('C') and x[1:].isdigit() else x)
         self.char_assignments.assignments_changed.connect(self._update_generated_names)
         self.char_assignments.hide()
         self.body.addWidget(self.char_assignments)
