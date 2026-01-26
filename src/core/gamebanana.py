@@ -88,6 +88,8 @@ def get_thumbnails(data:dict)->tuple[list[str], list[str]]:
     links, file_names = [], []
     
     previews = data.get("_aPreviewMedia", None)
+    if isinstance(previews, dict):
+        previews = previews.get("_aImages", [])
     for preview in previews:
         file_type = preview.get("_sType", None)
         if file_type is not None and file_type == "image":

@@ -1,5 +1,5 @@
 from typing import List, Callable, Dict, Optional
-from src.core.gamebanana import Gamebanana
+from src.core.gamebanana import Gamebanana, process_mod_info
 from src.models.mod import Mod, Character, Category, Wifi, ModItem, OnlineModItem
 from src.constants.enums import Fighter, Element
 
@@ -21,6 +21,7 @@ class OnlineManager(QObject):
         self.total_results = 0 
         
         self.selected_ids: set[str] = set()
+        self._mod_details_cache: Dict[str, Dict] = {} 
         self._focused_id = None # Track currently focused mod for preview
         
         self.callbacks: List[Callable] = []
@@ -61,6 +62,12 @@ class OnlineManager(QObject):
     def fetch_metadata(self, mod_id: str):
         if not mod_id:
             return
+            
+        # Check cache first
+        if mod_id in self._mod_details_cache:
+            print(f"[OnlineManager] Using cached details for {mod_id}")
+            self.mod_details_ready.emit(self._mod_details_cache[mod_id])
+            return
         
         # Fetch detailed info
         Gamebanana(
@@ -74,6 +81,7 @@ class OnlineManager(QObject):
         # data is keyed by ID: { "12345": { ... } }
         for mod_id, details in data.items():
             details["_mod_id"] = mod_id
+            self._mod_details_cache[mod_id] = details # Cache it
             self.mod_details_ready.emit(details)
 
     def get_mod(self, mod_id: str) -> OnlineModItem:
@@ -156,12 +164,18 @@ class OnlineManager(QObject):
         self.search_results = records
         self.total_results = total_count
         
+        for item in records:
+            try:
+                if "_idRow" in item:
+                    mid, details = process_mod_info(item)
+                    details["_mod_id"] = str(mid)
+                    self._mod_details_cache[str(mid)] = details
+            except Exception as e:
+                pass
+
         # Convert to ModItems for UI
         mod_items = []
         for item in records:
-            # We construct a minimal ModItem since we don't have full details
-            # item is now the record directly, not wrapped in another dict
-            
             # Extract stats from record
             likes = item.get("_nLikeCount", 0)
             posts = item.get("_nPostCount", 0)
