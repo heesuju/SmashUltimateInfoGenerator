@@ -5,6 +5,7 @@ import concurrent.futures
 from src.utils.web import get_request
 import difflib
 import urllib.parse
+from src.constants.apis import ApiEndpoints
 
 WIFI_SAFE_TAGS = [
     "wifi safe",
@@ -79,7 +80,8 @@ def find_negations(text):
     return False
 
 def get_mod_info(id:str):
-    result = get_request(f"https://gamebanana.com/apiv4/Mod/{id}")
+    url = ApiEndpoints.GAMEBANANA_MOD_DATA.format(id=id)
+    result = get_request(url)
     return result
 
 def get_thumbnails(data:dict)->tuple[list[str], list[str]]:
@@ -103,11 +105,7 @@ def get_mod_description(id:str):
     Get mod description
     """
     try:
-        GAMEBANANA_URL = "https://api.gamebanana.com/Core/Item/Data?\
-            itemid={id}&\
-            itemtype=Mod&\
-            fields=text"
-        url = GAMEBANANA_URL.format(id=id)
+        url = ApiEndpoints.GAMEBANANA_MOD_DESCRIPTION.format(id=id)
         data = get_request(url)
         return data[0]
     except Exception as e:
@@ -121,15 +119,7 @@ def search_mod(mod_name: str, author_name: str = "") -> str | None:
     """
     try:
         encoded_name = urllib.parse.quote(mod_name)
-        
-        GAMEBANANA_SEARCH_URL = "https://gamebanana.com/apiv11/Util/Search/Results?\
-            _sSearchString={query}&\
-            _nPage=1&\
-            _sModelName=Mod&\
-            _sOrder=best_match&\
-            _idGameRow=6498"
-        url = GAMEBANANA_SEARCH_URL.format(query=encoded_name,
-        author_name=author_name)
+        url = ApiEndpoints.GAMEBANANA_MOD_SEARCH_BY_BEST_MATCH.format(query=encoded_name)
         data = get_request(url)
         
         if not data or not data.get("_aRecords"):
@@ -186,15 +176,7 @@ def search_mods_list(mod_name: str, author_name: str = "", page: int = 1, sort: 
     """
     try:
         encoded_name = urllib.parse.quote(mod_name)
-        
-        GAMEBANANA_SEARCH_URL = "https://gamebanana.com/apiv11/Util/Search/Results?\
-            _sSearchString={query}&\
-            _nPage={page}&\
-            _sModelName=Mod&\
-            _sOrder={sort}&\
-            _idGameRow=6498"
-        url = GAMEBANANA_SEARCH_URL.format(query=encoded_name, page=page, sort=sort)
-        
+        url = ApiEndpoints.GAMEBANANA_MOD_SEARCH_LIST.format(query=encoded_name, page=page, sort=sort)
         data = get_request(url)
         
         if not data:
@@ -234,7 +216,7 @@ def get_new_mods(page: int = 1) -> list:
     Get new/updated mods.
     """
     try:
-        url = f"https://api.gamebanana.com/Core/List/New?itemtype=Mod&gameid=6498&include_updated=1&page={page}"
+        url = ApiEndpoints.GAMEBANANA_MOD_NEW_LIST.format(page=page)
         data = get_request(url)
         if not data:
             return []
