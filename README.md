@@ -25,7 +25,24 @@ python -m venv .venv
 ```sh
 pip install -r ./requirements.txt
 ```
-6. Run main.py file (Run main.exe for exe build)
+6. Install PyQt dependencies (Linux Only)
+```sh
+sudo apt update
+sudo apt install -y \
+    libxcb-xinerama0 \
+    libxkbcommon-x11-0 \
+    libxcb-cursor0 \
+    libxcb-icccm4 \
+    libxcb-image0 \
+    libxcb-keysyms1 \
+    libxcb-randr0 \
+    libxcb-render-util0 \
+    libxcb-shape0 \
+    libxcb-xfixes0
+```
+7. Run main.py file (Run main.exe for EXE build)
+
+
 
 ### How to build EXE:
 Run setup.py
@@ -40,18 +57,21 @@ The application supports extracting ZIP, 7z, and RAR archives:
   - Download and install 7-Zip from https://www.7-zip.org/
   - The application will automatically detect and use it for RAR extraction
 
-## How to use
-1. Install python and add to path
-2. Open cmd
-3. pip install -r .\requirements.txt
-4. Run main.py file (Run main.exe for exe build)
-```sh
-python main.py
-```
-5. Load the directory of the mod file with files like fighter, sound, effect, ui, etc.
-6. Enter the gamebanana url if you want authors and accurate mod name, otherwise authors have to be entered in manually and the folder name will be trimmed to get the mod name.
-7. Add an image by clicking 'Browse' under 'Image'.
-8. Make changes if necessary and click apply.
+## How to use(Windows)
+1. Open 'main.exe'
+2. Go to bottom right 'Config' menu and change 'mod directory', and 'cache directory'. 
+(mod is where you have all of your mods and cache is where you store presets - make a folder if you don't have it)
+3. Click save to apply changes
+4. Install 7zip for .rar support
+5. Go to github page and download lastest release of homebrew app ftpd.nro
+6. Open the app from Switch (no need to change port)
+7. In PC, go to the menu that looks like joycons
+8. If indicator is red, click refresh button next to port number
+9. If the app is running on the Switch, the indicator should turn green when connected
+10. Select 'Enabled Only' or 'All' and click 'Start Sync'
+11. Wait for the scan and check changes before proceeding
+12. If everything is okay, click 'Confirm' and wait until all the mods are synced
+13. Click 'Done' to finish
 
 ## Features
 * Generate `info.toml` for mods by scanning mod folder
@@ -62,7 +82,7 @@ python main.py
 * Sync mods with physical switch via FTP server
 * Export mods to folder
 * Workspace management
-* Supports slots for fighters and stages
+* Detects slots for fighters and stages
 
 ## Platform
 * Windows (EXE build)
