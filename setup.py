@@ -4,8 +4,9 @@ from cx_Freeze import setup, Executable
 
 build_exe_options = {
     "packages": ["os", "sys", "json", "requests", "PIL", "tomli", "qdarktheme", 
-                 "pyglet", "py7zr", "rarfile", "pydantic", "PyQt6", "PyQt6.QtMultimedia", "PyQt6.QtSvg", "certifi", "ssl",
-                 "urllib3", "idna", "charset_normalizer"],
+        "pyglet", "py7zr", "rarfile", "pydantic", "PyQt6", "PyQt6.QtMultimedia", 
+        "PyQt6.QtSvg", "certifi", "ssl", "urllib3", "idna", "charset_normalizer"
+    ],
     "excludes": [],
     "include_files": [
         ("assets", "assets"),
