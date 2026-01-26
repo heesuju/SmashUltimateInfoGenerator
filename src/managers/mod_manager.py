@@ -95,8 +95,9 @@ class ModManager(QObject):
         if not root_dir:
             return 
         
-        mod_folders = [os.path.join(root_dir, name) for name in os.listdir(root_dir)]
-        self.scan(mod_folders)
+        if os.path.exists(root_dir):
+            mod_folders = [os.path.join(root_dir, name) for name in os.listdir(root_dir)]
+            self.scan(mod_folders)
 
     def add_mod_from_path(self, path:str):
         """Add a mod from a folder or zip file path"""
