@@ -109,12 +109,7 @@ class GridListItemWidget(QWidget):
         
         info_layout.addStretch(1)
         
-        # Show maximum 5 icons
-        max_icons = 5
-        sorted_icons = sorted(mod.character_icons)
-        total_icons = len(sorted_icons)
-
-        for char_img in sorted_icons[:max_icons]:
+        for i, char_img in enumerate(self.mod.character_icons):
             img_label = QLabel()
             
             # Use cached icon if available
@@ -126,12 +121,19 @@ class GridListItemWidget(QWidget):
                 GridListItemWidget._icon_cache[char_img] = char_icon
             
             img_label.setPixmap(char_icon)
+            
+            if i < len(self.mod.character_names):
+                img_label.setToolTip(self.mod.character_names[i])
+            
             icon_layout.addWidget(img_label)
 
-        if total_icons > max_icons:
-            remaining = total_icons - max_icons
+        remaining = len(self.mod.character_names) - len(self.mod.character_icons)
+        
+        if remaining > 0:
             plus_label = QLabel(f"+{remaining}")
             plus_label.setStyleSheet("color: #888; font-size: 11px; padding-left: 4px;")
+            omitted = self.mod.character_names[len(self.mod.character_icons):]
+            plus_label.setToolTip("\n".join(omitted))
             icon_layout.addWidget(plus_label)
 
         self.fav_button = ToggleButton(

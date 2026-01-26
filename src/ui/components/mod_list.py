@@ -332,43 +332,53 @@ class ModList(QWidget):
             from src.constants.enums import Category
             
             icon_urls = []
-            
+            final_keys = []
+
             if mod.category == Category.STAGE:
-                # Handle Stage Icons
                 keys = [str(s.stage) for s in mod.stages]
-                final_keys = []
                 for key in keys:
-                    # Use cached stage icon existence check
                     if self._stage_icon_cache.get(key, False):
                         final_keys.append(key)
                 
-                icon_urls = DataManager.get_stage_icons(final_keys)
                 slots_display = format_stage_slots(mod.get_stage_slots())
                 
             else:
                 slots_display = format_slots(mod.get_character_slots(), self.config_manager.config.name_rules.cap_slots_display)
-                # Handle Character Icons
                 keys = mod.get_grouped_character_keys()
                 
-                # Check if group icons exist, if not ungroup them (using cache)
-                final_keys = []
                 for key in keys:
-                    # Use cached icon existence check
                     icon_exists = self._icon_cache.get(key, False)
                     if icon_exists:
-                        # Icon exists, use the key as-is
                         final_keys.append(key)
                     else:
-                        # Icon doesn't exist, check if it's a group and ungroup it (using cache)
                         group_chars = self._group_cache.get(key, [])
                         if group_chars:
-                            # This is a group without an icon, add all individual characters
                             final_keys.extend(group_chars)
                         else:
-                            # Not a group, keep the key anyway (fallback)
                             final_keys.append(key)
                 
-                icon_urls = DataManager.get_character_icons([character for character in final_keys])
+            final_keys = sorted(final_keys)
+
+            if self.mode == ListLayout.LIST:
+                MAX = 4
+            else: 
+                MAX = 5
+            
+            original_len = len(final_keys)
+            
+            all_names = []
+            if mod.category == Category.STAGE:
+                all_names = [DataManager.get_stage_data(k, "Value") for k in final_keys]
+            else:
+                all_names = [DataManager.get_character_Name(k) for k in final_keys]
+
+            if original_len > MAX:
+                final_keys = final_keys[:MAX]
+
+            if mod.category == Category.STAGE:
+                icon_urls = DataManager.get_stage_icons(final_keys)
+            else:
+                icon_urls = DataManager.get_character_icons(final_keys)
 
             return ModItem(
                 id=str(mod.hash),
@@ -382,7 +392,8 @@ class ModList(QWidget):
                 selected=self.mod_manager.is_selected(str(mod.hash)),
                 favorited=str(mod.hash) in self.mod_manager.favorite_ids,
                 hidden=str(mod.hash) in self.mod_manager.hidden_ids,
-                character_icons=icon_urls
+                character_icons=icon_urls,
+                character_names=all_names
             )
 
 

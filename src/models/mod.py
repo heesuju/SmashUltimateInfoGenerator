@@ -23,6 +23,7 @@ class ModItem(BaseModel):
     favorited:bool = False
     hidden:bool = False
     character_icons:List[str] = []
+    character_names:List[str] = []
 
 class OnlineModItem(ModItem):
     like_count: int = 0

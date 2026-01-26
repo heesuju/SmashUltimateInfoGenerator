@@ -72,21 +72,22 @@ class TreeItem(QTreeWidgetItem):
         icons_layout.setContentsMargins(0, 0, 0, 0)
         icons_layout.setSpacing(2)
         
-        # Show maximum 4 icons
-        max_icons = 4
-        sorted_icons = sorted(self.mod.character_icons)
-        total_icons = len(sorted_icons)
-        
-        for i, path in enumerate(sorted_icons[:max_icons]):
+        for i, path in enumerate(self.mod.character_icons):
             icon_label = QLabel()
             icon_label.setPixmap(QPixmap(path).scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            
+            if i < len(self.mod.character_names):
+                icon_label.setToolTip(self.mod.character_names[i])
+            
             icons_layout.addWidget(icon_label)
         
-        # Add "+N" label if there are more icons
-        if total_icons > max_icons:
-            remaining = total_icons - max_icons
+        remaining = len(self.mod.character_names) - len(self.mod.character_icons)
+        
+        if remaining > 0:
             plus_label = QLabel(f"+{remaining}")
             plus_label.setStyleSheet("color: #888; font-size: 11px; padding-left: 4px;")
+            omitted = self.mod.character_names[len(self.mod.character_icons):]
+            plus_label.setToolTip("\n".join(omitted))    
             icons_layout.addWidget(plus_label)
 
         icons_layout.addStretch()
