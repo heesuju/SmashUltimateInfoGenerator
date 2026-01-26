@@ -99,8 +99,8 @@ class ModManager(QObject):
             mod_folders = [os.path.join(root_dir, name) for name in os.listdir(root_dir)]
             self.scan(mod_folders)
 
-    def add_mod_from_path(self, path:str):
-        """Add a mod from a folder or zip file path"""
+    def add_mod_from_path(self, path:Union[str, List[str]]):
+        """Add mod(s) from folder(s) or zip file(s)"""
         root_dir = self.config_manager.config.root_dir
         if not root_dir:
             return

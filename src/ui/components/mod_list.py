@@ -672,10 +672,14 @@ class ModList(QWidget):
         if not self._check_root_dir():
             return
             
+        paths = []
         for url in event.mimeData().urls():
             path = url.toLocalFile()
             if os.path.isdir(path) or path.lower().endswith(('.zip', '.7z', '.rar')):
-                self.mod_manager.add_mod_from_path(path)
+                paths.append(path)
+        
+        if paths:
+            self.mod_manager.add_mod_from_path(paths)
     
     def on_add_folder_clicked(self):
         if not self._check_root_dir():
@@ -689,11 +693,11 @@ class ModList(QWidget):
         if not self._check_root_dir():
             return
             
-        file_path, _ = QFileDialog.getOpenFileName(
+        file_paths, _ = QFileDialog.getOpenFileNames(
             self, 
             AppStrings.ADD_FROM_ZIP.replace("...", ""), 
             "", 
             "Archive Files (*.zip *.7z *.rar);;All Files (*)"
         )
-        if file_path:
-            self.mod_manager.add_mod_from_path(file_path)
+        if file_paths:
+            self.mod_manager.add_mod_from_path(file_paths)

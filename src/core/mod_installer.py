@@ -148,21 +148,22 @@ class ModInstaller(QThread):
 
     def run(self):
         try:
-            if isinstance(self.directory, list):
-                # Handle list of paths if needed, though mostly used for single path
-                pass
-                
-            if isinstance(self.directory, str):
-                if self.directory.lower().endswith(tuple(ZIP_EXT)) and is_valid_file(self.directory):
-                    results = self.unzip_and_install(self.directory)
-                    self.install_finished.emit(results)
+            paths = self.directory if isinstance(self.directory, list) else [self.directory]
+            all_results = []
+            
+            for path in paths:
+                if not path:
+                    continue
+                    
+                if path.lower().endswith(tuple(ZIP_EXT)) and is_valid_file(path):
+                    results = self.unzip_and_install(path)
+                    all_results.extend(results)
                 else:
-                    mod_roots = scan_for_mod_roots(self.directory)
-                    results = []
+                    mod_roots = scan_for_mod_roots(path)
                     
                     # If empty, treat the directory itself as the mod root (Fallback)
-                    if not mod_roots and is_valid_dir(self.directory):
-                        mod_roots = [self.directory]
+                    if not mod_roots and is_valid_dir(path):
+                        mod_roots = [path]
 
                     if mod_roots:
                         for root in mod_roots:
@@ -171,11 +172,12 @@ class ModInstaller(QThread):
                             if mod:
                                 result = self.add_mod(mod)
                                 if result:
-                                    results.append(result)
-                        self.install_finished.emit(results)
+                                    all_results.append(result)
                     else:
-                        output_log(f"No valid mod found in {self.directory}")
-                        self.install_finished.emit([])
+                        output_log(f"No valid mod found in {path}")
+            
+            self.install_finished.emit(all_results)
+            
         except Exception as e:
             output_log(f"Error in ModInstaller: {e}")
             self.install_finished.emit([])
