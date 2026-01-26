@@ -158,15 +158,22 @@ class OnlineGridListItemWidget(GridListItemWidget):
             diff = now - dt
             days = diff.days
             if days < 0: return AppStrings.TIME_JUST_NOW
-            if days == 0: return AppStrings.TIME_TODAY
-            if days == 1: return AppStrings.TIME_YESTERDAY
+            if days == 0: 
+                hours = diff.seconds // 3600
+                if hours >= 1:
+                    return AppStrings.TIME_HOURS_AGO.format(hours=hours)
+                minutes = diff.seconds // 60
+                if minutes >= 1:
+                    return AppStrings.TIME_MINUTES_AGO.format(minutes=minutes)
+                return AppStrings.TIME_JUST_NOW
+
             if days < 7: return AppStrings.TIME_DAYS_AGO.format(days=days)
             weeks = days // 7
-            if weeks < 4: return AppStrings.TIME_WEEKS_AGO.format(weeks=weeks, s='s' if weeks > 1 else '')
+            if weeks < 4: return AppStrings.TIME_WEEKS_AGO.format(weeks=weeks)
             months = days // 30
-            if months < 12: return AppStrings.TIME_MONTHS_AGO.format(months=months, s='s' if months > 1 else '')
+            if months < 12: return AppStrings.TIME_MONTHS_AGO.format(months=months)
             years = days // 365
-            return AppStrings.TIME_YEARS_AGO.format(years=years, s='s' if years > 1 else '')
+            return AppStrings.TIME_YEARS_AGO.format(years=years)
 
         # Date Updated (New Row)
         if mod.date_updated:

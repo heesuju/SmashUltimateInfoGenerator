@@ -73,12 +73,12 @@ class AppStrings:
     
     # Dates / Time
     TIME_JUST_NOW = "Just now"
-    TIME_TODAY = "Today"
-    TIME_YESTERDAY = "Yesterday"
-    TIME_DAYS_AGO = "{days} days ago"
-    TIME_WEEKS_AGO = "{weeks} week{s} ago"
-    TIME_MONTHS_AGO = "{months} month{s} ago"
-    TIME_YEARS_AGO = "{years} year{s} ago"
+    TIME_DAYS_AGO = "{days}d"
+    TIME_WEEKS_AGO = "{weeks}w"
+    TIME_MONTHS_AGO = "{months}mo"
+    TIME_YEARS_AGO = "{years}y"
+    TIME_HOURS_AGO = "{hours}h"
+    TIME_MINUTES_AGO = "{minutes}m"
     
     # Misc
     TXT_UNKNOWN = "Unknown"
