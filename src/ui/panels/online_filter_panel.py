@@ -43,7 +43,7 @@ class OnlineFilterPanel(SidePanel):
     def reset(self):
         """Reset all filters to defaults"""
         self.author.clear()
-        self.category.setCurrentIndex(0)
+        # self.category.setCurrentIndex(0)
         self.sort.setCurrentIndex(0)
     
     def apply(self):
@@ -63,9 +63,7 @@ class OnlineFilterPanel(SidePanel):
         }
         sort_option = sort_map.get(self.sort.currentIndex(), "best_match")
         
-        # Trigger search with filters (including sort)
-        # Get current search query from online_manager if exists, otherwise use author
-        query = self.online_manager.current_query if self.online_manager.current_query else author
+        query = self.online_manager.current_query if self.online_manager.current_query else ""
         self.online_manager.search(query=query, author=author, page=1, sort=sort_option)
     
     def reset_filter(self):

@@ -132,7 +132,7 @@ class OnlineManager(QObject):
         self._notify()
         
         is_new = False
-        if not query and not author:
+        if not query:
             is_new = True
 
         # Start search thread

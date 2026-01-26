@@ -231,6 +231,45 @@ def get_new_mods(page: int = 1) -> list:
         print(f"Error getting new mods: {e}")
         return []
 
+def search_users(name: str) -> list[int]:
+    """
+    Search for users by name.
+    Returns a list of user IDs.
+    """
+    try:
+        url = ApiEndpoints.GAMEBANANA_USER_SEARCH.format(name=urllib.parse.quote(name))
+        data = get_request(url)
+        if not data:
+            return []
+        
+        ids = []
+        for item in data:
+            if isinstance(item, dict) and "id" in item:
+                ids.append(item["id"])
+        return ids
+    except Exception as e:
+        print(f"Error searching users: {e}")
+        return []
+
+def get_new_mods_by_user(user_id: int, page: int = 1) -> list[int]:
+    """
+    Get new mods by user ID.
+    """
+    try:
+        url = ApiEndpoints.GAMEBANANA_MOD_NEW_LIST_BY_USER.format(page=page, user=user_id)
+        data = get_request(url)
+        if not data:
+            return []
+        
+        ids = []
+        for item in data:
+            if isinstance(item, list) and len(item) >= 2 and item[0] == "Mod":
+                ids.append(item[1])
+        return ids
+    except Exception as e:
+        print(f"Error getting new mods by user: {e}")
+        return []
+
 def process_mod_info(data:dict)->tuple[str, dict]:
     profile = data.get("_sProfileUrl", "")
     id = profile.split("/")[-1]
@@ -319,18 +358,29 @@ class Gamebanana(threading.Thread):
         output_data = {}
 
         if self.is_new:
-            # Fetch new/updated mods
-            ids = get_new_mods(self.page)
+            ids = []
+            
+            if self.author_filter:
+                user_ids = search_users(self.author_filter)
+                
+                if user_ids:
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                        futures = [executor.submit(get_new_mods_by_user, uid, self.page) for uid in user_ids]
+                        for future in concurrent.futures.as_completed(futures):
+                            u_ids = future.result()
+                            if u_ids:
+                                ids.extend(u_ids)
+            else:
+                ids = get_new_mods(self.page)
+                
             if not ids:
                 self.callback({"records": [], "total_count": 0, "per_page": 0, "is_complete": True})
                 return
 
             fetched_records = []
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                # Submit all tasks
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 futures = [executor.submit(get_mod_info, str(mod_id)) for mod_id in ids]
                 
-                # Iterate in submission order to preserve sort
                 for future in futures:
                     try:
                         result = future.result()
@@ -395,7 +445,7 @@ class Gamebanana(threading.Thread):
             if result is not None:
                 results.append(result)
         elif isinstance(self.id, list):
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 futures = [executor.submit(get_mod_info, id) for id in self.id]
                 for future in concurrent.futures.as_completed(futures):
                     result = future.result()
