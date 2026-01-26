@@ -11,6 +11,7 @@ build_exe_options = {
     "include_files": [
         ("assets", "assets"),
         ("data/character_data.csv", "data/character_data.csv"),
+        ("data/stage_data.csv", "data/stage_data.csv"),
         ("data/item_names.csv", "data/item_names.csv"),
         ("LICENSE", "LICENSE"),
     ]
