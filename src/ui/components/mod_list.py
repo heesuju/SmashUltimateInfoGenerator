@@ -36,6 +36,7 @@ class ModList(QWidget):
     
     def __init__(self, mod_manager:ModManager, filter_manager:FilterManager, config_manager:ConfigManager, batch_manager=None):
         super().__init__()
+        self.setAcceptDrops(True)
         self.mod_manager = mod_manager
         self.batch_manager = batch_manager
         
@@ -660,18 +661,34 @@ class ModList(QWidget):
                     return
         event.ignore()
 
+    def _check_root_dir(self) -> bool:
+        """Check if root directory is set, show warning if not"""
+        if not self.config_manager.config.root_dir:
+            QMessageBox.warning(self, AppStrings.APP_TITLE, AppStrings.ERR_ROOT_DIR_NOT_SET)
+            return False
+        return True
+
     def dropEvent(self, event: QDropEvent):
+        if not self._check_root_dir():
+            return
+            
         for url in event.mimeData().urls():
             path = url.toLocalFile()
             if os.path.isdir(path) or path.lower().endswith(('.zip', '.7z', '.rar')):
                 self.mod_manager.add_mod_from_path(path)
     
     def on_add_folder_clicked(self):
+        if not self._check_root_dir():
+            return
+            
         folder_path = QFileDialog.getExistingDirectory(self, AppStrings.ADD_FROM_FOLDER.replace("...", ""))
         if folder_path:
             self.mod_manager.add_mod_from_path(folder_path)
 
     def on_add_zip_clicked(self):
+        if not self._check_root_dir():
+            return
+            
         file_path, _ = QFileDialog.getOpenFileName(
             self, 
             AppStrings.ADD_FROM_ZIP.replace("...", ""), 

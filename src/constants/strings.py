@@ -86,6 +86,7 @@ class AppStrings:
     # Errors
     ERR_GAMEBANANA_NOT_FOUND = "Could not find mod on GameBanana"
     ERR_FETCH_FAILED = "Failed to fetch mod data"
+    ERR_ROOT_DIR_NOT_SET = "Root directory is not set in Config. Please set it before adding mods."
     
     # Navigation / Tabs
     NAV_INSTALLED = "Installed"
