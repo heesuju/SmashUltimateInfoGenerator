@@ -75,7 +75,7 @@ class MainMenu(QWidget):
         
         self.edit = EditPanel(self.mod_manager, config_manager)
         self.batch = BatchPanel(self.batch_manager, self.mod_manager)
-        self.config = Config(config_manager)
+        self.config = Config(config_manager, self.mod_manager)
         self.workspace = WorkspacePanel(
             config_manager, 
             self.workspace_manager, 

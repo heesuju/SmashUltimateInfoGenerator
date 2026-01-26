@@ -34,9 +34,10 @@ from src.ui.common import choose_folder
 from src.utils.common import is_valid_dir
 
 class Config(SidePanel):
-    def __init__(self, config_manager:ConfigManager):
+    def __init__(self, config_manager:ConfigManager, mod_manager):
         super().__init__("Config")
         self.config_manager = config_manager
+        self.mod_manager = mod_manager
         
         self.root_dir = InputButtonWidget("Enter mod directory", InputButton(img=ButtonIcons.BROWSE, callback=self.choose_root_dir))
         self.body.addWidget(self.root_dir)
@@ -137,17 +138,27 @@ class Config(SidePanel):
     def save(self):
         if self.check_validity():
             current_theme = str(self.config_manager.config.theme)
-            new_theme = self.theme_drop.currentText()
+            current_root = self.config_manager.config.root_dir
+            current_cache = self.config_manager.config.cache_dir
             
+            new_theme = self.theme_drop.currentText()
+            new_root = self.root_dir.get_text()
+            new_cache = self.cache_dir.get_text()
+            
+            # Save all values
             self.config_manager.config.theme = Theme(new_theme)
-            self.config_manager.config.root_dir = self.root_dir.get_text()
-            self.config_manager.config.cache_dir = self.cache_dir.get_text()
+            self.config_manager.config.root_dir = new_root
+            self.config_manager.config.cache_dir = new_cache
             self.config_manager.config.export_dir = self.export_dir.get_text()
             self.config_manager.config.name_rules.folder_name_format = self.folder_name_format.get_text()
             self.config_manager.config.name_rules.cap_slots_folder = self.folder_name_format.get_cap_slots()
             self.config_manager.config.name_rules.display_name_format = self.display_name_format.get_text()
             self.config_manager.config.name_rules.cap_slots_display = self.display_name_format.get_cap_slots()
             self.config_manager.save()
+            
+            # Check if we need to reload mods
+            if current_root != new_root or current_cache != new_cache:
+                self.mod_manager.scan_all()
             
             if current_theme != new_theme:
                 reply = QMessageBox.question(
