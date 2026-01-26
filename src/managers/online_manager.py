@@ -22,6 +22,7 @@ class OnlineManager(QObject):
         
         self.selected_ids: set[str] = set()
         self._mod_details_cache: Dict[str, Dict] = {} 
+        self._page_cache: Dict[tuple, Dict] = {} # Cache for search results: (query, author, sort, page) -> data
         self._focused_id = None # Track currently focused mod for preview
         
         self.callbacks: List[Callable] = []
@@ -130,7 +131,7 @@ class OnlineManager(QObject):
             )
         return None
 
-    def search(self, query: str = "", author: str = "", page: int = 1, sort: str = "best_match"):
+    def search(self, query: str = "", author: str = "", page: int = 1, sort: str = "best_match", force_refresh: bool = False):
         """Initiate a search"""
         self.current_query = query
         self.current_author = author
@@ -139,6 +140,13 @@ class OnlineManager(QObject):
         self.is_loading = True
         self._notify()
         
+        # Check cache
+        cache_key = (query, author, sort, page)
+        if not force_refresh and cache_key in self._page_cache:
+            print(f"[OnlineManager] Using cached page results for {cache_key}")
+            self._on_search_complete(self._page_cache[cache_key])
+            return
+
         is_new = False
         if not query:
             is_new = True
@@ -157,6 +165,10 @@ class OnlineManager(QObject):
     def _on_search_complete(self, data: Dict):
         """Callback from Gamebanana thread"""
         self.is_loading = False
+        
+        # Cache the page results
+        cache_key = (self.current_query, self.current_author, self.current_sort, self.current_page)
+        self._page_cache[cache_key] = data
         
         # Extract metadata and records from dict response
         total_count = data.get("total_count", 0)

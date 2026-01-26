@@ -96,14 +96,14 @@ class SearchBar(QWidget):
             self.filter_manager.on_change()
 
     def on_refresh_clicked(self):
-        self.search_bar.set_text("")
         if self.online_manager:
             # Re-search with current query for online
             self.online_manager.search(
                 self.online_manager.current_query,
                 self.online_manager.current_author,
                 1,
-                self.online_manager.current_sort
+                self.online_manager.current_sort,
+                force_refresh=True
             )
         elif self.filter_manager and self.mod_manager:
             self.filter_manager.params.mod_name = ""
