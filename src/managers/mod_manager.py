@@ -136,6 +136,10 @@ class ModManager(QObject):
             self.mods[str(mod.hash)] = mod
 
     def on_complete(self):
+        # Validate workspace to remove stale hashes
+        current_hashes = list(self.mods.keys())
+        self.workspace_manager.validate_enabled_mods(current_hashes)
+        
         self.install_finished.emit()
         if self.callback:
             self.callback()

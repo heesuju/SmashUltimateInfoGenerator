@@ -151,6 +151,22 @@ class WorkspaceManager(QObject):
             self.save_enabled_mods()
             self._notify_enabled_changed(mod_id, enabled)
 
+    def validate_enabled_mods(self, valid_hashes: list[str]):
+        """Remove hashes that no longer exist in the provided list of valid hashes"""
+        if not self.enabled_mods:
+            return
+
+        valid_set = set(str(h) for h in valid_hashes)
+        original_count = len(self.enabled_mods)
+        
+        # Filter the list
+        self.enabled_mods = [h for h in self.enabled_mods if h in valid_set]
+        
+        if len(self.enabled_mods) != original_count:
+            output_log(f"Cleaned {original_count - len(self.enabled_mods)} stale mod(s) from workspace '{self.current_workspace_name}'")
+            self.save_enabled_mods()
+            self.workspace_changed.emit()
+
     def toggle_enabled(self, mod_id: str):
         is_enabled = self.is_enabled(mod_id)
         self.set_enabled(mod_id, not is_enabled)
