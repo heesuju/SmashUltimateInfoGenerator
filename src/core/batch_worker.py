@@ -3,6 +3,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 from src.managers.batch_manager import BatchManager, BatchTaskStatus
 from src.core.gamebanana import search_mod, get_mod_info, process_mod_info, get_mod_description, classify_mod_safety
 from src.managers.data_manager import DataManager
+from src.constants.strings import AppStrings
 
 
 class BatchWorker(QThread):
@@ -44,11 +45,11 @@ class BatchWorker(QThread):
                     match = re.search(r"gamebanana\.com/mods/(\d+)", task.mod.url)
                     if match:
                         mod_id = match.group(1)
-                        self.task_progress.emit(mod_hash, f"Using existing URL")
+                        self.task_progress.emit(mod_hash, AppStrings.STATUS_USING_EXISTING_URL)
                 
                 if not mod_id:
                     # Search for URL
-                    self.task_progress.emit(mod_hash, "Searching GameBanana...")
+                    self.task_progress.emit(mod_hash, AppStrings.STATUS_SEARCHING)
                     
                     # Build search query
                     mod_name = task.mod.mod_name.strip()
@@ -80,15 +81,15 @@ class BatchWorker(QThread):
                     mod_id = search_mod(mod_name, author_name)
                     mod_id = str(mod_id.get("_idRow"))
                     if not mod_id:
-                        self.task_error.emit(mod_hash, "Could not find mod on GameBanana")
+                        self.task_error.emit(mod_hash, AppStrings.ERR_GAMEBANANA_NOT_FOUND)
                         continue
                 
                 # Step 2: Fetch mod info
-                self.task_progress.emit(mod_hash, "Fetching mod data...")
+                self.task_progress.emit(mod_hash, AppStrings.STATUS_FETCHING_DATA)
                 result = get_mod_info(mod_id)
                 
                 if not result:
-                    self.task_error.emit(mod_hash, "Failed to fetch mod data")
+                    self.task_error.emit(mod_hash, AppStrings.ERR_FETCH_FAILED)
                     continue
                 
                 # Step 3: Process mod info
@@ -106,7 +107,7 @@ class BatchWorker(QThread):
                 task.fetched_is_final_smash = info.get("is_final_smash")
                 
                 # Fetch detailed description (separate API call)
-                self.task_progress.emit(mod_hash, "Fetching description...")
+                self.task_progress.emit(mod_hash, AppStrings.STATUS_FETCHING_DESC)
                 description = get_mod_description(mod_id)
                 if description:
                     task.fetched_description = description
@@ -117,7 +118,7 @@ class BatchWorker(QThread):
                             task.fetched_is_wifi_safe = True
                 
                 task.status = BatchTaskStatus.COMPLETE
-                task.progress_message = "Data fetched successfully"
+                task.progress_message = AppStrings.STATUS_DATA_FETCHED
                 
                 # Emit completion (UI will update via signal handler)
                 self.task_complete.emit(mod_hash)

@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QTabWidget, QFrame
 
 from src.constants.colors import AppColors
+from src.constants.strings import AppStrings
 from src.managers.data_manager import NavigationMenuIcon
 from src.managers.config_manager import ConfigManager
 from src.managers.mod_manager import ModManager
@@ -36,7 +37,7 @@ class MainMenu(QWidget):
         self.mod_manager = ModManager(config_manager, self.workspace_manager)
         self.filter_manager = FilterManager()
         self.batch_manager = BatchManager()
-        self.setWindowTitle("SmashGen")
+        self.setWindowTitle(AppStrings.APP_TITLE)
         self.setGeometry(100, 100, 1400, 800)
         
         layout = HBox()
@@ -169,11 +170,11 @@ class MainMenu(QWidget):
         # Tabs for Installed vs Online
         self.tabs = QTabWidget()
         self.tabs.setDocumentMode(True)  # Remove frame border
-        self.tabs.addTab(self.list_widget, "Installed")
+        self.tabs.addTab(self.list_widget, AppStrings.NAV_INSTALLED)
         
         # Create dedicated filter manager for online (or reuse the same one)
         self.online_list = OnlineModList(self.online_manager, self.filter_manager, self.download_manager)
-        self.tabs.addTab(self.online_list, "Online")
+        self.tabs.addTab(self.online_list, AppStrings.NAV_ONLINE)
         
         # Connect tab change to show/hide appropriate panels
         self.tabs.currentChanged.connect(self.on_tab_changed)

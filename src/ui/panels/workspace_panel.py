@@ -12,6 +12,7 @@ from src.managers.workspace_manager import WorkspaceManager
 from src.managers.mod_manager import ModManager
 from src.utils.logger import output_log
 from src.constants.colors import AppColors
+from src.constants.strings import AppStrings
 
 class WorkspacePanel(SidePanel):
     from PyQt6.QtCore import pyqtSignal
@@ -31,7 +32,7 @@ class WorkspacePanel(SidePanel):
         
         # Config Warning
         self.config_warning = QLabel()
-        self.config_warning.setText(f"<b>Warning:</b> Directories not set.<br><a href='config' style='color: {AppColors.TEXT_LINK};'>Open Config</a>")
+        self.config_warning.setText(AppStrings.WARN_CONFIG_DIRS.format(color=AppColors.TEXT_LINK))
         self.config_warning.setStyleSheet(f"""
             QLabel {{
                 color: {AppColors.TEXT_ERROR};
@@ -54,7 +55,7 @@ class WorkspacePanel(SidePanel):
         
         # Action buttons
         self.export_btn = self.add_footer_button(
-            "Export Enabled Mods", 
+            AppStrings.LBL_EXPORT_BUTTON.format(count=0), 
             self.on_sync_clicked, 
             primary=True,
             icon=ButtonIcons.EXPORT.value
@@ -87,7 +88,7 @@ class WorkspacePanel(SidePanel):
             self.export_btn.setToolTip("")
         else:
             self.export_btn.setEnabled(False)
-            self.export_btn.setToolTip("Export directory is invalid or not set in Config")
+            self.export_btn.setToolTip(AppStrings.TOOLTIP_EXPORT_INVALID)
             
     def on_config_link_clicked(self, link):
         if self.on_open_config:
@@ -96,7 +97,7 @@ class WorkspacePanel(SidePanel):
     def update_export_btn_text(self, *args):
         """Update export button text with enabled mod count"""
         count = len(self.workspace_manager.get_enabled_ids())
-        self.export_btn.setText(f"Export Enabled Mods ({count})")
+        self.export_btn.setText(AppStrings.LBL_EXPORT_BUTTON.format(count=count))
 
     def on_cache_changed(self):
         """Handle cache directory change"""
@@ -107,8 +108,8 @@ class WorkspacePanel(SidePanel):
         """Trigger sync process"""
         reply = QMessageBox.question(
             self, 
-            "Sync Mods", 
-            "This will delete any mods in the export folder that are disabled or removed, and copy all enabled mods.\nThis may take some time.\n\nContinue?",
+            AppStrings.DIALOG_TITLE_SYNC, 
+            AppStrings.DIALOG_MSG_SYNC,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
@@ -118,7 +119,7 @@ class WorkspacePanel(SidePanel):
     def on_sync_start(self):
         """Handle sync started event"""
         self.export_btn.setEnabled(False)
-        self.export_btn.setText("Exporting...")
+        self.export_btn.setText(AppStrings.STATUS_EXPORTING)
         self.sync_started.emit()
 
     def on_sync_finish(self):
@@ -130,7 +131,7 @@ class WorkspacePanel(SidePanel):
     def on_sync_progress(self, message: str, progress: float):
         """Handle sync progress event"""
         percent = int(progress * 100)
-        self.export_btn.setText(f"Exporting... {percent}%")
+        self.export_btn.setText(AppStrings.STATUS_EXPORTING_PERCENT.format(percent=percent))
         
         # Failsafe: if 100% is reached, consider it finished
         if progress >= 1.0:

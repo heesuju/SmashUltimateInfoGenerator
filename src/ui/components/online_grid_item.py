@@ -17,6 +17,7 @@ from src.ui.components.toggle_button import ToggleButton
 from src.utils.image_loader import ImageLoader
 from src.utils.image_utils import tint_pixmap
 from src.constants.colors import AppColors
+from src.constants.strings import AppStrings
 
 class OnlineGridListItem(GridListItem):
     def __init__(self, parent, mod: OnlineModItem, height:int=80, grid_list=None, online_manager=None, download_manager=None):
@@ -156,16 +157,16 @@ class OnlineGridListItemWidget(GridListItemWidget):
             now = datetime.now()
             diff = now - dt
             days = diff.days
-            if days < 0: return "Just now"
-            if days == 0: return "Today"
-            if days == 1: return "Yesterday"
-            if days < 7: return f"{days} days ago"
+            if days < 0: return AppStrings.TIME_JUST_NOW
+            if days == 0: return AppStrings.TIME_TODAY
+            if days == 1: return AppStrings.TIME_YESTERDAY
+            if days < 7: return AppStrings.TIME_DAYS_AGO.format(days=days)
             weeks = days // 7
-            if weeks < 4: return f"{weeks} week{'s' if weeks > 1 else ''} ago"
+            if weeks < 4: return AppStrings.TIME_WEEKS_AGO.format(weeks=weeks, s='s' if weeks > 1 else '')
             months = days // 30
-            if months < 12: return f"{months} month{'s' if months > 1 else ''} ago"
+            if months < 12: return AppStrings.TIME_MONTHS_AGO.format(months=months, s='s' if months > 1 else '')
             years = days // 365
-            return f"{years} year{'s' if years > 1 else ''} ago"
+            return AppStrings.TIME_YEARS_AGO.format(years=years, s='s' if years > 1 else '')
 
         # Date Updated (New Row)
         if mod.date_updated:
@@ -323,7 +324,7 @@ class OnlineGridListItemWidget(GridListItemWidget):
             menu = QMenu(self)
             
             for file_data in files:
-                name = file_data.get("name", "Unknown")
+                name = file_data.get("name", AppStrings.TXT_UNKNOWN)
                 desc = file_data.get("description", "")
                 label = f"{name}"
                 if desc:
@@ -336,7 +337,9 @@ class OnlineGridListItemWidget(GridListItemWidget):
             
             menu.addSeparator()
             
-            download_all = QAction("Download All", self)
+            menu.addSeparator()
+            
+            download_all = QAction(AppStrings.CTX_DOWNLOAD_ALL, self)
             download_all.triggered.connect(lambda: self.download_all_files(files))
             menu.addAction(download_all)
             

@@ -15,6 +15,7 @@ from src.utils.file import open_folder
 from src.utils.image_utils import tint_pixmap
 from src.constants.ui_params import BODY_FONT, BODY_FONT_SIZE, TITLE_FONT, TITLE_FONT_SIZE
 from src.constants.colors import AppColors
+from src.constants.strings import AppStrings
 from src.ui.components.resizable_text_browser import ResizableTextBrowser
 
 class PreviewPanel(SidePanel):
@@ -100,9 +101,9 @@ class PreviewPanel(SidePanel):
         
         self.body.addStretch(1)
 
-        self.edit_btn = self.add_footer_button("Edit", self.on_edit_clicked, icon=ButtonIcons.EDIT.value)
-        self.enable_btn = self.add_footer_button("Enable", self.on_enable_toggle, primary=True)
-        self.download_btn = self.add_footer_button("Download", self.on_download_clicked, primary=True)
+        self.edit_btn = self.add_footer_button(AppStrings.ACTION_EDIT, self.on_edit_clicked, icon=ButtonIcons.EDIT.value)
+        self.enable_btn = self.add_footer_button(AppStrings.ACTION_ENABLE, self.on_enable_toggle, primary=True)
+        self.download_btn = self.add_footer_button(AppStrings.ACTION_DOWNLOAD, self.on_download_clicked, primary=True)
         self.download_btn.hide()
 
     def set_online_data(self, id:str):
@@ -116,7 +117,7 @@ class PreviewPanel(SidePanel):
         self.download_btn.show()
         # Disable download until details loaded
         self.download_btn.setEnabled(False)
-        self.download_btn.setText("Loading...")
+        self.download_btn.setText(AppStrings.STATUS_LOADING)
         
         mod = self.online_manager.get_mod(id)
         if not mod:
@@ -131,7 +132,7 @@ class PreviewPanel(SidePanel):
         self.thumbnail.set_thumbnail(mod.thumbnail)
         self.author.setText(mod.authors)
         self.version.setText(mod.version)
-        self.description_label.setText("Loading details...")
+        self.description_label.setText(AppStrings.STATUS_LOADING_DETAILS)
         
         self.elements_container.clear()
 
@@ -142,7 +143,7 @@ class PreviewPanel(SidePanel):
             
         self.current_online_details = details
         self.download_btn.setEnabled(True)
-        self.download_btn.setText("Download")
+        self.download_btn.setText(AppStrings.ACTION_DOWNLOAD)
 
         description = details.get('description', '')
         if description:
@@ -151,15 +152,15 @@ class PreviewPanel(SidePanel):
         self.elements_container.clear()
         
         if details.get('is_wifi_safe'):
-            wifi_tag = ElementTag("Wifi-Safe")
+            wifi_tag = ElementTag(AppStrings.LBL_WIFI_SAFE)
             self.elements_container.add_widget(wifi_tag)
         
         if details.get('is_moveset'):
-            tag = ElementTag("Moveset")
+            tag = ElementTag(AppStrings.LBL_MOVESET)
             self.elements_container.add_widget(tag)
             
         if details.get('is_final_smash'):
-            tag = ElementTag("Final Smash")
+            tag = ElementTag(AppStrings.LBL_FINAL_SMASH)
             self.elements_container.add_widget(tag)
 
     def set_data(self, id:str):
@@ -188,7 +189,7 @@ class PreviewPanel(SidePanel):
         self.elements_container.clear()
         
         if str(mod.wifi_safe).lower() != "uncertain":
-            wifi_text = "Wifi-Safe" if str(mod.wifi_safe).lower() == "safe" else "Not Wifi-Safe"
+            wifi_text = AppStrings.LBL_WIFI_SAFE if str(mod.wifi_safe).lower() == "safe" else AppStrings.LBL_NOT_WIFI_SAFE
             wifi_tag = ElementTag(wifi_text)
             self.elements_container.add_widget(wifi_tag)
         
@@ -199,7 +200,7 @@ class PreviewPanel(SidePanel):
         # Update enable button state
         is_enabled = str(mod.hash) in self.mod_manager.enabled_ids
         if is_enabled:
-            self.enable_btn.setText("Disable")
+            self.enable_btn.setText(AppStrings.ACTION_DISABLE)
             self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_DISABLE.value))
             self.enable_btn.setStyleSheet(f"""
                 QPushButton {{
@@ -212,7 +213,7 @@ class PreviewPanel(SidePanel):
                 QPushButton:hover {{ background-color: #D32F2F; }}
             """)
         else:
-            self.enable_btn.setText("Enable")
+            self.enable_btn.setText(AppStrings.ACTION_ENABLE)
             self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_ENABLE.value))
             self.enable_btn.setStyleSheet(f"""
                 QPushButton {{
@@ -292,7 +293,7 @@ class PreviewPanel(SidePanel):
             mod = self.mod_manager.get_mod(self.mod_manager.focused_id)
             if mod and str(mod.hash) == str(mod_id):
                 if is_enabled:
-                    self.enable_btn.setText("Disable")
+                    self.enable_btn.setText(AppStrings.ACTION_DISABLE)
                     self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_DISABLE.value))
                     self.enable_btn.setStyleSheet(f"""
                         QPushButton {{
@@ -305,7 +306,7 @@ class PreviewPanel(SidePanel):
                         QPushButton:hover {{ background-color: #D32F2F; }}
                     """)
                 else:
-                    self.enable_btn.setText("Enable")
+                    self.enable_btn.setText(AppStrings.ACTION_ENABLE)
                     self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_ENABLE.value))
                     self.enable_btn.setStyleSheet(f"""
                         QPushButton {{
@@ -326,13 +327,13 @@ class PreviewPanel(SidePanel):
         """Show context menu for mod options"""
         menu = QMenu(self)
         
-        action = QAction("Copy Mod ID", self)
+        action = QAction(AppStrings.CTX_COPY_ID, self)
         action.triggered.connect(lambda: None) # Todo implement copy
-        title = QAction("Mod Options", self)
+        title = QAction(AppStrings.CTX_MOD_OPTIONS, self)
         title.setEnabled(False)
         menu.addAction(title)
         
-        open_action = QAction("Open Folder", self)
+        open_action = QAction(AppStrings.CTX_OPEN_FOLDER, self)
         open_action.setIcon(QIcon(ButtonIcons.BROWSE.value))
         open_action.triggered.connect(self.on_open_clicked)
         menu.addAction(open_action)
@@ -349,7 +350,7 @@ class PreviewPanel(SidePanel):
                 mod = self.mod_manager.get_mod(id)
         
         if mod and mod.url and mod.url.startswith("http"):
-            web_action = QAction("Open Web Page", self)
+            web_action = QAction(AppStrings.CTX_OPEN_WEB, self)
             web_action.setIcon(QIcon(ButtonIcons.WEB.value))
             web_action.triggered.connect(self.open_web_page)
             menu.addAction(web_action)
@@ -402,7 +403,7 @@ class PreviewPanel(SidePanel):
                 
             menu.addSeparator()
             
-            download_all = QAction("Download All", self)
+            download_all = QAction(AppStrings.CTX_DOWNLOAD_ALL, self)
             download_all.triggered.connect(lambda: self.download_all_files(files))
             menu.addAction(download_all)
             
@@ -421,7 +422,7 @@ class PreviewPanel(SidePanel):
                 filename = "download.zip"
             
             # Get mod name from details
-            mod_name = self.current_online_details.get("mod_name", "Unknown Mod")
+            mod_name = self.current_online_details.get("mod_name", AppStrings.LBL_UNKNOWN_MOD)
             # Get mod ID
             mod_id = self.online_manager.focused_id
             

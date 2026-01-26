@@ -7,6 +7,7 @@ from PyQt6.QtGui import QFont, QIcon
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.batch_task_styles import CELL_COMBO_STYLE
 from src.constants.colors import AppColors
+from src.constants.strings import AppStrings
 
 class AssignmentRowWidget(QWidget):
     """
@@ -22,7 +23,7 @@ class AssignmentRowWidget(QWidget):
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(4, 2, 4, 2)
         self.layout.setSpacing(5)
-        self.entity_combo = CheckableComboBox(include_all=False, placeholder_text="Select Entity")
+        self.entity_combo = CheckableComboBox(include_all=False, placeholder_text=AppStrings.PLACEHOLDER_SELECT_ENTITY)
         self.entity_combo.setStyleSheet(CELL_COMBO_STYLE)
         self.entity_map = {}
         
@@ -57,7 +58,7 @@ class AssignmentRowWidget(QWidget):
             self.entity_combo.update_display()
 
         # Slots Selector
-        self.slots_combo = CheckableComboBox(include_all=False, placeholder_text="Select Slots", formatter=slot_formatter, sorter=slot_sorter)
+        self.slots_combo = CheckableComboBox(include_all=False, placeholder_text=AppStrings.PLACEHOLDER_SELECT_SLOTS, formatter=slot_formatter, sorter=slot_sorter)
         self.slots_combo.setStyleSheet(CELL_COMBO_STYLE)
         self.slots_combo.add_items(slot_options)
         if default_slots:
@@ -132,7 +133,7 @@ class AssignmentListWidget(QWidget):
         self.tree = QTreeWidget()
         self.tree.setColumnCount(1)
         # Header Label with padding for button
-        self.tree.setHeaderLabels([f"{self.entity_label} Assignments"])
+        self.tree.setHeaderLabels([AppStrings.HEADER_ASSIGNMENTS.format(entity=self.entity_label)])
         self.tree.setStyleSheet(f"""
             QTreeWidget {{
                 border: 1px solid {AppColors.BORDER_DEFAULT};
@@ -169,7 +170,7 @@ class AssignmentListWidget(QWidget):
         # Add Button (Overlay on Header key)
         self.add_btn = QPushButton("+", self.tree.header())
         self.add_btn.setFixedSize(16, 16)
-        self.add_btn.setToolTip("Add Assignment Row")
+        self.add_btn.setToolTip(AppStrings.TOOLTIP_ADD_ROW)
         self.add_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: transparent;
@@ -225,7 +226,7 @@ class AssignmentListWidget(QWidget):
 
     def set_entities(self, entities: dict):
         self.entity_data = entities
-        self.tree.setHeaderLabels([f"{self.entity_label} Assignments"])
+        self.tree.setHeaderLabels([AppStrings.HEADER_ASSIGNMENTS.format(entity=self.entity_label)])
         
     def set_slot_options(self, slots: list, formatter=None, sorter=None):
         self.slot_options = slots

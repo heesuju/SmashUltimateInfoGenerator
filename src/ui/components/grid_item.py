@@ -17,6 +17,7 @@ from src.ui.components.grid_item_button import Overlay
 from src.ui.components.toggle_button import ToggleButton
 
 from src.constants.colors import AppColors
+from src.constants.strings import AppStrings
 from src.utils.file import open_folder
 
 ICON_ELLIPSIS = "assets/icons/ui/ellipsis.png"
@@ -301,7 +302,7 @@ class GridListItemWidget(QWidget):
         """Show context menu for mod options"""
         menu = QMenu(self)
         
-        open_action = QAction("Open Folder", self)
+        open_action = QAction(AppStrings.CTX_OPEN_FOLDER, self)
         open_action.setIcon(QIcon(ButtonIcons.BROWSE.value))
         open_action.triggered.connect(self.on_open_clicked)
         menu.addAction(open_action)
@@ -312,7 +313,7 @@ class GridListItemWidget(QWidget):
             mod = self.grid_list.mod_manager.get_mod(self.mod.id)
         
         if mod and mod.url and mod.url.startswith("http"):
-            web_action = QAction("Open Web Page", self)
+            web_action = QAction(AppStrings.CTX_OPEN_WEB, self)
             web_action.setIcon(QIcon(ButtonIcons.WEB.value))
             web_action.triggered.connect(lambda: self.on_web_clicked(mod.url))
             menu.addAction(web_action)

@@ -3,7 +3,7 @@ from typing import List
 from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QWidget, QSizePolicy, QLabel, QFrame, QPushButton, QHBoxLayout,
-    QMenu, QFileDialog
+    QMenu, QFileDialog, QMessageBox
 )
 from PyQt6.QtGui import (
     QPixmap, QIcon, QFont, QDragEnterEvent, QDropEvent, QColor
@@ -28,6 +28,7 @@ from src.utils.image_utils import tint_pixmap
 from src.constants.enums import Fighter, ListLayout
 from src.constants.ui_params import SPACING, GRID_PAGE_SIZE, LIST_PAGE_SIZE
 from src.constants.colors import AppColors
+from src.constants.strings import AppStrings
 
 class ModList(QWidget):
     batch_tasks_added = pyqtSignal()  # Signal when tasks are added to batch queue
@@ -106,7 +107,7 @@ class ModList(QWidget):
         
         # Add header checkbox for select all
         from PyQt6.QtWidgets import QCheckBox
-        self.header_checkbox = QCheckBox("Select All")
+        self.header_checkbox = QCheckBox(AppStrings.ACTION_SELECT_ALL)
         self.header_checkbox.setTristate(True)  # Allow partial state for visual feedback
         self.header_checkbox.stateChanged.connect(self.on_header_checkbox_changed)
         header_layout.addWidget(self.header_checkbox)
@@ -114,7 +115,7 @@ class ModList(QWidget):
         # Deselect/Clear Selection Button
         select_button = QPushButton()
         select_button.setIcon(QIcon(ButtonIcons.DESELECT.value))
-        select_button.setToolTip("Deselect All")
+        select_button.setToolTip(AppStrings.ACTION_DESELECT_ALL)
         select_button.setFixedWidth(24) # Small button
         select_button.setFlat(True) # Make it look like an icon
         select_button.clicked.connect(self.on_deselect_all)
@@ -122,7 +123,7 @@ class ModList(QWidget):
         
         header_layout.addStretch(1)
         
-        add_button = QPushButton("Add")
+        add_button = QPushButton(AppStrings.ACTION_ADD)
         tinted_add = tint_pixmap(QPixmap(ButtonIcons.ADD.value), QColor(AppColors.BUTTON_CYAN))
         add_button.setIcon(QIcon(tinted_add))
         add_button.setStyleSheet(f"QPushButton {{ color: {AppColors.BUTTON_CYAN}; }} QPushButton::menu-indicator {{ width: 0px; }}")
@@ -130,9 +131,9 @@ class ModList(QWidget):
         
         # Create menu for add button
         add_menu = QMenu(self)
-        add_folder_action = add_menu.addAction("Add from Folder...")
+        add_folder_action = add_menu.addAction(AppStrings.ADD_FROM_FOLDER)
         add_folder_action.triggered.connect(self.on_add_folder_clicked)
-        add_zip_action = add_menu.addAction("Add from ZIP...")
+        add_zip_action = add_menu.addAction(AppStrings.ADD_FROM_ZIP)
         add_zip_action.triggered.connect(self.on_add_zip_clicked)
         
         add_button.setMenu(add_menu)
@@ -158,9 +159,9 @@ class ModList(QWidget):
             btn.clicked.connect(callback)
             return btn
 
-        btn_generate = create_batch_btn(ButtonIcons.BATCH_GENERATE.value, "Generate", "Generate Info.toml for Selected", lambda: self.on_batch_action_btn("Generate Info.toml"), color=AppColors.BUTTON_PURPLE)
-        btn_enable = create_batch_btn(ButtonIcons.BATCH_ENABLE.value, "Enable", "Enable Selected", lambda: self.on_batch_action_btn("Enable"), color=AppColors.BUTTON_GREEN)
-        btn_disable = create_batch_btn(ButtonIcons.BATCH_DISABLE.value, "Disable", "Disable Selected", lambda: self.on_batch_action_btn("Disable"), color=AppColors.BUTTON_RED)
+        btn_generate = create_batch_btn(ButtonIcons.BATCH_GENERATE.value, AppStrings.ACTION_GENERATE, AppStrings.BATCH_GENERATE_TOOLTIP, lambda: self.on_batch_action_btn("Generate Info.toml"), color=AppColors.BUTTON_PURPLE)
+        btn_enable = create_batch_btn(ButtonIcons.BATCH_ENABLE.value, AppStrings.ACTION_ENABLE, AppStrings.BATCH_ENABLE_TOOLTIP, lambda: self.on_batch_action_btn("Enable"), color=AppColors.BUTTON_GREEN)
+        btn_disable = create_batch_btn(ButtonIcons.BATCH_DISABLE.value, AppStrings.ACTION_DISABLE, AppStrings.BATCH_DISABLE_TOOLTIP, lambda: self.on_batch_action_btn("Disable"), color=AppColors.BUTTON_RED)
         
         # Store buttons to update state
         self.btn_generate = btn_generate
@@ -170,12 +171,15 @@ class ModList(QWidget):
         # More actions menu
         btn_more = QPushButton()
         btn_more.setIcon(QIcon(ButtonIcons.MORE.value))
-        btn_more.setToolTip("More Actions")
+        # More actions menu
+        btn_more = QPushButton()
+        btn_more.setIcon(QIcon(ButtonIcons.MORE.value))
+        btn_more.setToolTip(AppStrings.ACTION_MORE)
         btn_more.setFixedWidth(30)
         btn_more.setFlat(True)
         
         more_menu = QMenu(self)
-        self.remove_action = more_menu.addAction(QIcon(ButtonIcons.BATCH_REMOVE.value), "Remove Selected")
+        self.remove_action = more_menu.addAction(QIcon(ButtonIcons.BATCH_REMOVE.value), AppStrings.BATCH_REMOVE_TOOLTIP)
         self.remove_action.triggered.connect(lambda: self.on_batch_action_btn("Remove"))
         btn_more.setMenu(more_menu)
         btn_more.setStyleSheet("QPushButton::menu-indicator { width: 0px; }")
@@ -573,8 +577,7 @@ class ModList(QWidget):
                     selected_mods.append(mod)
             
             if not selected_mods:
-                from PyQt6.QtWidgets import QMessageBox
-                QMessageBox.warning(self, "No Selection", "Please select mods to process.")
+                QMessageBox.warning(self, AppStrings.DIALOG_TITLE_NO_SELECTION, AppStrings.DIALOG_MSG_NO_SELECTION)
                 return
             
             # Add selected mods to batch queue
@@ -605,15 +608,14 @@ class ModList(QWidget):
         elif action == "Remove":
             selected_ids = self.mod_manager.get_selected_ids()
             if not selected_ids:
-                from PyQt6.QtWidgets import QMessageBox
-                QMessageBox.warning(self, "No Selection", "Please select mods to process.")
+                QMessageBox.warning(self, AppStrings.DIALOG_TITLE_NO_SELECTION, AppStrings.DIALOG_MSG_NO_SELECTION)
                 return
             
-            from PyQt6.QtWidgets import QMessageBox
+            
             reply = QMessageBox.question(
                 self, 
-                "Confirm Deletion", 
-                f"Are you sure you want to permanently delete {len(selected_ids)} selected mod(s)?\nThis action cannot be undone.",
+                AppStrings.DIALOG_TITLE_CONFIRM_DELETE, 
+                AppStrings.DIALOG_MSG_CONFIRM_DELETE.format(count=len(selected_ids)),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
                 QMessageBox.StandardButton.No
             )
@@ -625,9 +627,8 @@ class ModList(QWidget):
         elif action == "Enable":
             selected_ids = self.mod_manager.get_selected_ids()
             if not selected_ids:
-                 from PyQt6.QtWidgets import QMessageBox
-                 QMessageBox.warning(self, "No Selection", "Please select mods to process.")
-                 return
+                QMessageBox.warning(self, AppStrings.DIALOG_TITLE_NO_SELECTION, AppStrings.DIALOG_MSG_NO_SELECTION)
+                return
                  
             for mod_id in selected_ids:
                 self.mod_manager.add_enabled(mod_id)
@@ -639,9 +640,8 @@ class ModList(QWidget):
         elif action == "Disable":
             selected_ids = self.mod_manager.get_selected_ids()
             if not selected_ids:
-                 from PyQt6.QtWidgets import QMessageBox
-                 QMessageBox.warning(self, "No Selection", "Please select mods to process.")
-                 return
+                QMessageBox.warning(self, AppStrings.DIALOG_TITLE_NO_SELECTION, AppStrings.DIALOG_MSG_NO_SELECTION)
+                return
 
             for mod_id in selected_ids:
                 self.mod_manager.remove_enabled(mod_id)
@@ -667,14 +667,14 @@ class ModList(QWidget):
                 self.mod_manager.add_mod_from_path(path)
     
     def on_add_folder_clicked(self):
-        folder_path = QFileDialog.getExistingDirectory(self, "Select Mod Folder")
+        folder_path = QFileDialog.getExistingDirectory(self, AppStrings.ADD_FROM_FOLDER.replace("...", ""))
         if folder_path:
             self.mod_manager.add_mod_from_path(folder_path)
 
     def on_add_zip_clicked(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self, 
-            "Select Mod Archive", 
+            AppStrings.ADD_FROM_ZIP.replace("...", ""), 
             "", 
             "Archive Files (*.zip *.7z *.rar);;All Files (*)"
         )
