@@ -210,6 +210,28 @@ class BatchManager:
             if notify:
                 self._notify_callbacks()
     
+    def reset_task_data(self, mod_hash: str, notify: bool = True):
+        """Reset fetched data for a task to allow fresh refetch"""
+        task = self.get_task(mod_hash)
+        if task:
+            task.fetched_url = None
+            task.fetched_mod_name = None
+            task.fetched_authors = None
+            task.fetched_version = None
+            task.fetched_description = None
+            task.fetched_preview_links = None
+            task.fetched_preview_files = None
+            task.fetched_is_wifi_safe = None
+            task.fetched_is_moveset = None
+            task.fetched_is_final_smash = None
+            
+            task.status = BatchTaskStatus.PENDING
+            task.progress_message = ""
+            task.error_message = ""
+            
+            if notify:
+                self._notify_callbacks()
+    
     def add_callback(self, callback: Callable):
         """Add a callback to be notified when queue changes"""
         self.callbacks.append(callback)

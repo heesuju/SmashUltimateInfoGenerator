@@ -4,10 +4,10 @@ from PyQt6.QtWidgets import (
     QSizePolicy, QFrame
 )
 from PyQt6.QtCore import Qt, QSize, pyqtSignal, QTimer
-from PyQt6.QtGui import QPixmap, QFont, QMovie, QCursor
+from PyQt6.QtGui import QPixmap, QFont, QMovie, QCursor, QIcon
 from src.models.mod import Mod
 from src.managers.batch_manager import BatchTaskStatus, BatchTask
-from src.managers.data_manager import DataManager
+from src.managers.data_manager import DataManager, ButtonIcons
 from src.constants.enums import Category, Element, Wifi
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.single_combobox import SingleComboBox
@@ -48,6 +48,7 @@ class BatchTaskItem(QWidget):
     """Widget representing a single batch task with all info.toml fields"""
     
     remove_requested = pyqtSignal(str)  # Emits mod hash
+    refetch_requested = pyqtSignal(str) # Emits mod hash
     
     def __init__(self, task: BatchTask):
         super().__init__()
@@ -136,6 +137,30 @@ class BatchTaskItem(QWidget):
         self.status_label.setFont(status_font)
         self.update_status_display()
         header_layout.addWidget(self.status_label)
+        
+        header_layout.addWidget(self.status_label)
+        
+        # Refetch button
+        refetch_btn = QPushButton()
+        refetch_btn.setFixedSize(24, 24)
+        refetch_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.refetch_btn = refetch_btn # Store ref to disable if needed
+        # Use Refresh icon or similar
+        refetch_btn.setIcon(QIcon(ButtonIcons.REFRESH.value))
+        refetch_btn.setToolTip("Refetch data from GameBanana")
+        refetch_btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: rgba(128, 128, 128, 0.2);
+                border-radius: 12px;
+            }
+        """)
+        # Stop propagation 
+        refetch_btn.clicked.connect(lambda: self.refetch_requested.emit(str(self.mod.hash)))
+        header_layout.addWidget(refetch_btn)
         
         # Remove button
         remove_btn = QPushButton("✕")

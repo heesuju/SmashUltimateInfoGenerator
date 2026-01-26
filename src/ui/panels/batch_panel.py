@@ -153,6 +153,7 @@ class BatchPanel(SidePanel):
             # Create widget (Heavy Operation)
             task_widget = BatchTaskItem(task)
             task_widget.remove_requested.connect(self.on_remove_task)
+            task_widget.refetch_requested.connect(self.on_refetch_task)
             
             if has_stretch:
                 self.task_container.insertWidget(self.task_container.count() - 1, task_widget)
@@ -299,6 +300,15 @@ class BatchPanel(SidePanel):
             return
         
         self.batch_manager.remove_task(mod_hash)
+        
+    def on_refetch_task(self, mod_hash: str):
+        """Reset and refetch a specific task"""
+        if self.worker and self.worker.isRunning():
+            QMessageBox.warning(self, "Processing", "Cannot refetch while processing other tasks.")
+            return
+             
+        self.batch_manager.reset_task_data(mod_hash)
+        self.start_processing()
     
     def on_clear_queue(self):
         """Clear all tasks from the queue"""
