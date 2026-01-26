@@ -83,6 +83,9 @@ class MainMenu(QWidget):
             on_open_config=lambda: self.menu.show_panel(self.config)
         )
         
+        # Connect config change to workspace update
+        self.config.cache_changed.connect(self.workspace.on_cache_changed)
+        
         # Connect preview edit button to edit panel
         self.preview.edit_requested.connect(self.on_edit_requested)
         

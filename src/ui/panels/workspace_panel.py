@@ -97,6 +97,11 @@ class WorkspacePanel(SidePanel):
         count = len(self.workspace_manager.get_enabled_ids())
         self.export_btn.setText(f"Export Enabled Mods ({count})")
 
+    def on_cache_changed(self):
+        """Handle cache directory change"""
+        self.check_config()
+        self.workspace_manager.load()
+
     def on_sync_clicked(self):
         """Trigger sync process"""
         reply = QMessageBox.question(

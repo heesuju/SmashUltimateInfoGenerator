@@ -67,6 +67,7 @@ class WorkspaceManager(QObject):
             self.save_active_workspace()
         
         self.load_enabled_mods()
+        self.workspace_changed.emit()
 
     def load_enabled_mods(self):
         preset_filename = self.workspace_map.get(self.current_workspace_name, "presets")

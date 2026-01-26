@@ -21,7 +21,7 @@ import os
 import sys
 from functools import partial
 from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont
-from PyQt6.QtCore import Qt, QSize, QPoint, QPointF
+from PyQt6.QtCore import Qt, QSize, QPoint, QPointF, pyqtSignal
 from src.ui.components.layout import HBox, VBox
 from src.ui.components.checkbox_group import CheckboxGroup
 from src.managers.data_manager import ButtonIcons
@@ -34,6 +34,8 @@ from src.ui.common import choose_folder
 from src.utils.common import is_valid_dir
 
 class Config(SidePanel):
+    cache_changed = pyqtSignal()
+
     def __init__(self, config_manager:ConfigManager, mod_manager):
         super().__init__("Config")
         self.config_manager = config_manager
@@ -159,6 +161,9 @@ class Config(SidePanel):
             # Check if we need to reload mods
             if current_root != new_root or current_cache != new_cache:
                 self.mod_manager.scan_all()
+            
+            if current_cache != new_cache:
+                self.cache_changed.emit()
             
             if current_theme != new_theme:
                 reply = QMessageBox.question(
