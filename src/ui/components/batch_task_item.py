@@ -264,7 +264,8 @@ class BatchTaskItem(QWidget):
         version_row = TextRow(
             "Version", data_font,
             version_text, version_text, "version",
-            lambda attr, val: self._on_field_changed(attr, val)
+            lambda attr, val: self._on_field_changed(attr, val),
+            real_time_update=False
         )
         task_rows.append(("version", version_row))
 

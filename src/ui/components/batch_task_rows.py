@@ -230,13 +230,14 @@ class BatchTaskRow:
 
 class TextRow(BatchTaskRow):
     def __init__(self, label: str, data_font: QFont, 
-                 orig_value: str, new_value: str, attr_name: str, on_change: callable, orig_tooltip: str = None):
+                 orig_value: str, new_value: str, attr_name: str, on_change: callable, orig_tooltip: str = None, real_time_update: bool = True):
         super().__init__(label, data_font)
         self.orig_value = orig_value
         self.new_value = new_value
         self.attr_name = attr_name
         self.on_change = on_change
         self.orig_tooltip = orig_tooltip
+        self.real_time_update = real_time_update
 
     def create_widgets(self):
         label_widget = self._create_label_widget()
@@ -248,7 +249,11 @@ class TextRow(BatchTaskRow):
         self.input_widget.setFont(self.data_font)
         self.input_widget.setFixedHeight(ROW_CONTENT_HEIGHT)
         self.input_widget.setStyleSheet(CELL_INPUT_STYLE)
-        self.input_widget.textChanged.connect(lambda text: self.on_change(self.attr_name, text))
+        
+        if self.real_time_update:
+            self.input_widget.textChanged.connect(lambda text: self.on_change(self.attr_name, text))
+        else:
+            self.input_widget.editingFinished.connect(lambda: self.on_change(self.attr_name, self.input_widget.text()))
         
         cell.set_content(self.input_widget)
         
