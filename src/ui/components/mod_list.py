@@ -23,6 +23,7 @@ from src.ui.components.toggle_button import ToggleButton
 from src.ui.components.paging import Paging
 from src.ui.components.search_bar import SearchBar
 from src.ui.components.filter_chips import FilterChips
+from src.ui.components.loading_overlay import LoadingOverlay
 
 from src.utils.image_utils import tint_pixmap
 from src.constants.enums import Fighter, ListLayout
@@ -45,6 +46,8 @@ class ModList(QWidget):
         self.mod_manager.add_hidden_callback(self.on_hidden_changed)
         self.mod_manager.add_enabled_callback(self.on_enabled_changed)
         self.mod_manager.selection_changed.connect(self.on_selection_changed)
+        self.mod_manager.install_started.connect(self.on_install_started)
+        self.mod_manager.install_finished.connect(self.on_install_finished)
         
         self.filter_manager = filter_manager
         self.filter_manager.add_callback(self.on_filter_changed)
@@ -204,10 +207,27 @@ class ModList(QWidget):
         
         # Initialize button states
         self.update_batch_buttons_state()
+        
+        self.loading_overlay = LoadingOverlay(self.frame)
+        self.loading_overlay.label.setText("Installing Mods...")
+
+    def resizeEvent(self, event):
+        if hasattr(self, 'loading_overlay'):
+            if self.loading_overlay:
+                self.loading_overlay.resize(self.frame.size())
+        super().resizeEvent(event)
     
     def on_selection_changed(self, selected_ids: list):
         """Handle selection change signal"""
         self.update_batch_buttons_state()
+        
+    def on_install_started(self):
+        """Show loading overlay when installation starts"""
+        self.loading_overlay.show_loading()
+        
+    def on_install_finished(self):
+        """Hide loading overlay when installation finishes"""
+        self.loading_overlay.hide_loading()
         
     def update_batch_buttons_state(self):
         """Enable/Disable batch buttons based on selection count"""

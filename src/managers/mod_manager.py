@@ -11,6 +11,11 @@ from src.utils.logger import output_log
 from src.managers.cache_manager import CacheManager
 
 class ModManager(QObject):
+    # Signals
+    selection_changed = pyqtSignal(list)
+    install_started = pyqtSignal()
+    install_finished = pyqtSignal()
+
     def __init__(self, config_manager:ConfigManager, workspace_manager:WorkspaceManager):
         super().__init__()
         self.config_manager = config_manager
@@ -106,6 +111,7 @@ class ModManager(QObject):
             return
             
         output_log(f"Adding mod from: {path}")
+        self.install_started.emit()
         # Keep reference to installer to prevent GC/early termination
         self._current_installer = ModInstaller(
             directory=path,
@@ -118,6 +124,7 @@ class ModManager(QObject):
     def _on_mod_install_finish(self, new_paths:List[str]):
         """Callback when ModInstaller finishes"""
         if not new_paths:
+            self.install_finished.emit()
             return
             
         # Scan the newly added mods
@@ -129,6 +136,7 @@ class ModManager(QObject):
             self.mods[str(mod.hash)] = mod
 
     def on_complete(self):
+        self.install_finished.emit()
         if self.callback:
             self.callback()
 
@@ -185,7 +193,6 @@ class ModManager(QObject):
             self._notify_hidden_changed(id, False)
     
     # Selection management methods
-    selection_changed = pyqtSignal(list)
 
     def toggle_selection(self, id:str):
         """Toggle selection state of a mod"""

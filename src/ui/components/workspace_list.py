@@ -211,7 +211,7 @@ class WorkspaceList(QWidget):
         self.editor.setPlaceholderText("Name...")
         self.editor.setStyleSheet("background: #2b2b2b; color: white; border: 1px solid #555;")
         self.editor.returnPressed.connect(self.commit_add)
-        self.editor.editingFinished.connect(self.cancel_add_on_blur) # Optional: Be careful with this vs returnPressed
+        self.editor.editingFinished.connect(self.cancel_add_on_blur)
         
         self.tree.setItemWidget(item, 0, self.editor)
         self.editor.setFocus()
