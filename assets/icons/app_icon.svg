@@ -1,0 +1,35 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Document Shape -->
+  <path d="M96 64C87.1634 64 80 71.1634 80 80V432C80 440.837 87.1634 448 96 448H416C424.837 448 432 440.837 432 432V144L352 64H96Z" fill="#222222"/>
+  <path d="M352 64V144H432" fill="#444444"/>
+  
+  <!-- Smash Ball Logo -->
+  <g transform="translate(256, 266)">
+    <!-- The Ball -->
+    <circle cx="0" cy="0" r="130" fill="#F5F5F5"/>
+    
+    <!-- Vertical Cut: Wider (50), More Left (-90 center) -->
+    <rect x="-90" y="-130" width="50" height="260" fill="#222222"/>
+    
+    <!-- Horizontal Cut: Thin (20), 40% from bottom approx y=28 -->
+    <rect x="-130" y="28" width="260" height="20" fill="#222222"/>
+  </g>
+  
+  <!-- Final Clean Gear Implementation -->
+  <g transform="translate(420, 420)">
+     <!-- Removed the backing circle as requested -->
+     
+     <g fill="#4CAF50">
+        <!-- Center Hub -->
+        <circle cx="0" cy="0" r="55"/>
+        <!-- Teeth (8 blocks rotated) -->
+        <rect x="-15" y="-75" width="30" height="150" rx="4"/>
+        <rect x="-15" y="-75" width="30" height="150" rx="4" transform="rotate(45)"/>
+        <rect x="-15" y="-75" width="30" height="150" rx="4" transform="rotate(90)"/>
+        <rect x="-15" y="-75" width="30" height="150" rx="4" transform="rotate(135)"/>
+     </g>
+     <!-- Inner Hole -->
+     <circle cx="0" cy="0" r="25" fill="#222222"/>
+  </g>
+
+</svg>

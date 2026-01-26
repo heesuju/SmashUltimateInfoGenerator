@@ -1,48 +1,20 @@
-"""
-main.py: Entrypoint for the application
+import sys
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QIcon
+import qdarktheme
 
-Usage:
-    To run the application, execute this module directly:
-        python main.py
-"""
-
-from tkinterdnd2 import TkinterDnD
-from src.ui.views.menu import Menu
-from src.ui.views.editor import Editor
-from src.core.data import get_start_w_editor
-from src.core.web.webdriver_manager import WebDriverManager
-from src.constants.ui_params import (
-    WIN_SIZE_X_DEFAULT,
-    WIN_SIZE_Y_DEFAULT,
-    WIN_SIZE_X_MIN,
-    WIN_SIZE_Y_MIN,
-    TITLE
-)
-
-def main()->None:
-    """
-    Main entry point for the application.
-
-    This function is responsible for initializing the application
-    and invoking the necessary components to execute the desired functionality.
-
-    Returns:
-        None
-    """
-
-    root = TkinterDnD.Tk()
-    root.minsize(WIN_SIZE_X_MIN, WIN_SIZE_Y_MIN)
-    root.geometry(f"{WIN_SIZE_X_DEFAULT}x{WIN_SIZE_Y_DEFAULT}")
-    root.title(TITLE)
-
-    webdriver_manager = WebDriverManager()
-
-    if get_start_w_editor():
-        Editor(root, webdriver_manager)
-    else:
-        Menu(root, webdriver_manager)
-
-    root.mainloop()
+from src.ui.main_menu import MainMenu
+from src.managers.config_manager import ConfigManager
 
 if __name__ == "__main__":
-    main()
+    import multiprocessing
+    multiprocessing.freeze_support()
+    
+    app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon("assets/icons/app_icon.svg"))
+    config_manager = ConfigManager()
+
+    qdarktheme.setup_theme(str(config_manager.config.theme))
+    window = MainMenu(config_manager)
+    window.show()
+    sys.exit(app.exec())

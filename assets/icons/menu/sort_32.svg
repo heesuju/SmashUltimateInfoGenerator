@@ -1,0 +1,13 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sort Icon: Wide horizontal bars of decreasing width aligned center -->
+  <!-- Mimics a list or pile being sorted -->
+  
+  <!-- Wide Top Bar -->
+  <rect x="4" y="6" width="24" height="4" rx="1" fill="white"/>
+  
+  <!-- Medium Middle Bar -->
+  <rect x="8" y="14" width="16" height="4" rx="1" fill="white"/>
+  
+  <!-- Small Bottom Bar -->
+  <rect x="12" y="22" width="8" height="4" rx="1" fill="white"/>
+</svg>

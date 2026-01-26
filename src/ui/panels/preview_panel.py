@@ -1,0 +1,447 @@
+from PyQt6.QtWidgets import (
+    QWidget, QVBoxLayout, QSizePolicy, QLabel, QFrame, QHBoxLayout, QPushButton,
+    QMenu
+)
+from PyQt6.QtGui import QPixmap, QColor, QPalette, QIcon, QFont, QAction, QDesktopServices
+from PyQt6.QtCore import Qt, QSize, QPoint, QPointF, pyqtSignal, QUrl
+from src.ui.components.layout import HBox, VBox
+from src.ui.components.side_panel import SidePanel
+from src.ui.components.thumbnail_label import ThumbnailLabel
+from src.ui.components.toggle_button import ToggleButton
+from src.ui.components.flow_layout import FlowLayout, ElementTag
+from src.managers.mod_manager import ModManager
+from src.managers.data_manager import DataManager, ButtonIcons
+from src.utils.file import open_folder
+from src.utils.image_utils import tint_pixmap
+from src.constants.ui_params import BODY_FONT, BODY_FONT_SIZE, TITLE_FONT, TITLE_FONT_SIZE
+from src.constants.colors import AppColors
+from src.constants.strings import AppStrings
+from src.ui.components.resizable_text_browser import ResizableTextBrowser
+
+class PreviewPanel(SidePanel):
+    edit_requested = pyqtSignal(str)  # Emits mod_id when edit is requested
+    
+    def __init__(self, mod_manager:ModManager, online_manager=None, download_manager=None):
+        super().__init__("Preview")
+        self.header.setSpacing(4)
+        self.mod_manager = mod_manager
+        self.online_manager = online_manager
+        self.download_manager = download_manager
+        self.is_online_mode = False
+        self.current_online_details = {} # Cache for online mod details
+        
+        self.workspace_manager = mod_manager.workspace_manager
+        self.workspace_manager.workspace_changed.connect(self.on_workspace_changed)
+        
+        self.mod_manager.add_focus_callback(self.set_data)
+        self.mod_manager.add_favorite_callback(self.on_favorite_changed)
+        self.mod_manager.add_hidden_callback(self.on_hidden_changed)
+        self.mod_manager.add_enabled_callback(self.on_enabled_changed)
+        
+        if self.online_manager:
+            self.online_manager.add_focus_callback(self.set_online_data)
+            self.online_manager.mod_details_ready.connect(self.update_online_details)
+
+        self.header.addStretch()
+        self.fav_button = ToggleButton(
+            ButtonIcons.FAV_ON.value, 
+            ButtonIcons.FAV_OFF.value, 
+            self.on_fav_on, 
+            self.on_fav_off, 
+            24,
+            color_a=AppColors.BUTTON_YELLOW,
+            color_b=AppColors.BUTTON_GRAY
+        )
+        self.header.addWidget(self.fav_button)
+        
+        self.hide_button = ToggleButton(
+            ButtonIcons.HIDE_ON.value, 
+            ButtonIcons.HIDE_OFF.value, 
+            self.on_vis_off, 
+            self.on_vis_on, 
+            24,
+            color_a=AppColors.BUTTON_GRAY,
+            color_b=AppColors.BUTTON_CYAN
+        )
+        self.header.addWidget(self.hide_button)
+
+
+        menu_button = QPushButton()
+        menu_button.setIcon(QIcon(QPixmap(ButtonIcons.MORE.value)))
+        menu_button.setFlat(True)
+        menu_button.setObjectName("obj")
+        menu_button.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+        menu_button.setFixedSize(QSize(24, 24))
+        menu_button.clicked.connect(self.show_context_menu)
+        self.header.addWidget(menu_button)
+        self.menu_button = menu_button
+        
+        self.thumbnail = ThumbnailLabel()
+        self.body.addWidget(self.thumbnail)
+
+        # Author and Version on same row
+        info_layout = QHBoxLayout()
+        self.body.addLayout(info_layout)
+        
+        body_font = QFont(BODY_FONT, BODY_FONT_SIZE)
+        
+        self.author = QLabel("")
+        self.author.setFont(body_font)
+        info_layout.addWidget(self.author)
+        
+        info_layout.addStretch(1)
+        
+        self.version = QLabel("1.0.0")
+        self.version.setFont(body_font)
+        info_layout.addWidget(self.version)
+
+        self.elements_container = FlowLayout(spacing=5)
+        self.body.addWidget(self.elements_container)
+
+        self.description_label = ResizableTextBrowser()
+        self.description_label.setFont(QFont(BODY_FONT, BODY_FONT_SIZE))
+        self.body.addWidget(self.description_label)        
+        
+        self.body.addStretch(1)
+
+        self.edit_btn = self.add_footer_button(AppStrings.ACTION_EDIT, self.on_edit_clicked, icon=ButtonIcons.EDIT.value)
+        self.enable_btn = self.add_footer_button(AppStrings.ACTION_ENABLE, self.on_enable_toggle, primary=True)
+        self.download_btn = self.add_footer_button(AppStrings.ACTION_DOWNLOAD, self.on_download_clicked, primary=True)
+        self.download_btn.hide()
+
+    def set_online_data(self, id:str):
+        """Handle online mod selection - show basic info immediately"""
+        self.is_online_mode = True
+        self.current_online_details = {} # Reset cache
+        
+        # Toggle buttons
+        self.edit_btn.hide()
+        self.enable_btn.hide()
+        self.download_btn.show()
+        # Disable download until details loaded
+        self.download_btn.setEnabled(False)
+        self.download_btn.setText(AppStrings.STATUS_LOADING)
+        
+        mod = self.online_manager.get_mod(id)
+        if not mod:
+            return
+            
+        self.fav_button.hide()
+        self.hide_button.hide()
+        
+        if self.title_label:
+            self.title_label.setText(mod.name)
+            
+        self.thumbnail.set_thumbnail(mod.thumbnail)
+        self.author.setText(mod.authors)
+        self.version.setText(mod.version)
+        self.description_label.setText(AppStrings.STATUS_LOADING_DETAILS)
+        
+        self.elements_container.clear()
+
+    def update_online_details(self, details:dict):
+        """Update preview with full details from API"""
+        if not self.is_online_mode:
+            return
+            
+        self.current_online_details = details
+        self.download_btn.setEnabled(True)
+        self.download_btn.setText(AppStrings.ACTION_DOWNLOAD)
+
+        description = details.get('description', '')
+        if description:
+            self.description_label.set_html(description)
+        
+        self.elements_container.clear()
+        
+        if details.get('is_wifi_safe'):
+            wifi_tag = ElementTag(AppStrings.LBL_WIFI_SAFE)
+            self.elements_container.add_widget(wifi_tag)
+        
+        if details.get('is_moveset'):
+            tag = ElementTag(AppStrings.LBL_MOVESET)
+            self.elements_container.add_widget(tag)
+            
+        if details.get('is_final_smash'):
+            tag = ElementTag(AppStrings.LBL_FINAL_SMASH)
+            self.elements_container.add_widget(tag)
+
+    def set_data(self, id:str):
+        """Handle installed mod selection"""
+        self.is_online_mode = False
+        # Toggle buttons
+
+        self.edit_btn.show()
+        self.enable_btn.show()
+        self.download_btn.hide()
+        
+        mod = self.mod_manager.get_mod(id)
+        self.fav_button.show()
+        self.hide_button.show()
+        self.fav_button.set_state(str(mod.hash) in self.mod_manager.favorite_ids)
+        self.hide_button.set_state(str(mod.hash) in self.mod_manager.hidden_ids)
+        
+        if self.title_label:
+            self.title_label.setText(mod.mod_name)
+            
+        self.thumbnail.set_thumbnail(mod.thumbnail)
+        self.author.setText(mod.authors)
+        self.version.setText(mod.version)
+        self.description_label.setText(mod.description)
+        
+        self.elements_container.clear()
+        
+        if str(mod.wifi_safe).lower() != "uncertain":
+            wifi_text = AppStrings.LBL_WIFI_SAFE if str(mod.wifi_safe).lower() == "safe" else AppStrings.LBL_NOT_WIFI_SAFE
+            wifi_tag = ElementTag(wifi_text)
+            self.elements_container.add_widget(wifi_tag)
+        
+        for element in mod.includes:
+            tag = ElementTag(str(element))
+            self.elements_container.add_widget(tag)
+        
+        # Update enable button state
+        is_enabled = str(mod.hash) in self.mod_manager.enabled_ids
+        if is_enabled:
+            self.enable_btn.setText(AppStrings.ACTION_DISABLE)
+            self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_DISABLE.value))
+            self.enable_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {AppColors.BUTTON_RED}; 
+                    color: white; 
+                    border-radius: 4px;
+                    border: none;
+                    text-align: center;
+                }}
+                QPushButton:hover {{ background-color: #D32F2F; }}
+            """)
+        else:
+            self.enable_btn.setText(AppStrings.ACTION_ENABLE)
+            self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_ENABLE.value))
+            self.enable_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {AppColors.BUTTON_GREEN}; 
+                    color: white; 
+                    border-radius: 4px;
+                    border: none;
+                    text-align: center;
+                }}
+                QPushButton:hover {{ background-color: #388E3C; }}
+            """)
+
+    def on_open_clicked(self):
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        open_folder(mod.path)
+        
+    def on_fav_on(self):
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        self.mod_manager.add_favorite(mod.hash)
+
+    def on_fav_off(self):
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        self.mod_manager.remove_favorite(mod.hash)
+        
+    def on_favorite_changed(self, mod_id:str, is_favorite:bool):
+        # Update UI if the changed mod is the currently displayed one
+        if self.mod_manager.focused_id:
+            mod = self.mod_manager.get_mod(self.mod_manager.focused_id)
+            if mod and str(mod.hash) == str(mod_id):
+                self.fav_button.set_state(is_favorite)
+
+    def on_vis_on(self):
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        self.mod_manager.remove_hidden(mod.hash)
+        
+    def on_vis_off(self):
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        self.mod_manager.add_hidden(mod.hash)
+
+    def on_hidden_changed(self, mod_id:str, is_hidden:bool):
+        # Update UI if the changed mod is the currently displayed one
+        if self.mod_manager.focused_id:
+            mod = self.mod_manager.get_mod(self.mod_manager.focused_id)
+            if mod and str(mod.hash) == str(mod_id):
+                # Note: is_hidden=True means Hidden, Button State True = Hidden.
+                self.hide_button.set_state(is_hidden)
+
+    def on_enable_toggle(self):
+        """Toggle enabled state for the current mod"""
+        id = self.mod_manager.focused_id
+        if not id:
+            return
+        mod = self.mod_manager.get_mod(id)
+        if str(mod.hash) in self.mod_manager.enabled_ids:
+            self.mod_manager.remove_enabled(mod.hash)
+        else:
+            self.mod_manager.add_enabled(mod.hash)
+    
+    def on_enabled(self):
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        self.mod_manager.add_enabled(mod.hash)
+
+    def on_disabled(self):
+        id =self.mod_manager.focused_id
+        mod = self.mod_manager.get_mod(id)
+        self.mod_manager.remove_enabled(mod.hash)
+    
+    def on_enabled_changed(self, mod_id:str, is_enabled:bool):
+        """Update UI if the changed mod is the currently displayed one"""
+        if self.mod_manager.focused_id:
+            mod = self.mod_manager.get_mod(self.mod_manager.focused_id)
+            if mod and str(mod.hash) == str(mod_id):
+                if is_enabled:
+                    self.enable_btn.setText(AppStrings.ACTION_DISABLE)
+                    self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_DISABLE.value))
+                    self.enable_btn.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: {AppColors.BUTTON_RED}; 
+                            color: white; 
+                            border-radius: 4px;
+                            border: none;
+                            text-align: center;
+                        }}
+                        QPushButton:hover {{ background-color: #D32F2F; }}
+                    """)
+                else:
+                    self.enable_btn.setText(AppStrings.ACTION_ENABLE)
+                    self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_ENABLE.value))
+                    self.enable_btn.setStyleSheet(f"""
+                        QPushButton {{
+                            background-color: {AppColors.BUTTON_GREEN}; 
+                            color: white; 
+                            border-radius: 4px;
+                            border: none;
+                            text-align: center;
+                        }}
+                        QPushButton:hover {{ background-color: #388E3C; }}
+                    """)
+    
+    def on_edit_clicked(self):
+        """Emit signal to request edit mode for current mod"""
+        self.edit_requested.emit(self.mod_manager.focused_id)
+
+    def show_context_menu(self):
+        """Show context menu for mod options"""
+        menu = QMenu(self)
+        
+        action = QAction(AppStrings.CTX_COPY_ID, self)
+        action.triggered.connect(lambda: None) # Todo implement copy
+        title = QAction(AppStrings.CTX_MOD_OPTIONS, self)
+        title.setEnabled(False)
+        menu.addAction(title)
+        
+        open_action = QAction(AppStrings.CTX_OPEN_FOLDER, self)
+        open_action.setIcon(QIcon(ButtonIcons.BROWSE.value))
+        open_action.triggered.connect(self.on_open_clicked)
+        menu.addAction(open_action)
+        
+        # Check if URL exists for current mod
+        mod = None
+        if self.is_online_mode and self.online_manager:
+            id = self.online_manager.focused_id
+            if id:
+                mod = self.online_manager.get_mod(id)
+        elif self.mod_manager:
+            id = self.mod_manager.focused_id
+            if id:
+                mod = self.mod_manager.get_mod(id)
+        
+        if mod and mod.url and mod.url.startswith("http"):
+            web_action = QAction(AppStrings.CTX_OPEN_WEB, self)
+            web_action.setIcon(QIcon(ButtonIcons.WEB.value))
+            web_action.triggered.connect(self.open_web_page)
+            menu.addAction(web_action)
+        
+        menu.exec(self.menu_button.mapToGlobal(QPoint(0, self.menu_button.height())))
+
+    def open_web_page(self):
+        """Open mod URL in browser"""
+        if self.is_online_mode:
+            id = self.online_manager.focused_id
+            if id:
+                mod = self.online_manager.get_mod(id)
+                if mod and mod.url and mod.url.startswith("http"):
+                    QDesktopServices.openUrl(QUrl(mod.url))
+        else:
+            id = self.mod_manager.focused_id
+            if id:
+                mod = self.mod_manager.get_mod(id)
+                if mod.url and mod.url.startswith("http"):
+                    QDesktopServices.openUrl(QUrl(mod.url))
+
+    def on_download_clicked(self):
+        """Handle download button click"""
+        files = self.current_online_details.get("files", [])
+        
+        if not files:
+            print("No files to download")
+            return
+            
+        if len(files) == 1:
+            # Single file - download directly
+            # files[0]["name"] corresponds to _sFile from gamebanana.py
+            self.download_file(files[0]["url"], files[0].get("name"))
+        else:
+            # Multiple files - show menu
+            menu = QMenu(self)
+            
+            for file_data in files:
+                name = file_data.get("name", "Unknown")
+                desc = file_data.get("description", "")
+                label = f"{name}"
+                if desc:
+                    label += f" - {desc}"
+                    
+                action = QAction(label, self)
+                # Use closure to capture loop variable
+                # Pass Name (_sFile) if available
+                action.triggered.connect(lambda checked, url=file_data["url"], fname=name: self.download_file(url, fname))
+                menu.addAction(action)
+                
+            menu.addSeparator()
+            
+            download_all = QAction(AppStrings.CTX_DOWNLOAD_ALL, self)
+            download_all.triggered.connect(lambda: self.download_all_files(files))
+            menu.addAction(download_all)
+            
+            # Show below button
+            menu.exec(self.download_btn.mapToGlobal(QPoint(0, self.download_btn.height())))
+            
+    def download_file(self, url:str, filename:str=None):
+        """Download file logic"""
+        if self.download_manager:
+            # Extract filename from URL or use default if not provided
+            if not filename:
+                filename = url.split("/")[-1]
+                if "?" in filename:
+                    filename = filename.split("?")[0]
+            if not filename:
+                filename = "download.zip"
+            
+            # Get mod name from details
+            mod_name = self.current_online_details.get("mod_name", AppStrings.LBL_UNKNOWN_MOD)
+            # Get mod ID
+            mod_id = self.online_manager.focused_id
+            
+            self.download_manager.start_download(url, filename, mod_name, mod_id, self.current_online_details)
+        else:
+            # Fallback
+            QDesktopServices.openUrl(QUrl(url))
+        
+    def download_all_files(self, files:list):
+        """Download all files"""
+        print(f"Downloading {len(files)} files")
+        for f in files:
+             if f.get("url"):
+                self.download_file(f.get("url"), f.get("name"))
+
+    def on_workspace_changed(self):
+        """Refresh current mod view when workspace changes (status may have changed)"""
+        if self.mod_manager.focused_id and not self.is_online_mode:
+            self.set_data(self.mod_manager.focused_id)

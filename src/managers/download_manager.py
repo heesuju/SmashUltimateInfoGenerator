@@ -1,0 +1,548 @@
+from PyQt6.QtCore import QObject, pyqtSignal, QUrl, QFile, QIODevice
+from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
+import os
+import shutil
+from collections import deque
+from src.managers.config_manager import ConfigManager
+from src.core.mod_installer import ModInstaller
+from src.utils.toml import dump_toml, load_toml
+from pathlib import Path
+from src.core.scanner import scan_mod
+from src.models.mod import Mod
+from src.core.formatting import (
+    format_folder_name, 
+    format_display_name, 
+    format_slots, 
+    format_character_names_for_display, 
+    format_character_names_for_folder, 
+    get_mod_name,
+    clean_version
+)
+from src.utils.string_helper import SPECIAL_CHARS, remove_redundant_spacing
+from src.constants.enums import Fighter, Wifi, Element
+from src.managers.data_manager import DataManager
+
+class DownloadManager(QObject):
+    # Signals
+    download_queued = pyqtSignal(str, str) # id, name
+    download_started = pyqtSignal(str, str) # id, name
+    progress_updated = pyqtSignal(str, int, int) # id, received, total
+    download_finished = pyqtSignal(str, bool, str) # id, success, message
+    total_progress_updated = pyqtSignal(float) # 0.0 to 1.0
+    install_started = pyqtSignal(str) # id
+    install_finished = pyqtSignal(str) # path
+    install_failed = pyqtSignal(str, str) # id, error_message
+    thumbnail_updated = pyqtSignal(str) # path
+    
+    def __init__(self, config_manager: ConfigManager, max_concurrent=3):
+        super().__init__()
+        self.manager = QNetworkAccessManager()
+        self.config_manager = config_manager
+        self.max_concurrent_downloads = max_concurrent
+        
+        self.download_queue = deque()
+        self.active_downloads = {} # id -> reply
+        self.download_meta = {} # id -> dict (metadata for post-processing)
+        self.download_files = {} # id -> QFile
+        self.active_installers = [] # Prevent GC of installers
+        self.progress_map = {} # id -> (received, total)
+        
+        # Default download path
+        self.download_path = os.path.join(os.getcwd(), "downloads")
+        if not os.path.exists(self.download_path):
+            os.makedirs(self.download_path)
+            
+    def start_download(self, url: str, filename: str, mod_name: str, mod_id_str: str, mod_data: dict = None):
+        """Queue a download"""
+        # Create a unique ID
+        import time
+        download_id = f"{mod_name}_{filename}_{int(time.time())}"
+        
+        # Check if multiple files exist and append suffix
+        if mod_data:
+            files = mod_data.get("files", [])
+            if len(files) > 1:
+                matching_file = next((f for f in files if f.get("url") == url), None)
+                file_index = files.index(matching_file) if matching_file in files else -1
+                
+                if matching_file and file_index > 0:
+                    desc = matching_file.get("description", "")
+                    if desc:
+                        import re
+                        clean_desc = re.sub(r'[()\[\]{}]', '', desc)
+                        for char in SPECIAL_CHARS:
+                            clean_desc = clean_desc.replace(char, "")
+                        clean_desc = remove_redundant_spacing(clean_desc).strip()
+                        if clean_desc:
+                            mod_name = f"{mod_name} ({clean_desc})"
+
+        task = {
+            "id": download_id,
+            "url": url,
+            "filename": filename,
+            "mod_name": mod_name,
+            "mod_id_str": mod_id_str,
+            "mod_data": mod_data
+        }
+        
+        self.download_queue.append(task)
+        self.download_queued.emit(download_id, mod_name)
+        self.process_queue()
+        return download_id
+
+    def process_queue(self):
+        """Process the download queue"""
+        while len(self.active_downloads) < self.max_concurrent_downloads and self.download_queue:
+            task = self.download_queue.popleft()
+            self._start_download_task(task)
+            
+    def _start_download_task(self, task):
+        download_id = task["id"]
+        url_str = task["url"]
+        filename = task["filename"]
+        mod_name = task["mod_name"]
+        
+        # Store metadata for post-processing
+        self.download_meta[download_id] = task
+        
+        # Start Request
+        request = QNetworkRequest(QUrl(url_str))
+        request.setAttribute(QNetworkRequest.Attribute.RedirectPolicyAttribute, True)
+        
+        # Spoof User Agent
+        request.setRawHeader(b"User-Agent", b"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+        reply = self.manager.get(request)
+        reply.setReadBufferSize(4 * 1024 * 1024) # 4MB buffer (default is often smaller/adaptive)
+        self.active_downloads[download_id] = reply
+        
+        # Connect signals
+        reply.downloadProgress.connect(lambda recv, tot, id=download_id: self._on_progress(id, recv, tot))
+        reply.finished.connect(lambda id=download_id: self._on_finished(id))
+        reply.readyRead.connect(lambda id=download_id: self._on_ready_read(id))
+        reply.metaDataChanged.connect(lambda id=download_id: self._on_metadata_changed(id))
+        
+        self.download_started.emit(download_id, mod_name)
+        
+    def _on_metadata_changed(self, download_id):
+        reply = self.active_downloads.get(download_id)
+        if not reply or download_id in self.download_files:
+            return
+            
+        # Determine filename from Content-Disposition or fallback
+        filename = self.download_meta[download_id]["filename"]
+        try:
+            content_disp = reply.header(QNetworkRequest.KnownHeaders.ContentDispositionHeader)
+            if content_disp:
+                import re
+                match = re.search(r'filename="?([^";]+)"?', content_disp)
+                if match:
+                    filename = match.group(1)
+        except Exception as e:
+            print(f"Error parsing headers: {e}")
+        
+        file_path = os.path.join(self.download_path, filename)
+        
+        file = QFile(file_path)
+        if file.open(QIODevice.OpenModeFlag.WriteOnly):
+            self.download_files[download_id] = file
+        else:
+            print(f"Failed to open file: {filename}")
+            # Will fail in readyRead or finished
+
+    def _on_ready_read(self, download_id):
+        reply = self.active_downloads.get(download_id)
+        
+        # Ensure file exists (lazy open fallback if metadata didn't fire/work)
+        if download_id not in self.download_files:
+            self._on_metadata_changed(download_id)
+            
+        file = self.download_files.get(download_id)
+        if reply and file:
+            data = reply.readAll()
+            file.write(data)
+            
+    def _on_progress(self, download_id, received, total):
+        import time
+        current_time = time.time()
+        
+        # Update internal map (always keep data fresh)
+        if total > 0:
+            self.progress_map[download_id] = (received, total)
+        
+        # Initialize tracking 
+        if not hasattr(self, 'last_progress_updates'):
+            self.last_progress_updates = {}
+            
+        last_time = self.last_progress_updates.get(download_id, 0)
+        
+        # Throttle to ~10fps (100ms) or if complete
+        # We update BOTH the individual signal AND the total signal here to save CPU
+        if (current_time - last_time >= 0.1) or (received == total and total > 0):
+            self.progress_updated.emit(download_id, received, total)
+            self.last_progress_updates[download_id] = current_time
+            
+            # Calculate and emit total progress (throttled)
+            total_received = sum(r for r, t in self.progress_map.values())
+            total_expected = sum(t for r, t in self.progress_map.values())
+            
+            if total_expected > 0:
+                global_progress = total_received / total_expected
+                self.total_progress_updated.emit(global_progress)
+        
+    def _on_finished(self, download_id):
+        reply = self.active_downloads.pop(download_id, None)
+        file = self.download_files.pop(download_id, None)
+        meta = self.download_meta.pop(download_id, None)
+        
+        # Remove from progress tracking
+        self.progress_map.pop(download_id, None)
+        
+        # Determine if we should reset progress
+        if not self.active_downloads and not self.download_queue:
+            self.total_progress_updated.emit(-1.0)
+        elif self.active_downloads:
+             # Recalculate remaining
+            total_received = sum(r for r, t in self.progress_map.values())
+            total_expected = sum(t for r, t in self.progress_map.values())
+            if total_expected > 0:
+                self.total_progress_updated.emit(total_received / total_expected)
+        
+        if file:
+            file.close()
+            filename = file.fileName()
+            
+        if reply:
+            err = reply.error()
+            if err == QNetworkReply.NetworkError.NoError:
+                # Success - Start Post Processing
+                if meta:
+                   self._process_install(meta, filename)
+                else: 
+                   self.download_finished.emit(download_id, True, "Download Complete")
+            else:
+                # Failure or Cancelled - Cleanup partial file
+                if file and os.path.exists(filename):
+                    try:
+                        os.remove(filename)
+                        print(f"Removed partial file: {filename}")
+                    except Exception as e:
+                        print(f"Failed to remove partial file: {e}")
+                        
+                self.download_finished.emit(download_id, False, reply.errorString())
+            reply.deleteLater()
+            
+        # Process next
+        self.process_queue()
+        
+    def _process_install(self, meta: dict, downloaded_path: str):
+        """Use ModInstaller to install the downloaded file"""
+        # Emit install started signal
+        self.install_started.emit(meta["id"])
+        
+        mod_root = self.config_manager.config.root_dir
+        if not mod_root or not os.path.exists(mod_root):
+             self.download_finished.emit(meta["id"], False, "Mod root directory not configured")
+             return
+
+        # Create Installer
+        installer = ModInstaller(
+            directory=downloaded_path,
+            root_dir=mod_root,
+            on_finish=None
+        )
+        
+        # Connect signals passing metadata closure
+        installer.install_finished.connect(
+            lambda paths: self._on_installer_finished(installer, paths, meta, downloaded_path)
+        )
+        
+        # Keep reference and start
+        self.active_installers.append(installer)
+        installer.start()
+        
+    def _on_installer_finished(self, installer, new_paths, meta, downloaded_path):
+        """Callback when ModInstaller finishes"""
+        if installer in self.active_installers:
+            self.active_installers.remove(installer)
+            
+        if not new_paths:
+            if not downloaded_path.lower().endswith(('.zip', '.7z', '.rar')):
+                 self._manual_install_fallback(meta, downloaded_path)
+                 return
+
+            # Installation failed - no mod root found
+            error_msg = "Installation failed: No valid mod structure found in archive"
+            self.install_failed.emit(meta["id"], error_msg)
+            self.download_finished.emit(meta["id"], False, error_msg)
+            
+            # Cleanup downloaded file
+            if os.path.exists(downloaded_path):
+                try:
+                    os.remove(downloaded_path)
+                except Exception as e:
+                    print(f"Failed to remove downloaded file: {e}")
+            return
+
+        # Process paths (usually just one)
+        try:
+            for path in new_paths:
+                final_path = self._write_metadata(path, meta)
+                self.install_finished.emit(final_path)
+
+            # Cleanup downloaded file
+            if os.path.exists(downloaded_path):
+                try:
+                    os.remove(downloaded_path)
+                    print(f"Removed downloaded file: {downloaded_path}")
+                except Exception as e:
+                    print(f"Failed to remove downloaded file: {e}")
+                
+            self.download_finished.emit(meta["id"], True, "Installation Complete")
+        except Exception as e:
+            error_msg = f"Installation error: {str(e)}"
+            print(f"Installation failed: {e}")
+            self.install_failed.emit(meta["id"], error_msg)
+            self.download_finished.emit(meta["id"], False, error_msg)
+            
+            # Cleanup on error
+            if os.path.exists(downloaded_path):
+                try:
+                    os.remove(downloaded_path)
+                except Exception as cleanup_err:
+                    print(f"Failed to remove downloaded file during error cleanup: {cleanup_err}")
+
+    def _manual_install_fallback(self, meta, downloaded_path):
+        """Fallback for loose files not handled by ModInstaller"""
+        try:
+            mod_root = self.config_manager.config.root_dir
+            folder_name = "".join([c for c in meta["mod_name"] if c.isalpha() or c.isdigit() or c in (' ', '.', '_', '-')]).rstrip()
+            target_dir = os.path.join(mod_root, folder_name)
+            
+            if not os.path.exists(target_dir):
+                os.makedirs(target_dir)
+                
+            filename = meta["filename"]
+            target_path = os.path.join(target_dir, filename)
+            
+            if os.path.exists(target_path):
+                os.remove(target_path)
+            
+            if os.path.exists(downloaded_path):
+                shutil.move(downloaded_path, target_path)
+                
+            final_path = self._write_metadata(target_dir, meta)
+            self.install_finished.emit(final_path)
+            self.download_finished.emit(meta["id"], True, "Installation Complete")
+            
+        except Exception as e:
+            error_msg = f"Manual installation error: {str(e)}"
+            print(f"Manual fallback error: {e}")
+            self.install_failed.emit(meta["id"], error_msg)
+            self.download_finished.emit(meta["id"], False, error_msg)
+            
+            # Cleanup downloaded file on error
+            if os.path.exists(downloaded_path):
+                try:
+                    os.remove(downloaded_path)
+                except Exception as cleanup_err:
+                    print(f"Failed to remove downloaded file during error cleanup: {cleanup_err}")
+
+    def _write_metadata(self, target_dir: str, meta: dict) -> str:
+        """Generate info.toml and download thumbnail. Returns final directory path."""
+        try:
+            mod_data = meta.get("mod_data")
+            if not mod_data:
+                return target_dir
+            
+            # Step 1: Scan the mod directory to detect characters, slots, etc.
+            mod = Mod()
+            mod.path = target_dir
+            mod.display_name = mod_data.get("mod_name", "")
+            mod.mod_name = mod_data.get("mod_name", "")
+            mod.folder_name = os.path.basename(target_dir)
+            
+            # Perform Local Scan
+            mod = scan_mod(mod)
+            
+            # --- START FORMATTING LOGIC ---
+            # Extract Components
+            char_keys = mod.get_character_keys()
+            slots_list = mod.get_character_slots()
+            category_str = str(mod.category.value)
+            
+            # Format Components
+            name_rules = self.config_manager.config.name_rules
+            
+            slots_str_display = format_slots(slots_list, name_rules.cap_slots_display)
+            slots_str_folder = format_slots(slots_list, name_rules.cap_slots_folder)
+            
+            # Convert keys to custom names for proper grouping/display
+            char_names = []
+            for key in char_keys:
+                try:
+                    name = DataManager.get_character_names(Fighter(key))
+                    if name:
+                        char_names.append(name)
+                    else:
+                        char_names.append(key)
+                except:
+                    char_names.append(key)
+
+            chars_str_display = format_character_names_for_display(char_names)
+            chars_str_folder = format_character_names_for_folder(char_names)
+            
+            # Clean Mod Name (Remove redundant chars/slots from title)
+            # Use name from meta which was processed in start_download
+            online_name = meta.get("mod_name", mod_data.get("mod_name", ""))
+            
+            mod.mod_name = online_name
+            
+            # Generate Final Names
+            final_display_name = format_display_name(chars_str_display, slots_str_display, online_name, category_str)
+            final_folder_name = format_folder_name(chars_str_folder, slots_str_folder, online_name, category_str)
+            
+            mod.display_name = final_display_name
+            mod.folder_name = final_folder_name
+            
+            # Rename Folder on Disk
+            parent_dir = os.path.dirname(target_dir)
+            new_target_dir = os.path.join(parent_dir, final_folder_name)
+            
+            if new_target_dir != target_dir:
+                try:
+                    # Handle collision
+                    counter = 1
+                    base_new_dir = new_target_dir
+                    while os.path.exists(new_target_dir):
+                         new_target_dir = f"{base_new_dir}_{counter}"
+                         counter += 1
+                         
+                    os.rename(target_dir, new_target_dir)
+                    target_dir = new_target_dir
+                    mod.path = target_dir
+                    mod.folder_name = os.path.basename(target_dir) # Update in case of counter
+                except Exception as e:
+                    print(f"Failed to rename folder: {e}")
+            
+            # --- END FORMATTING LOGIC ---
+            
+            # Load existing info.toml to check for description and other fields
+            existing_desc = ""
+            existing_authors = ""
+            existing_version = ""
+            existing_category = ""
+
+            existing_data = load_toml(mod.path)
+            if existing_data:
+                existing_desc = existing_data.get("description", "")
+                existing_authors = existing_data.get("authors", "")
+                existing_version = existing_data.get("version", "")
+                existing_category = existing_data.get("category", "")
+
+            # Step 2: Overlay Online Metadata
+            
+            # Description
+            if existing_desc:
+                mod.description = existing_desc
+                print(f"Preserving existing description for {mod.mod_name}")
+            else:
+                mod.description = mod_data.get("description", "")
+            
+            # Authors
+            if existing_authors:
+                mod.authors = existing_authors
+            else:
+                mod.authors = mod_data.get("authors", "")
+
+            # Wifi Safe
+            is_wifi_safe = mod_data.get("is_wifi_safe", False)
+            if is_wifi_safe:
+                mod.wifi_safe = Wifi.SAFE
+            else:
+                mod.wifi_safe = Wifi.UNCERTAIN
+            
+            # Additional Elements
+            if mod_data.get("is_moveset", False):
+                mod.add_to_included(Element.MOVESET)
+            
+            if mod_data.get("is_final_smash", False):
+                mod.add_to_included(Element.FINAL_SMASH)
+
+            # Version
+            if existing_version:
+                mod.version = clean_version(existing_version)
+            else:
+                raw_ver = mod_data.get("version", "1.0.0")
+                if not raw_ver or raw_ver == "0":
+                    raw_ver = "1.0.0"
+                mod.version = clean_version(raw_ver)
+
+            mod.url = f"https://gamebanana.com/mods/{meta.get('mod_id_str')}"
+            
+            # Use original URL if available in data
+            if "url" in mod_data and mod_data["url"]:
+                 mod.url = mod_data["url"]
+            
+            # Step 3: Write merged data to info.toml
+            toml_data = mod.to_dict()
+            dump_toml(target_dir, toml_data)
+            
+            # Step 4: Handle Thumbnail
+            # Check for preview_links if thumbnail key is missing
+            thumb_url = mod_data.get("thumbnail")
+            if not thumb_url:
+                previews = mod_data.get("preview_links", [])
+                if previews and len(previews) > 0:
+                    thumb_url = previews[0]
+            
+            if thumb_url:
+                preview_path = os.path.join(target_dir, "preview.webp")
+                if not os.path.exists(preview_path):
+                    self._download_thumbnail(thumb_url, target_dir)
+            
+            return target_dir # Return the final (potentially renamed) path
+
+        except Exception as e:
+            print(f"Metadata write error: {e}")
+            return target_dir # Return original path on error call logic continues
+
+    def _download_thumbnail(self, url: str, target_dir: str):
+        req = QNetworkRequest(QUrl(url))
+        reply = self.manager.get(req)
+        reply.finished.connect(lambda: self._save_thumbnail(reply, target_dir))
+        
+    def _save_thumbnail(self, reply, target_dir):
+        if reply.error() == QNetworkReply.NetworkError.NoError:
+            data = reply.readAll()
+            path = os.path.join(target_dir, "preview.webp")
+            f = QFile(path)
+            if f.open(QIODevice.OpenModeFlag.WriteOnly):
+                f.write(data)
+                f.close()
+            
+            # Emit signal that thumbnail is ready
+            self.thumbnail_updated.emit(target_dir)
+
+        reply.deleteLater()
+            
+    def cancel_download(self, download_id):
+        # Check active downloads
+        reply = self.active_downloads.get(download_id)
+        if reply:
+            reply.abort()
+            return
+
+        found = False
+        temp_queue = deque()
+        while self.download_queue:
+            task = self.download_queue.popleft()
+            if task["id"] == download_id:
+                found = True
+            else:
+                temp_queue.append(task)
+        
+        self.download_queue = temp_queue
+        
+        if found:
+            self.download_finished.emit(download_id, False, "Cancelled")

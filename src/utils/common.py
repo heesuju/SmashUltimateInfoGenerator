@@ -34,7 +34,7 @@ def get_parent_dir(directory:str)->str:
     """
     get the parent directory
     """
-    return Path(directory).parent
+    return str(Path(directory).parent)
 
 def sanitize_path(directory:str)->str:
     """

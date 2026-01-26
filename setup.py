@@ -1,18 +1,30 @@
+import sys
+import os
 from cx_Freeze import setup, Executable
 
-# Dependencies are automatically detected, but they might need fine-tuning.
 build_exe_options = {
-    "packages": ["tkinter", "tkinterdnd2", "webdriver_manager", "selenium"],
-    "includes": ["tkinterdnd2", "webdriver_manager", "selenium"],    
-    "include_files": ["assets", "data", "src"],
-    "zip_include_packages": ["tomli_w", "Pillow", "requests", "beautifulsoup4", "tomli", "pyunpack", "patool"],
+    "packages": ["os", "sys", "json", "requests", "PIL", "tomli", "qdarktheme", 
+        "pyglet", "py7zr", "rarfile", "pydantic", "PyQt6", "PyQt6.QtMultimedia", 
+        "PyQt6.QtSvg", "certifi", "ssl", "urllib3", "idna", "charset_normalizer"
+    ],
+    "excludes": [],
+    "include_files": [
+        ("assets", "assets"),
+        ("data/character_data.csv", "data/character_data.csv"),
+        ("data/stage_data.csv", "data/stage_data.csv"),
+        ("data/item_names.csv", "data/item_names.csv"),
+        ("LICENSE", "LICENSE"),
+    ]
 }
 
-# change base to console to show console logs
+base = None
+if sys.platform == "win32":
+   base = "Win32GUI"
+
 setup(
-    name="Info Toml Generator",
-    version="1.8.3",
-    description="Info.toml Generator for ARCropolis",
+    name="SmashUltimateInfoGenerator",
+    version="2.0.0",
+    description="Smash Ultimate Info Generator",
     options={"build_exe": build_exe_options},
-    executables=[Executable("main.py", base="Win32GUI")],
+    executables=[Executable("main.py", base=base, icon="assets/icons/app_icon.ico")]
 )

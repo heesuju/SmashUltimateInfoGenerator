@@ -11,23 +11,16 @@ from src.utils.file import (
 )
 from src.utils.csv_helper import csv_to_dict
 from src.utils.string_helper import str_to_int
-from src.models.mod import Mod
-from src.models.character import Character
-from src.constants.elements import *
-from src.constants.categories import *
+from src.models.mod import Mod, Character
+from src.constants.enums import Category, Element, Fighter, Stage, StageSlot
 from .formatting import (
     format_slots,
     get_mod_name,
     format_character_names,
     group_char_name
 )
-from data import PATH_CHAR_NAMES
 
-def get_character(code:str, character_data:dict)->dict:
-    for data in character_data:
-        if code == data['Key']:
-            return data
-    return None
+from src.managers.data_manager import DataManager
 
 def scan_character(mod:Mod)->Mod:
     def get_slots_as_number(slots:list[str])->list[int]:
@@ -39,8 +32,7 @@ def scan_character(mod:Mod)->Mod:
 
         numbers.sort()
         return numbers
-
-    character_dict = csv_to_dict(PATH_CHAR_NAMES)
+    
     fighter_dir = os.path.join(mod.path, "fighter")
     effect_dir = os.path.join(mod.path, "effect", "fighter")
     skin_fighters = get_children(fighter_dir)
@@ -52,10 +44,8 @@ def scan_character(mod:Mod)->Mod:
     names = list(set(skin_fighters + eff_fighters))
     
     for name in names:
-        dict = get_character(name, character_dict)
-        if dict is None:
-            break
-        character = Character(**dict)
+        fighter = Fighter(name)
+        character = Character(fighter=fighter, slots=[])
 
         if name in skin_fighters:
             path = os.path.join(fighter_dir, name)
@@ -81,7 +71,7 @@ def scan_character(mod:Mod)->Mod:
                         if slot not in character.slots:
                             character.slots.append(slot)   
                 if found_model == False:
-                    mod.add_to_included(RECOLOR)
+                    mod.add_to_included(Element.RECOLOR)
 
         if name in eff_fighters:
             path = os.path.join(effect_dir, name)
@@ -104,14 +94,14 @@ def scan_fighter(mod:Mod)->Mod:
         return mod
 
     if search_dir_by_keyword(root_dir, "model"):
-        if RECOLOR not in mod.includes:
-            mod.add_to_included(SKIN)
+        if Element.RECOLOR not in mod.includes:
+            mod.add_to_included(Element.SKIN)
 
     if search_dir_by_keyword(root_dir, "motion"):
-        mod.add_to_included(MOTION)
+        mod.add_to_included(Element.MOTION)
 
     if "kirby" in mod.display_name == False and search_dir_by_keyword(root_dir, "kirby"):
-        mod.add_to_included(KIRBY_HAT)       
+        mod.add_to_included(Element.KIRBY_HAT)       
 
     return mod
 
@@ -123,21 +113,51 @@ def scan_effect(mod:Mod)->Mod:
 
     for file in get_children_by_extension(root_dir, ".eff"):
         if search_files_for_pattern(file, r"c\d+"):
-            mod.add_to_included(ONE_SLOT_EFFECT)
+            mod.add_to_included(Element.ONE_EFFECT)
         else:
-            mod.add_to_included(ALL_SLOT_EFFECT)
+            mod.add_to_included(Element.ALL_EFFECT)
         break
     
-    if ALL_SLOT_EFFECT not in mod.includes and ONE_SLOT_EFFECT not in mod.includes:
-        mod.add_to_included(ALL_SLOT_EFFECT)    
+    if Element.ALL_EFFECT not in mod.includes and Element.ONE_EFFECT not in mod.includes:
+        mod.add_to_included(Element.ALL_EFFECT)    
 
     return mod
 
+
+from src.models.mod import StageModel
+
 def scan_stage(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "stage")
+    mod.stages = [] # Initialize list
 
     if is_valid_dir(root_dir):  
-        mod.add_to_included(STAGE)
+        mod.add_to_included(Element.STAGE)
+        
+        stages = get_children(root_dir)
+        for stage_folder_name in stages:
+            try:
+                # Try to match folder name to Stage enum (case-insensitive)
+                stage_enum = Stage(stage_folder_name.lower())
+                
+                stage_path = os.path.join(root_dir, stage_folder_name)
+                slots = []
+                
+                # Check for "normal" and "battle" subfolders
+                normal_path = os.path.join(stage_path, "normal")
+                battle_path = os.path.join(stage_path, "battle")
+                
+                if is_valid_dir(normal_path):
+                    slots.append(StageSlot.NORMAL)
+                
+                if is_valid_dir(battle_path):
+                    slots.append(StageSlot.BATTLE)
+                
+                if slots:
+                    mod.stages.append(StageModel(stage=stage_enum, slots=slots))
+                    
+            except ValueError:
+                # Folder name does not match any Stage enum value
+                continue
     
     return mod
 
@@ -145,7 +165,7 @@ def scan_item(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "item")
 
     if is_valid_dir(root_dir):  
-        mod.add_to_included(ITEM)
+        mod.add_to_included(Element.ITEM)
 
     return mod
 
@@ -154,13 +174,13 @@ def scan_sound(mod:Mod)->Mod:
 
     if is_valid_dir(root_dir):  
         if search_dir_by_keyword(root_dir, "fighter_voice"):
-            mod.add_to_included(VOICE)
+            mod.add_to_included(Element.VOICE)
 
         if search_dir_by_keyword(root_dir, "fighter"):
-            mod.add_to_included(SOUND)
+            mod.add_to_included(Element.SOUND)
         
         if search_dir_by_keyword(root_dir, "narration"):
-            mod.add_to_included(NARRATOR)
+            mod.add_to_included(Element.NARRATOR)
 
     return mod
 
@@ -168,7 +188,7 @@ def scan_stream(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "stream")
 
     if is_valid_dir(root_dir):  
-        mod.add_to_included(VICTORY_THEME)
+        mod.add_to_included(Element.V_THEME)
 
     return mod
 
@@ -176,7 +196,7 @@ def scan_camera(mod:Mod)->Mod:
     root_dir = os.path.join(mod.path, "camera")
 
     if is_valid_dir(root_dir):
-        mod.add_to_included(VICTORY_ANIMATION)
+        mod.add_to_included(Element.V_ANIMATION)
         
     return mod
 
@@ -190,12 +210,12 @@ def scan_ui(mod:Mod)->Mod:
             single_name = get_children_by_extension(message_dir, ".xmsbt")
 
             if len(custom_name) > 0:
-                mod.add_to_included(ALL_SLOT_NAME)
+                mod.add_to_included(Element.ALL_NAME)
             elif len(single_name) > 0:
-                mod.add_to_included(ONE_SLOT_NAME)
+                mod.add_to_included(Element.ONE_NAME)
             
         if search_dir_by_keyword(root_dir, "replace") or search_dir_by_keyword(root_dir, "replace_patch"):
-            mod.add_to_included(UI)
+            mod.add_to_included(Element.UI)
         
     return mod
 
@@ -206,34 +226,54 @@ def scan_thumbnail(mod:Mod)->Mod:
     
     return mod
 
+def scan_flags(mod:Mod)->Mod:
+    root_dir = os.path.join(mod.path, "flags")
+
+    if is_valid_dir(root_dir):
+        mod.add_to_included(Element.FLAGS)
+    
+    return mod
+
+def scan_plugin(mod:Mod)->Mod:
+    plugin_path = os.path.join(mod.path, "plugin.nro")
+
+    if is_valid_file(plugin_path):
+        mod.add_to_included(Element.PLUGIN)
+    
+    return mod
+
 def scan_mod(mod:Mod)->Mod:
     """
     Scans mod directory and auto-fills information
     """
     def get_category(mod:Mod)->str:
-        if SKIN in mod.includes or MOTION in mod.includes or RECOLOR in mod.includes:
-            return CATEGORY_FIGHTER
-        elif STAGE in mod.includes:
-            return CATEGORY_STAGE
-        elif ONE_SLOT_EFFECT in mod.includes or ALL_SLOT_EFFECT in mod.includes:
-            return CATEGORY_EFFECTS
-        elif VOICE in mod.includes or SOUND in mod.includes or NARRATOR in mod.includes:
-            return CATEGORY_AUDIO
-        elif UI in mod.includes:
-            return CATEGORY_UI
+        if Element.SKIN in mod.includes or Element.MOTION in mod.includes or Element.RECOLOR in mod.includes:
+            return Category.FIGHTER
+        elif Element.STAGE in mod.includes:
+            return Category.STAGE
+        elif Element.ONE_EFFECT in mod.includes or Element.ALL_EFFECT in mod.includes:
+            return Category.EFFECTS
+        elif Element.VOICE in mod.includes or Element.SOUND in mod.includes or Element.NARRATOR in mod.includes:
+            return Category.AUDIO
+        elif Element.UI in mod.includes:
+            return Category.UI
+        elif Element.FLAGS in mod.includes:
+            return Category.PARAM
+        elif len(mod.characters) > 0:
+            return Category.FIGHTER
         else:
-            return CATEGORY_MISC
+            return Category.MISC
         
     def check_includes(includes:list[str])->list[str]:
         output_arr = includes
-        if SKIN in output_arr and RECOLOR in output_arr:
-            output_arr.remove(SKIN)
-        if ALL_SLOT_EFFECT in output_arr and ONE_SLOT_EFFECT in output_arr:
-            output_arr.remove(ONE_SLOT_EFFECT)
-        if ALL_SLOT_NAME in output_arr and ONE_SLOT_NAME in output_arr:
-            output_arr.remove(ONE_SLOT_NAME)
+        if Element.SKIN in output_arr and Element.RECOLOR in output_arr:
+            output_arr.remove(Element.SKIN)
+        if Element.ALL_EFFECT in output_arr and Element.ONE_EFFECT in output_arr:
+            output_arr.remove(Element.ONE_EFFECT)
+        if Element.ALL_NAME in output_arr and Element.ONE_NAME in output_arr:
+            output_arr.remove(Element.ONE_NAME)
         return output_arr
-
+    
     mod.characters = []
     mod = scan_character(mod)
     mod = scan_fighter(mod)
@@ -245,17 +285,22 @@ def scan_mod(mod:Mod)->Mod:
     mod = scan_camera(mod)
     mod = scan_ui(mod)
     mod = scan_thumbnail(mod)
+    mod = scan_flags(mod)
+    mod = scan_plugin(mod)
+    
     mod.category = get_category(mod)
+    
     mod.includes = check_includes(mod.includes)
 
-    keys, names, groups, series, slots = mod.get_character_data()
+    keys = mod.get_character_keys()
+    slots = mod.get_character_slots()
 
     if not mod.mod_name:
         mod.mod_name = get_mod_name(
             mod.display_name,
             keys,
             slots,
-            mod.category
+            str(mod.category)
         )
 
     return mod

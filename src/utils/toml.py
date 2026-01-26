@@ -5,7 +5,7 @@ toml.py: Contains various methods for reading and writing TOML file format
 import os
 import tomli
 import tomli_w
-from .common import is_valid_file
+from src.utils.common import is_valid_file
 
 INFO_TOML = "info.toml"
 

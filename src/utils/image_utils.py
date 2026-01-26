@@ -15,6 +15,28 @@ def add_text_to_image(pixmap: QPixmap, text:str, padding:tuple[int, int, int, in
     painter.end()
     return pixmap
 
+def tint_pixmap(pixmap: QPixmap, color: QColor) -> QPixmap:
+    """Recursively tints a pixmap with a specific color."""
+    if pixmap.isNull():
+        return pixmap
+        
+    # Create a new pixmap to draw on
+    tinted = QPixmap(pixmap.size())
+    tinted.fill(Qt.GlobalColor.transparent)
+    
+    painter = QPainter(tinted)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    
+    # Draw original pixmap
+    painter.drawPixmap(0, 0, pixmap)
+    
+    # Tint it
+    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+    painter.fillRect(tinted.rect(), color)
+    painter.end()
+    
+    return tinted
+
 def create_image_overlay(base_pixmap: QPixmap, alpha_pixmap: QPixmap) -> QPixmap:
     # Convert both QPixmaps to QImages
     base_image = base_pixmap.toImage().convertToFormat(QImage.Format.Format_ARGB32)

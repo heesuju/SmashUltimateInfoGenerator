@@ -4,7 +4,7 @@ Module that contains various methods to format strings used in this application
 
 import re
 from src.core.data import load_config, get_folder_name_format, get_display_name_format
-from src.utils.csv_helper import csv_to_dict, csv_to_key_value
+from src.utils.csv_helper import csv_to_dict, get_columns_by_key
 from src.utils.string_helper import (
     remove_texts,
     remove_special_chars,
@@ -17,7 +17,7 @@ from src.utils.string_helper import (
     BLACKLIST_CHARS
 )
 
-from data import PATH_CHAR_NAMES
+from src.managers.data_manager import DataManager
 
 def format_folder_name(characters:str, slots:str, mod_name:str, category:str):
     format = get_folder_name_format()
@@ -35,10 +35,53 @@ def format_display_name(characters:str, slots:str, mod_name:str, category:str):
     display_name = display_name.replace("{category}", category)
     return clean_display_name(display_name)
 
-def format_character_names(characters:list[str]):
-    return ", ".join(sorted(characters))
+def get_grouped_names(character_names: list[str]) -> list[str]:
+    """
+    Consolidates character names into their group name if all members of the group are present.
+    """
+    if not character_names:
+        return []
 
-def format_slots(slots:list[int]):
+    input_keys = set()
+    key_to_display = {} 
+    
+    for name in character_names:
+        key = DataManager.get_character_by_custom(name)
+        if key:
+            input_keys.add(key)
+            key_to_display[key] = name
+        else:
+            pass
+
+    groups_to_check = set()
+    char_data = DataManager.get_character_by_key()
+    
+    for key in input_keys:
+        if key in char_data:
+            group = char_data[key][2]
+            if group:
+                groups_to_check.add(group)
+
+    final_names = []
+    processed_keys = set()
+
+    for group in groups_to_check:
+        group_members = set()
+        for k, v in char_data.items():
+            if v[2] == group:
+                group_members.add(k)
+        
+        if group_members.issubset(input_keys):
+            final_names.append(group)
+            processed_keys.update(group_members)
+
+    for key in input_keys:
+        if key not in processed_keys:
+            final_names.append(key_to_display[key])
+            
+    return sorted(final_names)
+
+def format_slots(slots:list[int], is_cap:bool=True):
     if len(slots) <= 0:
         return ""
     
@@ -68,18 +111,45 @@ def format_slots(slots:list[int]):
             out_str += "," + item
     
     slot_prefix = "C"
-    loaded_config = load_config()
-    is_cap = loaded_config.is_slot_capped
+    
     if is_cap == False:
         slot_prefix = "c"
         
     return slot_prefix + out_str
 
+def format_stage_slots(slots:list[str]):
+    if not slots:
+        return ""
+    
+    formatted = [s[0].upper() for s in slots if s]
+    formatted.sort()
+    
+    return ", ".join(formatted)
+
+def format_stage_slots_for_folder(slots:list[str]):
+    if not slots:
+        return ""
+    
+    formatted = [s[0].upper() for s in slots if s]
+    formatted.sort()
+    return "".join(formatted)
+
+def format_stage_names_for_display(stage_names:list[str]):
+    if not stage_names:
+        return ""
+    return ", ".join(sorted(stage_names))
+
+def format_stage_names_for_folder(stage_names:list[str]):
+    if not stage_names:
+        return ""
+    formatted = [name.replace(" ", "") for name in stage_names]
+    return "".join(sorted(formatted))
+
 def remove_characters(text:str, characters:list[str]):
     text = text.replace("&", " ")
     arr_to_remove = []
     set_char = set()
-    char_dict = csv_to_key_value(PATH_CHAR_NAMES)
+    char_dict = DataManager.get_character_by_key()
     
     for key in characters:
         set_char.add(key)
@@ -146,9 +216,32 @@ def group_char_name(char_names, group_names):
         else: outstr += names
             
     return outstr
+    
+def format_character_names_for_display(characters:list[str]):
+    """
+    Formats character names for display (comma separated, groups consolidated)
+    """
+    grouped = get_grouped_names(characters)
+    return ", ".join(grouped)
+
+def format_character_names_for_folder(characters:list[str]):
+    """
+    Formats character names for folder (CamelCase, no spaces/commas, groups consolidated)
+    """
+    grouped = get_grouped_names(characters)
+    # Remove spaces from each name and join them
+    cleaned = [name.replace(" ", "") for name in grouped]
+    return "".join(cleaned)
+
+def format_character_names(characters:list[str]):
+    """
+    Legacy method kept for compatibility, uses display format
+    """
+    return format_character_names_for_display(characters)
+
 
 def get_group_count(group_name):
-    dict_arr = csv_to_dict(PATH_CHAR_NAMES) 
+    dict_arr = DataManager.get_character_data()
     count = 0
 
     for dict in dict_arr:
@@ -183,6 +276,10 @@ def get_mod_name(display_name:str, character_keys:list, slots:list, category:str
     name = remove_paranthesis(name)
     if len(name) > 4:
         name = add_spaces_to_camel_case(name)
+    
+    if not name or len(name.strip()) == 0:
+        return display_name
+        
     return name
 
 def trim_mod_name(mod_name, ignored_list):
@@ -236,21 +333,41 @@ def clean_version(version:str)->str:
     """
     Returns formatted version(e.g. v1.0 -> 1.0.0)
     """
-    parts = version.split('.')
-    if len(parts) <= 0:
+    if not version:
         return "1.0.0"
 
+    # Remove 'v' prefix if present
+    if version.lower().startswith('v'):
+        version = version[1:]
+
+    parts = version.split('.')
     numeric_parts = []
-    for part in parts :
-        if part:
-            numbers = filter(str.isdigit, part)
-            numeric_parts.append(''.join(numbers))
-
-    diff = 3 - len(numeric_parts)
-    for n in range(diff):
+    
+    for part in parts:
+        if not part:
+            continue
+        # Extract digits
+        digits = ''.join(filter(str.isdigit, part))
+        if digits:
+            # removing zero padding by converting to int
+            numeric_parts.append(str(int(digits)))
+    
+    # If no valid parts found, return default
+    if not numeric_parts:
+        return "1.0.0"
+        
+    # Ensure exactly 3 parts
+    while len(numeric_parts) < 3:
         numeric_parts.append('0')
-
+    
+    # Truncate to 3 parts
+    numeric_parts = numeric_parts[:3]
+    
     formatted_version = '.'.join(numeric_parts)
+    
+    if formatted_version == "0.0.0":
+        return "1.0.0"
+
     return formatted_version
 
 def clean_description(description:str)->str:

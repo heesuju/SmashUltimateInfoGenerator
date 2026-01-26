@@ -5,106 +5,135 @@ included elements
 
 import os
 import copy
-from threading import Thread
-import concurrent.futures
-from typing import Union
+from PyQt6.QtCore import QObject, pyqtSignal, QRunnable, QThreadPool
+from concurrent.futures import ThreadPoolExecutor
+from typing import Union, List
 from src.utils.file import is_valid_dir, get_base_name
 from src.utils.toml import load_toml
 from src.utils.hash import get_hash
 from src.models.mod import Mod
 from .scanner import scan_mod
+from src.utils.logger import output_log
+from src.managers.cache_manager import CacheManager
 
-class ModLoader(Thread):
-    """
-    Mod Loader Class loads mod(s) in multi-thread
-    Mod directories will be scanned for info.tomls and other info
-    such as skins, which slots they use, and other elements.
-    """
-    def __init__(
-        self,
-        directory:Union[str, list],
-        on_finish:callable,
-        on_start:callable = None,
-        on_progress:callable = None
-    ):
+# Worker Signals
+class ModWorkerSignals(QObject):
+    finished = pyqtSignal(Mod)  # Emit each mod when done
+    error = pyqtSignal(str)     # Emit error messages if needed
+
+# Worker Runnable
+class ModWorker(QRunnable):
+    def __init__(self, mod_name:str, mod_path:str, cache_manager:CacheManager):
         super().__init__()
-        self.directory = directory
-        self.on_start = on_start
-        self.on_progress = on_progress
-        self.on_finish = on_finish
-        self.daemon = True
-        self.start()
-
-    def find_mod(self, name:str, path:str)->Mod:
-        """
-        Finds the mod in the designated path
-        Args:
-            name: the name of the mod
-            path: the directory where the mod is located in
-        Returns the scanned mod
-        """
-        if not is_valid_dir(path):
-            return None
-
-        mod = Mod()
-        mod.folder_name = name
-        mod.display_name = name
-        mod.category = "Misc"
-        mod.wifi_safe = "Uncertain"
-        mod.path = path
-        mod.hash = get_hash(name)
-
-        data = load_toml(path)
-        if data is not None:
-            mod.update(**data)
-            mod.contains_info = True
-
-        mod = scan_mod(mod)
-
-        return mod
-
-    def find_mods(self, directory:Union[str, list[str]])->None:
-        """
-        Scans multiple mod directories in multiple threads to save time
-        Args: 
-            directory (str or list): the directory(-ies) containing mods that needs to be scanned
-
-        Returns None since scanned mods will be sent through a callback function
-        """
-        mods = []
-
-        if self.on_start is not None:
-            self.on_start(len(os.listdir(directory)))
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = []
-            if isinstance(directory, str):
-                for folder_name in os.listdir(directory):
-                    futures.append(executor.submit(
-                            self.find_mod,
-                            folder_name,
-                            os.path.join(directory, folder_name)
-                        )
-                    )
-            elif isinstance(directory, list):
-                futures = [executor.submit(self.find_mod, get_base_name(d), d) for d in directory]
-            if self.on_progress is not None:
-                for future in futures:
-                    future.add_done_callback(self.on_progress)
-            for future in concurrent.futures.as_completed(futures):
-                mod = future.result()
-                if mod is not None:
-                    mods.append(mod)
-
-        self.on_finish(mods)
+        self.mod_name = mod_name
+        self.mod_path = mod_path
+        self.cache_manager = cache_manager
+        self.signals = ModWorkerSignals()
 
     def run(self):
-        """
-        Runs the thread
-        """
+        try:
+            if not is_valid_dir(self.mod_path):
+                return
+
+            # Try to load from cache first
+            cached_data = self.cache_manager.get_cached_mod(self.mod_path)
+            
+            if cached_data is not None:
+                # Cache hit - load from cache
+                try:
+                    mod = Mod(**cached_data)
+                    mod.path = self.mod_path
+                    mod.hash = get_hash(self.mod_name)
+                    self.signals.finished.emit(mod)
+                    return
+                except Exception as e:
+                    output_log(f"Error loading from cache for {self.mod_name}: {e}")
+                    # Fall through to regular scan
+            
+            # Cache miss or invalid - perform full scan
+            data = load_toml(self.mod_path)
+            mod = Mod()
+            
+            if data is not None:
+                try:
+                    mod = Mod(**data)
+                    mod.contains_info = True
+                except Exception as e:
+                    output_log(f"Error loading mod info for {self.mod_name}: {e}")
+            
+            if not mod.display_name:
+                mod.display_name = self.mod_name
+            
+            mod.path = self.mod_path
+            mod.hash = get_hash(self.mod_name)
+            mod.folder_name = self.mod_name
+            
+            mod = scan_mod(mod)
+            
+            # Store in cache for next time
+            cache_data = mod.model_dump(exclude={'is_selected', 'path', 'hash'})
+            self.cache_manager.set_cached_mod(self.mod_path, cache_data)
+            
+            self.signals.finished.emit(mod)
+        except Exception as e:
+            self.signals.error.emit(f"Error loading mod {self.mod_name}: {e}")
+
+
+# ModLoader with ThreadPool
+class ModLoader(QObject):
+    all_finished = pyqtSignal()
+
+    def __init__(self, directory: Union[str, List[str]]):
+        super().__init__()
+        self.directory = directory
         if isinstance(self.directory, str):
-            if is_valid_dir(self.directory):
-                self.find_mods(self.directory)
-        elif isinstance(self.directory, list):
-            if False not in [is_valid_dir(d) for d in self.directory]:
-                self.find_mods(self.directory)
+            self.directory = [self.directory]
+        self.thread_pool = QThreadPool()
+        # Optimize for HDD: limit to 4 threads to reduce disk seek overhead
+        self.thread_pool.setMaxThreadCount(4)
+        self.cache_manager = CacheManager()
+        self.pending = len(self.directory) 
+        self.total = len(self.directory)
+        self.success = 0
+
+    def _worker_done(self, *_):
+        self.pending -= 1
+        self.success += 1
+        if self.pending == 0:
+            output_log("Scan complete: {0} mods found".format(self.success))
+            self.all_finished.emit()
+
+    def _worker_failed(self, error_msg=None):
+        self.pending -= 1
+        if error_msg:
+            output_log(f"Mod scan error: {error_msg}")
+            
+        if self.pending == 0:
+            output_log("Scan complete: {0} mods found".format(self.success))
+            self.all_finished.emit()
+
+    def load_mods(self, on_progress:callable, on_complete:callable=None):
+        """
+        Scans mods asynchronously and sends each scanned mod via callback
+        """
+        if on_complete:
+            self.all_finished.connect(on_complete)
+
+        if self.pending == 0:
+            self.all_finished.emit()
+            return
+
+        # Cleanup orphaned cache entries before scanning
+        self.cache_manager.cleanup()
+        
+        for mod_path in self.directory:
+            if not is_valid_dir(mod_path):
+                self._worker_failed(f"Invalid mod directory: {mod_path}")
+                continue
+
+            mod_name = get_base_name(mod_path)
+            worker = ModWorker(mod_name, mod_path, self.cache_manager)
+            worker.signals.finished.connect(on_progress)  # send each mod to UI
+            worker.signals.finished.connect(lambda *_: self._worker_done())
+            worker.signals.error.connect(self._worker_failed)
+            self.thread_pool.start(worker)

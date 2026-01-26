@@ -1,34 +1,28 @@
-class Settings():
-    def __init__(self, **kwargs):
-        """
-        Default values for settings
-        """
-        self.default_directory:str = ""
-        self.is_slot_capped:bool = True
-        self.start_with_editor:bool = False
-        self.display_name_format:str = "{characters} {slots} {mod}"
-        self.folder_name_format:str = "{category}_{characters}[{slots}]_{mod}"
-        self.additional_elements:list[str] = []
-        self.sort_priority:list[dict] = [
-            {"column": "category", "order": "Ascending"},
-            {"column": "characters.custom", "order": "Ascending"},
-            {"column": "characters.slots", "order": "Ascending"},
-            {"column": "mod_name", "order": "Ascending"}
-        ]
-        self.cache_dir:str = ""
-        self.workspace:str = "Default"
-        self.close_on_apply:bool = True
-        self.update(**kwargs)
+from typing import List
+from pydantic import BaseModel
+from src.constants.enums import Theme
 
-    def update(self, **kwargs):
-        """
-        Updates attribute values with dict
-        Usage:
-            settings = Settings(**dict)
-            or
-            settings = Settings()
-            settings.update(**dict)
-        """
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
+class NameRules(BaseModel):
+    cap_slots_folder:bool=True
+    cap_slots_display:bool=True
+    folder_name_format:str=""
+    display_name_format:str=""
+
+class SortRule(BaseModel):
+    name:str=""
+    priority:int=0
+    asc:bool=True
+
+class Settings(BaseModel):
+    root_dir:str=""
+    cache_dir:str=""
+    workspace:str="Default"
+    custom_elements:List[str]=[]
+    hidden_folders:List[str]=[]
+    theme:Theme=Theme.DARK
+    name_rules:NameRules=NameRules()
+    sort_rules:List[SortRule]=[]
+    favorites:List[str]=[]
+    export_dir:str=""
+    ftp_ip:str=""
+    ftp_port:int=5000
