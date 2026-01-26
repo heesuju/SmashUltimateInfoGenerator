@@ -16,7 +16,7 @@ from src.ui.components.toggle_button import ToggleButton
 
 from src.utils.image_loader import ImageLoader
 from src.utils.image_utils import tint_pixmap
-from src.constants.colors import ButtonColor
+from src.constants.colors import AppColors
 
 class OnlineGridListItem(GridListItem):
     def __init__(self, parent, mod: OnlineModItem, height:int=80, grid_list=None, online_manager=None, download_manager=None):
@@ -182,7 +182,7 @@ class OnlineGridListItemWidget(GridListItemWidget):
 
         # -- Actions Content --
         self.browser_button = QPushButton()
-        web_pixmap = tint_pixmap(QPixmap(ButtonIcons.WEB.value), QColor(ButtonColor.CYAN.value))
+        web_pixmap = tint_pixmap(QPixmap(ButtonIcons.WEB.value), QColor(AppColors.BUTTON_CYAN))
         self.browser_button.setIcon(QIcon(web_pixmap))
         self.browser_button.setFlat(True)
         self.browser_button.setFixedSize(24, 24)
@@ -191,7 +191,7 @@ class OnlineGridListItemWidget(GridListItemWidget):
         action_layout.addWidget(self.browser_button)
 
         self.download_button = QPushButton()
-        download_pixmap = tint_pixmap(QPixmap(ButtonIcons.DOWNLOAD.value), QColor(ButtonColor.GREEN.value))
+        download_pixmap = tint_pixmap(QPixmap(ButtonIcons.DOWNLOAD.value), QColor(AppColors.BUTTON_GREEN))
         self.download_button.setIcon(QIcon(download_pixmap))
         self.download_button.setFlat(True)
         self.download_button.setFixedSize(24, 24)

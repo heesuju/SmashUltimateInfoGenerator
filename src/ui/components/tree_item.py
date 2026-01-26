@@ -4,7 +4,7 @@ from PyQt6.QtCore import Qt
 
 from src.managers.data_manager import ButtonIcons, DataManager
 from src.models.mod import Mod, ModItem
-from src.constants.colors import ButtonColor
+from src.constants.colors import AppColors
 
 from src.ui.components.toggle_button import ToggleButton
 
@@ -56,8 +56,8 @@ class TreeItem(QTreeWidgetItem):
             self.on_fav_on, 
             self.on_fav_off, 
             24,
-            color_a=ButtonColor.YELLOW.value,
-            color_b=ButtonColor.GRAY.value
+            color_a=AppColors.BUTTON_YELLOW,
+            color_b=AppColors.BUTTON_GRAY
         )
         self.fav_button.set_state(self.mod.favorited)
         
@@ -108,8 +108,8 @@ class TreeItem(QTreeWidgetItem):
             self.on_vis_on, 
             24, 
             initial_state=self.mod.hidden,
-            color_a=ButtonColor.GRAY.value,
-            color_b=ButtonColor.CYAN.value
+            color_a=AppColors.BUTTON_GRAY,
+            color_b=AppColors.BUTTON_CYAN
         )
         
         actions_layout.addWidget(self.hide_button)
@@ -121,8 +121,8 @@ class TreeItem(QTreeWidgetItem):
             self.on_disable,
             24,
             initial_state=self.mod.enabled,
-            color_a=ButtonColor.GREEN.value,
-            color_b=ButtonColor.GRAY.value
+            color_a=AppColors.BUTTON_GREEN,
+            color_b=AppColors.BUTTON_GRAY
         )
         
         actions_layout.addWidget(self.enable_button)

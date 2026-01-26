@@ -14,7 +14,7 @@ from src.managers.data_manager import DataManager, ButtonIcons
 from src.utils.file import open_folder
 from src.utils.image_utils import tint_pixmap
 from src.constants.ui_params import BODY_FONT, BODY_FONT_SIZE, TITLE_FONT, TITLE_FONT_SIZE
-from src.constants.colors import ButtonColor
+from src.constants.colors import AppColors
 from src.ui.components.resizable_text_browser import ResizableTextBrowser
 
 class PreviewPanel(SidePanel):
@@ -45,8 +45,8 @@ class PreviewPanel(SidePanel):
             self.on_fav_on, 
             self.on_fav_off, 
             24,
-            color_a=ButtonColor.YELLOW.value,
-            color_b=ButtonColor.GRAY.value
+            color_a=AppColors.BUTTON_YELLOW,
+            color_b=AppColors.BUTTON_GRAY
         )
         self.header.addWidget(self.fav_button)
         
@@ -56,8 +56,8 @@ class PreviewPanel(SidePanel):
             self.on_vis_off, 
             self.on_vis_on, 
             24,
-            color_a=ButtonColor.GRAY.value,
-            color_b=ButtonColor.CYAN.value
+            color_a=AppColors.BUTTON_GRAY,
+            color_b=AppColors.BUTTON_CYAN
         )
         self.header.addWidget(self.hide_button)
 
@@ -203,7 +203,7 @@ class PreviewPanel(SidePanel):
             self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_DISABLE.value))
             self.enable_btn.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: {ButtonColor.RED.value}; 
+                    background-color: {AppColors.BUTTON_RED}; 
                     color: white; 
                     border-radius: 4px;
                     border: none;
@@ -216,7 +216,7 @@ class PreviewPanel(SidePanel):
             self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_ENABLE.value))
             self.enable_btn.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: {ButtonColor.GREEN.value}; 
+                    background-color: {AppColors.BUTTON_GREEN}; 
                     color: white; 
                     border-radius: 4px;
                     border: none;
@@ -296,7 +296,7 @@ class PreviewPanel(SidePanel):
                     self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_DISABLE.value))
                     self.enable_btn.setStyleSheet(f"""
                         QPushButton {{
-                            background-color: {ButtonColor.RED.value}; 
+                            background-color: {AppColors.BUTTON_RED}; 
                             color: white; 
                             border-radius: 4px;
                             border: none;
@@ -309,7 +309,7 @@ class PreviewPanel(SidePanel):
                     self.enable_btn.setIcon(QIcon(ButtonIcons.BATCH_ENABLE.value))
                     self.enable_btn.setStyleSheet(f"""
                         QPushButton {{
-                            background-color: {ButtonColor.GREEN.value}; 
+                            background-color: {AppColors.BUTTON_GREEN}; 
                             color: white; 
                             border-radius: 4px;
                             border: none;

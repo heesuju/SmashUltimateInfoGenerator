@@ -24,6 +24,7 @@ import os
 
 # Import styles and rows
 from src.ui.components.batch_task_styles import *
+from src.constants.colors import AppColors
 from src.ui.components.batch_task_rows import (
     truncate_text, truncate_to_lines, BatchTaskRow, TextRow, DescriptionRow, 
     ComboRow, MultiComboRow, ThumbnailRow, GridCell, AutoResizingTextEdit, AssignmentRow
@@ -101,22 +102,22 @@ class BatchTaskItem(QWidget):
         # ClickableHeader allows collapsing the view
         header_widget = ClickableHeader()
         header_widget.clicked.connect(self.toggle_collapse)
-        header_widget.setStyleSheet("""
-            QWidget {
-                background-color: rgba(128, 128, 128, 0.1);
-                border: 1px solid rgba(128, 128, 128, 0.3);
+        header_widget.setStyleSheet(f"""
+            QWidget {{
+                background-color: {AppColors.BG_SELECTED};
+                border: 1px solid {AppColors.BORDER_DEFAULT};
                 border-radius: 4px;
-            }
-            QWidget:hover {
-                 background-color: rgba(128, 128, 128, 0.2);
-            }
+            }}
+            QWidget:hover {{
+                 background-color: {AppColors.BG_HOVER};
+            }}
         """)
         header_layout = QHBoxLayout(header_widget)
         header_layout.setContentsMargins(10, 8, 10, 8)
         
         # Arrow indicator
         self.arrow_label = QLabel("▼") # Starts expanded, but toggle_collapse will fix it
-        self.arrow_label.setStyleSheet("border: none; background: transparent; color: #aaa; font-size: 10px;")
+        self.arrow_label.setStyleSheet(f"border: none; background: transparent; color: {AppColors.TEXT_DISABLED}; font-size: 10px;")
         header_layout.addWidget(self.arrow_label)
         
         # Mod name - prioritize display_name from TOML if available
@@ -148,15 +149,15 @@ class BatchTaskItem(QWidget):
         # Use Refresh icon or similar
         refetch_btn.setIcon(QIcon(ButtonIcons.REFRESH.value))
         refetch_btn.setToolTip("Refetch data from GameBanana")
-        refetch_btn.setStyleSheet("""
-            QPushButton {
+        refetch_btn.setStyleSheet(f"""
+            QPushButton {{
                 background-color: transparent;
                 border: none;
-            }
-            QPushButton:hover {
-                background-color: rgba(128, 128, 128, 0.2);
+            }}
+            QPushButton:hover {{
+                background-color: {AppColors.BG_HOVER};
                 border-radius: 12px;
-            }
+            }}
         """)
         # Stop propagation 
         refetch_btn.clicked.connect(lambda: self.refetch_requested.emit(str(self.mod.hash)))
@@ -166,19 +167,19 @@ class BatchTaskItem(QWidget):
         remove_btn = QPushButton("✕")
         remove_btn.setFixedSize(24, 24)
         remove_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        remove_btn.setStyleSheet("""
-            QPushButton {
+        remove_btn.setStyleSheet(f"""
+            QPushButton {{
                 background-color: transparent;
                 border: none;
-                color: #aaa;
+                color: {AppColors.REMOVE_ICON};
                 font-size: 14px;
                 font-weight: bold;
-            }
-            QPushButton:hover {
-                color: #ff6666;
-                background-color: rgba(255, 100, 100, 0.15);
+            }}
+            QPushButton:hover {{
+                color: {AppColors.REMOVE_ICON_HOVER};
+                background-color: {AppColors.REMOVE_BG_HOVER};
                 border-radius: 12px;
-            }
+            }}
         """)
         # Stop propagation to prevent collapsing when clicking remove
         # Note: In Qt, buttons usually consume mouse events so this is implicit,
@@ -218,24 +219,21 @@ class BatchTaskItem(QWidget):
         self.table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         # Add basic styling to match previous look
-        self.table.setStyleSheet("""
-            QTableWidget {
+        self.table.setStyleSheet(f"""
+            QTableWidget {{
                 background-color: transparent;
                 border: none;
-            }
-            QHeaderView::section {
-                background-color: rgba(128, 128, 128, 0.2);
-                border: 1px solid rgba(128, 128, 128, 0.3);
+            }}
+            QHeaderView::section {{
+                background-color: {AppColors.BG_HOVER};
+                border: 1px solid {AppColors.BORDER_DEFAULT};
                 padding: 4px;
                 font-weight: bold;
-            }
+            }}
         """)
 
         # Fonts
         data_font = QFont("Arial", 9)
-
-        # Define rows to add
-        # We'll collect them first then add
         task_rows = []
 
         # Field order: mod_name, version, wifi_safe, authors, category, playable_character, slots, elements,

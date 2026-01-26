@@ -1,5 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QTabWidget, QFrame
 
+from src.constants.colors import AppColors
 from src.managers.data_manager import NavigationMenuIcon
 from src.managers.config_manager import ConfigManager
 from src.managers.mod_manager import ModManager
@@ -223,7 +224,7 @@ class MainMenu(QWidget):
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.VLine)
         sep.setFrameShadow(QFrame.Shadow.Sunken)
-        sep.setStyleSheet("color: rgba(255, 255, 255, 0.1); background-color: rgba(255, 255, 255, 0.1); width: 1px;")
+        sep.setStyleSheet(f"color: {AppColors.SEPARATOR}; background-color: {AppColors.SEPARATOR}; width: 1px;")
         return sep
 
     def update_separators_visibility(self):
@@ -432,11 +433,11 @@ class MainMenu(QWidget):
             return
             
         if connected:
-            ftp_btn.set_status_color(QColor("#4CAF50")) # Green
+            ftp_btn.set_status_color(QColor(AppColors.STATUS_GREEN)) # Green
         elif msg == "Searching...":
-            ftp_btn.set_status_color(QColor("#FFC107")) # Amber
+            ftp_btn.set_status_color(QColor(AppColors.STATUS_AMBER)) # Amber
         else:
-            ftp_btn.set_status_color(QColor("#F44336")) # Red
+            ftp_btn.set_status_color(QColor(AppColors.STATUS_RED)) # Red
 
     def keyPressEvent(self, event):
         """Handle global keyboard shortcuts"""

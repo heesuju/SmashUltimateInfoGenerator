@@ -11,6 +11,7 @@ from src.managers.config_manager import ConfigManager
 from src.managers.workspace_manager import WorkspaceManager
 from src.managers.mod_manager import ModManager
 from src.utils.logger import output_log
+from src.constants.colors import AppColors
 
 class WorkspacePanel(SidePanel):
     from PyQt6.QtCore import pyqtSignal
@@ -30,15 +31,15 @@ class WorkspacePanel(SidePanel):
         
         # Config Warning
         self.config_warning = QLabel()
-        self.config_warning.setText("<b>Warning:</b> Directories not set.<br><a href='config' style='color: #4da6ff;'>Open Config</a>")
-        self.config_warning.setStyleSheet("""
-            QLabel {
-                color: #ff5555;
-                background-color: rgba(255, 85, 85, 0.1);
-                border: 1px solid rgba(255, 85, 85, 0.3);
+        self.config_warning.setText(f"<b>Warning:</b> Directories not set.<br><a href='config' style='color: {AppColors.TEXT_LINK};'>Open Config</a>")
+        self.config_warning.setStyleSheet(f"""
+            QLabel {{
+                color: {AppColors.TEXT_ERROR};
+                background-color: {AppColors.BG_ERROR};
+                border: 1px solid {AppColors.BORDER_ERROR};
                 border-radius: 4px;
                 padding: 8px;
-            }
+            }}
         """)
         self.config_warning.setOpenExternalLinks(False)
         self.config_warning.linkActivated.connect(self.on_config_link_clicked)

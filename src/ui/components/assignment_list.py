@@ -6,6 +6,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QEvent, QSize, QTimer
 from PyQt6.QtGui import QFont, QIcon
 from src.ui.components.multi_combobox import CheckableComboBox
 from src.ui.components.batch_task_styles import CELL_COMBO_STYLE
+from src.constants.colors import AppColors
 
 class AssignmentRowWidget(QWidget):
     """
@@ -73,18 +74,18 @@ class AssignmentRowWidget(QWidget):
         # Remove Button
         self.remove_btn = QPushButton("-")
         self.remove_btn.setFixedSize(20, 20)
-        self.remove_btn.setStyleSheet("""
-            QPushButton {
+        self.remove_btn.setStyleSheet(f"""
+            QPushButton {{
                 border: none;
                 background: transparent;
                 border-radius: 3px;
-                color: #ff5555;
+                color: {AppColors.REMOVE_ICON_HOVER};
                 font-weight: bold;
                 padding-bottom: 2px;
-            }
-            QPushButton:hover {
-                background-color: rgba(255, 100, 100, 0.3);
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {AppColors.REMOVE_BG_HOVER};
+            }}
         """)
         self.layout.addWidget(self.remove_btn)
 
@@ -132,31 +133,31 @@ class AssignmentListWidget(QWidget):
         self.tree.setColumnCount(1)
         # Header Label with padding for button
         self.tree.setHeaderLabels([f"{self.entity_label} Assignments"])
-        self.tree.setStyleSheet("""
-            QTreeWidget {
-                border: 1px solid rgba(128, 128, 128, 0.3);
-                background: rgba(0, 0, 0, 0.2);
+        self.tree.setStyleSheet(f"""
+            QTreeWidget {{
+                border: 1px solid {AppColors.BORDER_DEFAULT};
+                background: {AppColors.BG_DARK_DIM};
                 border-radius: 5px;
                 outline: 0;
-            }
-            QTreeWidget::item {
+            }}
+            QTreeWidget::item {{
                 padding: 2px;
                 border: none;
-            }
-            QTreeWidget::item:hover {
+            }}
+            QTreeWidget::item:hover {{
                 background-color: transparent; 
-            }
-            QTreeWidget::item:selected {
+            }}
+            QTreeWidget::item:selected {{
                 background-color: transparent;
-            }
-             QHeaderView::section {
-                background-color: rgba(0, 0, 0, 0.3);
-                color: #ddd;
+            }}
+             QHeaderView::section {{
+                background-color: {AppColors.BG_HEADER_DARK};
+                color: {AppColors.TEXT_PRIMARY};
                 padding: 4px;
                 border: none;
-                border-bottom: 1px solid rgba(128, 128, 128, 0.3);
+                border-bottom: 1px solid {AppColors.BORDER_DEFAULT};
                 font-weight: bold;
-            }
+            }}
         """)
         self.tree.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.tree.setSelectionMode(QTreeWidget.SelectionMode.NoSelection)
@@ -169,18 +170,18 @@ class AssignmentListWidget(QWidget):
         self.add_btn = QPushButton("+", self.tree.header())
         self.add_btn.setFixedSize(16, 16)
         self.add_btn.setToolTip("Add Assignment Row")
-        self.add_btn.setStyleSheet("""
-            QPushButton {
+        self.add_btn.setStyleSheet(f"""
+            QPushButton {{
                 background-color: transparent;
                 border: none;
                 border-radius: 3px;
                 color: white;
                 font-weight: bold;
                 padding-bottom: 2px;
-            }
-            QPushButton:hover {
-                background-color: rgba(255, 255, 255, 0.2);
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {AppColors.BG_HOVER_LIGHT};
+            }}
         """)
         self.add_btn.clicked.connect(self.add_row)
         

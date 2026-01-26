@@ -16,7 +16,7 @@ from src.ui.components.layout import HBox, VBox
 from src.ui.components.grid_item_button import Overlay
 from src.ui.components.toggle_button import ToggleButton
 
-from src.constants.colors import ButtonColor
+from src.constants.colors import AppColors
 from src.utils.file import open_folder
 
 ICON_ELLIPSIS = "assets/icons/ui/ellipsis.png"
@@ -142,8 +142,8 @@ class GridListItemWidget(QWidget):
             self.on_fav_on, 
             self.on_fav_off, 
             24,
-            color_a=ButtonColor.YELLOW.value,
-            color_b=ButtonColor.GRAY.value
+            color_a=AppColors.BUTTON_YELLOW,
+            color_b=AppColors.BUTTON_GRAY
         )
         self.fav_button.set_state(self.mod.favorited)
         action_layout.addWidget(self.fav_button)
@@ -154,8 +154,8 @@ class GridListItemWidget(QWidget):
             self.on_vis_off, 
             self.on_vis_on, 
             24,
-            color_a=ButtonColor.GRAY.value,
-            color_b=ButtonColor.CYAN.value
+            color_a=AppColors.BUTTON_GRAY,
+            color_b=AppColors.BUTTON_CYAN
         )
         self.hide_button.set_state(self.mod.hidden)
         action_layout.addWidget(self.hide_button)
@@ -168,8 +168,8 @@ class GridListItemWidget(QWidget):
             self.on_disable,
             24,
             initial_state=self.mod.enabled,
-            color_a=ButtonColor.GREEN.value,
-            color_b=ButtonColor.GRAY.value
+            color_a=AppColors.BUTTON_GREEN,
+            color_b=AppColors.BUTTON_GRAY
         )
         action_layout.addWidget(self.enable_button)
 

@@ -27,7 +27,7 @@ from src.ui.components.filter_chips import FilterChips
 from src.utils.image_utils import tint_pixmap
 from src.constants.enums import Fighter, ListLayout
 from src.constants.ui_params import SPACING, GRID_PAGE_SIZE, LIST_PAGE_SIZE
-from src.constants.colors import ButtonColor
+from src.constants.colors import AppColors
 
 class ModList(QWidget):
     batch_tasks_added = pyqtSignal()  # Signal when tasks are added to batch queue
@@ -123,9 +123,9 @@ class ModList(QWidget):
         header_layout.addStretch(1)
         
         add_button = QPushButton("Add")
-        tinted_add = tint_pixmap(QPixmap(ButtonIcons.ADD.value), QColor(ButtonColor.CYAN.value))
+        tinted_add = tint_pixmap(QPixmap(ButtonIcons.ADD.value), QColor(AppColors.BUTTON_CYAN))
         add_button.setIcon(QIcon(tinted_add))
-        add_button.setStyleSheet(f"QPushButton {{ color: {ButtonColor.CYAN.value}; }} QPushButton::menu-indicator {{ width: 0px; }}")
+        add_button.setStyleSheet(f"QPushButton {{ color: {AppColors.BUTTON_CYAN}; }} QPushButton::menu-indicator {{ width: 0px; }}")
         add_button.setFlat(True)
         
         # Create menu for add button
@@ -158,9 +158,9 @@ class ModList(QWidget):
             btn.clicked.connect(callback)
             return btn
 
-        btn_generate = create_batch_btn(ButtonIcons.BATCH_GENERATE.value, "Generate", "Generate Info.toml for Selected", lambda: self.on_batch_action_btn("Generate Info.toml"), color=ButtonColor.PURPLE.value)
-        btn_enable = create_batch_btn(ButtonIcons.BATCH_ENABLE.value, "Enable", "Enable Selected", lambda: self.on_batch_action_btn("Enable"), color=ButtonColor.GREEN.value)
-        btn_disable = create_batch_btn(ButtonIcons.BATCH_DISABLE.value, "Disable", "Disable Selected", lambda: self.on_batch_action_btn("Disable"), color=ButtonColor.RED.value)
+        btn_generate = create_batch_btn(ButtonIcons.BATCH_GENERATE.value, "Generate", "Generate Info.toml for Selected", lambda: self.on_batch_action_btn("Generate Info.toml"), color=AppColors.BUTTON_PURPLE)
+        btn_enable = create_batch_btn(ButtonIcons.BATCH_ENABLE.value, "Enable", "Enable Selected", lambda: self.on_batch_action_btn("Enable"), color=AppColors.BUTTON_GREEN)
+        btn_disable = create_batch_btn(ButtonIcons.BATCH_DISABLE.value, "Disable", "Disable Selected", lambda: self.on_batch_action_btn("Disable"), color=AppColors.BUTTON_RED)
         
         # Store buttons to update state
         self.btn_generate = btn_generate

@@ -10,6 +10,7 @@ from src.ui.components.single_combobox import SingleComboBox
 from src.ui.components.assignment_list import AssignmentListWidget
 from src.core.formatting import format_slots, format_display_name, format_folder_name, format_character_names_for_display, format_character_names_for_folder, clean_version
 from src.ui.components.batch_task_styles import *
+from src.constants.colors import AppColors
 
 def truncate_text(text: str, max_length: int = 50) -> str:
     """Truncate text with ellipsis if too long"""
@@ -174,7 +175,7 @@ class BatchTaskRow:
             text_edit = AutoResizingTextEdit(display_text, read_only=True)
             text_edit.setFont(self.data_font)
             
-            color = "#888" if (is_muted or not text) else "#ddd"
+            color = AppColors.TEXT_SECONDARY if (is_muted or not text) else AppColors.TEXT_PRIMARY
             
             text_edit.setStyleSheet(f"""
                 QTextEdit {{
@@ -195,7 +196,7 @@ class BatchTaskRow:
             # Make the cursor start at the beginning for long text
             line_edit.setCursorPosition(0)
             
-            color = "#888" if (is_muted or not text) else "#ddd"
+            color = AppColors.TEXT_SECONDARY if (is_muted or not text) else AppColors.TEXT_PRIMARY
             
             line_edit.setStyleSheet(f"""
                 QLineEdit {{
@@ -281,7 +282,7 @@ class DescriptionRow(BatchTaskRow):
         orig_edit = AutoResizingTextEdit(display_text, read_only=True, max_height=100, min_height=100)
         orig_edit.setFont(self.data_font)
         is_muted = not self.orig_desc
-        color = "#888" if is_muted else "#ddd"
+        color = AppColors.TEXT_SECONDARY if is_muted else AppColors.TEXT_PRIMARY
         orig_edit.setStyleSheet(f"""
             QTextEdit {{
                 border: none;
