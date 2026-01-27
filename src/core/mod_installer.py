@@ -24,14 +24,17 @@ from src.core.formatting import (
 from src.core.scanner import scan_mod
 from src.utils.hash import get_hash
 from src.utils.logger import output_log
+from src.utils.env import find_7z
 
 # Configure rarfile to use 7-Zip if available
-_7ZIP_PATH = r"C:\Program Files\7-Zip\7z.exe"
-if os.path.exists(_7ZIP_PATH):
+_7ZIP_PATH = find_7z()
+if _7ZIP_PATH:
     # Set 7-Zip as the extraction tool
     rarfile.UNRAR_TOOL = "7z"
     rarfile.SEVENZIP_TOOL = _7ZIP_PATH
     rarfile.tool_setup()
+else:
+    output_log("7-Zip not found. RAR extraction may not work.")
 
 
 ZIP_EXT = [
