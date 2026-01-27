@@ -21,7 +21,8 @@ class OnlineManager(QObject):
         self.total_results = 0 
         
         self.selected_ids: set[str] = set()
-        self._mod_details_cache: Dict[str, Dict] = {} 
+        self._mod_info_cache: Dict[str, Dict] = {} 
+        self._mod_description_cache: Dict[str, str] = {}
         self._page_cache: Dict[tuple, Dict] = {} # Cache for search results: (query, author, sort, page) -> data
         self._focused_id = None # Track currently focused mod for preview
         
@@ -65,10 +66,17 @@ class OnlineManager(QObject):
             return
             
         # Check cache first
-        if mod_id in self._mod_details_cache:
-            print(f"[OnlineManager] Using cached details for {mod_id}")
-            self.mod_details_ready.emit(self._mod_details_cache[mod_id])
+        has_info = mod_id in self._mod_info_cache
+        has_desc = mod_id in self._mod_description_cache
+        
+        if has_info and has_desc:
+            print(f"[OnlineManager] Using fully cached details for {mod_id}")
+            details = self._mod_info_cache[mod_id].copy()
+            details['description'] = self._mod_description_cache[mod_id]
+            self.mod_details_ready.emit(details)
             return
+        
+        print(f"[OnlineManager] Cache partial or missing for {mod_id} (info: {has_info}, desc: {has_desc})")
         
         # Fetch detailed info
         Gamebanana(
@@ -82,7 +90,11 @@ class OnlineManager(QObject):
         # data is keyed by ID: { "12345": { ... } }
         for mod_id, details in data.items():
             details["_mod_id"] = mod_id
-            self._mod_details_cache[mod_id] = details # Cache it
+            description = details.pop('description', None)
+            self._mod_info_cache[mod_id] = details
+            if description:
+                self._mod_description_cache[mod_id] = description
+                details['description'] = description
             self.mod_details_ready.emit(details)
 
     def get_mod(self, mod_id: str) -> OnlineModItem:
@@ -181,7 +193,7 @@ class OnlineManager(QObject):
                 if "_idRow" in item:
                     mid, details = process_mod_info(item)
                     details["_mod_id"] = str(mid)
-                    self._mod_details_cache[str(mid)] = details
+                    self._mod_info_cache[str(mid)] = details
             except Exception as e:
                 pass
 
