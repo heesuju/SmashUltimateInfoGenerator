@@ -15,6 +15,7 @@ class ModManager(QObject):
     selection_changed = pyqtSignal(list)
     install_started = pyqtSignal()
     install_finished = pyqtSignal()
+    install_error = pyqtSignal(str)
 
     def __init__(self, config_manager:ConfigManager, workspace_manager:WorkspaceManager):
         super().__init__()
@@ -119,6 +120,7 @@ class ModManager(QObject):
             on_finish=None
         )
         self._current_installer.install_finished.connect(self._on_mod_install_finish)
+        self._current_installer.error_occurred.connect(self.install_error.emit)
         self._current_installer.start()
     
     def _on_mod_install_finish(self, new_paths:List[str]):
