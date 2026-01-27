@@ -48,6 +48,7 @@ class ModList(QWidget):
         self.mod_manager.selection_changed.connect(self.on_selection_changed)
         self.mod_manager.install_started.connect(self.on_install_started)
         self.mod_manager.install_finished.connect(self.on_install_finished)
+        self.mod_manager.install_error.connect(self.on_install_error)
         
         self.filter_manager = filter_manager
         self.filter_manager.add_callback(self.on_filter_changed)
@@ -228,6 +229,11 @@ class ModList(QWidget):
     def on_install_finished(self):
         """Hide loading overlay when installation finishes"""
         self.loading_overlay.hide_loading()
+        
+    def on_install_error(self, message: str):
+        """Handle installation error by showing a popup"""
+        self.loading_overlay.hide_loading()
+        QMessageBox.critical(self, "Installation Error", message)
         
     def update_batch_buttons_state(self):
         """Enable/Disable batch buttons based on selection count"""

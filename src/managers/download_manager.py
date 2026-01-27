@@ -256,6 +256,9 @@ class DownloadManager(QObject):
         installer.install_finished.connect(
             lambda paths: self._on_installer_finished(installer, paths, meta, downloaded_path)
         )
+        installer.error_occurred.connect(
+            lambda err: self.install_failed.emit(meta["id"], err)
+        )
         
         # Keep reference and start
         self.active_installers.append(installer)

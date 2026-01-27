@@ -29,12 +29,9 @@ from src.utils.env import find_7z
 # Configure rarfile to use 7-Zip if available
 _7ZIP_PATH = find_7z()
 if _7ZIP_PATH:
-    # Set 7-Zip as the extraction tool
     rarfile.UNRAR_TOOL = "7z"
     rarfile.SEVENZIP_TOOL = _7ZIP_PATH
     rarfile.tool_setup()
-else:
-    output_log("7-Zip not found. RAR extraction may not work.")
 
 
 ZIP_EXT = [
@@ -76,6 +73,8 @@ def extract_archive(archive_path: str, extract_to: str) -> None:
             with py7zr.SevenZipFile(archive_path, 'r') as z:
                 z.extractall(extract_to)
         elif ext == ".rar":
+            if not _7ZIP_PATH:
+                raise ValueError("7-Zip is required for RAR extraction but was not found. Please install 7-Zip (Windows) or p7zip (Linux).")
             with rarfile.RarFile(archive_path, 'r') as rar_ref:
                 rar_ref.extractall(extract_to)
         else:
@@ -129,6 +128,7 @@ class ModInstaller(QThread):
     Can add folders, zip files containing the mod.
     """
     install_finished = pyqtSignal(list) # Emits list of new paths
+    error_occurred = pyqtSignal(str)
 
     def __init__(
         self,
@@ -183,6 +183,7 @@ class ModInstaller(QThread):
             
         except Exception as e:
             output_log(f"Error in ModInstaller: {e}")
+            self.error_occurred.emit(str(e))
             self.install_finished.emit([])
 
     def process_mod(self, path:str, fallback_name:str=None) -> Mod:
@@ -236,6 +237,7 @@ class ModInstaller(QThread):
                             
             except Exception as e:
                 output_log(f"Unzip error: {e}")
+                raise e
         return results
 
     def add_mod(self, mod:Mod)->str:
